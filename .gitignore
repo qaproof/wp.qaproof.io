@@ -1,0 +1,40 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node (if you use build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Composer (if used)
+vendor/
+composer.lock
+
+# Build / dist
+dist/
+build/
+
+# Env files
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# Mac / Linux temp
+*.swp
+*.swo
+
+# PHPUnit / coverage
+coverage/
+.phpunit.result.cache
+
+# Archive files
+*.zip
+*.tar.gz
