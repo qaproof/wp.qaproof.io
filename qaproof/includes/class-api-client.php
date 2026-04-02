@@ -15,6 +15,13 @@ class QAProof_API_Client {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/compare';
         $api_key  = QAProof_Settings::get_api_key();
 
+        // DEBUG: temporary logging — remove after fixing auth issue
+        error_log( '[QAProof DEBUG] endpoint: ' . $endpoint );
+        error_log( '[QAProof DEBUG] api_key length: ' . strlen( $api_key ) );
+        error_log( '[QAProof DEBUG] api_key first 10: ' . substr( $api_key, 0, 10 ) );
+        error_log( '[QAProof DEBUG] api_key last 10: ' . substr( $api_key, -10 ) );
+        error_log( '[QAProof DEBUG] api_key hex dump first 20 bytes: ' . bin2hex( substr( $api_key, 0, 20 ) ) );
+
         if ( empty( $api_key ) ) {
             return new WP_Error(
                 'qaproof_no_api_key',
