@@ -564,24 +564,12 @@ class QAProof_Settings {
             return $value;
         }
 
-        // Must start with qap_ prefix.
-        if ( strpos( $value, 'qap_' ) !== 0 ) {
-            add_settings_error(
-                'qaproof_api_key',
-                'invalid_prefix',
-                __( 'Invalid API key: must start with "qap_".', 'qaproof' ),
-                'error'
-            );
-            return get_option( 'qaproof_api_key', '' );
-        }
-
-        // After prefix, must be exactly 64 hex characters (total length = 68).
-        $hex_part = substr( $value, 4 );
-        if ( ! preg_match( '/^[0-9a-f]{64}$/i', $hex_part ) ) {
+        // Must match format: prefix_ followed by 64 hex characters (e.g. qap_..., uiux_...).
+        if ( ! preg_match( '/^[a-z0-9]+_[0-9a-f]{64}$/i', $value ) ) {
             add_settings_error(
                 'qaproof_api_key',
                 'invalid_format',
-                __( 'Invalid API key format: must be "qap_" followed by 64 hexadecimal characters.', 'qaproof' ),
+                __( 'Invalid API key format: must be a prefix followed by underscore and 64 hexadecimal characters.', 'qaproof' ),
                 'error'
             );
             return get_option( 'qaproof_api_key', '' );

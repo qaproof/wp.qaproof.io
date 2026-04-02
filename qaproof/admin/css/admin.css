@@ -459,6 +459,22 @@
   line-height: 120% !important;
 }
 
+/* Constrain settings form inputs/selects to a reasonable width */
+#qaproof-app .form-table td select,
+#qaproof-app .form-table td .qaproof-select,
+#qaproof-app .form-table td input.regular-text,
+#qaproof-app .form-table td input[type="email"],
+#qaproof-app .form-table td input[type="url"],
+#qaproof-app .form-table td input[type="text"] {
+  max-width: 300px !important;
+  width: 100% !important;
+}
+
+#qaproof-app .form-table td input.small-text,
+#qaproof-app .form-table td input[type="number"] {
+  max-width: 100px !important;
+}
+
 #qaproof-app input[type="url"]:focus,
 #qaproof-app input[type="text"]:focus,
 #qaproof-app input[type="password"]:focus,
@@ -4059,6 +4075,7 @@
   position: relative;
   display: block;
   width: 100%;
+  max-width: 300px;
   min-width: 200px;
 }
 
