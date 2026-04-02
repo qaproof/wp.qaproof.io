@@ -19,7 +19,7 @@ class QAProof_Settings {
     public static function register_settings() {
         register_setting( self::GROUP_GENERAL, 'qaproof_api_key', [
             'type'              => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
+            'sanitize_callback' => [ __CLASS__, 'sanitize_api_key' ],
             'default'           => '',
         ]);
 
@@ -120,8 +120,8 @@ class QAProof_Settings {
 
         register_setting( self::GROUP_TESTS_GENERAL, 'qaproof_max_history', [
             'type'              => 'integer',
-            'sanitize_callback' => 'absint',
-            'default'           => 100,
+            'sanitize_callback' => [ __CLASS__, 'sanitize_max_history' ],
+            'default'           => 30,
         ]);
 
         add_settings_section(
@@ -166,12 +166,6 @@ class QAProof_Settings {
             'default'           => '[]',
         ]);
 
-        register_setting( self::GROUP_TESTS_FIDELITY, 'qaproof_fidelity_pass_score', [
-            'type'              => 'integer',
-            'sanitize_callback' => 'absint',
-            'default'           => 80,
-        ]);
-
         register_setting( self::GROUP_TESTS_FIDELITY, 'qaproof_fidelity_ignore_text', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
@@ -183,6 +177,10 @@ class QAProof_Settings {
             __( 'Design Fidelity', 'qaproof' ),
             function () {
                 echo '<p>' . esc_html__( 'Settings for design fidelity comparisons (Figma vs live page).', 'qaproof' ) . '</p>';
+                echo '<div class="qaproof-figma-plan-notice" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 12px 0 20px; border-radius: 4px;">';
+                echo '<strong>' . esc_html__( 'Figma API Limits', 'qaproof' ) . '</strong><br>';
+                echo esc_html__( 'Each saved design requires only 1 Figma API call — once fetched, the image and detected elements are cached in WordPress and reused for all future tests (zero API calls). However, Figma enforces strict rate limits by plan: Starter (~6 requests/month), Professional (~unlimited). If you hit the limit, you can always export your design as an image and use "Upload Image" on the Tests page instead.', 'qaproof' );
+                echo '</div>';
             },
             'qaproof-settings-tests-fidelity'
         );
@@ -191,14 +189,6 @@ class QAProof_Settings {
             'qaproof_saved_designs',
             __( 'Saved Designs', 'qaproof' ),
             [ __CLASS__, 'render_saved_designs_field' ],
-            'qaproof-settings-tests-fidelity',
-            'qaproof_tests_fidelity_section'
-        );
-
-        add_settings_field(
-            'qaproof_fidelity_pass_score',
-            __( 'Pass Score', 'qaproof' ),
-            [ __CLASS__, 'render_fidelity_pass_score_field' ],
             'qaproof-settings-tests-fidelity',
             'qaproof_tests_fidelity_section'
         );
@@ -214,12 +204,6 @@ class QAProof_Settings {
         // ============================
         // Tests tab — Responsive
         // ============================
-        register_setting( self::GROUP_TESTS_RESPONSIVE, 'qaproof_responsive_pass_score', [
-            'type'              => 'integer',
-            'sanitize_callback' => 'absint',
-            'default'           => 80,
-        ]);
-
         register_setting( self::GROUP_TESTS_RESPONSIVE, 'qaproof_viewport_desktop', [
             'type'              => 'integer',
             'sanitize_callback' => 'absint',
@@ -248,14 +232,6 @@ class QAProof_Settings {
         );
 
         add_settings_field(
-            'qaproof_responsive_pass_score',
-            __( 'Pass Score', 'qaproof' ),
-            [ __CLASS__, 'render_responsive_pass_score_field' ],
-            'qaproof-settings-tests-responsive',
-            'qaproof_tests_responsive_section'
-        );
-
-        add_settings_field(
             'qaproof_viewports',
             __( 'Viewport Widths (px)', 'qaproof' ),
             [ __CLASS__, 'render_viewports_field' ],
@@ -266,12 +242,6 @@ class QAProof_Settings {
         // ============================
         // Tests tab — Accessibility
         // ============================
-        register_setting( self::GROUP_TESTS_A11Y, 'qaproof_accessibility_pass_score', [
-            'type'              => 'integer',
-            'sanitize_callback' => 'absint',
-            'default'           => 80,
-        ]);
-
         register_setting( self::GROUP_TESTS_A11Y, 'qaproof_wcag_level', [
             'type'              => 'string',
             'sanitize_callback' => 'sanitize_text_field',
@@ -285,14 +255,6 @@ class QAProof_Settings {
                 echo '<p>' . esc_html__( 'Settings for WCAG accessibility testing.', 'qaproof' ) . '</p>';
             },
             'qaproof-settings-tests-accessibility'
-        );
-
-        add_settings_field(
-            'qaproof_accessibility_pass_score',
-            __( 'Pass Score', 'qaproof' ),
-            [ __CLASS__, 'render_accessibility_pass_score_field' ],
-            'qaproof-settings-tests-accessibility',
-            'qaproof_tests_accessibility_section'
         );
 
         add_settings_field(
@@ -310,8 +272,15 @@ class QAProof_Settings {
 
     public static function render_api_key_field() {
         $value = get_option( 'qaproof_api_key', '' );
-        echo '<input type="password" name="qaproof_api_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off" />';
-        echo '<p class="description">' . esc_html__( 'Your API key from the QAProof dashboard.', 'qaproof' ) . '</p>';
+        echo '<div class="qaproof-api-key-wrapper">';
+        echo '  <input type="password" id="qaproof_api_key" name="qaproof_api_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off" placeholder="qap_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />';
+        echo '  <button type="button" class="qaproof-eye-toggle" title="' . esc_attr__( 'Show/Hide API Key', 'qaproof' ) . '">';
+        echo '    <svg class="qaproof-eye-icon qaproof-eye-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+        echo '    <svg class="qaproof-eye-icon qaproof-eye-on" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        echo '  </button>';
+        echo '  <span class="qaproof-key-fade"></span>';
+        echo '</div>';
+        echo '<p class="qaproof-api-key-error" style="display:none;"></p>';
     }
 
     public static function render_monitoring_section_description() {
@@ -337,9 +306,9 @@ class QAProof_Settings {
     }
 
     public static function render_default_threshold_field() {
-        $value = get_option( 'qaproof_default_threshold', 90 );
+        $value = get_option( 'qaproof_default_threshold', 95 );
         echo '<input type="number" name="qaproof_default_threshold" value="' . esc_attr( $value ) . '" min="0" max="100" step="1" class="small-text" />';
-        echo '<p class="description">' . esc_html__( 'Score below this threshold triggers notifications. 0-100, default 90.', 'qaproof' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Score below this threshold triggers notifications. 0-100, default 95.', 'qaproof' ) . '</p>';
     }
 
     // ============================
@@ -364,8 +333,8 @@ class QAProof_Settings {
     }
 
     public static function render_max_history_field() {
-        $value = get_option( 'qaproof_max_history', 100 );
-        echo '<input type="number" name="qaproof_max_history" value="' . esc_attr( $value ) . '" min="10" max="1000" step="10" class="small-text" />';
+        $value = get_option( 'qaproof_max_history', 30 );
+        echo '<input type="number" name="qaproof_max_history" value="' . esc_attr( $value ) . '" min="5" max="30" step="5" class="small-text" />';
         echo '<p class="description">' . esc_html__( 'Maximum number of test results to keep. Oldest results are pruned automatically.', 'qaproof' ) . '</p>';
     }
 
@@ -380,13 +349,18 @@ class QAProof_Settings {
         $clean = [];
         foreach ( $designs as $d ) {
             if ( empty( $d['name'] ) ) continue;
-            $clean[] = [
+            $entry = [
                 'id'         => isset( $d['id'] ) ? sanitize_text_field( $d['id'] ) : bin2hex( random_bytes( 4 ) ),
                 'name'       => sanitize_text_field( $d['name'] ),
                 'pageUrl'    => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
                 'figmaToken' => isset( $d['figmaToken'] ) ? sanitize_text_field( $d['figmaToken'] ) : '',
                 'figmaUrl'   => isset( $d['figmaUrl'] ) ? sanitize_url( $d['figmaUrl'] ) : '',
             ];
+            // Preserve saved design image if present (not submitted through settings form)
+            if ( ! empty( $d['imageBase64'] ) ) {
+                $entry['imageBase64'] = $d['imageBase64'];
+            }
+            $clean[] = $entry;
         }
         return wp_json_encode( $clean );
     }
@@ -395,6 +369,99 @@ class QAProof_Settings {
         $raw = get_option( 'qaproof_saved_designs', '[]' );
         $designs = json_decode( $raw, true );
         return is_array( $designs ) ? $designs : [];
+    }
+
+    /**
+     * Update the cached image for a specific saved design.
+     *
+     * @param string $design_id  The design's unique ID.
+     * @param string $image_b64  The full data-URL (data:image/png;base64,...).
+     * @return bool True if updated, false if design not found.
+     */
+    public static function update_saved_design_image( $design_id, $image_b64 ) {
+        $designs = self::get_saved_designs();
+        $found   = false;
+        foreach ( $designs as &$d ) {
+            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
+                $d['imageBase64'] = $image_b64;
+                $found = true;
+                break;
+            }
+        }
+        unset( $d );
+        if ( ! $found ) return false;
+        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
+        return true;
+    }
+
+    /**
+     * Clear the cached image for a specific saved design.
+     *
+     * @param string $design_id  The design's unique ID.
+     * @return bool True if cleared, false if design not found.
+     */
+    public static function clear_saved_design_image( $design_id ) {
+        $designs = self::get_saved_designs();
+        $found   = false;
+        foreach ( $designs as &$d ) {
+            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
+                unset( $d['imageBase64'] );
+                $found = true;
+                break;
+            }
+        }
+        unset( $d );
+        if ( ! $found ) return false;
+        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
+        return true;
+    }
+
+    /**
+     * Store cached element detection data for a saved design.
+     *
+     * @param string $design_id  The design's unique ID.
+     * @param array  $elements   Array of detected elements (from detect-elements API).
+     * @param string $source     Detection source ('figma-api' or 'ai-vision').
+     * @return bool True if saved, false if design not found.
+     */
+    public static function update_saved_design_elements( $design_id, $elements, $source = '' ) {
+        $designs = self::get_saved_designs();
+        $found   = false;
+        foreach ( $designs as &$d ) {
+            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
+                $d['elementsJson'] = wp_json_encode( $elements );
+                $d['elementsSource'] = $source;
+                $found = true;
+                break;
+            }
+        }
+        unset( $d );
+        if ( ! $found ) return false;
+        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
+        return true;
+    }
+
+    /**
+     * Clear cached element detection data for a saved design.
+     *
+     * @param string $design_id  The design's unique ID.
+     * @return bool True if cleared, false if design not found.
+     */
+    public static function clear_saved_design_elements( $design_id ) {
+        $designs = self::get_saved_designs();
+        $found   = false;
+        foreach ( $designs as &$d ) {
+            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
+                unset( $d['elementsJson'] );
+                unset( $d['elementsSource'] );
+                $found = true;
+                break;
+            }
+        }
+        unset( $d );
+        if ( ! $found ) return false;
+        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
+        return true;
     }
 
     public static function render_saved_designs_field() {
@@ -426,14 +493,16 @@ class QAProof_Settings {
             </button>
             <input type="hidden" name="qaproof_saved_designs" id="qaproof-saved-designs-json" value="<?php echo esc_attr( wp_json_encode( $designs ) ); ?>" />
         </div>
-        <p class="description"><?php esc_html_e( 'Save Figma designs here, then select them by name on the Tests page.', 'qaproof' ); ?></p>
+        <p class="description">
+            <?php
+                printf(
+                    /* translators: %s: link to Tests page */
+                    esc_html__( 'Save your designs here, then select them by name on the %s page.', 'qaproof' ),
+                    '<a href="' . esc_url( admin_url( 'admin.php?page=qaproof-tests' ) ) . '">' . esc_html__( 'Design Fidelity Test', 'qaproof' ) . '</a>'
+                );
+            ?>
+        </p>
         <?php
-    }
-
-    public static function render_fidelity_pass_score_field() {
-        $value = get_option( 'qaproof_fidelity_pass_score', 80 );
-        echo '<input type="number" name="qaproof_fidelity_pass_score" value="' . esc_attr( $value ) . '" min="0" max="100" step="1" class="small-text" />';
-        echo '<p class="description">' . esc_html__( 'Scores below this value are considered failing. 0-100.', 'qaproof' ) . '</p>';
     }
 
     public static function render_fidelity_ignore_text_field() {
@@ -446,31 +515,23 @@ class QAProof_Settings {
     // ============================
     // Tests — Responsive Fields
     // ============================
-    public static function render_responsive_pass_score_field() {
-        $value = get_option( 'qaproof_responsive_pass_score', 80 );
-        echo '<input type="number" name="qaproof_responsive_pass_score" value="' . esc_attr( $value ) . '" min="0" max="100" step="1" class="small-text" />';
-        echo '<p class="description">' . esc_html__( 'Scores below this value are considered failing. 0-100.', 'qaproof' ) . '</p>';
-    }
-
     public static function render_viewports_field() {
         $desktop = get_option( 'qaproof_viewport_desktop', 1920 );
         $tablet  = get_option( 'qaproof_viewport_tablet', 768 );
         $mobile  = get_option( 'qaproof_viewport_mobile', 375 );
         ?>
-        <fieldset>
+        <fieldset class="qaproof-viewport-fields">
             <label>
                 <?php esc_html_e( 'Desktop:', 'qaproof' ); ?>
-                <input type="number" name="qaproof_viewport_desktop" value="<?php echo esc_attr( $desktop ); ?>" min="800" max="3840" step="1" class="small-text" />
+                <span class="qaproof-input-suffix"><input type="number" name="qaproof_viewport_desktop" value="<?php echo esc_attr( $desktop ); ?>" min="800" max="3840" step="1" class="small-text" /><span class="qaproof-suffix">px</span></span>
             </label>
-            <br />
             <label>
                 <?php esc_html_e( 'Tablet:', 'qaproof' ); ?>
-                <input type="number" name="qaproof_viewport_tablet" value="<?php echo esc_attr( $tablet ); ?>" min="320" max="1200" step="1" class="small-text" style="margin-left: 12px;" />
+                <span class="qaproof-input-suffix"><input type="number" name="qaproof_viewport_tablet" value="<?php echo esc_attr( $tablet ); ?>" min="320" max="1200" step="1" class="small-text" /><span class="qaproof-suffix">px</span></span>
             </label>
-            <br />
             <label>
                 <?php esc_html_e( 'Mobile:', 'qaproof' ); ?>
-                <input type="number" name="qaproof_viewport_mobile" value="<?php echo esc_attr( $mobile ); ?>" min="280" max="480" step="1" class="small-text" style="margin-left: 8px;" />
+                <span class="qaproof-input-suffix"><input type="number" name="qaproof_viewport_mobile" value="<?php echo esc_attr( $mobile ); ?>" min="280" max="480" step="1" class="small-text" /><span class="qaproof-suffix">px</span></span>
             </label>
         </fieldset>
         <p class="description"><?php esc_html_e( 'Viewport widths (in pixels) used for responsive screenshots.', 'qaproof' ); ?></p>
@@ -480,12 +541,6 @@ class QAProof_Settings {
     // ============================
     // Tests — Accessibility Fields
     // ============================
-    public static function render_accessibility_pass_score_field() {
-        $value = get_option( 'qaproof_accessibility_pass_score', 80 );
-        echo '<input type="number" name="qaproof_accessibility_pass_score" value="' . esc_attr( $value ) . '" min="0" max="100" step="1" class="small-text" />';
-        echo '<p class="description">' . esc_html__( 'Scores below this value are considered failing. 0-100.', 'qaproof' ) . '</p>';
-    }
-
     public static function render_wcag_level_field() {
         $value = get_option( 'qaproof_wcag_level', 'AA' );
         ?>
@@ -496,6 +551,51 @@ class QAProof_Settings {
         </select>
         <p class="description"><?php esc_html_e( 'WCAG 2.1 conformance level to test against. AA is the standard for most websites.', 'qaproof' ); ?></p>
         <?php
+    }
+
+    /**
+     * Sanitize and validate the API key on save.
+     */
+    public static function sanitize_api_key( $value ) {
+        $value = sanitize_text_field( $value );
+
+        // Allow empty value (clearing the key).
+        if ( '' === $value ) {
+            return $value;
+        }
+
+        // Must start with qap_ prefix.
+        if ( strpos( $value, 'qap_' ) !== 0 ) {
+            add_settings_error(
+                'qaproof_api_key',
+                'invalid_prefix',
+                __( 'Invalid API key: must start with "qap_".', 'qaproof' ),
+                'error'
+            );
+            return get_option( 'qaproof_api_key', '' );
+        }
+
+        // After prefix, must be exactly 64 hex characters (total length = 68).
+        $hex_part = substr( $value, 4 );
+        if ( ! preg_match( '/^[0-9a-f]{64}$/i', $hex_part ) ) {
+            add_settings_error(
+                'qaproof_api_key',
+                'invalid_format',
+                __( 'Invalid API key format: must be "qap_" followed by 64 hexadecimal characters.', 'qaproof' ),
+                'error'
+            );
+            return get_option( 'qaproof_api_key', '' );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Sanitize max history — clamp between 5 and 30.
+     */
+    public static function sanitize_max_history( $value ) {
+        $value = absint( $value );
+        return max( 5, min( 30, $value ) );
     }
 
     /**

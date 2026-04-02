@@ -15,10 +15,9 @@
   const submitBtn = document.getElementById('qaproof-submit-btn');
   const testTypeSelector = document.querySelector('.qaproof-test-type-selector');
   const figmaFields = document.getElementById('qaproof-figma-fields');
-  const sourceToggle = document.querySelector('.qaproof-source-toggle');
-  const sourceUrl = document.getElementById('qaproof-source-url');
+  const sourceToggle = document.getElementById('qaproof-source-toggle');
+  const sourceSaved = document.getElementById('qaproof-source-saved');
   const sourceUpload = document.getElementById('qaproof-source-upload');
-  const figmaUrlInput = document.getElementById('qaproof-figma-url');
   const figmaFileInput = document.getElementById('qaproof-figma-file');
   const uploadPreview = document.getElementById('qaproof-upload-preview');
   const uploadPreviewImg = document.getElementById('qaproof-upload-preview-img');
@@ -88,8 +87,9 @@
   // State
   // ============================
   let testType = (qaproof && qaproof.defaultTestType) || 'fidelity';
-  let figmaSource = 'url';
+  let figmaSource = 'saved'; // Default to saved design tab
   let uploadedFileBase64 = null;
+  let savedDesignImageBase64 = null; // Cached image from a saved design (avoids Figma API calls)
   let allDifferences = [];
   let activeDiffIndex = null;
   let activeDevice = 'desktop';
@@ -142,6 +142,92 @@
         });
     });
   }
+
+  // ============================
+  // API Key — Eye Toggle + Validation
+  // ============================
+  (function () {
+    var keyInput = document.getElementById('qaproof_api_key');
+    if (!keyInput) return;
+
+    var wrapper = keyInput.closest('.qaproof-api-key-wrapper');
+    if (!wrapper) return;
+
+    var eyeBtn    = wrapper.querySelector('.qaproof-eye-toggle');
+    var eyeOff    = wrapper.querySelector('.qaproof-eye-off');
+    var eyeOn     = wrapper.querySelector('.qaproof-eye-on');
+    var errorEl   = wrapper.parentNode.querySelector('.qaproof-api-key-error');
+    var keyRegex  = /^qap_[0-9a-f]{64}$/i;
+
+    // Fade gradient — sync color to input background
+    var fadeEl = wrapper.querySelector('.qaproof-key-fade');
+    function syncFade() {
+      if (!fadeEl) return;
+      var bg = getComputedStyle(keyInput).backgroundColor;
+      fadeEl.style.background = 'linear-gradient(to right, transparent, ' + bg + ' 70%)';
+    }
+    syncFade();
+    keyInput.addEventListener('focus', function () { setTimeout(syncFade, 50); });
+    keyInput.addEventListener('blur', function () { setTimeout(syncFade, 50); });
+    // Re-sync on theme toggle
+    var themeBtn = document.getElementById('qaproof-theme-toggle');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function () { setTimeout(syncFade, 100); });
+    }
+
+    // Eye toggle
+    if (eyeBtn) {
+      eyeBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var isPassword = keyInput.type === 'password';
+        keyInput.type = isPassword ? 'text' : 'password';
+        if (eyeOff && eyeOn) {
+          eyeOff.style.display = isPassword ? 'none' : 'block';
+          eyeOn.style.display  = isPassword ? 'block' : 'none';
+        }
+      });
+    }
+
+    // Client-side validation
+    function validateKey() {
+      var val = keyInput.value.trim();
+
+      // Empty — neutral state
+      if (!val) {
+        keyInput.classList.remove('qaproof-key-valid', 'qaproof-key-invalid');
+        if (errorEl) errorEl.style.display = 'none';
+        return;
+      }
+
+      if (keyRegex.test(val)) {
+        keyInput.classList.add('qaproof-key-valid');
+        keyInput.classList.remove('qaproof-key-invalid');
+        if (errorEl) errorEl.style.display = 'none';
+      } else {
+        keyInput.classList.add('qaproof-key-invalid');
+        keyInput.classList.remove('qaproof-key-valid');
+        if (errorEl) {
+          if (val.indexOf('qap_') !== 0) {
+            errorEl.textContent = 'API key must start with "qap_"';
+          } else {
+            var hex = val.substring(4);
+            if (hex.length !== 64) {
+              errorEl.textContent = 'Key is ' + (4 + hex.length) + ' characters — expected 68 (qap_ + 64 hex chars)';
+            } else {
+              errorEl.textContent = 'Key contains invalid characters — only 0-9 and a-f are allowed after "qap_"';
+            }
+          }
+          errorEl.style.display = 'block';
+        }
+      }
+    }
+
+    keyInput.addEventListener('input', validateKey);
+    keyInput.addEventListener('paste', function () { setTimeout(validateKey, 0); });
+
+    // Validate on load if there's already a value
+    if (keyInput.value) validateKey();
+  })();
 
   // ============================
   // Saved Designs Repeater (Settings page)
@@ -321,8 +407,8 @@
       var statusText = parseInt(m.is_enabled, 10) ? 'Active' : 'Paused';
       var baselineText = parseInt(m.has_baseline, 10) ? '' : ' (no baseline)';
 
-      html += '<tr data-id="' + m.id + '">';
-      html += '<td class="qaproof-monitor-url"><a href="#" class="qaproof-monitor-detail-link" data-id="' + m.id + '">' + escapeHtml(truncateUrl(m.page_url, 60)) + '</a></td>';
+      html += '<tr data-id="' + m.id + '" class="qaproof-monitor-row-clickable">';
+      html += '<td class="qaproof-monitor-url"><a href="#" class="qaproof-monitor-detail-link" data-id="' + m.id + '">' + escapeHtml(truncateUrl(m.page_url, 60)) + '</a> <span class="qaproof-monitor-view-hint">View Results &rsaquo;</span></td>';
       html += '<td>' + escapeHtml(capitalize(m.schedule)) + '</td>';
       html += '<td><span class="qaproof-monitor-score ' + scoreClass + '">' + scoreText + '</span></td>';
       html += '<td>' + escapeHtml(lastRun) + '</td>';
@@ -344,6 +430,15 @@
       link.addEventListener('click', function (e) {
         e.preventDefault();
         showMonitorDetail(parseInt(this.dataset.id, 10));
+      });
+    });
+
+    // Make entire row clickable (except action buttons)
+    monitorsListEl.querySelectorAll('.qaproof-monitor-row-clickable').forEach(function (row) {
+      row.addEventListener('click', function (e) {
+        if (e.target.closest('.qaproof-monitor-actions') || e.target.closest('a')) return;
+        var id = parseInt(row.dataset.id, 10);
+        if (id) showMonitorDetail(id);
       });
     });
 
@@ -455,25 +550,30 @@
   }
 
   function runMonitor(id, btn) {
+    // Add running animation to the row
+    var row = btn ? btn.closest('tr[data-id]') : null;
+    if (row) row.classList.add('qaproof-monitor-running');
+
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Running...';
+      btn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span>';
     }
 
     apiCall('POST', '/monitors/' + id + '/run').then(function (resp) {
+      if (row) row.classList.remove('qaproof-monitor-running');
       if (btn) {
         btn.disabled = false;
         btn.textContent = 'Run';
       }
       if (resp.success) {
         loadMonitors();
-        if (resp.data && resp.data.result) {
-          showMonitorDetail(id);
-        }
+        // Always open detail view to show the new result
+        showMonitorDetail(id);
       } else {
         alert((resp.error && resp.error.message) || 'Failed to run monitor.');
       }
     }).catch(function () {
+      if (row) row.classList.remove('qaproof-monitor-running');
       if (btn) {
         btn.disabled = false;
         btn.textContent = 'Run';
@@ -873,7 +973,7 @@
   // Saved Design Selector (Tests page)
   // ============================
   var savedDesignSelect = document.getElementById('qaproof-saved-design');
-  var savedDesignWrap   = document.getElementById('qaproof-saved-design-selector');
+  var savedDesignWrap   = document.getElementById('qaproof-figma-fields'); // Design source block (contains saved design dropdown)
 
   function populateSavedDesigns() {
     if (!savedDesignSelect || !qaproof.savedDesigns) return;
@@ -885,7 +985,8 @@
     designs.forEach(function (d) {
       var opt = document.createElement('option');
       opt.value = d.id;
-      opt.textContent = d.name;
+      var badges = (d.hasImage ? ' \u2713' : '') + (d.hasElements ? ' \u25A0' : '');
+      opt.textContent = d.name + badges;
       savedDesignSelect.appendChild(opt);
     });
   }
@@ -901,7 +1002,10 @@
   if (savedDesignSelect) {
     savedDesignSelect.addEventListener('change', function () {
       var designId = savedDesignSelect.value;
-      if (!designId) return; // Manual Entry selected — don't clear fields
+      if (!designId) {
+        savedDesignImageBase64 = null; // Clear saved image for manual entry
+        return;
+      }
 
       var designs = qaproof.savedDesigns || [];
       var found = null;
@@ -919,25 +1023,54 @@
       if (figmaTokenEl && found.figmaToken) figmaTokenEl.value = found.figmaToken;
       if (figmaUrlEl && found.figmaUrl)  figmaUrlEl.value = found.figmaUrl;
 
-      // Switch to URL source if figma URL is provided
-      if (found.figmaUrl && sourceToggle) {
-        sourceToggle.querySelectorAll('.qaproof-source-btn').forEach(function (b) {
-          b.classList.toggle('active', b.dataset.source === 'url');
-        });
-        figmaSource = 'url';
-        if (sourceUrl) sourceUrl.classList.remove('hidden');
-        if (sourceUpload) sourceUpload.classList.add('hidden');
+      // If this design has a saved image, load it from WP (zero Figma API calls)
+      if (found.hasImage) {
         updateFigmaPreviewVisibility();
+
+        // Lazy-load saved image from WP REST
+        setPreviewState('loading');
+        fetch(qaproof.restBase + '/saved-design-image/' + found.id, {
+          headers: { 'X-WP-Nonce': qaproof.nonce },
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success && json.imageBase64) {
+            savedDesignImageBase64 = json.imageBase64;
+            showPreviewResult({
+              imageBase64: json.imageBase64,
+              fileKey: 'Saved',
+              nodeId: found.name || found.id,
+              sizeKB: Math.round(json.imageBase64.length * 0.75 / 1024),
+            });
+            if (previewMeta) {
+              previewMeta.textContent = 'Saved image \u00B7 No Figma API call';
+            }
+          } else {
+            // Image missing — fall back to Figma preview
+            savedDesignImageBase64 = null;
+            triggerFigmaPreview(true);
+          }
+        })
+        .catch(function () {
+          savedDesignImageBase64 = null;
+          triggerFigmaPreview(true);
+        });
+        return; // Don't trigger Figma preview — we're loading from WP
       }
 
-      // Trigger preview after a short delay
-      clearTimeout(figmaPreviewTimeout);
-      figmaPreviewTimeout = setTimeout(function () { triggerFigmaPreview(true); }, 300);
+      savedDesignImageBase64 = null; // No saved image for this design
+
+      // If design has Figma URL, silently fetch preview
+      if (found.figmaUrl) {
+        updateFigmaPreviewVisibility();
+        clearTimeout(figmaPreviewTimeout);
+        figmaPreviewTimeout = setTimeout(function () { triggerFigmaPreview(true); }, 300);
+      }
     });
   }
 
   // ============================
-  // Figma Source Toggle
+  // Design Source Toggle (Saved Design / Upload Image)
   // ============================
   if (sourceToggle) {
     sourceToggle.addEventListener('click', function (e) {
@@ -949,27 +1082,24 @@
       });
       btn.classList.add('active');
 
-      figmaSource = btn.dataset.source;
-      if (sourceUrl) sourceUrl.classList.toggle('hidden', figmaSource !== 'url');
-      if (sourceUpload) sourceUpload.classList.toggle('hidden', figmaSource !== 'upload');
-      var figmaTokenRow = document.getElementById('qaproof-figma-token-row');
-      if (figmaTokenRow) figmaTokenRow.classList.toggle('hidden', figmaSource !== 'url');
-      updateFigmaPreviewVisibility();
+      var source = btn.dataset.source;
+      if (sourceSaved) sourceSaved.classList.toggle('hidden', source !== 'saved');
+      if (sourceUpload) sourceUpload.classList.toggle('hidden', source !== 'upload');
 
-      // Sync Design Preview panel content with the active source
-      if (figmaSource === 'upload' && uploadedFileBase64) {
-        // Show previously uploaded image in the preview panel
-        showUploadedImagePreview(uploadedFileBase64, '', 0);
-        if (previewMeta) previewMeta.textContent = 'Uploaded image';
-      } else if (figmaSource === 'upload') {
-        // No image uploaded yet — show empty state
-        setPreviewState('empty');
-      } else if (figmaSource === 'url') {
-        // Switching back to URL — try to show Figma preview if cached
-        var tokenEl = document.getElementById('qaproof-figma-token');
-        var urlEl   = document.getElementById('qaproof-figma-url');
-        if (tokenEl && urlEl && tokenEl.value.trim() && urlEl.value.trim()) {
-          triggerFigmaPreview(false);
+      // Update preview based on source
+      if (source === 'saved') {
+        // Show saved design preview if one is selected
+        var designSel = document.getElementById('qaproof-saved-design');
+        if (designSel && designSel.value) {
+          designSel.dispatchEvent(new Event('change'));
+        } else {
+          setPreviewState('empty');
+        }
+      } else if (source === 'upload') {
+        savedDesignImageBase64 = null;
+        if (uploadedFileBase64) {
+          showUploadedImagePreview(uploadedFileBase64, '', 0);
+          if (previewMeta) previewMeta.textContent = 'Uploaded image';
         } else {
           setPreviewState('empty');
         }
@@ -998,15 +1128,11 @@
     var show = testType === 'fidelity';
     figmaPreviewWrap.style.display = show ? '' : 'none';
 
-    // Update empty state text based on source mode
+    // Update empty state text
     if (previewEmpty) {
       var emptyText = previewEmpty.querySelector('p');
       if (emptyText) {
-        if (figmaSource === 'upload') {
-          emptyText.textContent = 'Upload a design image to preview and detect sections.';
-        } else {
-          emptyText.textContent = 'Enter your Figma Token and URL to preview the design before testing.';
-        }
+        emptyText.textContent = 'Select a saved design or upload an image to preview.';
       }
     }
   }
@@ -1040,7 +1166,7 @@
     var map = {
       'FIGMA_AUTH_FAILED':          'Invalid or expired Figma token.',
       'FIGMA_FILE_NOT_FOUND':       'File not found. Check the URL.',
-      'FIGMA_RATE_LIMITED':         'Figma rate limit exceeded after retries. Wait 1-2 minutes, then try again.',
+      'FIGMA_RATE_LIMITED':         'Figma rate limit exceeded. This is often caused by Starter plan restrictions (very low API limits). Ensure your Figma file is in a Professional or higher workspace, or use "Upload Image" instead. Wait 1-2 minutes, then try again.',
       'FIGMA_RENDER_TIMEOUT':       'Design too complex to preview.',
       'FIGMA_EXPORT_FAILED':        'Figma could not export this design.',
       'FIGMA_NODE_NOT_RENDERABLE':  'This node cannot be rendered. Try a different frame.',
@@ -1054,12 +1180,20 @@
   }
 
   function triggerFigmaPreview(manual) {
-    var tokenEl = document.getElementById('qaproof-figma-token');
-    var urlEl   = document.getElementById('qaproof-figma-url');
-    if (!tokenEl || !urlEl) return;
-
-    var token = tokenEl.value.trim();
-    var url   = urlEl.value.trim();
+    // Get Figma credentials from selected saved design
+    var token = '';
+    var url   = '';
+    var designSelect = document.getElementById('qaproof-saved-design');
+    if (designSelect && designSelect.value) {
+      var designs = qaproof.savedDesigns || [];
+      for (var i = 0; i < designs.length; i++) {
+        if (designs[i].id === designSelect.value) {
+          token = designs[i].figmaToken || '';
+          url   = designs[i].figmaUrl || '';
+          break;
+        }
+      }
+    }
 
     if (!token || !url) {
       setPreviewState('empty');
@@ -1150,9 +1284,318 @@
   attachPreviewListeners();
 
   // ============================
+  // Refresh from Figma Button (bypass cache)
+  // ============================
+  var refreshFigmaBtn = document.getElementById('qaproof-refresh-figma-btn');
+
+  function updateRefreshBtnVisibility() {
+    if (!refreshFigmaBtn) return;
+    // Show when a saved design with Figma URL is selected and preview is loaded
+    var designSel = document.getElementById('qaproof-saved-design');
+    var hasFigma = false;
+    if (designSel && designSel.value) {
+      var ds = qaproof.savedDesigns || [];
+      for (var i = 0; i < ds.length; i++) {
+        if (ds[i].id === designSel.value && ds[i].figmaUrl) { hasFigma = true; break; }
+      }
+    }
+    var show = hasFigma && previewSuccess && !previewSuccess.classList.contains('hidden');
+    refreshFigmaBtn.style.display = show ? '' : 'none';
+  }
+
+  // Hook into setPreviewState to update refresh button visibility
+  var _originalSetPreviewState = setPreviewState;
+  setPreviewState = function (state, errorText, showRetry) {
+    _originalSetPreviewState(state, errorText, showRetry);
+    updateRefreshBtnVisibility();
+  };
+
+  if (refreshFigmaBtn) {
+    refreshFigmaBtn.addEventListener('click', function () {
+      // Get Figma credentials from selected saved design
+      var designSel = document.getElementById('qaproof-saved-design');
+      var token = '', url = '';
+      if (designSel && designSel.value) {
+        var ds = qaproof.savedDesigns || [];
+        for (var i = 0; i < ds.length; i++) {
+          if (ds[i].id === designSel.value) {
+            token = ds[i].figmaToken || '';
+            url = ds[i].figmaUrl || '';
+            break;
+          }
+        }
+      }
+      if (!token || !url) return;
+
+      // Clear client-side cache for this design
+      var cacheKey = url + '|' + token;
+      delete figmaPreviewCache[cacheKey];
+
+      // Trigger preview with forceRefresh flag
+      setPreviewState('loading');
+      refreshFigmaBtn.classList.add('spinning');
+
+      fetch(qaproof.restBase + '/figma-preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce':   qaproof.nonce,
+        },
+        body: JSON.stringify({ figmaUrl: url, figmaToken: token, forceRefresh: true }),
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        refreshFigmaBtn.classList.remove('spinning');
+        if (json.success && json.data) {
+          figmaPreviewCache[cacheKey] = { data: json.data, ts: Date.now() };
+          figmaRateLimitUntil = 0;
+          showPreviewResult(json.data);
+
+          // Auto-save the refreshed image to the saved design if one is selected
+          var designId = savedDesignSelect ? savedDesignSelect.value : '';
+          if (designId && json.data.imageBase64) {
+            savedDesignImageBase64 = json.data.imageBase64;
+            // Save to WP in background
+            fetch(qaproof.restBase + '/save-design-image', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce':   qaproof.nonce,
+              },
+              body: JSON.stringify({ designId: designId, imageBase64: json.data.imageBase64 }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (saveJson) {
+              if (saveJson.success) {
+                // Update in-memory data
+                var designs = qaproof.savedDesigns || [];
+                for (var i = 0; i < designs.length; i++) {
+                  if (designs[i].id === designId) {
+                    designs[i].imageBase64 = json.data.imageBase64;
+                    break;
+                  }
+                }
+                if (previewMeta) previewMeta.textContent = 'Refreshed & saved \u00B7 No API call needed next time';
+              }
+            })
+            .catch(function () { /* silent — refresh itself succeeded */ });
+          }
+        } else {
+          var code = json.error && json.error.code ? json.error.code : '';
+          var msg  = json.error && json.error.message ? json.error.message : '';
+          if (code === 'FIGMA_RATE_LIMITED') {
+            figmaRateLimitUntil = Date.now() + 60000;
+          }
+          setPreviewState('error', mapFigmaErrorMessage(code, msg), isRetryableError(code));
+        }
+      })
+      .catch(function () {
+        refreshFigmaBtn.classList.remove('spinning');
+        setPreviewState('error', 'Could not refresh preview.', true);
+      });
+    });
+  }
+
+  // ============================
+  // Save Design Image Button
+  // ============================
+  var saveDesignBtn = document.getElementById('qaproof-save-design-btn');
+  var saveDesignLabel = saveDesignBtn ? saveDesignBtn.querySelector('.qaproof-save-design-label') : null;
+
+  function updateSaveDesignBtnVisibility() {
+    if (!saveDesignBtn) return;
+    // Show when a saved design is selected and preview is loaded
+    var hasSelectedDesign = savedDesignSelect && savedDesignSelect.value;
+    var previewLoaded = previewSuccess && !previewSuccess.classList.contains('hidden');
+    saveDesignBtn.style.display = (hasSelectedDesign && previewLoaded) ? '' : 'none';
+  }
+
+  // Patch setPreviewState again to also update save button
+  var _prevSetPreviewState = setPreviewState;
+  setPreviewState = function (state, errorText, showRetry) {
+    _prevSetPreviewState(state, errorText, showRetry);
+    updateSaveDesignBtnVisibility();
+  };
+
+  if (saveDesignBtn) {
+    saveDesignBtn.addEventListener('click', function () {
+      if (!savedDesignSelect || !savedDesignSelect.value) return;
+      var designId = savedDesignSelect.value;
+
+      // Get the current preview image
+      var imageData = previewImage ? previewImage.src : null;
+      if (!imageData || !imageData.startsWith('data:image')) return;
+
+      // Save to WP via REST
+      if (saveDesignLabel) saveDesignLabel.textContent = 'Saving...';
+      saveDesignBtn.disabled = true;
+
+      // Helper: save elements to WP for this design
+      function saveElementsToDesign(elDesignId, els, source) {
+        return fetch(qaproof.restBase + '/save-design-elements', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce':   qaproof.nonce,
+          },
+          body: JSON.stringify({ designId: elDesignId, elements: els, source: source }),
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (saveJson) {
+          if (saveJson.success) {
+            var designs = qaproof.savedDesigns || [];
+            for (var i = 0; i < designs.length; i++) {
+              if (designs[i].id === elDesignId) {
+                designs[i].hasElements = true;
+                designs[i].elementsSource = source;
+                break;
+              }
+            }
+          }
+          return saveJson;
+        });
+      }
+
+      // Helper: run background detection and save results
+      function bgDetectAndSave(bgDesignId) {
+        // Look up saved design for Figma credentials
+        var bgSd = null;
+        var dsList = qaproof.savedDesigns || [];
+        for (var di = 0; di < dsList.length; di++) {
+          if (dsList[di].id === bgDesignId) { bgSd = dsList[di]; break; }
+        }
+
+        var bgRequestBody;
+        if (bgSd && bgSd.figmaUrl && bgSd.figmaToken) {
+          bgRequestBody = { figmaUrl: bgSd.figmaUrl, figmaToken: bgSd.figmaToken };
+        } else if (imageData && imageData.startsWith('data:image')) {
+          var bgParts = imageData.split(',');
+          if (bgParts.length < 2 || !bgParts[1]) return;
+          bgRequestBody = { figmaImageBase64: bgParts[1] };
+        } else {
+          return;
+        }
+
+        if (previewMeta) {
+          previewMeta.textContent = 'Saved image \u00B7 Detecting elements...';
+        }
+
+        fetch(qaproof.restBase + '/detect-elements', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce':   qaproof.nonce,
+          },
+          body: JSON.stringify(bgRequestBody),
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success && json.data && json.data.elements && json.data.elements.length > 0) {
+            var bgSource = json.data.source || '';
+            console.log('[QAProof] Background detection done:', bgSource, '(' + json.data.elements.length + ' elements)');
+
+            // Render overlays so user sees them immediately
+            detectedElementsSource = bgSource;
+            elementsDetectedForCache = 'saved-elements|' + bgDesignId;
+            renderElementOverlays(json.data.elements);
+            if (elementControlsDiv) elementControlsDiv.style.display = '';
+
+            // Save to WP
+            saveElementsToDesign(bgDesignId, json.data.elements, bgSource)
+            .then(function () {
+              if (previewMeta) {
+                previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
+              }
+            });
+          } else {
+            console.log('[QAProof] Background detection returned no elements');
+            if (previewMeta) {
+              previewMeta.textContent = 'Saved image \u00B7 No API call needed';
+            }
+          }
+        })
+        .catch(function () {
+          console.warn('[QAProof] Background element detection failed');
+          if (previewMeta) {
+            previewMeta.textContent = 'Saved image \u00B7 No API call needed';
+          }
+        });
+      }
+
+      // Step 1: Save image (+ existing elements if any)
+      var savePromises = [];
+      savePromises.push(
+        fetch(qaproof.restBase + '/save-design-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce':   qaproof.nonce,
+          },
+          body: JSON.stringify({ designId: designId, imageBase64: imageData }),
+        }).then(function (res) { return res.json(); })
+      );
+
+      var hasExistingElements = detectedElements && detectedElements.length > 0;
+      if (hasExistingElements) {
+        var elSource = detectedElementsSource || 'ai-vision';
+        savePromises.push(saveElementsToDesign(designId, detectedElements, elSource));
+      }
+
+      Promise.all(savePromises)
+      .then(function (results) {
+        var json = results[0]; // image save result
+        saveDesignBtn.disabled = false;
+        if (json.success) {
+          if (saveDesignLabel) saveDesignLabel.textContent = 'Saved!';
+          // Update the in-memory savedDesigns array
+          var designs = qaproof.savedDesigns || [];
+          for (var i = 0; i < designs.length; i++) {
+            if (designs[i].id === designId) {
+              designs[i].imageBase64 = imageData;
+              break;
+            }
+          }
+          savedDesignImageBase64 = imageData;
+
+          if (hasExistingElements && results[1] && results[1].success) {
+            // Elements were already detected and saved
+            if (previewMeta) {
+              previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
+            }
+          } else if (!hasExistingElements) {
+            // No elements yet — trigger background detection
+            bgDetectAndSave(designId);
+          } else {
+            if (previewMeta) {
+              previewMeta.textContent = 'Saved image \u00B7 No API call needed';
+            }
+          }
+
+          setTimeout(function () {
+            if (saveDesignLabel) saveDesignLabel.textContent = 'Save';
+          }, 2000);
+        } else {
+          if (saveDesignLabel) saveDesignLabel.textContent = 'Error';
+          setTimeout(function () {
+            if (saveDesignLabel) saveDesignLabel.textContent = 'Save';
+          }, 2000);
+        }
+      })
+      .catch(function () {
+        saveDesignBtn.disabled = false;
+        if (saveDesignLabel) saveDesignLabel.textContent = 'Error';
+        setTimeout(function () {
+          if (saveDesignLabel) saveDesignLabel.textContent = 'Save';
+        }, 2000);
+      });
+    });
+  }
+
+  // ============================
   // Element Detection & Selection
   // ============================
   var detectedElements = [];
+  var detectedElementsSource = ''; // 'figma-api' or 'ai-vision'
   var selectedElement = null;
   var elementsDetectedForCache = ''; // track which preview we detected for
   var activeDepthFilter = 'all';     // 'all', '0', '1', '2'
@@ -1199,6 +1642,7 @@
       overlaysContainer.classList.remove('has-selection');
     }
     detectedElements = [];
+    detectedElementsSource = '';
     selectedElement = null;
     elementsDetectedForCache = '';
     activeDepthFilter = 'all';
@@ -1571,23 +2015,75 @@
     // Clear previous error
     if (detectError) detectError.classList.add('hidden');
 
-    if (figmaSource === 'upload') {
-      // Detect elements from uploaded image
-      if (!uploadedFileBase64) return;
+    // Look up the selected saved design (if any) for Figma credentials
+    var designSel = document.getElementById('qaproof-saved-design');
+    var sd = null;
+    if (designSel && designSel.value) {
+      var dsList = qaproof.savedDesigns || [];
+      for (var di = 0; di < dsList.length; di++) {
+        if (dsList[di].id === designSel.value) { sd = dsList[di]; break; }
+      }
+    }
+
+    // Saved design with cached elements → use them instantly (no API call)
+    if (sd && sd.hasElements) {
+      cacheKey = 'saved-elements|' + sd.id;
+      // If already rendered from this cache, skip
+      if (elementsDetectedForCache === cacheKey && detectedElements.length > 0) {
+        renderElementOverlays(detectedElements);
+        return;
+      }
+      // Fetch cached elements from WP
+      if (detectingDiv) detectingDiv.classList.remove('hidden');
+      if (elementControlsDiv) elementControlsDiv.style.display = 'none';
+      fetch(qaproof.restBase + '/saved-design-elements/' + sd.id, {
+        method: 'GET',
+        headers: { 'X-WP-Nonce': qaproof.nonce },
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (detectingDiv) detectingDiv.classList.add('hidden');
+        if (elementControlsDiv) elementControlsDiv.style.display = '';
+        if (json.success && json.elements && json.elements.length > 0) {
+          elementsDetectedForCache = cacheKey;
+          detectedElementsSource = json.source || '';
+          console.log('[QAProof] Loaded cached elements:', json.source, '(' + json.elements.length + ' elements)');
+          renderElementOverlays(json.elements);
+        } else {
+          // Cache was empty or invalid — fall through to live detection
+          console.log('[QAProof] Cached elements empty, triggering live detection');
+          sd.hasElements = false;
+          triggerDetectElements();
+        }
+      })
+      .catch(function () {
+        if (detectingDiv) detectingDiv.classList.add('hidden');
+        if (elementControlsDiv) elementControlsDiv.style.display = '';
+        // Fallback to live detection
+        sd.hasElements = false;
+        triggerDetectElements();
+      });
+      return;
+    }
+
+    // Saved design with Figma URL → pixel-perfect via Figma API (preferred)
+    if (sd && sd.figmaUrl && sd.figmaToken) {
+      cacheKey = sd.figmaUrl + '|' + sd.figmaToken;
+      requestBody = { figmaUrl: sd.figmaUrl, figmaToken: sd.figmaToken };
+    } else if (uploadedFileBase64) {
+      // Uploaded image → AI vision (approximate)
       var base64Parts = uploadedFileBase64.split(',');
       if (base64Parts.length < 2 || !base64Parts[1]) return;
       cacheKey = 'upload|' + uploadedFileBase64.length;
       requestBody = { figmaImageBase64: base64Parts[1] };
+    } else if (savedDesignImageBase64) {
+      // Saved design image without Figma credentials → AI vision fallback
+      var savedParts = savedDesignImageBase64.split(',');
+      if (savedParts.length < 2 || !savedParts[1]) return;
+      cacheKey = 'saved|' + savedDesignImageBase64.length;
+      requestBody = { figmaImageBase64: savedParts[1] };
     } else {
-      // Detect elements from Figma URL
-      var tokenEl = document.getElementById('qaproof-figma-token');
-      var urlEl   = document.getElementById('qaproof-figma-url');
-      if (!tokenEl || !urlEl) return;
-      var token = tokenEl.value.trim();
-      var url   = urlEl.value.trim();
-      if (!token || !url) return;
-      cacheKey = url + '|' + token;
-      requestBody = { figmaUrl: url, figmaToken: token };
+      return;
     }
 
     // Already detected — just refresh overlays
@@ -1614,7 +2110,54 @@
 
       if (json.success && json.data && json.data.elements && json.data.elements.length > 0) {
         elementsDetectedForCache = cacheKey;
+        var detectionSource = json.data.source || '';
+        detectedElementsSource = detectionSource;
+        // Log detection source for debugging
+        if (detectionSource) {
+          console.log('[QAProof] Detection source:', detectionSource, '(' + json.data.elements.length + ' elements)');
+        }
+        // If we requested Figma API but got AI vision fallback, warn user
+        if (requestBody.figmaUrl && detectionSource === 'ai-vision') {
+          console.warn('[QAProof] Figma API detection failed, fell back to AI vision. Possibly rate-limited.');
+          if (detectError) {
+            detectError.textContent = 'Figma API rate-limited \u2014 showing approximate detection. Try again later for pixel-perfect results.';
+            detectError.classList.remove('hidden');
+          }
+        }
         renderElementOverlays(json.data.elements);
+
+        // Auto-save detected elements to WP if a saved design is selected
+        var autoSaveDesignId = savedDesignSelect ? savedDesignSelect.value : '';
+        if (autoSaveDesignId && json.data.elements.length > 0) {
+          fetch(qaproof.restBase + '/save-design-elements', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-WP-Nonce':   qaproof.nonce,
+            },
+            body: JSON.stringify({
+              designId: autoSaveDesignId,
+              elements: json.data.elements,
+              source:   detectionSource,
+            }),
+          })
+          .then(function (r) { return r.json(); })
+          .then(function (saveJson) {
+            if (saveJson.success) {
+              console.log('[QAProof] Elements saved to design', autoSaveDesignId);
+              // Update in-memory flag
+              var designs = qaproof.savedDesigns || [];
+              for (var i = 0; i < designs.length; i++) {
+                if (designs[i].id === autoSaveDesignId) {
+                  designs[i].hasElements = true;
+                  designs[i].elementsSource = detectionSource;
+                  break;
+                }
+              }
+            }
+          })
+          .catch(function () { /* silent */ });
+        }
       } else {
         // Show error
         var msg = (json.error && json.error.message) ? json.error.message : 'No elements detected. Try a different design image.';
@@ -1658,11 +2201,20 @@
   var expandBtn = document.getElementById('qaproof-inspector-expand');
   var previewPanel = document.querySelector('.qaproof-preview-panel');
 
+  // Create backdrop overlay for expanded inspector — append to #qaproof-app
+  var inspectorBackdrop = document.createElement('div');
+  inspectorBackdrop.className = 'qaproof-inspector-backdrop';
+  var qaproofApp = document.getElementById('qaproof-app');
+  if (qaproofApp) {
+    qaproofApp.appendChild(inspectorBackdrop);
+  }
+
   if (expandBtn && previewPanel) {
     expandBtn.addEventListener('click', function () {
       var isExpanded = previewPanel.classList.toggle('inspector-expanded');
-      // Toggle body scroll lock
+      // Toggle body scroll lock + backdrop
       document.body.classList.toggle('qaproof-inspector-open', isExpanded);
+      inspectorBackdrop.classList.toggle('active', isExpanded);
       // Update button label
       var label = expandBtn.querySelector('.dashicons');
       if (label) {
@@ -1682,6 +2234,13 @@
     // ESC to close expanded inspector
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && previewPanel.classList.contains('inspector-expanded')) {
+        expandBtn.click();
+      }
+    });
+
+    // Click backdrop to close expanded inspector
+    inspectorBackdrop.addEventListener('click', function () {
+      if (previewPanel.classList.contains('inspector-expanded')) {
         expandBtn.click();
       }
     });
@@ -1769,7 +2328,8 @@
       loadingSubtext.textContent = 'This may take 1-2 minutes (3 screenshots + AI analysis)';
     } else if (testType === 'accessibility') {
       loadingText.textContent = 'Capturing page and running accessibility audit...';
-      loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level AA compliance (30-60 seconds)';
+      var wcagLvl = (typeof qaproof !== 'undefined' && qaproof.wcagLevel) ? qaproof.wcagLevel : 'AA';
+      loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level ' + wcagLvl + ' compliance (30-60 seconds)';
     } else if (testType === 'design-audit') {
       loadingText.textContent = 'Scanning page and extracting design tokens...';
       loadingSubtext.textContent = 'Analyzing design system consistency (1-2 minutes)';
@@ -1785,30 +2345,58 @@
 
     // Validate
     if (testType === 'fidelity') {
-      if (figmaSource === 'url' && figmaUrlInput && !figmaUrlInput.value.trim()) {
-        showError('Please enter a Figma URL or upload a design image.');
-        loading.classList.add('hidden');
-        submitBtn.disabled = false;
-        return;
-      }
-      if (figmaSource === 'upload' && !uploadedFileBase64) {
-        showError('Please upload a design screenshot.');
-        loading.classList.add('hidden');
-        submitBtn.disabled = false;
-        return;
+      // Need either: saved design image, uploaded image, or a saved design with Figma URL
+      if (!savedDesignImageBase64 && !uploadedFileBase64) {
+        var designSel = document.getElementById('qaproof-saved-design');
+        var hasFigmaUrl = false;
+        if (designSel && designSel.value) {
+          var ds = qaproof.savedDesigns || [];
+          for (var vi = 0; vi < ds.length; vi++) {
+            if (ds[vi].id === designSel.value && ds[vi].figmaUrl) { hasFigmaUrl = true; break; }
+          }
+        }
+        if (!hasFigmaUrl) {
+          showError('Please upload a design image or select a saved design.');
+          loading.classList.add('hidden');
+          submitBtn.disabled = false;
+          return;
+        }
       }
     }
 
     // Build body
     var body = { pageUrl: pageUrl, testType: testType };
 
+    // Include WCAG level for accessibility tests
+    if (testType === 'accessibility' && typeof qaproof !== 'undefined' && qaproof.wcagLevel) {
+      body.wcagLevel = qaproof.wcagLevel;
+    }
+
     if (testType === 'fidelity') {
-      var figmaToken = document.getElementById('qaproof-figma-token');
-      if (figmaToken && figmaToken.value.trim()) {
-        body.figmaToken = figmaToken.value.trim();
+      // Pass ignoreText setting
+      if (typeof qaproof !== 'undefined') {
+        body.ignoreText = qaproof.fidelityIgnoreText !== false;
       }
-      if (figmaSource === 'url' && figmaUrlInput) {
-        body.figmaUrl = figmaUrlInput.value.trim();
+      // Get Figma credentials from selected saved design if available
+      var designSelect = document.getElementById('qaproof-saved-design');
+      var selectedDesign = null;
+      if (designSelect && designSelect.value) {
+        var allDesigns = qaproof.savedDesigns || [];
+        for (var di = 0; di < allDesigns.length; di++) {
+          if (allDesigns[di].id === designSelect.value) { selectedDesign = allDesigns[di]; break; }
+        }
+      }
+      if (selectedDesign && selectedDesign.figmaToken) {
+        body.figmaToken = selectedDesign.figmaToken;
+      }
+
+      // Priority: saved design image > uploaded image > Figma URL (from saved design)
+      if (savedDesignImageBase64) {
+        // Use saved design image — zero Figma API calls
+        var savedParts = savedDesignImageBase64.split(',');
+        if (savedParts.length >= 2 && savedParts[1]) {
+          body.figmaImageBase64 = savedParts[1];
+        }
       } else if (uploadedFileBase64) {
         var parts = uploadedFileBase64.split(',');
         if (parts.length < 2 || !parts[1]) {
@@ -1818,6 +2406,8 @@
           return;
         }
         body.figmaImageBase64 = parts[1];
+      } else if (selectedDesign && selectedDesign.figmaUrl) {
+        body.figmaUrl = selectedDesign.figmaUrl;
       }
 
       // Element-level fidelity: send selected region
@@ -1936,6 +2526,15 @@
     if (score >= 90) return 'Excellent';
     if (score >= 70) return 'Good';
     return 'Needs Work';
+  }
+
+  function buildBackButtonHtml() {
+    return '<div class="qaproof-back-nav">' +
+      '<button type="button" class="qaproof-back-btn" id="qaproof-back-to-form">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+        '<span>Back to Test</span>' +
+      '</button>' +
+    '</div>';
   }
 
   function buildScoreRingHtml(score, label, scoreClass) {
@@ -2536,7 +3135,7 @@
     var score = data.score;
     var scoreClass = getScoreClass(score);
 
-    var html = '';
+    var html = buildBackButtonHtml();
 
     // Combined score + stats header
     html += '<div class="qaproof-report-hero">';
@@ -2675,8 +3274,7 @@
 
     var score = data.score;
     var scoreClass = getScoreClass(score);
-
-    var html = '';
+    var html = buildBackButtonHtml();
 
     // Combined score + stats header
     html += '<div class="qaproof-report-hero">';
@@ -2833,7 +3431,7 @@
     var score = data.score;
     var scoreClass = getScoreClass(score);
 
-    var html = '';
+    var html = buildBackButtonHtml();
 
     // Combined score + stats header
     html += '<div class="qaproof-report-hero">';
@@ -2976,7 +3574,7 @@
     var debtGrade = debtScore <= 10 ? 'A+' : debtScore <= 20 ? 'A' : debtScore <= 30 ? 'B' : debtScore <= 45 ? 'C' : debtScore <= 60 ? 'D' : 'F';
     var debtColor = debtScore > 50 ? '#EF4444' : debtScore > 25 ? '#F0B429' : '#00ADB5';
 
-    var html = '';
+    var html = buildBackButtonHtml();
 
     // Combined score + stats header
     html += '<div class="qaproof-report-hero">';
@@ -3178,9 +3776,7 @@
       // Spacing panel
       html += '  <div class="qaproof-token-panel" data-panel="spacing">';
       if (ds.spacing && ds.spacing.scale && ds.spacing.scale.length > 0) {
-        var totalSpacing = ds.spacing.total || 0;
-        var onGrid = totalSpacing - (ds.spacing.outliers ? ds.spacing.outliers.length : 0);
-        var gridPct = totalSpacing > 0 ? Math.round((onGrid / totalSpacing) * 100) : 0;
+        var gridPct = ds.spacing.gridAdherence || 0;
         html += '    <div class="qaproof-token-section-head">';
         html += '      <h4>Detected Scale (4px grid)</h4>';
         html += '      <span class="qaproof-token-count">' + gridPct + '% on-grid adherence</span>';
@@ -4523,53 +5119,35 @@
   // Email Report — Inline Confirmation
   // ============================
   function toggleEmailConfirmation(emailBtn) {
-    // Ensure the button is wrapped for positioning
-    var wrap = emailBtn.closest('.qaproof-email-btn-wrap');
-    if (!wrap) {
-      wrap = document.createElement('span');
-      wrap.className = 'qaproof-email-btn-wrap';
-      emailBtn.parentNode.insertBefore(wrap, emailBtn);
-      wrap.appendChild(emailBtn);
-    }
-
-    // If confirmation already open, close it
-    var existing = wrap.querySelector('.qaproof-email-confirm');
-    if (existing) {
-      existing.classList.remove('qaproof-email-confirm-visible');
-      setTimeout(function() { existing.remove(); }, 200);
+    // If already expanded, collapse back
+    if (emailBtn.classList.contains('qaproof-email-expanded')) {
+      collapseEmailBtn(emailBtn);
       return;
     }
 
     var userEmail = typeof qaproofAdmin !== 'undefined' && qaproofAdmin.adminEmail ? qaproofAdmin.adminEmail : 'your account email';
 
-    var confirm = document.createElement('div');
-    confirm.className = 'qaproof-email-confirm';
-    confirm.innerHTML = '' +
-      '<div class="qaproof-email-confirm-inner">' +
-      '  <span class="dashicons dashicons-email-alt qaproof-email-confirm-icon"></span>' +
-      '  <span class="qaproof-email-confirm-text">Report will be sent to <strong>' + escapeHtml(userEmail) + '</strong></span>' +
-      '</div>' +
-      '<div class="qaproof-email-confirm-actions">' +
-      '  <button type="button" class="qaproof-btn qaproof-btn-secondary qaproof-btn-sm" id="qaproof-email-confirm-cancel">Cancel</button>' +
-      '  <button type="button" class="qaproof-btn qaproof-email-send-btn qaproof-btn-sm" id="qaproof-email-confirm-send"><span class="dashicons dashicons-yes"></span> Send</button>' +
-      '</div>';
+    // Save original content
+    emailBtn._originalHtml = emailBtn.innerHTML;
+    emailBtn.classList.add('qaproof-email-expanded');
 
-    wrap.appendChild(confirm);
-
-    // Animate in
-    requestAnimationFrame(function() {
-      confirm.classList.add('qaproof-email-confirm-visible');
-    });
+    emailBtn.innerHTML = '' +
+      '<span class="qaproof-email-confirm-text">Send to <strong>' + escapeHtml(userEmail) + '</strong>?</span>' +
+      '<span class="qaproof-email-confirm-actions">' +
+      '  <button type="button" class="qaproof-email-confirm-cancel">Cancel</button>' +
+      '  <button type="button" class="qaproof-email-confirm-send"><span class="dashicons dashicons-yes"></span> Confirm</button>' +
+      '</span>';
 
     // Cancel
-    confirm.querySelector('#qaproof-email-confirm-cancel').addEventListener('click', function() {
-      confirm.classList.remove('qaproof-email-confirm-visible');
-      setTimeout(function() { confirm.remove(); }, 200);
+    emailBtn.querySelector('.qaproof-email-confirm-cancel').addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      collapseEmailBtn(emailBtn);
     });
 
     // Send
-    confirm.querySelector('#qaproof-email-confirm-send').addEventListener('click', function() {
-      var sendBtn = confirm.querySelector('#qaproof-email-confirm-send');
+    emailBtn.querySelector('.qaproof-email-confirm-send').addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var sendBtn = this;
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span> Sending...';
 
@@ -4578,15 +5156,23 @@
         sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span> Sent!';
         sendBtn.classList.add('qaproof-email-sent');
         setTimeout(function() {
-          confirm.classList.remove('qaproof-email-confirm-visible');
-          setTimeout(function() { confirm.remove(); }, 200);
+          collapseEmailBtn(emailBtn);
         }, 1200);
       }, 1500);
     });
   }
 
+  function collapseEmailBtn(emailBtn) {
+    emailBtn.classList.remove('qaproof-email-expanded');
+    if (emailBtn._originalHtml) {
+      emailBtn.innerHTML = emailBtn._originalHtml;
+    }
+  }
+
   // Hook up email buttons (delegated)
   document.addEventListener('click', function(e) {
+    // Don't re-trigger if clicking inside expanded confirmation
+    if (e.target.closest('.qaproof-email-confirm-actions') || e.target.closest('.qaproof-email-confirm-text')) return;
     var btn = e.target.closest('#qaproof-email-btn');
     if (btn) {
       e.preventDefault();
@@ -4647,7 +5233,7 @@
     var now = new Date();
     var dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    var reportId = now.getTime().toString(36).toUpperCase();
+    var reportId = 'QP-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
     var differences = data.differences || [];
     var recommendations = data.recommendations || [];
     var categories = data.categories || {};
@@ -4802,20 +5388,25 @@
     doc.text(dateStr, W - M, 20, { align: 'right' });
     doc.setFontSize(7.5);
     doc.setTextColor(140, 148, 162);
-    doc.text(timeStr + '  |  Report #' + reportId, W - M, 27, { align: 'right' });
+    doc.text(timeStr + '  |  ' + reportId, W - M, 27, { align: 'right' });
 
-    // Score badge in header (right side)
-    var badgeW = 38;
-    var badgeH = 18;
-    var badgeX = W - M - badgeW;
-    var badgeY = 38;
-    setF(scoreColor);
-    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 3, 3, 'F');
-    doc.setFontSize(20);
+    // Score circle in header (right side)
+    var circR = 13;
+    var circX = W - M - circR;
+    var circY = 46;
+    // Outer ring (score color)
+    doc.setLineWidth(1.8);
+    setD(scoreColor);
+    doc.setFillColor(42, 47, 56);
+    doc.circle(circX, circY, circR, 'FD');
+    // Score number
+    doc.setFontSize(22);
     doc.setTextColor(255, 255, 255);
-    doc.text(String(score != null ? score : '--'), badgeX + badgeW / 2, badgeY + 11, { align: 'center' });
-    doc.setFontSize(6.5);
-    doc.text('/100', badgeX + badgeW / 2, badgeY + 15.5, { align: 'center' });
+    doc.text(String(score != null ? score : '--'), circX, circY + 2, { align: 'center' });
+    // /100 below
+    doc.setFontSize(6);
+    doc.setTextColor(140, 148, 162);
+    doc.text('/100', circX, circY + 7.5, { align: 'center' });
 
     y = 74;
 
@@ -5411,7 +6002,7 @@
       var score = item.score != null ? parseInt(item.score, 10) : null;
       var scoreClass = score != null ? getScoreClass(score) : '';
       var typeBadgeClass = 'qaproof-badge-' + (item.test_type || 'fidelity');
-      var typeLabels = { fidelity: 'Fidelity', responsive: 'Responsive', accessibility: 'Accessibility', regression: 'Regression' };
+      var typeLabels = { fidelity: 'Fidelity', responsive: 'Responsive', accessibility: 'Accessibility', regression: 'Regression', 'design-audit': 'Design Audit' };
       var dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
       var urlDisplay = item.page_url || '';
       if (urlDisplay.length > 50) urlDisplay = urlDisplay.substring(0, 50) + '...';
@@ -5422,12 +6013,24 @@
         '<div class="qaproof-history-url" title="' + escapeAttr(item.page_url || '') + '">' + escapeHtml(urlDisplay) + '</div>' +
         '<div class="qaproof-history-score ' + scoreClass + '">' + (score != null ? score : '\u2014') + '</div>' +
         '<div class="qaproof-history-actions">' +
-        '  <button type="button" class="button button-small qaproof-history-view" data-id="' + item.id + '">View</button>' +
-        '  <button type="button" class="button button-small qaproof-history-delete" data-id="' + item.id + '">Delete</button>' +
+        '  <button type="button" class="button button-small qaproof-history-view" data-id="' + item.id + '" title="View report">' +
+        '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+        '    View' +
+        '  </button>' +
+        '  <button type="button" class="button button-small qaproof-history-download" data-id="' + item.id + '" title="Download PDF report">' +
+        '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+        '  </button>' +
+        '  <button type="button" class="button button-small qaproof-history-delete" data-id="' + item.id + '" title="Delete">' +
+        '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+        '  </button>' +
         '</div>';
 
       row.querySelector('.qaproof-history-view').addEventListener('click', function () {
         viewItem(item.id);
+      });
+
+      row.querySelector('.qaproof-history-download').addEventListener('click', function () {
+        downloadItemPdf(item.id);
       });
 
       row.querySelector('.qaproof-history-delete').addEventListener('click', function () {
@@ -5455,6 +6058,9 @@
       var rLoading = cfg.resultLoadingEl;
       var rText    = cfg.resultLoadingTextEl;
       var rContainer = cfg.resultContainerEl;
+
+      // Switch to test/audit tab, hide form, mark source
+      if (cfg.onBeforeView) cfg.onBeforeView();
 
       if (rLoading) {
         rLoading.classList.remove('hidden');
@@ -5486,6 +6092,8 @@
               renderResponsiveResults(resultData);
             } else if (resultData.testType === 'accessibility') {
               renderAccessibilityResults(resultData);
+            } else if (resultData.testType === 'design-audit') {
+              renderDesignAuditResults(resultData);
             } else {
               renderFidelityResults(resultData);
             }
@@ -5525,6 +6133,23 @@
         .catch(function () {});
     }
 
+    function downloadItemPdf(id) {
+      fetch(qaproof.restBase.replace(/\/+$/, '') + '/test-history/' + id, {
+        headers: { 'X-WP-Nonce': qaproof.nonce },
+        credentials: 'same-origin'
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+          if (resp.success && resp.data) {
+            var resultData = parseResultData(resp.data);
+            generatePdfReport(resultData);
+          }
+        })
+        .catch(function () {
+          alert('Failed to download report.');
+        });
+    }
+
     return { init: init, load: load };
   }
 
@@ -5546,6 +6171,15 @@
     resultContainerEl:   resultsContainer,
     renderResult: null, // uses fallback global render functions
     showError:    showError,
+    onBeforeView: function () {
+      if (typeof testsPageTabs !== 'undefined' && testsPageTabs) testsPageTabs.switchTo('test');
+      // Hide the form card so only the report shows
+      var formCard = document.querySelector('#qaproof-tab-test > .qaproof-card');
+      if (formCard) formCard.style.display = 'none';
+      // Mark that we came from history
+      var app = document.getElementById('qaproof-app');
+      if (app) app.setAttribute('data-back-tab', 'history');
+    },
   });
   if (testsHistoryMgr) testsHistoryMgr.init();
   // ============================
@@ -5693,6 +6327,378 @@
       if (el) el.textContent = msg;
       if (wrap) wrap.classList.remove('hidden');
     },
+    onBeforeView: function () {
+      if (typeof a11yPageTabs !== 'undefined' && a11yPageTabs) a11yPageTabs.switchTo('a11y-audit');
+      // Hide the form card so only the report shows
+      var formCard = document.querySelector('#qaproof-tab-a11y-audit > .qaproof-card');
+      if (formCard) formCard.style.display = 'none';
+      // Mark that we came from history
+      var app = document.getElementById('qaproof-app');
+      if (app) app.setAttribute('data-back-tab', 'a11y-history');
+    },
   });
   if (a11yHistoryMgr) a11yHistoryMgr.init();
+
+  // ============================
+  // Page Tabs (Test | History) — Tests & Accessibility pages
+  // ============================
+  function initPageTabs(tabsContainerId, historyMgr) {
+    var tabsContainer = document.getElementById(tabsContainerId);
+    if (!tabsContainer) return null;
+
+    var app = tabsContainer.closest('#qaproof-app');
+    if (!app) return null;
+
+    var tabs = tabsContainer.querySelectorAll('.qaproof-page-tab');
+    var historyLoaded = false;
+
+    function switchTo(targetTab) {
+      tabs.forEach(function (t) {
+        if (t.getAttribute('data-tab') === targetTab) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
+      var panels = app.querySelectorAll('.qaproof-tab-panel');
+      panels.forEach(function (panel) {
+        if (panel.getAttribute('data-tab-panel') === targetTab) {
+          panel.classList.add('active');
+        } else {
+          panel.classList.remove('active');
+        }
+      });
+      if (targetTab.indexOf('history') !== -1 && !historyLoaded && historyMgr) {
+        historyMgr.load(true);
+        historyLoaded = true;
+      }
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        switchTo(tab.getAttribute('data-tab'));
+      });
+    });
+
+    return { switchTo: switchTo };
+  }
+
+  var testsPageTabs = initPageTabs('qaproof-page-tabs', testsHistoryMgr);
+  var a11yPageTabs  = initPageTabs('qaproof-a11y-page-tabs', a11yHistoryMgr);
+
+  // ============================
+  // Back Button — return from results to form
+  // ============================
+  document.addEventListener('click', function (e) {
+    var backBtn = e.target.closest('#qaproof-back-to-form');
+    if (!backBtn) return;
+
+    var app = backBtn.closest('#qaproof-app');
+    if (!app) return;
+
+    // Hide results
+    var results = app.querySelectorAll('#qaproof-results, #qaproof-a11y-results');
+    results.forEach(function (r) {
+      r.classList.add('hidden');
+      r.innerHTML = '';
+    });
+
+    // Check if we came from a history tab
+    var backTab = app.getAttribute('data-back-tab');
+
+    if (backTab) {
+      // Restore the form card visibility first
+      var testFormCard = app.querySelector('#qaproof-tab-test > .qaproof-card');
+      var a11yFormCard = app.querySelector('#qaproof-tab-a11y-audit > .qaproof-card');
+      if (testFormCard) testFormCard.style.display = '';
+      if (a11yFormCard) a11yFormCard.style.display = '';
+
+      // Navigate to the history tab we came from
+      if (backTab === 'history' && typeof testsPageTabs !== 'undefined' && testsPageTabs) {
+        testsPageTabs.switchTo('history');
+      } else if (backTab === 'a11y-history' && typeof a11yPageTabs !== 'undefined' && a11yPageTabs) {
+        a11yPageTabs.switchTo('a11y-history');
+      }
+
+      // Clear the attribute
+      app.removeAttribute('data-back-tab');
+    } else {
+      // Normal back — show the test/audit tab with form
+      var testPanel = app.querySelector('.qaproof-tab-panel[data-tab-panel="test"], .qaproof-tab-panel[data-tab-panel="a11y-audit"]');
+      if (testPanel) {
+        var panels = app.querySelectorAll('.qaproof-tab-panel');
+        panels.forEach(function (p) { p.classList.remove('active'); });
+        testPanel.classList.add('active');
+
+        var pageTabs = app.querySelectorAll('.qaproof-page-tab');
+        pageTabs.forEach(function (t) {
+          if (t.getAttribute('data-tab') === testPanel.getAttribute('data-tab-panel')) {
+            t.classList.add('active');
+          } else {
+            t.classList.remove('active');
+          }
+        });
+      }
+
+      // Show the form card(s) again
+      var card = app.querySelector('.qaproof-card');
+      if (card) card.style.display = '';
+    }
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ============================
+  // Settings saved toast
+  // ============================
+  function showQaproofToast(message) {
+    var app = document.getElementById('qaproof-app');
+    if (!app) return;
+
+    // Remove any existing toast
+    var existing = app.querySelector('.qaproof-toast');
+    if (existing) existing.remove();
+
+    var toast = document.createElement('div');
+    toast.className = 'qaproof-toast';
+    toast.innerHTML = '<span class="dashicons dashicons-yes-alt"></span> ' + message;
+    app.prepend(toast);
+
+    requestAnimationFrame(function () {
+      toast.classList.add('qaproof-toast-visible');
+    });
+
+    setTimeout(function () {
+      toast.classList.remove('qaproof-toast-visible');
+      toast.addEventListener('transitionend', function () { toast.remove(); });
+    }, 3000);
+  }
+
+  // Detect settings save via sessionStorage flag
+  (function () {
+    if (sessionStorage.getItem('qaproof_settings_saved')) {
+      sessionStorage.removeItem('qaproof_settings_saved');
+      // Hide default WP notice if any
+      var wpNotice = document.querySelector('.notice-success, .updated');
+      if (wpNotice) wpNotice.style.display = 'none';
+      showQaproofToast('Settings saved successfully');
+    }
+
+    // Set flag before form submits
+    var settingsForm = document.querySelector('#qaproof-app form[action="options.php"]');
+    if (settingsForm) {
+      settingsForm.addEventListener('submit', function () {
+        sessionStorage.setItem('qaproof_settings_saved', '1');
+      });
+    }
+  })();
+
+  // ============================
+  // Custom form validation (replace browser tooltips)
+  // ============================
+  (function () {
+    var app = document.getElementById('qaproof-app');
+    if (!app) return;
+
+    // Disable native browser validation on all forms
+    var forms = app.querySelectorAll('form');
+    forms.forEach(function (f) { f.setAttribute('novalidate', ''); });
+
+    // Show custom error under an input
+    function showFieldError(input, message) {
+      clearFieldError(input);
+      var err = document.createElement('div');
+      err.className = 'qaproof-field-error';
+      err.textContent = message;
+      input.classList.add('qaproof-input-invalid');
+      input.parentNode.insertBefore(err, input.nextSibling);
+    }
+
+    // Remove custom error
+    function clearFieldError(input) {
+      input.classList.remove('qaproof-input-invalid');
+      var next = input.nextElementSibling;
+      if (next && next.classList.contains('qaproof-field-error')) {
+        next.remove();
+      }
+    }
+
+    // Build human-readable message
+    function getValidationMessage(input) {
+      var val = input.value.trim();
+      var type = input.getAttribute('type') || 'text';
+      var min = input.getAttribute('min');
+      var max = input.getAttribute('max');
+
+      if (input.hasAttribute('required') && !val) {
+        return 'This field is required.';
+      }
+      if (type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        return 'Please enter a valid email address.';
+      }
+      if (type === 'url' && val && !/^https?:\/\/.+/i.test(val)) {
+        return 'Please enter a valid URL starting with http:// or https://';
+      }
+      if (type === 'number' && val) {
+        var num = parseFloat(val);
+        if (isNaN(num)) return 'Please enter a valid number.';
+        if (min !== null && num < parseFloat(min)) {
+          return 'Value must be at least ' + min + '.';
+        }
+        if (max !== null && num > parseFloat(max)) {
+          return 'Value must be no more than ' + max + '.';
+        }
+      }
+      return '';
+    }
+
+    // Validate on submit
+    app.addEventListener('submit', function (e) {
+      var form = e.target.closest('form');
+      if (!form) return;
+
+      var inputs = form.querySelectorAll('input[required], input[type="number"], input[type="email"], input[type="url"]');
+      var firstInvalid = null;
+
+      inputs.forEach(function (input) {
+        var msg = getValidationMessage(input);
+        if (msg) {
+          showFieldError(input, msg);
+          if (!firstInvalid) firstInvalid = input;
+        } else {
+          clearFieldError(input);
+        }
+      });
+
+      if (firstInvalid) {
+        e.preventDefault();
+        e.stopPropagation();
+        firstInvalid.focus();
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, true);
+
+    // Clear error on input change
+    app.addEventListener('input', function (e) {
+      var input = e.target;
+      if (input.classList.contains('qaproof-input-invalid')) {
+        var msg = getValidationMessage(input);
+        if (!msg) {
+          clearFieldError(input);
+        } else {
+          var next = input.nextElementSibling;
+          if (next && next.classList.contains('qaproof-field-error')) {
+            next.textContent = msg;
+          }
+        }
+      }
+    });
+  })();
+
+  // ============================
+  // Custom select dropdowns
+  // ============================
+  (function () {
+    var app = document.getElementById('qaproof-app');
+    if (!app) return;
+
+    function buildCustomSelect(nativeSelect) {
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'qaproof-select';
+
+      var trigger = document.createElement('div');
+      trigger.className = 'qaproof-select-trigger';
+      trigger.setAttribute('tabindex', '0');
+
+      var triggerText = document.createElement('span');
+      triggerText.className = 'qaproof-select-text';
+
+      var arrow = document.createElement('span');
+      arrow.className = 'qaproof-select-arrow';
+      arrow.innerHTML = '<span class="dashicons dashicons-arrow-down-alt2"></span>';
+
+      trigger.appendChild(triggerText);
+      trigger.appendChild(arrow);
+
+      var dropdown = document.createElement('div');
+      dropdown.className = 'qaproof-select-dropdown';
+
+      function buildOptions() {
+        dropdown.innerHTML = '';
+        var options = nativeSelect.options;
+        for (var i = 0; i < options.length; i++) {
+          var item = document.createElement('div');
+          item.className = 'qaproof-select-option';
+          if (options[i].selected) item.classList.add('selected');
+          item.dataset.value = options[i].value;
+          item.textContent = options[i].text;
+          dropdown.appendChild(item);
+        }
+        var selected = nativeSelect.options[nativeSelect.selectedIndex];
+        triggerText.textContent = selected ? selected.text : '';
+      }
+
+      buildOptions();
+
+      wrapper.appendChild(trigger);
+      wrapper.appendChild(dropdown);
+
+      nativeSelect.style.display = 'none';
+      nativeSelect.parentNode.insertBefore(wrapper, nativeSelect.nextSibling);
+
+      // Toggle dropdown
+      trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isOpen = wrapper.classList.contains('open');
+        closeAllSelects();
+        if (!isOpen) wrapper.classList.add('open');
+      });
+
+      // Keyboard support
+      trigger.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          trigger.click();
+        } else if (e.key === 'Escape') {
+          wrapper.classList.remove('open');
+        }
+      });
+
+      // Select option
+      dropdown.addEventListener('click', function (e) {
+        var opt = e.target.closest('.qaproof-select-option');
+        if (!opt) return;
+        nativeSelect.value = opt.dataset.value;
+        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        buildOptions();
+        wrapper.classList.remove('open');
+      });
+
+      // Sync if native select changes programmatically
+      nativeSelect.addEventListener('change', function () {
+        buildOptions();
+      });
+
+      // Watch for dynamic option changes (e.g. saved designs populated by JS)
+      var observer = new MutationObserver(function () {
+        buildOptions();
+      });
+      observer.observe(nativeSelect, { childList: true, subtree: true, characterData: true });
+    }
+
+    function closeAllSelects() {
+      app.querySelectorAll('.qaproof-select.open').forEach(function (s) {
+        s.classList.remove('open');
+      });
+    }
+
+    document.addEventListener('click', function () {
+      closeAllSelects();
+    });
+
+    // Init all selects in #qaproof-app
+    app.querySelectorAll('select').forEach(buildCustomSelect);
+  })();
 })();

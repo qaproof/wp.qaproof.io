@@ -58,7 +58,8 @@
   min-height: calc(100vh - 32px);
   line-height: 120%;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 /* Decorative gradient ellipses from website design — two blobs */
@@ -125,6 +126,169 @@
   line-height: 120%;
 }
 
+/* Inside page-header: tighten spacing */
+.qaproof-page-header h1 {
+  margin-bottom: 4px !important;
+}
+.qaproof-page-header .qaproof-subtitle {
+  margin-bottom: 0 !important;
+}
+
+/* ============================
+   Page Header + Page Tabs (Test | History)
+   ============================ */
+.qaproof-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.qaproof-page-header-left {
+  flex: 1;
+  min-width: 0;
+}
+.qaproof-page-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+/* Theme toggle inside page header — override absolute positioning */
+.qaproof-page-header-right .qaproof-theme-toggle {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  flex-shrink: 0;
+}
+.qaproof-page-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f3f5;
+  border-radius: 14px;
+  padding: 5px;
+  flex-shrink: 0;
+}
+.qaproof-page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--qp-text-secondary) !important;
+  font-family: var(--qp-font) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  line-height: 1.2 !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+.qaproof-page-tab:hover {
+  color: var(--qp-text-primary) !important;
+  background: rgba(0,0,0,0.04) !important;
+}
+.qaproof-page-tab.active {
+  background: #fff !important;
+  color: var(--qp-text-primary) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  font-weight: 600 !important;
+}
+.qaproof-page-tab svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.qaproof-page-tab.active svg {
+  opacity: 1;
+  color: var(--qp-accent);
+}
+
+/* Tab Panels */
+.qaproof-tab-panel {
+  display: none;
+}
+.qaproof-tab-panel.active {
+  display: block;
+}
+
+/* Inline history (inside tab panel — no collapse header) */
+.qaproof-history-inline {
+  border-radius: var(--qp-radius) !important;
+  padding: 0 !important;
+}
+.qaproof-history-inline .qaproof-history-content {
+  display: block !important;
+  max-height: none !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Back button in results */
+.qaproof-back-nav {
+  margin-bottom: 20px;
+}
+.qaproof-back-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: var(--qp-text-primary) !important;
+  font-family: var(--qp-font) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: none !important;
+  line-height: 1.2 !important;
+  min-height: 0 !important;
+}
+.qaproof-back-btn:hover {
+  background: #f9fafb !important;
+  border-color: var(--qp-accent) !important;
+  color: var(--qp-accent) !important;
+}
+.qaproof-back-btn svg {
+  flex-shrink: 0;
+}
+
+/* Dark theme — page tabs */
+#qaproof-app.qaproof-dark .qaproof-page-tabs {
+  background: rgba(255,255,255,0.06);
+}
+#qaproof-app.qaproof-dark .qaproof-page-tab {
+  color: rgba(238,238,238,0.55) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-page-tab:hover {
+  color: #EEEEEE !important;
+  background: rgba(255,255,255,0.06) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-page-tab.active {
+  background: var(--qp-bg-card) !important;
+  color: #EEEEEE !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+/* Dark theme — back button */
+#qaproof-app.qaproof-dark .qaproof-back-btn {
+  background: var(--qp-bg-card) !important;
+  border-color: var(--qp-border) !important;
+  color: #EEEEEE !important;
+}
+#qaproof-app.qaproof-dark .qaproof-back-btn:hover {
+  background: var(--qp-bg-card-hover) !important;
+  border-color: var(--qp-accent) !important;
+  color: var(--qp-accent) !important;
+}
+
 /* ============================
    Card — matches Rectangle 196 / card style (#00ADB5 on #222831)
    ============================ */
@@ -159,6 +323,7 @@
   justify-content: center;
   gap: 6px;
   padding: 10px 16px;
+  white-space: nowrap;
   border: none;
   border-radius: var(--qp-radius-pill);
   font-size: 13px;
@@ -193,6 +358,7 @@
    ============================ */
 #qaproof-app .qaproof-source-toggle {
   display: inline-flex;
+  align-items: stretch;
   gap: 2px;
   background: #222831;
   border-radius: var(--qp-radius-pill);
@@ -202,7 +368,8 @@
 }
 
 #qaproof-app .qaproof-source-btn {
-  padding: 7px 18px;
+  padding: 8px 18px;
+  margin: 0;
   border: none;
   border-radius: var(--qp-radius-pill);
   font-size: 14px;
@@ -211,7 +378,12 @@
   background: transparent;
   color: rgba(238, 238, 238, 0.5);
   transition: all var(--qp-transition);
-  line-height: 120%;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 #qaproof-app .qaproof-source-btn.active {
@@ -222,6 +394,24 @@
 #qaproof-app .qaproof-source-btn:hover:not(.active) {
   color: #EEEEEE;
   background: rgba(255, 255, 255, 0.08);
+}
+
+#qaproof-app .qaproof-recommended-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+#qaproof-app .qaproof-source-btn.active .qaproof-recommended-badge {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* ============================
@@ -283,6 +473,99 @@
 
 #qaproof-app input::placeholder {
   color: #9CA3AF !important;
+}
+
+/* ============================
+   API Key — eye toggle + validation
+   ============================ */
+.qaproof-api-key-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 480px;
+  width: 100%;
+}
+#qaproof-app .qaproof-api-key-wrapper input.regular-text {
+  width: 100% !important;
+  padding-right: 52px !important;
+}
+/* Fade-out gradient before the eye icon — color set by JS to match input bg */
+.qaproof-key-fade {
+  position: absolute;
+  right: 40px;
+  top: 2px;
+  bottom: 2px;
+  width: 36px;
+  pointer-events: none;
+  z-index: 1;
+}
+.qaproof-eye-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  border: none !important;
+  cursor: pointer;
+  padding: 4px !important;
+  margin: 0 !important;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.2s;
+  min-height: 0 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  z-index: 2;
+}
+.qaproof-eye-toggle:hover {
+  color: var(--qp-accent) !important;
+}
+.qaproof-eye-toggle:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.qaproof-eye-icon {
+  display: block;
+}
+
+/* Validation states */
+.qaproof-api-key-wrapper input.qaproof-key-valid {
+  border-color: #22c55e !important;
+}
+.qaproof-api-key-wrapper input.qaproof-key-valid:focus {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+}
+.qaproof-api-key-wrapper input.qaproof-key-invalid {
+  border-color: #ef4444 !important;
+}
+.qaproof-api-key-wrapper input.qaproof-key-invalid:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+.qaproof-api-key-error {
+  color: #ef4444 !important;
+  font-size: 13px !important;
+  margin-top: 4px !important;
+  font-weight: 500;
+}
+.qaproof-api-key-hint {
+  transition: color 0.2s;
+}
+
+/* Dark theme */
+#qaproof-app.qaproof-dark .qaproof-eye-toggle {
+  color: #9CA3AF;
+}
+#qaproof-app.qaproof-dark .qaproof-eye-toggle:hover {
+  color: var(--qp-accent) !important;
+}
+/* Dark: fade bg set by JS dynamically */
+#qaproof-app.qaproof-dark .qaproof-api-key-error {
+  color: #f87171 !important;
 }
 
 /* ============================
@@ -376,14 +659,20 @@
 
 #qaproof-app .button-link-delete {
   color: var(--qp-score-low) !important;
-  border: 1px solid transparent !important;
+  border: 1px solid rgba(220, 38, 38, 0.35) !important;
   border-radius: var(--qp-radius-pill) !important;
-  background: transparent !important;
+  background: rgba(239, 68, 68, 0.06) !important;
+  font-weight: 600 !important;
+  font-family: var(--qp-font) !important;
+  line-height: 120% !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
   transition: all var(--qp-transition) !important;
 }
 
 #qaproof-app .button-link-delete:hover {
-  background: rgba(239, 68, 68, 0.1) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
   border-color: var(--qp-score-low) !important;
 }
 
@@ -507,6 +796,7 @@
 #qaproof-app .qaproof-report-hero-actions {
   display: flex;
   gap: 10px;
+  position: relative;
 }
 
 /* Inline stats row */
@@ -2275,8 +2565,50 @@
   transition: background var(--qp-transition);
 }
 
+#qaproof-app .qaproof-monitors-table tbody tr.qaproof-monitor-row-clickable {
+  cursor: pointer;
+}
+
 #qaproof-app .qaproof-monitors-table tbody tr:hover {
   background: #F8F9FA;
+}
+
+/* "View Results" hint — visible on row hover */
+#qaproof-app .qaproof-monitor-view-hint {
+  font-size: 11px;
+  color: var(--qp-accent);
+  opacity: 0;
+  margin-left: 6px;
+  transition: opacity 0.15s ease;
+  font-weight: 600;
+}
+
+#qaproof-app .qaproof-monitors-table tbody tr:hover .qaproof-monitor-view-hint {
+  opacity: 0.7;
+}
+
+/* Running animation — pulsing row */
+@keyframes qaproof-row-pulse {
+  0%, 100% { background: rgba(0, 173, 181, 0.04); }
+  50% { background: rgba(0, 173, 181, 0.12); }
+}
+
+#qaproof-app .qaproof-monitors-table tbody tr.qaproof-monitor-running {
+  animation: qaproof-row-pulse 1.5s ease infinite;
+}
+
+#qaproof-app .qaproof-monitors-table tbody tr.qaproof-monitor-running td {
+  opacity: 0.7;
+}
+
+#qaproof-app .qaproof-monitors-table tbody tr.qaproof-monitor-running .qaproof-monitor-actions .button {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+#qaproof-app .qaproof-monitors-table tbody tr.qaproof-monitor-running .qaproof-run-monitor {
+  opacity: 1 !important;
+  pointer-events: none;
 }
 
 #qaproof-app .qaproof-monitors-table tbody tr:last-child td {
@@ -2311,6 +2643,8 @@
 #qaproof-app .qaproof-monitor-actions .button {
   margin-right: 4px;
 }
+
+/* Delete button inherits global .button-link-delete + .button-small styles */
 
 /* Status indicators */
 #qaproof-app .qaproof-status-active {
@@ -2701,14 +3035,16 @@
   height: 18px;
 }
 
-#qaproof-app .qaproof-dash-stat-icon.icon-monitors { background: rgba(0, 173, 181, 0.1); }
-#qaproof-app .qaproof-dash-stat-icon.icon-monitors .dashicons { color: var(--qp-accent); }
-#qaproof-app .qaproof-dash-stat-icon.icon-active { background: rgba(59, 130, 246, 0.1); }
-#qaproof-app .qaproof-dash-stat-icon.icon-active .dashicons { color: #3B82F6; }
+#qaproof-app .qaproof-dash-stat-icon.icon-tests { background: rgba(59, 130, 246, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-tests .dashicons { color: #3B82F6; }
 #qaproof-app .qaproof-dash-stat-icon.icon-score { background: rgba(139, 92, 246, 0.1); }
 #qaproof-app .qaproof-dash-stat-icon.icon-score .dashicons { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-stat-icon.icon-monitors { background: rgba(0, 173, 181, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-monitors .dashicons { color: var(--qp-accent); }
 #qaproof-app .qaproof-dash-stat-icon.icon-alerts { background: rgba(245, 158, 11, 0.1); }
 #qaproof-app .qaproof-dash-stat-icon.icon-alerts .dashicons { color: #F59E0B; }
+#qaproof-app .qaproof-dash-stat-icon.icon-tokens { background: rgba(16, 185, 129, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-tokens .dashicons { color: #10B981; }
 
 #qaproof-app .qaproof-dash-stat-val {
   font-size: 22px;
@@ -2730,6 +3066,147 @@
   margin-top: 3px;
 }
 
+/* --- Token Usage Card --- */
+#qaproof-app .qaproof-dash-usage {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-usage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+#qaproof-app .qaproof-dash-usage-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #222831;
+}
+
+#qaproof-app .qaproof-dash-usage-title .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #7a8290;
+}
+
+#qaproof-app .qaproof-dash-usage-plan {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #7a8290;
+  font-weight: 600;
+}
+
+#qaproof-app .qaproof-dash-plan-badge {
+  background: linear-gradient(135deg, var(--qp-accent), #0891B2);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+#qaproof-app .qaproof-dash-usage-bar-wrap {
+  margin-bottom: 10px;
+}
+
+#qaproof-app .qaproof-dash-usage-bar {
+  height: 7px;
+  background: #F0F2F5;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+#qaproof-app .qaproof-dash-usage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--qp-accent), #0891B2);
+  border-radius: 100px;
+  transition: width 0.6s ease;
+}
+
+#qaproof-app .qaproof-dash-usage-nums {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #7a8290;
+}
+
+#qaproof-app .qaproof-dash-usage-nums strong {
+  color: #222831;
+  font-weight: 700;
+}
+
+#qaproof-app .qaproof-dash-usage-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 16px;
+  padding-top: 10px;
+  border-top: 1px solid #F0F2F5;
+  margin-bottom: 8px;
+}
+
+#qaproof-app .qaproof-dash-usage-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #4b5563;
+}
+
+#qaproof-app .qaproof-dash-usage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-usage-item[data-color="teal"] .qaproof-dash-usage-dot { background: var(--qp-accent); }
+#qaproof-app .qaproof-dash-usage-item[data-color="blue"] .qaproof-dash-usage-dot { background: #3B82F6; }
+#qaproof-app .qaproof-dash-usage-item[data-color="purple"] .qaproof-dash-usage-dot { background: #8B5CF6; }
+#qaproof-app .qaproof-dash-usage-item[data-color="green"] .qaproof-dash-usage-dot { background: #10B981; }
+#qaproof-app .qaproof-dash-usage-item[data-color="amber"] .qaproof-dash-usage-dot { background: #F59E0B; }
+
+#qaproof-app .qaproof-dash-usage-label {
+  font-weight: 500;
+}
+
+#qaproof-app .qaproof-dash-usage-count {
+  font-weight: 700;
+  color: #222831;
+}
+
+#qaproof-app .qaproof-dash-usage-footer {
+  font-size: 10px;
+  color: #9CA3AF;
+}
+
+#qaproof-app .qaproof-dash-usage-sep {
+  margin: 0 4px;
+}
+
+#qaproof-app .qaproof-dash-usage-footer a {
+  color: var(--qp-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#qaproof-app .qaproof-dash-usage-footer a:hover {
+  text-decoration: underline;
+}
+
 /* --- Section heading --- */
 #qaproof-app .qaproof-dash-section {
   font-size: 15px;
@@ -2738,6 +3215,149 @@
   margin: 0 0 14px;
   padding-left: 2px;
 }
+
+/* --- Tools layout: 3 top + 2 bottom --- */
+#qaproof-app .qaproof-dash-tools-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+#qaproof-app .qaproof-dash-tools-bottom {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+/* --- Wide horizontal cards (Accessibility + Regression) --- */
+#qaproof-app .qaproof-dash-tool-wide {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: var(--qp-radius-card);
+  padding: 20px 24px;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: var(--qp-shadow);
+}
+
+#qaproof-app .qaproof-dash-tool-wide::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 4px 0 0 4px;
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"]::before { background: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"]::before { background: #F59E0B; }
+
+#qaproof-app .qaproof-dash-tool-wide:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+#qaproof-app .qaproof-dash-tool-wide-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tool-wide-icon {
+  background: rgba(139, 92, 246, 0.1);
+}
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tool-wide-icon {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+#qaproof-app .qaproof-dash-tool-wide-icon .dashicons {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tool-wide-icon .dashicons { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tool-wide-icon .dashicons { color: #F59E0B; }
+
+#qaproof-app .qaproof-dash-tool-wide-content {
+  flex: 1;
+  min-width: 0;
+}
+
+#qaproof-app .qaproof-dash-tool-wide-content h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--qp-text-primary);
+  margin: 0 0 4px 0;
+  font-family: var(--qp-font);
+}
+
+#qaproof-app .qaproof-dash-tool-wide-content p {
+  font-size: 12.5px;
+  color: #7a8290;
+  margin: 0;
+  line-height: 1.4;
+}
+
+#qaproof-app .qaproof-dash-tool-wide-tags {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-tag {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--qp-font);
+  background: rgba(0, 0, 0, 0.04);
+  color: #6b7280;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tag {
+  background: rgba(139, 92, 246, 0.06);
+  color: #7C3AED;
+  border-color: rgba(139, 92, 246, 0.15);
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tag {
+  background: rgba(245, 158, 11, 0.06);
+  color: #D97706;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+#qaproof-app .qaproof-dash-tool-wide .qaproof-dash-tool-arrow {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #ccc;
+  opacity: 0;
+  transition: all 0.2s ease;
+  transform: translateX(-4px);
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-tool-wide:hover .qaproof-dash-tool-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"]:hover .qaproof-dash-tool-arrow { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"]:hover .qaproof-dash-tool-arrow { color: #F59E0B; }
 
 /* --- Tool cards: white, clean, colored left accent --- */
 #qaproof-app .qaproof-dash-tools {
@@ -2775,6 +3395,7 @@
 #qaproof-app .qaproof-dash-tool[data-color="blue"]::before { background: #3B82F6; }
 #qaproof-app .qaproof-dash-tool[data-color="purple"]::before { background: #8B5CF6; }
 #qaproof-app .qaproof-dash-tool[data-color="amber"]::before { background: #F59E0B; }
+#qaproof-app .qaproof-dash-tool[data-color="green"]::before { background: #10B981; }
 
 #qaproof-app .qaproof-dash-tool:hover {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
@@ -2796,6 +3417,7 @@
 #qaproof-app .qaproof-dash-tool[data-color="blue"] .qaproof-dash-tool-icon { background: rgba(59, 130, 246, 0.1); }
 #qaproof-app .qaproof-dash-tool[data-color="purple"] .qaproof-dash-tool-icon { background: rgba(139, 92, 246, 0.1); }
 #qaproof-app .qaproof-dash-tool[data-color="amber"] .qaproof-dash-tool-icon { background: rgba(245, 158, 11, 0.1); }
+#qaproof-app .qaproof-dash-tool[data-color="green"] .qaproof-dash-tool-icon { background: rgba(16, 185, 129, 0.1); }
 
 #qaproof-app .qaproof-dash-tool-icon .dashicons {
   font-size: 18px;
@@ -2807,6 +3429,7 @@
 #qaproof-app .qaproof-dash-tool[data-color="blue"] .qaproof-dash-tool-icon .dashicons { color: #3B82F6; }
 #qaproof-app .qaproof-dash-tool[data-color="purple"] .qaproof-dash-tool-icon .dashicons { color: #8B5CF6; }
 #qaproof-app .qaproof-dash-tool[data-color="amber"] .qaproof-dash-tool-icon .dashicons { color: #F59E0B; }
+#qaproof-app .qaproof-dash-tool[data-color="green"] .qaproof-dash-tool-icon .dashicons { color: #10B981; }
 
 #qaproof-app .qaproof-dash-tool h3 {
   font-size: 14px;
@@ -2843,6 +3466,7 @@
 #qaproof-app .qaproof-dash-tool[data-color="blue"]:hover .qaproof-dash-tool-arrow { color: #3B82F6; }
 #qaproof-app .qaproof-dash-tool[data-color="purple"]:hover .qaproof-dash-tool-arrow { color: #8B5CF6; }
 #qaproof-app .qaproof-dash-tool[data-color="amber"]:hover .qaproof-dash-tool-arrow { color: #F59E0B; }
+#qaproof-app .qaproof-dash-tool[data-color="green"]:hover .qaproof-dash-tool-arrow { color: #10B981; }
 
 /* --- Quick links: 2-col grid, dark cards --- */
 #qaproof-app .qaproof-dash-links {
@@ -2921,6 +3545,8 @@
 @media (max-width: 1100px) {
   #qaproof-app .qaproof-dash-stats { grid-template-columns: repeat(2, 1fr); }
   #qaproof-app .qaproof-dash-tools { grid-template-columns: repeat(2, 1fr); }
+  #qaproof-app .qaproof-dash-tools-top { grid-template-columns: repeat(2, 1fr); }
+  #qaproof-app .qaproof-dash-tools-bottom { grid-template-columns: 1fr; }
   #qaproof-app .qaproof-dash-links { grid-template-columns: 1fr; }
 }
 
@@ -2933,6 +3559,8 @@
   #qaproof-app .qaproof-dash-hero-score { align-self: center; }
   #qaproof-app .qaproof-dash-stats { grid-template-columns: 1fr 1fr; }
   #qaproof-app .qaproof-dash-tools { grid-template-columns: 1fr; }
+  #qaproof-app .qaproof-dash-tools-top { grid-template-columns: 1fr; }
+  #qaproof-app .qaproof-dash-tool-wide-tags { display: none; }
 }
 
 /* ============================
@@ -3323,6 +3951,229 @@
 }
 
 /* ============================
+   Toast Notification
+   ============================ */
+#qaproof-app .qaproof-toast {
+  position: fixed;
+  top: 46px;
+  right: 20px;
+  background: #222831;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 99999;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#qaproof-app .qaproof-toast .dashicons {
+  color: var(--qp-accent);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+#qaproof-app .qaproof-toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================
+   Custom Form Validation
+   ============================ */
+#qaproof-app .qaproof-input-invalid {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+
+#qaproof-app .qaproof-field-error {
+  color: #EF4444;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+/* Viewport fields row */
+#qaproof-app .qaproof-viewport-fields {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#qaproof-app .qaproof-viewport-fields label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+/* Number input suffix (px) */
+#qaproof-app .qaproof-input-suffix {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+#qaproof-app .qaproof-input-suffix input {
+  padding-right: 32px !important;
+  width: 110px !important;
+}
+
+#qaproof-app .qaproof-suffix {
+  position: absolute;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+/* Always show number input spinners */
+#qaproof-app input[type="number"] {
+  -webkit-appearance: auto !important;
+  -moz-appearance: auto !important;
+  appearance: auto !important;
+}
+
+#qaproof-app input[type="number"]::-webkit-inner-spin-button,
+#qaproof-app input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: auto !important;
+  opacity: 1 !important;
+  height: auto;
+  cursor: pointer;
+}
+
+/* ============================
+   Custom Select Dropdown
+   ============================ */
+#qaproof-app .qaproof-select {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 200px;
+}
+
+#qaproof-app .qaproof-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #222831;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+#qaproof-app .qaproof-select-trigger:hover {
+  border-color: #9CA3AF;
+}
+
+#qaproof-app .qaproof-select-trigger:focus,
+#qaproof-app .qaproof-select.open .qaproof-select-trigger {
+  border-color: var(--qp-accent);
+  box-shadow: 0 0 0 2px rgba(0, 173, 181, 0.15);
+}
+
+#qaproof-app .qaproof-select-arrow .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #9CA3AF;
+  transition: transform 0.2s ease;
+}
+
+#qaproof-app .qaproof-select.open .qaproof-select-arrow .dashicons {
+  transform: rotate(180deg);
+}
+
+#qaproof-app .qaproof-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+#qaproof-app .qaproof-select.open .qaproof-select-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+#qaproof-app .qaproof-select-option {
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+#qaproof-app .qaproof-select-option:hover {
+  background: #F3F4F6;
+}
+
+#qaproof-app .qaproof-select-option.selected {
+  color: var(--qp-accent);
+  font-weight: 700;
+  background: rgba(0, 173, 181, 0.06);
+}
+
+/* Dark theme */
+#qaproof-app.qaproof-dark .qaproof-select-trigger {
+  background: #2a3240;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f0f3f7;
+}
+
+#qaproof-app.qaproof-dark .qaproof-select-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+#qaproof-app.qaproof-dark .qaproof-select-dropdown {
+  background: #2a3240;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+#qaproof-app.qaproof-dark .qaproof-select-option {
+  color: #d1d5db;
+}
+
+#qaproof-app.qaproof-dark .qaproof-select-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#qaproof-app.qaproof-dark .qaproof-select-option.selected {
+  color: var(--qp-accent);
+  background: rgba(0, 173, 181, 0.1);
+}
+
+/* ============================
    Brand Badge
    ============================ */
 #qaproof-app .qaproof-brand-badge {
@@ -3428,6 +4279,7 @@
   gap: 6px;
   margin-top: 16px;
   padding: 10px 24px;
+  box-sizing: border-box;
   background: linear-gradient(135deg, #0d9488 0%, #00ADB5 100%);
   color: #fff;
   border: 1px solid rgba(0, 173, 181, 0.4);
@@ -3436,15 +4288,14 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   letter-spacing: 0.3px;
 }
 
-#qaproof-app .qaproof-email-btn:hover {
+#qaproof-app .qaproof-email-btn:hover:not(.qaproof-email-expanded) {
   background: linear-gradient(135deg, #00ADB5 0%, #0d9488 100%);
   border-color: #00ADB5;
   box-shadow: 0 4px 16px rgba(0, 173, 181, 0.35);
-  transform: translateY(-1px);
 }
 
 #qaproof-app .qaproof-email-btn .dashicons {
@@ -3458,64 +4309,93 @@
    Email Modal
    ============================ */
 /* Email Report — Inline Confirmation */
-#qaproof-app .qaproof-email-btn-wrap {
-  position: relative;
+/* Email btn wrap no longer needed — confirmation is inline */
+
+/* Email button — expanded confirmation state */
+#qaproof-app .qaproof-email-btn.qaproof-email-expanded {
   display: inline-flex;
-}
-
-#qaproof-app .qaproof-email-confirm {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  width: max-content;
-  max-width: 380px;
-  padding: 12px 16px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 173, 181, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 10;
-}
-
-#qaproof-app .qaproof-email-confirm.qaproof-email-confirm-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-#qaproof-app .qaproof-email-confirm-inner {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-#qaproof-app .qaproof-email-confirm-icon {
-  color: var(--qp-accent);
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
+  gap: 12px;
+  padding: 5px 5px 5px 18px !important;
+  background: #222831 !important;
+  border: 1px solid rgba(0, 173, 181, 0.3) !important;
+  cursor: default;
+  white-space: nowrap;
+  transition: none !important;
 }
 
 #qaproof-app .qaproof-email-confirm-text {
   font-family: 'Kodchasan', sans-serif;
-  font-size: 13px;
-  color: #374151;
-  line-height: 1.4;
+  font-size: 12.5px;
+  color: rgba(238, 238, 238, 0.85);
+  line-height: 1;
 }
 
 #qaproof-app .qaproof-email-confirm-text strong {
-  color: #222831;
+  color: #ffffff;
   font-weight: 700;
 }
 
 #qaproof-app .qaproof-email-confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  display: inline-flex;
+  gap: 6px;
+}
+
+#qaproof-app .qaproof-email-confirm-cancel {
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  color: rgba(238, 238, 238, 0.7);
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+#qaproof-app .qaproof-email-confirm-cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #EEEEEE;
+}
+
+#qaproof-app .qaproof-email-confirm-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 16px;
+  background: linear-gradient(135deg, #0d9488 0%, #00ADB5 100%);
+  border: 1px solid rgba(0, 173, 181, 0.5);
+  border-radius: 100px;
+  color: #fff;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+#qaproof-app .qaproof-email-confirm-send:hover {
+  background: linear-gradient(135deg, #00ADB5 0%, #0d9488 100%);
+  box-shadow: 0 2px 10px rgba(0, 173, 181, 0.3);
+}
+
+#qaproof-app .qaproof-email-confirm-send:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+#qaproof-app .qaproof-email-confirm-send .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+}
+
+#qaproof-app .qaproof-email-confirm-send.qaproof-email-sent {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  border-color: #10B981 !important;
 }
 
 #qaproof-app .qaproof-btn-sm {
@@ -3602,20 +4482,7 @@
   animation: qaproof-spin 1s linear infinite;
 }
 
-/* Dark theme: email confirmation */
-#qaproof-app.qaproof-dark .qaproof-email-confirm {
-  background: #2A2F38;
-  border-color: rgba(0, 173, 181, 0.35);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-#qaproof-app.qaproof-dark .qaproof-email-confirm-text {
-  color: #EEEEEE;
-}
-
-#qaproof-app.qaproof-dark .qaproof-email-confirm-text strong {
-  color: #ffffff;
-}
+/* Email confirm always sits on dark report hero — no theme overrides needed */
 
 /* ============================
    Test History
@@ -3721,10 +4588,10 @@
 /* Rows */
 #qaproof-app .qaproof-history-row {
   display: grid;
-  grid-template-columns: 150px 100px 1fr 60px 120px;
+  grid-template-columns: 140px 95px 1fr 50px auto;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 12px 14px;
   border-radius: 12px;
   margin-bottom: 4px;
   background: #222831;
@@ -3756,6 +4623,7 @@
   font-weight: 600;
   text-transform: capitalize;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 #qaproof-app .qaproof-badge-fidelity {
@@ -3776,6 +4644,11 @@
 #qaproof-app .qaproof-badge-regression {
   background: rgba(249, 115, 22, 0.18);
   color: #FB923C;
+}
+
+#qaproof-app .qaproof-badge-design-audit {
+  background: rgba(236, 72, 153, 0.18);
+  color: #F472B6;
 }
 
 #qaproof-app .qaproof-history-url {
@@ -3799,22 +4672,43 @@
 /* Action buttons — dark theme */
 #qaproof-app .qaproof-history-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 #qaproof-app .qaproof-history-actions .button {
   font-size: 11px;
-  padding: 4px 14px !important;
-  line-height: 1.6;
-  border-radius: 10px !important;
+  padding: 5px 10px !important;
+  line-height: 1.4;
+  border-radius: 8px !important;
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: rgba(238, 238, 238, 0.7) !important;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 0 !important;
+  white-space: nowrap;
+}
+/* Icon-only buttons (download, delete) — square-ish */
+#qaproof-app .qaproof-history-actions .qaproof-history-download,
+#qaproof-app .qaproof-history-actions .qaproof-history-delete {
+  padding: 5px 7px !important;
+}
+#qaproof-app .qaproof-history-actions .button svg {
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 #qaproof-app .qaproof-history-actions .qaproof-history-view:hover {
+  background: rgba(0, 173, 181, 0.12) !important;
+  border-color: rgba(0, 173, 181, 0.4) !important;
+  color: var(--qp-accent) !important;
+}
+
+#qaproof-app .qaproof-history-download:hover {
   background: rgba(0, 173, 181, 0.12) !important;
   border-color: rgba(0, 173, 181, 0.4) !important;
   color: var(--qp-accent) !important;
@@ -3854,6 +4748,24 @@
   padding: 30px 24px;
   color: var(--qp-text-muted);
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+#qaproof-app .qaproof-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(238, 238, 238, 0.15);
+  border-top-color: var(--qp-accent);
+  border-radius: 50%;
+  animation: qaproof-spin 0.7s linear infinite;
+}
+
+@keyframes qaproof-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Load more button */
@@ -3863,19 +4775,21 @@
 }
 
 #qaproof-app .qaproof-history-content .qaproof-history-load-more-wrap .button {
-  background: rgba(0, 173, 181, 0.1) !important;
-  border: 1px solid rgba(0, 173, 181, 0.3) !important;
+  background: transparent !important;
+  border: 2px solid var(--qp-accent) !important;
   color: var(--qp-accent) !important;
   border-radius: var(--qp-radius-pill) !important;
-  padding: 6px 24px !important;
-  font-size: 12px !important;
+  padding: 8px 28px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
   transition: all 0.2s ease;
 }
 
 #qaproof-app .qaproof-history-content .qaproof-history-load-more-wrap .button:hover {
-  background: rgba(0, 173, 181, 0.2) !important;
+  background: var(--qp-accent) !important;
+  color: #fff !important;
   border-color: var(--qp-accent) !important;
-  box-shadow: 0 2px 10px rgba(0, 173, 181, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 173, 181, 0.3);
 }
 
 /* Responsive: stack on smaller screens */
@@ -4296,6 +5210,18 @@
   border-radius: 12px;
   border: 1px solid #E8EAED;
   transition: border-color 0.2s, transform 0.15s;
+  overflow: hidden;
+  min-width: 0;
+}
+#qaproof-app .qaproof-comp-info {
+  min-width: 0;
+  overflow: hidden;
+}
+#qaproof-app .qaproof-comp-name,
+#qaproof-app .qaproof-comp-count {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #qaproof-app .qaproof-component-card:hover {
   border-color: rgba(0, 173, 181, 0.3);
@@ -4478,6 +5404,12 @@
   padding-top: 10px;
   padding-bottom: 10px;
 }
+#qaproof-app .qaproof-form-left .form-table td input[type="url"],
+#qaproof-app .qaproof-form-left .form-table td input[type="text"],
+#qaproof-app .qaproof-form-left .form-table td .qaproof-select {
+  max-width: 420px;
+  width: 100%;
+}
 #qaproof-app .qaproof-form-left .form-table td p.description {
   font-size: 12px;
   margin-top: 4px;
@@ -4515,6 +5447,76 @@
   height: 16px;
   color: #00ADB5;
 }
+
+#qaproof-app .qaproof-save-design-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(0, 173, 181, 0.4);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: #00ADB5;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Kodchasan', sans-serif;
+}
+
+#qaproof-app .qaproof-save-design-btn:hover {
+  background: rgba(0, 173, 181, 0.12);
+  border-color: #00ADB5;
+}
+
+#qaproof-app .qaproof-save-design-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#qaproof-app .qaproof-save-design-btn .dashicons {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+  color: inherit;
+}
+
+#qaproof-app .qaproof-refresh-figma-btn {
+  margin-left: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: rgba(238, 238, 238, 0.6);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+#qaproof-app .qaproof-refresh-figma-btn:hover {
+  color: #00ADB5;
+  border-color: #00ADB5;
+  background: rgba(0, 173, 181, 0.08);
+}
+
+#qaproof-app .qaproof-refresh-figma-btn .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: inherit;
+}
+
+#qaproof-app .qaproof-refresh-figma-btn.spinning .dashicons {
+  animation: qaproof-spin 1s linear infinite;
+}
+
+@keyframes qaproof-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 #qaproof-app .qaproof-preview-body {
   padding: 16px;
   min-height: 238px;
@@ -4631,10 +5633,11 @@
   position: relative;
   display: block;
   width: 100%;
+  max-height: 450px;
+  overflow-y: auto;
   line-height: 0;
   font-size: 0;
   border-radius: 8px;
-  overflow: hidden;
   border: none;               /* NO border — it shifts the overlay origin */
   padding: 0;                 /* NO padding */
   margin: 0;
@@ -4863,17 +5866,43 @@
 body.qaproof-inspector-open {
   overflow: hidden;
 }
-#qaproof-app .qaproof-preview-panel.inspector-expanded {
+/* Remove transform from card ancestor so position:fixed works relative to viewport,
+   and raise z-index above the backdrop (99998) so the panel inside isn't covered */
+body.qaproof-inspector-open #qaproof-app .qaproof-card {
+  animation: none;
+  transform: none;
+  z-index: 99999;
+}
+#qaproof-app > .qaproof-inspector-backdrop {
+  display: none;
   position: fixed;
-  top: 32px; /* WP admin bar */
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 99998;
+}
+#qaproof-app > .qaproof-inspector-backdrop.active {
+  display: block;
+}
+/* Expanded inspector */
+#qaproof-app .qaproof-preview-panel.inspector-expanded {
+  position: fixed;
+  top: 52px; /* WP admin bar + margin */
+  left: 180px; /* clear WP sidebar */
+  right: 30px;
+  bottom: 30px;
   z-index: 99999;
-  border-radius: 0;
+  border-radius: 18px;
   margin: 0;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  background: #222831;
+  overflow: hidden;
 }
 #qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-preview-body {
   flex: 1;
@@ -4882,6 +5911,7 @@ body.qaproof-inspector-open {
   overflow: hidden;
   padding: 0;
   min-height: 0;
+  max-height: none;
 }
 #qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-preview-success {
   display: flex !important;
@@ -4893,6 +5923,7 @@ body.qaproof-inspector-open {
   flex: 1;
   overflow: auto;
   min-width: 0;
+  max-height: none;
   padding: 16px;
 }
 #qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-preview-image-wrap img {
@@ -4906,6 +5937,8 @@ body.qaproof-inspector-open {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   padding: 12px;
   background: #1a1e25;
+  display: flex;
+  flex-direction: column;
 }
 #qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-inspector-expand {
   background: rgba(0, 173, 181, 0.2);
@@ -5017,6 +6050,27 @@ body.qaproof-inspector-open {
 }
 #qaproof-app .qaproof-clear-selection:hover {
   color: #e74c3c;
+}
+
+/* --- Hide inspector-only elements in non-expanded mode --- */
+#qaproof-app .qaproof-element-list,
+#qaproof-app .qaproof-depth-filters,
+#qaproof-app .qaproof-selected-element,
+#qaproof-app .qaproof-detect-error {
+  display: none;
+}
+#qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-element-list {
+  display: block;
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+}
+#qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-depth-filters {
+  display: flex;
+}
+#qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-selected-element,
+#qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-detect-error {
+  display: block;
 }
 
 /* --- Element List Panel --- */
@@ -5574,6 +6628,16 @@ body.qaproof-inspector-open {
   color: #f0f3f7;
   border-color: var(--qp-divider);
 }
+#qaproof-app.qaproof-dark .qaproof-monitors-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+#qaproof-app.qaproof-dark .qaproof-monitors-table tbody tr.qaproof-monitor-running {
+  animation-name: qaproof-row-pulse-dark;
+}
+@keyframes qaproof-row-pulse-dark {
+  0%, 100% { background: rgba(0, 173, 181, 0.06); }
+  50% { background: rgba(0, 173, 181, 0.15); }
+}
 
 /* Dark: form sections */
 #qaproof-app.qaproof-dark .qaproof-form-section {
@@ -5643,6 +6707,23 @@ body.qaproof-inspector-open {
   border-color: rgba(0, 173, 181, 0.3);
   box-shadow: 0 4px 20px rgba(0, 173, 181, 0.08);
 }
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide:hover {
+  background: #323b4a;
+  border-color: rgba(0, 173, 181, 0.3);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide-content h3 { color: #f0f3f7; }
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide-content p { color: #7b8698; }
+#qaproof-app.qaproof-dark .qaproof-dash-tag {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tag { color: #A78BFA; }
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tag { color: #FBBF24; }
 
 /* Dark: Quick Links — white cards with dark text */
 #qaproof-app.qaproof-dark .qaproof-dash-link {
@@ -5668,6 +6749,43 @@ body.qaproof-inspector-open {
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link-icon {
   background: rgba(0, 173, 181, 0.10);
+}
+
+/* Dark: Token usage card */
+#qaproof-app.qaproof-dark .qaproof-dash-usage {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-title {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-title .dashicons {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-plan {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-nums {
+  color: #7b8698;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-nums strong {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-breakdown {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-item {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-count {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-footer {
+  color: #6b7380;
 }
 
 /* Dark: recommendation items — elevated surface */
@@ -5700,6 +6818,28 @@ body.qaproof-inspector-open {
 #qaproof-app.qaproof-dark .qaproof-rec-group-quick .qaproof-rec-indicator { background: #ffffff; }
 #qaproof-app.qaproof-dark .qaproof-rec-group-structural .qaproof-rec-indicator { background: #ffffff; }
 
+/* Dark: Component Inventory cards */
+#qaproof-app.qaproof-dark .qaproof-component-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-card-border);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-component-card:hover {
+  border-color: rgba(0, 173, 181, 0.4);
+}
+#qaproof-app.qaproof-dark .qaproof-comp-name {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-comp-count {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-comp-variations {
+  color: var(--qp-text-muted);
+}
+#qaproof-app.qaproof-dark .qaproof-comp-icon {
+  background: rgba(0, 173, 181, 0.15);
+}
+
 /* Dark: category cards — white header, dark body */
 #qaproof-app.qaproof-dark .qaproof-category-card {
   background: #2a3240;
@@ -5713,213 +6853,4 @@ body.qaproof-inspector-open {
 #qaproof-app.qaproof-dark .qaproof-cat-score-num {
   color: #222831;
 }
-#qaproof-app.qaproof-dark .qaproof-category-card h3 {
-  color: #1a1e24;
-}
-#qaproof-app.qaproof-dark .qaproof-cat-evaluates {
-  color: #5a6270;
-}
-
-/* Dark: diff items — elevated surface */
-#qaproof-app.qaproof-dark .qaproof-diff-item {
-  background: #323b4a;
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #f0f3f7;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-}
-#qaproof-app.qaproof-dark .qaproof-difference {
-  background: #f0f2f5;
-  border-color: #e0e3e8;
-  color: #374151;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-#qaproof-app.qaproof-dark .qaproof-difference:hover {
-  background: #e8eaef;
-  border-color: rgba(0, 173, 181, 0.4);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-}
-#qaproof-app.qaproof-dark .qaproof-difference.active {
-  border-color: var(--qp-accent);
-  background: rgba(0, 173, 181, 0.08);
-}
-#qaproof-app.qaproof-dark .qaproof-diff-num {
-  color: #7b8698;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-body p {
-  color: #4b5563;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-group {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: var(--qp-divider);
-}
-#qaproof-app.qaproof-dark .qaproof-diff-group-header {
-  background: #f0f2f5;
-  border-radius: 10px 10px 0 0;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-group-header:hover {
-  background: #e8eaef;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-group-title {
-  color: #1a1e24;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-group-count {
-  color: #4b5563;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-group-chevron {
-  color: #6b7280;
-}
-#qaproof-app.qaproof-dark .qaproof-diff-description {
-  color: #1f2937;
-}
-
-/* Dark: diff severity bar */
-#qaproof-app.qaproof-dark .qaproof-diff-summary-bar {
-  background: #2a3240;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--qp-card-shadow);
-}
-
-/* Dark: filter buttons — white style */
-#qaproof-app.qaproof-dark .qaproof-filter-btn {
-  background: #f0f2f5;
-  border-color: #d1d5db;
-  color: #4b5563;
-}
-#qaproof-app.qaproof-dark .qaproof-filter-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
-  color: #1f2937;
-}
-#qaproof-app.qaproof-dark .qaproof-filter-btn.active {
-  background: var(--qp-accent);
-  color: #fff;
-  border-color: var(--qp-accent);
-}
-/* Dark: separator between severity and device filter groups */
-#qaproof-app.qaproof-dark .qaproof-device-filter {
-  margin-left: 8px;
-  padding-left: 16px;
-  border-left: 2px solid rgba(255, 255, 255, 0.12);
-}
-
-/* Dark: source toggle tabs */
-#qaproof-app.qaproof-dark .qaproof-source-toggle {
-  background: #323b4a;
-}
-#qaproof-app.qaproof-dark .qaproof-source-tab {
-  color: #7b8698;
-}
-#qaproof-app.qaproof-dark .qaproof-source-tab:hover {
-  color: #f0f3f7;
-}
-#qaproof-app.qaproof-dark .qaproof-source-tab.active {
-  background: var(--qp-accent);
-  color: #fff;
-}
-
-/* Dark: empty states */
-#qaproof-app.qaproof-dark .qaproof-monitors-empty,
-#qaproof-app.qaproof-dark .qaproof-history-empty {
-  color: #4b5563;
-}
-
-/* Dark: chrome bars */
-#qaproof-app.qaproof-dark .qaproof-chrome-bar {
-  background: #2a3240;
-  border-color: var(--qp-divider);
-}
-#qaproof-app.qaproof-dark .qaproof-chrome-title {
-  color: #f0f3f7;
-}
-#qaproof-app.qaproof-dark .qaproof-chrome-btn {
-  color: #a8b2c1;
-  background: #323b4a;
-  border-color: rgba(255, 255, 255, 0.10);
-}
-#qaproof-app.qaproof-dark .qaproof-chrome-btn:hover {
-  background: #3a4352;
-  color: #f0f3f7;
-}
-#qaproof-app.qaproof-dark .qaproof-chrome-btn.active {
-  color: var(--qp-accent);
-  background: #3a4352;
-}
-
-/* Dark: screenshot section */
-#qaproof-app.qaproof-dark .qaproof-screenshot-chrome {
-  background: #2a3240;
-  border-color: var(--qp-divider);
-}
-#qaproof-app.qaproof-dark .qaproof-screenshot-label {
-  color: #7b8698;
-}
-
-/* Dark: results timeline */
-#qaproof-app.qaproof-dark .qaproof-results-timeline {
-  background: #2a3240;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--qp-card-shadow);
-}
-
-/* Dark: component cards */
-#qaproof-app.qaproof-dark .qaproof-component-card {
-  background: #2a3240;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--qp-card-shadow);
-  color: #f0f3f7;
-}
-#qaproof-app.qaproof-dark .qaproof-component-card:hover {
-  border-color: rgba(0, 173, 181, 0.4);
-  box-shadow: 0 4px 20px rgba(0, 173, 181, 0.08);
-}
-
-/* Dark: viewport cards */
-#qaproof-app.qaproof-dark .qaproof-viewport-card {
-  background: #2a3240;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--qp-card-shadow);
-  color: #f0f3f7;
-}
-
-/* Dark: inspector overlay */
-#qaproof-app.qaproof-dark .qaproof-inspector-expand {
-  background: #2a3240;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--qp-card-shadow);
-  color: #f0f3f7;
-}
-
-/* Dark: feedback card overrides */
-#qaproof-app.qaproof-dark .qaproof-feedback-card {
-  background: #2a3240;
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: var(--qp-card-shadow);
-}
-#qaproof-app.qaproof-dark .qaproof-feedback-comment,
-#qaproof-app.qaproof-dark textarea.qaproof-feedback-comment {
-  background: #f0f2f5 !important;
-  border-color: #d1d5db !important;
-  color: #1f2937 !important;
-}
-#qaproof-app.qaproof-dark textarea.qaproof-feedback-comment::placeholder {
-  color: #9ca3af !important;
-}
-
-/* Dark: test type selector — better contrast */
-#qaproof-app.qaproof-dark .qaproof-test-type-selector {
-  background: #0d1117;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-#qaproof-app.qaproof-dark .qaproof-test-type-btn {
-  color: rgba(240, 243, 247, 0.7);
-}
-#qaproof-app.qaproof-dark .qaproof-test-type-btn:hover:not(.active) {
-  color: #f0f3f7;
-  background: rgba(255, 255, 255, 0.10);
-}
-#qaproof-app.qaproof-dark .qaproof-test-type-btn.active {
-  background: var(--qp-accent);
-  color: #fff;
-  box-shadow: 0 2px 12px rgba(0, 173, 181, 0.35);
-}
+#qaproof-app.qaproof-dark .qaproof-category

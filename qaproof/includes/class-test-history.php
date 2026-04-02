@@ -83,6 +83,39 @@ class QAProof_Test_History {
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM " . self::table_name() . $where );
     }
 
+    /**
+     * Get dashboard statistics from test history.
+     * Returns total tests, average score, count per type, and recent failures (score < threshold).
+     */
+    public static function get_stats( $threshold = 70 ) {
+        global $wpdb;
+        $table = self::table_name();
+
+        $totals = $wpdb->get_row(
+            "SELECT COUNT(*) AS total, AVG(score) AS avg_score FROM {$table} WHERE score IS NOT NULL",
+            ARRAY_A
+        );
+
+        $by_type = $wpdb->get_results(
+            "SELECT test_type, COUNT(*) AS cnt, AVG(score) AS avg FROM {$table} WHERE score IS NOT NULL GROUP BY test_type ORDER BY cnt DESC",
+            ARRAY_A
+        );
+
+        $below = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE score IS NOT NULL AND score < %d",
+                $threshold
+            )
+        );
+
+        return [
+            'total'       => (int) ( $totals['total'] ?? 0 ),
+            'avg_score'   => $totals['avg_score'] !== null ? round( (float) $totals['avg_score'] ) : null,
+            'below_threshold' => $below,
+            'by_type'     => $by_type ?: [],
+        ];
+    }
+
     public static function purge_old( $keep = 100 ) {
         global $wpdb;
         $table = self::table_name();

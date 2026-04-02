@@ -181,11 +181,12 @@ class QAProof_API_Client {
      *
      * Timeout set to 120s to allow for Figma API rate-limit retries on the backend.
      *
-     * @param string $figma_url   Figma design URL.
-     * @param string $figma_token Figma Personal Access Token.
+     * @param string $figma_url    Figma design URL.
+     * @param string $figma_token  Figma Personal Access Token.
+     * @param bool   $force_refresh Whether to bypass server-side cache.
      * @return array|WP_Error Preview data on success, WP_Error on failure.
      */
-    public static function preview_figma( $figma_url, $figma_token ) {
+    public static function preview_figma( $figma_url, $figma_token, $force_refresh = false ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/figma-preview';
         $api_key  = QAProof_Settings::get_api_key();
 
@@ -201,10 +202,11 @@ class QAProof_API_Client {
                 'Content-Type'  => 'application/json',
                 'Authorization' => 'Bearer ' . $api_key,
             ),
-            'body'      => wp_json_encode( array(
-                'figmaUrl'   => $figma_url,
-                'figmaToken' => $figma_token,
-            ) ),
+            'body'      => wp_json_encode( array_filter( array(
+                'figmaUrl'     => $figma_url,
+                'figmaToken'   => $figma_token,
+                'forceRefresh' => $force_refresh ? true : null,
+            ) ) ),
             'timeout'   => 120,
             'sslverify' => true,
         ) );

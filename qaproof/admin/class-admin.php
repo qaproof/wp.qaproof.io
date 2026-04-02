@@ -154,12 +154,39 @@ class QAProof_Admin {
             'testsUrl'      => admin_url( 'admin.php?page=' . self::TESTS_SLUG ),
             'settingsUrl'   => admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ),
             'monitorsUrl'   => admin_url( 'admin.php?page=' . self::MONITORS_SLUG ),
-            'defaultThreshold'  => (int) get_option( 'qaproof_default_threshold', 90 ),
+            'defaultThreshold'  => (int) get_option( 'qaproof_default_threshold', 95 ),
             'defaultTestType'   => get_option( 'qaproof_default_test_type', 'fidelity' ),
-            'savedDesigns'      => QAProof_Settings::get_saved_designs(),
+            'savedDesigns'      => self::get_saved_designs_for_js(),
             'autoSaveHistory'   => (bool) get_option( 'qaproof_auto_save_history', true ),
-            'maxHistory'        => (int) get_option( 'qaproof_max_history', 100 ),
+            'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
+            'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
+            'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
         ]);
+    }
+
+    /**
+     * Get saved designs for JS localization — strips large imageBase64 data
+     * and replaces with a boolean hasImage flag to keep page load fast.
+     */
+    private static function get_saved_designs_for_js() {
+        $designs = QAProof_Settings::get_saved_designs();
+        if ( empty( $designs ) ) {
+            return [];
+        }
+        $result = [];
+        foreach ( $designs as $d ) {
+            $result[] = [
+                'id'              => isset( $d['id'] )         ? $d['id']         : '',
+                'name'            => isset( $d['name'] )       ? $d['name']       : '',
+                'pageUrl'         => isset( $d['pageUrl'] )    ? $d['pageUrl']    : '',
+                'figmaToken'      => isset( $d['figmaToken'] ) ? $d['figmaToken'] : '',
+                'figmaUrl'        => isset( $d['figmaUrl'] )   ? $d['figmaUrl']   : '',
+                'hasImage'        => ! empty( $d['imageBase64'] ),
+                'hasElements'     => ! empty( $d['elementsJson'] ),
+                'elementsSource'  => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
+            ];
+        }
+        return $result;
     }
 
     // ============================
@@ -239,6 +266,30 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        // Save/Get Design Image (cache Figma image in saved design)
+        register_rest_route( self::REST_NAMESPACE, '/save-design-image', [
+            'methods'             => 'POST',
+            'callback'            => [ __CLASS__, 'handle_save_design_image' ],
+            'permission_callback' => $permission,
+        ]);
+        register_rest_route( self::REST_NAMESPACE, '/saved-design-image/(?P<id>[a-f0-9]+)', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'handle_get_design_image' ],
+            'permission_callback' => $permission,
+        ]);
+
+        // Save detected elements for a saved design
+        register_rest_route( self::REST_NAMESPACE, '/save-design-elements', [
+            'methods'             => 'POST',
+            'callback'            => [ __CLASS__, 'handle_save_design_elements' ],
+            'permission_callback' => $permission,
+        ]);
+        register_rest_route( self::REST_NAMESPACE, '/saved-design-elements/(?P<id>[a-f0-9]+)', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'handle_get_design_elements' ],
+            'permission_callback' => $permission,
+        ]);
+
         // Detect Elements in design image
         register_rest_route( self::REST_NAMESPACE, '/detect-elements', [
             'methods'             => 'POST',
@@ -291,6 +342,15 @@ class QAProof_Admin {
             'testType' => $test_type,
         ];
 
+        // Pass WCAG level for accessibility tests
+        if ( $test_type === 'accessibility' && ! empty( $params['wcagLevel'] ) ) {
+            $allowed_levels = [ 'A', 'AA', 'AAA' ];
+            $level = strtoupper( sanitize_text_field( $params['wcagLevel'] ) );
+            if ( in_array( $level, $allowed_levels, true ) ) {
+                $api_params['wcagLevel'] = $level;
+            }
+        }
+
         if ( $test_type === 'fidelity' ) {
             if ( ! empty( $params['figmaUrl'] ) ) {
                 $api_params['figmaUrl'] = sanitize_url( $params['figmaUrl'] );
@@ -300,6 +360,10 @@ class QAProof_Admin {
             }
             if ( ! empty( $params['figmaToken'] ) ) {
                 $api_params['figmaToken'] = sanitize_text_field( $params['figmaToken'] );
+            }
+            // Pass ignoreText setting
+            if ( isset( $params['ignoreText'] ) ) {
+                $api_params['ignoreText'] = rest_sanitize_boolean( $params['ignoreText'] );
             }
             // Element-level fidelity: pass region coordinates
             if ( ! empty( $params['elementRegion'] ) && is_array( $params['elementRegion'] ) ) {
@@ -341,8 +405,8 @@ class QAProof_Admin {
             is_array( $result ) ? $result : []
         );
         $saved_id = QAProof_Test_History::save( $save_data );
-        $max = (int) get_option( 'qaproof_max_history', 100 );
-        QAProof_Test_History::purge_old( $max > 0 ? $max : 100 );
+        $max = (int) get_option( 'qaproof_max_history', 30 );
+        QAProof_Test_History::purge_old( $max > 0 ? $max : 30 );
 
         return new WP_REST_Response( [
             'success'  => true,
@@ -504,7 +568,7 @@ class QAProof_Admin {
             'schedule'        => isset( $params['schedule'] ) ? sanitize_text_field( $params['schedule'] ) : 'daily',
             'notify_email'    => isset( $params['notify_email'] ) ? (int) $params['notify_email'] : 1,
             'notify_admin'    => isset( $params['notify_admin'] ) ? (int) $params['notify_admin'] : 1,
-            'threshold_score' => isset( $params['threshold_score'] ) ? (int) $params['threshold_score'] : (int) get_option( 'qaproof_default_threshold', 90 ),
+            'threshold_score' => isset( $params['threshold_score'] ) ? (int) $params['threshold_score'] : (int) get_option( 'qaproof_default_threshold', 95 ),
         ] );
 
         if ( ! $id ) {
@@ -671,8 +735,9 @@ class QAProof_Admin {
     public static function handle_figma_preview( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 
-        $figma_url   = isset( $params['figmaUrl'] )   ? sanitize_url( $params['figmaUrl'] )             : '';
-        $figma_token = isset( $params['figmaToken'] ) ? sanitize_text_field( $params['figmaToken'] ) : '';
+        $figma_url     = isset( $params['figmaUrl'] )     ? sanitize_url( $params['figmaUrl'] )           : '';
+        $figma_token   = isset( $params['figmaToken'] )   ? sanitize_text_field( $params['figmaToken'] ) : '';
+        $force_refresh = ! empty( $params['forceRefresh'] );
 
         if ( empty( $figma_url ) || empty( $figma_token ) ) {
             return new WP_REST_Response( [
@@ -681,7 +746,7 @@ class QAProof_Admin {
             ], 400 );
         }
 
-        $result = QAProof_API_Client::preview_figma( $figma_url, $figma_token );
+        $result = QAProof_API_Client::preview_figma( $figma_url, $figma_token, $force_refresh );
 
         if ( is_wp_error( $result ) ) {
             $status = 502;
@@ -702,6 +767,142 @@ class QAProof_Admin {
         }
 
         return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );
+    }
+
+    /**
+     * Save a fetched Figma image to a saved design entry.
+     * This allows reusing the image without re-calling the Figma API.
+     */
+    public static function handle_save_design_image( WP_REST_Request $request ) {
+        $params    = $request->get_json_params();
+        $design_id = isset( $params['designId'] )   ? sanitize_text_field( $params['designId'] )   : '';
+        $image_b64 = isset( $params['imageBase64'] ) ? $params['imageBase64']                       : '';
+
+        if ( empty( $design_id ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Design ID is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        if ( empty( $image_b64 ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Image data is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        // Validate it looks like a data URL
+        if ( strpos( $image_b64, 'data:image/' ) !== 0 ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Invalid image data format.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        $updated = QAProof_Settings::update_saved_design_image( $design_id, $image_b64 );
+
+        if ( ! $updated ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Saved design not found.', 'qaproof' ) ],
+            ], 404 );
+        }
+
+        return new WP_REST_Response( [ 'success' => true ], 200 );
+    }
+
+    /**
+     * Get a saved design's cached image.
+     */
+    public static function handle_get_design_image( WP_REST_Request $request ) {
+        $design_id = sanitize_text_field( $request['id'] );
+        $designs   = QAProof_Settings::get_saved_designs();
+
+        foreach ( $designs as $d ) {
+            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
+                if ( ! empty( $d['imageBase64'] ) ) {
+                    return new WP_REST_Response( [
+                        'success'     => true,
+                        'imageBase64' => $d['imageBase64'],
+                    ], 200 );
+                }
+                return new WP_REST_Response( [
+                    'success' => false,
+                    'error'   => [ 'message' => __( 'No saved image for this design.', 'qaproof' ) ],
+                ], 404 );
+            }
+        }
+
+        return new WP_REST_Response( [
+            'success' => false,
+            'error'   => [ 'message' => __( 'Design not found.', 'qaproof' ) ],
+        ], 404 );
+    }
+
+    /**
+     * Save detected elements for a saved design.
+     */
+    public static function handle_save_design_elements( WP_REST_Request $request ) {
+        $params    = $request->get_json_params();
+        $design_id = isset( $params['designId'] ) ? sanitize_text_field( $params['designId'] ) : '';
+        $elements  = isset( $params['elements'] ) ? $params['elements']                        : [];
+        $source    = isset( $params['source'] )   ? sanitize_text_field( $params['source'] )   : '';
+
+        if ( empty( $design_id ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Design ID is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        if ( empty( $elements ) || ! is_array( $elements ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Elements data is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        $updated = QAProof_Settings::update_saved_design_elements( $design_id, $elements, $source );
+
+        if ( ! $updated ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Saved design not found.', 'qaproof' ) ],
+            ], 404 );
+        }
+
+        return new WP_REST_Response( [ 'success' => true ], 200 );
+    }
+
+    /**
+     * Get cached detected elements for a saved design.
+     */
+    public static function handle_get_design_elements( WP_REST_Request $request ) {
+        $design_id = sanitize_text_field( $request['id'] );
+        $designs   = QAProof_Settings::get_saved_designs();
+
+        foreach ( $designs as $d ) {
+            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
+                if ( ! empty( $d['elementsJson'] ) ) {
+                    $elements = json_decode( $d['elementsJson'], true );
+                    return new WP_REST_Response( [
+                        'success'  => true,
+                        'elements' => is_array( $elements ) ? $elements : [],
+                        'source'   => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
+                    ], 200 );
+                }
+                return new WP_REST_Response( [
+                    'success' => false,
+                    'error'   => [ 'message' => __( 'No saved elements for this design.', 'qaproof' ) ],
+                ], 404 );
+            }
+        }
+
+        return new WP_REST_Response( [
+            'success' => false,
+            'error'   => [ 'message' => __( 'Design not found.', 'qaproof' ) ],
+        ], 404 );
     }
 
     /**
@@ -808,7 +1009,7 @@ class QAProof_Admin {
                             </th>
                             <td>
                                 <input type="number" id="qaproof-monitor-threshold" min="0" max="100" step="1"
-                                       value="<?php echo esc_attr( get_option( 'qaproof_default_threshold', 90 ) ); ?>" class="small-text" />
+                                       value="<?php echo esc_attr( get_option( 'qaproof_default_threshold', 95 ) ); ?>" class="small-text" />
                                 <p class="description"><?php esc_html_e( 'Notify when score drops below this value.', 'qaproof' ); ?></p>
                             </td>
                         </tr>
@@ -872,17 +1073,21 @@ class QAProof_Admin {
         $monitors       = QAProof_Monitor::get_all();
         $total_monitors = count( $monitors );
         $active_monitors = 0;
-        $last_scores     = [];
-        $recent_failures = 0;
+        $monitor_failures = 0;
 
         foreach ( $monitors as $m ) {
             if ( (int) $m['is_enabled'] ) $active_monitors++;
-            if ( $m['last_score'] !== null ) $last_scores[] = (int) $m['last_score'];
-            if ( $m['last_score'] !== null && (int) $m['last_score'] < (int) $m['threshold_score'] ) $recent_failures++;
+            if ( $m['last_score'] !== null && (int) $m['last_score'] < (int) $m['threshold_score'] ) $monitor_failures++;
         }
 
-        $avg_score = ! empty( $last_scores ) ? round( array_sum( $last_scores ) / count( $last_scores ) ) : null;
-        $has_api_key = ! empty( QAProof_Settings::get_api_key() );
+        // Stats from ALL tests (manual + monitor)
+        $default_threshold = (int) get_option( 'qaproof_default_threshold', 95 );
+        $history_stats     = QAProof_Test_History::get_stats( $default_threshold );
+        $total_tests       = $history_stats['total'];
+        $avg_score         = $history_stats['avg_score'];
+        $below_threshold   = $history_stats['below_threshold'];
+        $tests_by_type     = $history_stats['by_type'];
+        $has_api_key       = ! empty( QAProof_Settings::get_api_key() );
 
         // Calculate score ring SVG values
         $ring_radius    = 44;
@@ -952,17 +1157,10 @@ class QAProof_Admin {
                 <!-- Stats row -->
                 <div class="qaproof-dash-stats">
                     <div class="qaproof-dash-stat">
-                        <div class="qaproof-dash-stat-icon icon-monitors"><span class="dashicons dashicons-desktop"></span></div>
+                        <div class="qaproof-dash-stat-icon icon-tests"><span class="dashicons dashicons-chart-bar"></span></div>
                         <div>
-                            <div class="qaproof-dash-stat-val"><?php echo esc_html( $total_monitors ); ?></div>
-                            <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Monitors', 'qaproof' ); ?></div>
-                        </div>
-                    </div>
-                    <div class="qaproof-dash-stat">
-                        <div class="qaproof-dash-stat-icon icon-active"><span class="dashicons dashicons-yes-alt"></span></div>
-                        <div>
-                            <div class="qaproof-dash-stat-val"><?php echo esc_html( $active_monitors ); ?></div>
-                            <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Active', 'qaproof' ); ?></div>
+                            <div class="qaproof-dash-stat-val"><?php echo esc_html( $total_tests ); ?></div>
+                            <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Total Tests', 'qaproof' ); ?></div>
                         </div>
                     </div>
                     <div class="qaproof-dash-stat">
@@ -975,41 +1173,127 @@ class QAProof_Admin {
                         </div>
                     </div>
                     <div class="qaproof-dash-stat">
-                        <div class="qaproof-dash-stat-icon icon-alerts"><span class="dashicons dashicons-bell"></span></div>
+                        <div class="qaproof-dash-stat-icon icon-monitors"><span class="dashicons dashicons-desktop"></span></div>
                         <div>
-                            <div class="qaproof-dash-stat-val <?php echo $recent_failures > 0 ? 'score-low' : ''; ?>">
-                                <?php echo esc_html( $recent_failures ); ?>
-                            </div>
-                            <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Alerts', 'qaproof' ); ?></div>
+                            <div class="qaproof-dash-stat-val"><?php echo esc_html( $active_monitors . '/' . $total_monitors ); ?></div>
+                            <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Monitors', 'qaproof' ); ?></div>
                         </div>
+                    </div>
+                    <div class="qaproof-dash-stat">
+                        <div class="qaproof-dash-stat-icon icon-tokens"><span class="dashicons dashicons-database"></span></div>
+                        <div>
+                            <div class="qaproof-dash-stat-val"><?php echo esc_html( '4,280' ); ?></div>
+                            <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Tokens Used', 'qaproof' ); ?></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Token Usage -->
+                <div class="qaproof-dash-usage">
+                    <div class="qaproof-dash-usage-header">
+                        <div class="qaproof-dash-usage-title">
+                            <span class="dashicons dashicons-chart-pie"></span>
+                            <?php esc_html_e( 'Token Usage', 'qaproof' ); ?>
+                        </div>
+                        <div class="qaproof-dash-usage-plan">
+                            <span class="qaproof-dash-plan-badge">Pro</span>
+                            <?php esc_html_e( 'Plan', 'qaproof' ); ?>
+                        </div>
+                    </div>
+                    <div class="qaproof-dash-usage-bar-wrap">
+                        <div class="qaproof-dash-usage-bar">
+                            <div class="qaproof-dash-usage-bar-fill" style="width: 42.8%;"></div>
+                        </div>
+                        <div class="qaproof-dash-usage-nums">
+                            <span><strong>4,280</strong> <?php esc_html_e( 'used', 'qaproof' ); ?></span>
+                            <span><strong>10,000</strong> <?php esc_html_e( 'total', 'qaproof' ); ?></span>
+                        </div>
+                    </div>
+                    <div class="qaproof-dash-usage-breakdown">
+                        <div class="qaproof-dash-usage-item" data-color="teal">
+                            <span class="qaproof-dash-usage-dot"></span>
+                            <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></span>
+                            <span class="qaproof-dash-usage-count">1,420</span>
+                        </div>
+                        <div class="qaproof-dash-usage-item" data-color="blue">
+                            <span class="qaproof-dash-usage-dot"></span>
+                            <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Responsive', 'qaproof' ); ?></span>
+                            <span class="qaproof-dash-usage-count">980</span>
+                        </div>
+                        <div class="qaproof-dash-usage-item" data-color="purple">
+                            <span class="qaproof-dash-usage-dot"></span>
+                            <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Accessibility', 'qaproof' ); ?></span>
+                            <span class="qaproof-dash-usage-count">860</span>
+                        </div>
+                        <div class="qaproof-dash-usage-item" data-color="green">
+                            <span class="qaproof-dash-usage-dot"></span>
+                            <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></span>
+                            <span class="qaproof-dash-usage-count">620</span>
+                        </div>
+                        <div class="qaproof-dash-usage-item" data-color="amber">
+                            <span class="qaproof-dash-usage-dot"></span>
+                            <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Regression', 'qaproof' ); ?></span>
+                            <span class="qaproof-dash-usage-count">400</span>
+                        </div>
+                    </div>
+                    <div class="qaproof-dash-usage-footer">
+                        <?php esc_html_e( 'Resets on May 1, 2026', 'qaproof' ); ?>
+                        <span class="qaproof-dash-usage-sep">&middot;</span>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SETTINGS_SLUG ) ); ?>"><?php esc_html_e( 'Upgrade Plan', 'qaproof' ); ?></a>
                     </div>
                 </div>
 
                 <!-- Testing Tools -->
                 <h2 class="qaproof-dash-section"><?php esc_html_e( 'Testing Tools', 'qaproof' ); ?></h2>
-                <div class="qaproof-dash-tools">
+
+                <!-- Row 1: Three design test tools -->
+                <div class="qaproof-dash-tools-top">
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::TESTS_SLUG ) ); ?>" class="qaproof-dash-tool" data-color="teal">
                         <div class="qaproof-dash-tool-icon"><span class="dashicons dashicons-art"></span></div>
                         <h3><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></h3>
-                        <p><?php esc_html_e( 'AI-powered comparison between Figma mockups and live implementations.', 'qaproof' ); ?></p>
+                        <p><?php esc_html_e( 'Compare Figma mockups against live pages using AI vision analysis.', 'qaproof' ); ?></p>
                         <span class="dashicons dashicons-arrow-right-alt2 qaproof-dash-tool-arrow"></span>
                     </a>
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::TESTS_SLUG ) ); ?>" class="qaproof-dash-tool" data-color="blue">
                         <div class="qaproof-dash-tool-icon"><span class="dashicons dashicons-smartphone"></span></div>
                         <h3><?php esc_html_e( 'Responsive Testing', 'qaproof' ); ?></h3>
-                        <p><?php esc_html_e( 'Viewport analysis across desktop, tablet, and mobile breakpoints.', 'qaproof' ); ?></p>
+                        <p><?php esc_html_e( 'Analyze layout adaptation across desktop, tablet, and mobile viewports.', 'qaproof' ); ?></p>
                         <span class="dashicons dashicons-arrow-right-alt2 qaproof-dash-tool-arrow"></span>
                     </a>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::ACCESSIBILITY_SLUG ) ); ?>" class="qaproof-dash-tool" data-color="purple">
-                        <div class="qaproof-dash-tool-icon"><span class="dashicons dashicons-universal-access"></span></div>
-                        <h3><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></h3>
-                        <p><?php esc_html_e( 'WCAG 2.1 Level AA compliance check for color, structure, and navigation.', 'qaproof' ); ?></p>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::TESTS_SLUG ) ); ?>" class="qaproof-dash-tool" data-color="green">
+                        <div class="qaproof-dash-tool-icon"><span class="dashicons dashicons-analytics"></span></div>
+                        <h3><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></h3>
+                        <p><?php esc_html_e( 'Extract design tokens and score system consistency with Design Debt Score.', 'qaproof' ); ?></p>
                         <span class="dashicons dashicons-arrow-right-alt2 qaproof-dash-tool-arrow"></span>
                     </a>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MONITORS_SLUG ) ); ?>" class="qaproof-dash-tool" data-color="amber">
-                        <div class="qaproof-dash-tool-icon"><span class="dashicons dashicons-visibility"></span></div>
-                        <h3><?php esc_html_e( 'Visual Regression', 'qaproof' ); ?></h3>
-                        <p><?php esc_html_e( 'Scheduled monitoring with baseline comparison and automated alerts.', 'qaproof' ); ?></p>
+                </div>
+
+                <!-- Row 2: Two wider horizontal cards -->
+                <div class="qaproof-dash-tools-bottom">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::ACCESSIBILITY_SLUG ) ); ?>" class="qaproof-dash-tool-wide" data-color="purple">
+                        <div class="qaproof-dash-tool-wide-icon"><span class="dashicons dashicons-universal-access"></span></div>
+                        <div class="qaproof-dash-tool-wide-content">
+                            <h3><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></h3>
+                            <p><?php esc_html_e( 'WCAG 2.1 compliance check — color contrast, ARIA, keyboard navigation, semantic HTML.', 'qaproof' ); ?></p>
+                        </div>
+                        <div class="qaproof-dash-tool-wide-tags">
+                            <span class="qaproof-dash-tag">Level A</span>
+                            <span class="qaproof-dash-tag">Level AA</span>
+                            <span class="qaproof-dash-tag">Level AAA</span>
+                        </div>
+                        <span class="dashicons dashicons-arrow-right-alt2 qaproof-dash-tool-arrow"></span>
+                    </a>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MONITORS_SLUG ) ); ?>" class="qaproof-dash-tool-wide" data-color="amber">
+                        <div class="qaproof-dash-tool-wide-icon"><span class="dashicons dashicons-visibility"></span></div>
+                        <div class="qaproof-dash-tool-wide-content">
+                            <h3><?php esc_html_e( 'Visual Regression', 'qaproof' ); ?></h3>
+                            <p><?php esc_html_e( 'Scheduled monitoring with baseline comparison and automated email alerts.', 'qaproof' ); ?></p>
+                        </div>
+                        <div class="qaproof-dash-tool-wide-tags">
+                            <span class="qaproof-dash-tag">Daily</span>
+                            <span class="qaproof-dash-tag">Weekly</span>
+                            <span class="qaproof-dash-tag">Monthly</span>
+                        </div>
                         <span class="dashicons dashicons-arrow-right-alt2 qaproof-dash-tool-arrow"></span>
                     </a>
                 </div>
@@ -1106,9 +1390,25 @@ class QAProof_Admin {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
         ?>
         <div class="wrap" id="qaproof-app">
-            <?php self::render_theme_toggle(); ?>
-            <h1><?php esc_html_e( 'Tests', 'qaproof' ); ?></h1>
-            <p class="qaproof-subtitle"><?php esc_html_e( 'Analyze design fidelity, responsive behavior, and design consistency', 'qaproof' ); ?></p>
+            <div class="qaproof-page-header">
+                <div class="qaproof-page-header-left">
+                    <h1><?php esc_html_e( 'Tests', 'qaproof' ); ?></h1>
+                    <p class="qaproof-subtitle"><?php esc_html_e( 'Analyze design fidelity, responsive behavior, and design consistency', 'qaproof' ); ?></p>
+                </div>
+                <div class="qaproof-page-header-right">
+                    <div class="qaproof-page-tabs" id="qaproof-page-tabs">
+                        <button type="button" class="qaproof-page-tab active" data-tab="test">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            <?php esc_html_e( 'Test', 'qaproof' ); ?>
+                        </button>
+                        <button type="button" class="qaproof-page-tab" data-tab="history">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <?php esc_html_e( 'History', 'qaproof' ); ?>
+                        </button>
+                    </div>
+                    <?php self::render_theme_toggle(); ?>
+                </div>
+            </div>
 
             <?php if ( empty( QAProof_Settings::get_api_key() ) ) : ?>
                 <div class="notice notice-warning inline">
@@ -1121,6 +1421,9 @@ class QAProof_Admin {
                     </p>
                 </div>
             <?php endif; ?>
+
+            <!-- Tab: Test -->
+            <div class="qaproof-tab-panel active" id="qaproof-tab-test" data-tab-panel="test">
 
             <!-- Test Type Selector -->
             <div class="qaproof-card">
@@ -1142,18 +1445,44 @@ class QAProof_Admin {
                 <form id="qaproof-test-form">
                     <div class="qaproof-form-grid">
                         <div class="qaproof-form-left">
-                            <!-- Saved Design Selector (fidelity only) -->
-                            <div id="qaproof-saved-design-selector" class="qaproof-saved-design-selector">
+                            <!-- Design source (hidden for responsive) -->
+                            <div id="qaproof-figma-fields">
                                 <table class="form-table">
                                     <tr>
                                         <th scope="row">
-                                            <label for="qaproof-saved-design"><?php esc_html_e( 'Saved Design', 'qaproof' ); ?></label>
+                                            <label><?php esc_html_e( 'Design Source', 'qaproof' ); ?></label>
                                         </th>
                                         <td>
-                                            <select id="qaproof-saved-design" class="regular-text">
-                                                <option value=""><?php esc_html_e( '-- Manual Entry --', 'qaproof' ); ?></option>
-                                            </select>
-                                            <p class="description"><?php esc_html_e( 'Select a saved design or enter details manually.', 'qaproof' ); ?></p>
+                                            <div class="qaproof-source-toggle" id="qaproof-source-toggle">
+                                                <button type="button" class="qaproof-source-btn active" data-source="saved">
+                                                    <?php esc_html_e( 'Saved Design', 'qaproof' ); ?>
+                                                </button>
+                                                <button type="button" class="qaproof-source-btn" data-source="upload">
+                                                    <?php esc_html_e( 'Upload Image', 'qaproof' ); ?>
+                                                </button>
+                                            </div>
+                                            <!-- Saved design source -->
+                                            <div id="qaproof-source-saved" style="margin-top: 16px;">
+                                                <select id="qaproof-saved-design" class="regular-text">
+                                                    <option value=""><?php esc_html_e( '-- Select Design --', 'qaproof' ); ?></option>
+                                                </select>
+                                                <p class="description" style="margin-top: 6px;">
+                                                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=qaproof-settings&tab=tests&subtab=fidelity' ) ); ?>"><?php esc_html_e( 'Manage designs in Settings', 'qaproof' ); ?></a>
+                                                </p>
+                                            </div>
+                                            <!-- Upload image source -->
+                                            <div id="qaproof-source-upload" class="hidden" style="margin-top: 10px;">
+                                                <input type="file" id="qaproof-figma-file"
+                                                       accept="image/png,image/jpeg,image/webp" />
+                                                <div id="qaproof-upload-preview" class="hidden" style="margin-top: 10px;">
+                                                    <img id="qaproof-upload-preview-img" alt="Preview"
+                                                         style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;" />
+                                                    <br />
+                                                    <button type="button" id="qaproof-upload-clear" class="button button-link-delete" style="margin-top: 5px;">
+                                                        <?php esc_html_e( 'Remove', 'qaproof' ); ?>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                 </table>
@@ -1174,57 +1503,6 @@ class QAProof_Admin {
                                 </tr>
                             </table>
 
-                            <!-- Figma fields (hidden for responsive) -->
-                            <div id="qaproof-figma-fields">
-                                <table class="form-table">
-                                    <tr>
-                                        <th scope="row">
-                                            <label><?php esc_html_e( 'Design Source', 'qaproof' ); ?></label>
-                                        </th>
-                                        <td>
-                                            <div class="qaproof-source-toggle">
-                                                <button type="button" class="qaproof-source-btn active" data-source="url">
-                                                    <?php esc_html_e( 'Figma URL', 'qaproof' ); ?>
-                                                </button>
-                                                <button type="button" class="qaproof-source-btn" data-source="upload">
-                                                    <?php esc_html_e( 'Upload Image', 'qaproof' ); ?>
-                                                </button>
-                                            </div>
-                                            <!-- Figma URL source -->
-                                            <div id="qaproof-source-url" style="margin-top: 10px;">
-                                                <input type="url" id="qaproof-figma-url" name="figmaUrl"
-                                                       class="regular-text"
-                                                       placeholder="https://www.figma.com/design/..." />
-                                            </div>
-                                            <!-- Upload image source -->
-                                            <div id="qaproof-source-upload" class="hidden" style="margin-top: 10px;">
-                                                <input type="file" id="qaproof-figma-file"
-                                                       accept="image/png,image/jpeg,image/webp" />
-                                                <div id="qaproof-upload-preview" class="hidden" style="margin-top: 10px;">
-                                                    <img id="qaproof-upload-preview-img" alt="Preview"
-                                                         style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;" />
-                                                    <br />
-                                                    <button type="button" id="qaproof-upload-clear" class="button button-link-delete" style="margin-top: 5px;">
-                                                        <?php esc_html_e( 'Remove', 'qaproof' ); ?>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr id="qaproof-figma-token-row">
-                                        <th scope="row">
-                                            <label for="qaproof-figma-token"><?php esc_html_e( 'Figma Token', 'qaproof' ); ?></label>
-                                        </th>
-                                        <td>
-                                            <input type="password" id="qaproof-figma-token" name="figmaToken"
-                                                   class="regular-text" autocomplete="off"
-                                                   placeholder="figd_..." />
-                                            <p class="description"><?php esc_html_e( 'Your Figma Personal Access Token.', 'qaproof' ); ?></p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-
                             <p class="submit">
                                 <button type="submit" id="qaproof-submit-btn" class="button button-primary button-hero">
                                     <?php esc_html_e( 'Analyze Design Fidelity', 'qaproof' ); ?>
@@ -1234,12 +1512,17 @@ class QAProof_Admin {
 
                         <!-- Figma Design Preview Panel -->
                         <div class="qaproof-form-right" id="qaproof-figma-preview-wrap">
-                            <!-- Backdrop for expanded inspector mode -->
-                            <div class="qaproof-inspector-backdrop" id="qaproof-inspector-backdrop"></div>
                             <div class="qaproof-preview-panel" id="qaproof-figma-preview-panel">
                                 <div class="qaproof-preview-header">
                                     <span class="dashicons dashicons-visibility"></span>
                                     <?php esc_html_e( 'Design Preview', 'qaproof' ); ?>
+                                    <button type="button" class="qaproof-save-design-btn" id="qaproof-save-design-btn" title="<?php esc_attr_e( 'Save image to selected design (no more API calls)', 'qaproof' ); ?>" style="display:none">
+                                        <span class="dashicons dashicons-download"></span>
+                                        <span class="qaproof-save-design-label"><?php esc_html_e( 'Save', 'qaproof' ); ?></span>
+                                    </button>
+                                    <button type="button" class="qaproof-refresh-figma-btn" id="qaproof-refresh-figma-btn" title="<?php esc_attr_e( 'Refresh from Figma (bypass cache)', 'qaproof' ); ?>" style="display:none">
+                                        <span class="dashicons dashicons-update"></span>
+                                    </button>
                                     <button type="button" class="qaproof-inspector-close" id="qaproof-inspector-close" title="<?php esc_attr_e( 'Close Inspector', 'qaproof' ); ?>" style="display:none">×</button>
                                 </div>
                                 <div class="qaproof-preview-body">
@@ -1328,39 +1611,34 @@ class QAProof_Admin {
             <!-- Results (populated by JS) -->
             <div id="qaproof-results" class="hidden"></div>
 
-            <!-- Test History -->
-            <div id="qaproof-history-section" class="qaproof-history-section is-collapsed">
-                <div class="qaproof-history-header">
-                    <h2>
-                        <span class="dashicons dashicons-backup"></span>
-                        <?php esc_html_e( 'Test History', 'qaproof' ); ?>
-                    </h2>
-                    <button type="button" id="qaproof-history-toggle" class="button button-small">
-                        <span class="dashicons dashicons-arrow-down-alt2"></span>
-                    </button>
-                </div>
-                <div id="qaproof-history-content" class="qaproof-history-content">
-                    <div class="qaproof-history-filters" id="qaproof-history-filters">
-                        <button type="button" class="qaproof-filter-btn active" data-type="">All</button>
-                        <button type="button" class="qaproof-filter-btn" data-type="fidelity">Fidelity</button>
-                        <button type="button" class="qaproof-filter-btn" data-type="responsive">Responsive</button>
-                        <button type="button" class="qaproof-filter-btn" data-type="design-audit">Design Audit</button>
-                    </div>
-                    <div id="qaproof-history-list"></div>
-                    <div id="qaproof-history-loading" class="qaproof-history-loading-state hidden">
-                        <span class="spinner is-active" style="float:none;margin:0 8px 0 0;"></span> <?php esc_html_e( 'Loading...', 'qaproof' ); ?>
-                    </div>
-                    <div id="qaproof-history-empty" class="qaproof-history-empty-state hidden">
-                        <span class="dashicons dashicons-clock"></span>
-                        <?php esc_html_e( 'No test history yet. Run a test to see results here.', 'qaproof' ); ?>
-                    </div>
-                    <div class="qaproof-history-load-more-wrap">
-                        <button type="button" id="qaproof-history-load-more" class="button hidden">
-                            <?php esc_html_e( 'Load More', 'qaproof' ); ?>
-                        </button>
+            </div><!-- /.qaproof-tab-panel #qaproof-tab-test -->
+
+            <!-- Tab: History -->
+            <div class="qaproof-tab-panel" id="qaproof-tab-history" data-tab-panel="history">
+                <div id="qaproof-history-section" class="qaproof-history-section qaproof-history-inline">
+                    <div id="qaproof-history-content" class="qaproof-history-content">
+                        <div class="qaproof-history-filters" id="qaproof-history-filters">
+                            <button type="button" class="qaproof-filter-btn active" data-type="">All</button>
+                            <button type="button" class="qaproof-filter-btn" data-type="fidelity">Fidelity</button>
+                            <button type="button" class="qaproof-filter-btn" data-type="responsive">Responsive</button>
+                            <button type="button" class="qaproof-filter-btn" data-type="design-audit">Design Audit</button>
+                        </div>
+                        <div id="qaproof-history-list"></div>
+                        <div id="qaproof-history-loading" class="qaproof-history-loading-state hidden">
+                            <span class="qaproof-spinner"></span> <?php esc_html_e( 'Loading...', 'qaproof' ); ?>
+                        </div>
+                        <div id="qaproof-history-empty" class="qaproof-history-empty-state hidden">
+                            <span class="dashicons dashicons-clock"></span>
+                            <?php esc_html_e( 'No test history yet. Run a test to see results here.', 'qaproof' ); ?>
+                        </div>
+                        <div class="qaproof-history-load-more-wrap">
+                            <button type="button" id="qaproof-history-load-more" class="button hidden">
+                                <?php esc_html_e( 'Load More', 'qaproof' ); ?>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </div><!-- /.qaproof-tab-panel #qaproof-tab-history -->
 
             <!-- Brand Badge -->
             <div class="qaproof-brand-badge">
@@ -1378,9 +1656,25 @@ class QAProof_Admin {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
         ?>
         <div class="wrap" id="qaproof-app">
-            <?php self::render_theme_toggle(); ?>
-            <h1><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></h1>
-            <p class="qaproof-subtitle"><?php esc_html_e( 'WCAG 2.1 compliance analysis for your web pages', 'qaproof' ); ?></p>
+            <div class="qaproof-page-header">
+                <div class="qaproof-page-header-left">
+                    <h1><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></h1>
+                    <p class="qaproof-subtitle"><?php esc_html_e( 'WCAG 2.1 compliance analysis for your web pages', 'qaproof' ); ?></p>
+                </div>
+                <div class="qaproof-page-header-right">
+                    <div class="qaproof-page-tabs" id="qaproof-a11y-page-tabs">
+                        <button type="button" class="qaproof-page-tab active" data-tab="a11y-audit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                            <?php esc_html_e( 'Audit', 'qaproof' ); ?>
+                        </button>
+                        <button type="button" class="qaproof-page-tab" data-tab="a11y-history">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <?php esc_html_e( 'History', 'qaproof' ); ?>
+                        </button>
+                    </div>
+                    <?php self::render_theme_toggle(); ?>
+                </div>
+            </div>
 
             <?php if ( empty( QAProof_Settings::get_api_key() ) ) : ?>
                 <div class="notice notice-warning inline">
@@ -1393,6 +1687,9 @@ class QAProof_Admin {
                     </p>
                 </div>
             <?php endif; ?>
+
+            <!-- Tab: Audit -->
+            <div class="qaproof-tab-panel active" id="qaproof-tab-a11y-audit" data-tab-panel="a11y-audit">
 
             <div class="qaproof-card">
                 <form id="qaproof-a11y-form" onsubmit="return false;">
@@ -1442,8 +1739,12 @@ class QAProof_Admin {
             <!-- Results -->
             <div id="qaproof-a11y-results" class="hidden"></div>
 
-            <!-- Test History -->
-            <?php self::render_test_history_section( 'a11y', [] ); ?>
+            </div><!-- /.qaproof-tab-panel #qaproof-tab-a11y-audit -->
+
+            <!-- Tab: History -->
+            <div class="qaproof-tab-panel" id="qaproof-tab-a11y-history" data-tab-panel="a11y-history">
+                <?php self::render_test_history_section( 'a11y', [], true ); ?>
+            </div><!-- /.qaproof-tab-panel #qaproof-tab-a11y-history -->
 
             <!-- Brand Badge -->
             <div class="qaproof-brand-badge">
@@ -1459,18 +1760,20 @@ class QAProof_Admin {
     // ============================
 
     /**
-     * Renders a collapsible test history section.
+     * Renders a test history section.
      *
-     * @param string $prefix  Unique prefix for element IDs (e.g. 'a11y', 'history' for Tests page).
+     * @param string $prefix  Unique prefix for element IDs (e.g. 'a11y').
      * @param array  $filters Optional filter tabs. Each entry: ['type' => '', 'label' => 'All'].
      *                        Empty array = no filter tabs shown.
+     * @param bool   $inline  If true, renders without collapsible wrapper (for tab panels).
      */
-    private static function render_test_history_section( $prefix, $filters = [] ) {
+    private static function render_test_history_section( $prefix, $filters = [], $inline = false ) {
         $id = function ( $suffix ) use ( $prefix ) {
             return 'qaproof-' . $prefix . '-history-' . $suffix;
         };
         ?>
-        <div id="<?php echo esc_attr( $id( 'section' ) ); ?>" class="qaproof-history-section is-collapsed">
+        <div id="<?php echo esc_attr( $id( 'section' ) ); ?>" class="qaproof-history-section<?php echo $inline ? ' qaproof-history-inline' : ' is-collapsed'; ?>">
+            <?php if ( ! $inline ) : ?>
             <div class="qaproof-history-header">
                 <h2>
                     <span class="dashicons dashicons-backup"></span>
@@ -1480,6 +1783,7 @@ class QAProof_Admin {
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </button>
             </div>
+            <?php endif; ?>
             <div id="<?php echo esc_attr( $id( 'content' ) ); ?>" class="qaproof-history-content">
                 <?php if ( ! empty( $filters ) ) : ?>
                     <div class="qaproof-history-filters" id="<?php echo esc_attr( $id( 'filters' ) ); ?>">
@@ -1493,7 +1797,7 @@ class QAProof_Admin {
                 <?php endif; ?>
                 <div id="<?php echo esc_attr( $id( 'list' ) ); ?>"></div>
                 <div id="<?php echo esc_attr( $id( 'loading' ) ); ?>" class="qaproof-history-loading-state hidden">
-                    <span class="spinner is-active" style="float:none;margin:0 8px 0 0;"></span> <?php esc_html_e( 'Loading...', 'qaproof' ); ?>
+                    <span class="qaproof-spinner"></span> <?php esc_html_e( 'Loading...', 'qaproof' ); ?>
                 </div>
                 <div id="<?php echo esc_attr( $id( 'empty' ) ); ?>" class="qaproof-history-empty-state hidden">
                     <span class="dashicons dashicons-clock"></span>
