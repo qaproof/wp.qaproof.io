@@ -1376,14 +1376,40 @@
   // Test Type Selector
   // ============================
   if (testTypeSelector) {
+    // Create sliding indicator
+    var ttSlider = document.createElement('div');
+    ttSlider.className = 'qaproof-test-type-slider';
+    testTypeSelector.appendChild(ttSlider);
+
+    function moveTestTypeSlider(btn) {
+      var navRect = testTypeSelector.getBoundingClientRect();
+      var btnRect = btn.getBoundingClientRect();
+      ttSlider.style.width = btnRect.width + 'px';
+      ttSlider.style.height = btnRect.height + 'px';
+      ttSlider.style.transform = 'translateX(' + (btnRect.left - navRect.left - testTypeSelector.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - testTypeSelector.clientTop) + 'px)';
+    }
+
+    // Initial position without transition
+    requestAnimationFrame(function () {
+      var activeBtn = testTypeSelector.querySelector('.qaproof-test-type-btn.active');
+      if (activeBtn) {
+        ttSlider.style.transition = 'none';
+        moveTestTypeSlider(activeBtn);
+        requestAnimationFrame(function () {
+          ttSlider.style.transition = '';
+        });
+      }
+    });
+
     testTypeSelector.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-test-type-btn');
-      if (!btn) return;
+      if (!btn || btn.classList.contains('active')) return;
 
       testTypeSelector.querySelectorAll('.qaproof-test-type-btn').forEach(function (b) {
         b.classList.remove('active');
       });
       btn.classList.add('active');
+      moveTestTypeSlider(btn);
 
       testType = btn.dataset.type;
 
@@ -1423,6 +1449,10 @@
         var initLabels = { fidelity: 'Analyze Design Fidelity', responsive: 'Test Responsive', accessibility: 'Run Accessibility Audit' };
         submitBtn.textContent = initLabels[testType] || 'Run Test';
       }
+      // Move slider to default tab
+      requestAnimationFrame(function () {
+        if (typeof moveTestTypeSlider === 'function') moveTestTypeSlider(defaultBtn);
+      });
     }
   }
 
@@ -4961,8 +4991,18 @@
     container.innerHTML = '';
 
     var entries = Object.entries(categories || {});
-    var r = 23; // SVG ring radius
+    if (!entries.length) return;
+
+    var r = 23;
     var circumference = 2 * Math.PI * r;
+
+    // Build tabs nav
+    var nav = document.createElement('div');
+    nav.className = 'qaproof-cat-tabs-nav';
+
+    // Build tab panels container
+    var panels = document.createElement('div');
+    panels.className = 'qaproof-cat-tabs-panels';
 
     for (var i = 0; i < entries.length; i++) {
       var name = entries[i][0];
@@ -4972,31 +5012,81 @@
       var offset = circumference - (cat.score / 100) * circumference;
       var displayName = labels[name] || capitalize(name.replace(/_/g, ' '));
 
-      var card = document.createElement('div');
-      card.className = 'qaproof-category-card';
-      card.style.animationDelay = (i * 0.06) + 's';
-
-      card.innerHTML =
-        '<div class="qaproof-cat-header">' +
-        '  <div class="qaproof-cat-score-ring">' +
-        '    <svg viewBox="0 0 56 56">' +
-        '      <circle class="qaproof-ring-bg" cx="28" cy="28" r="' + r + '" />' +
-        '      <circle class="qaproof-ring-fill ' + scoreClass + '" cx="28" cy="28" r="' + r + '"' +
-        '        stroke-dasharray="' + circumference.toFixed(2) + '"' +
-        '        stroke-dashoffset="' + offset.toFixed(2) + '" />' +
-        '    </svg>' +
-        '    <div class="qaproof-cat-score-num">' + cat.score + '</div>' +
-        '  </div>' +
-        '  <div class="qaproof-cat-title-group">' +
-        '    <h3>' + escapeHtml(displayName) + '</h3>' +
-        (description ? '    <div class="qaproof-cat-evaluates">' + escapeHtml(description) + '</div>' : '') +
-        '  </div>' +
+      // Tab button
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'qaproof-cat-tab' + (i === 0 ? ' active' : '');
+      tab.setAttribute('data-tab', name);
+      tab.innerHTML =
+        '<div class="qaproof-cat-score-ring">' +
+        '  <svg viewBox="0 0 56 56">' +
+        '    <circle class="qaproof-ring-bg" cx="28" cy="28" r="' + r + '" />' +
+        '    <circle class="qaproof-ring-fill ' + scoreClass + '" cx="28" cy="28" r="' + r + '"' +
+        '      stroke-dasharray="' + circumference.toFixed(2) + '"' +
+        '      stroke-dashoffset="' + offset.toFixed(2) + '" />' +
+        '  </svg>' +
+        '  <div class="qaproof-cat-score-num">' + cat.score + '</div>' +
         '</div>' +
-        '<div class="qaproof-cat-divider"></div>' +
-        '<p>' + escapeHtml(cat.notes || '') + '</p>';
+        '<span class="qaproof-cat-tab-label">' + escapeHtml(displayName) + '</span>';
+      nav.appendChild(tab);
 
-      container.appendChild(card);
+      // Tab panel
+      var panel = document.createElement('div');
+      panel.className = 'qaproof-cat-tab-panel' + (i === 0 ? ' active' : '');
+      panel.setAttribute('data-panel', name);
+      panel.innerHTML =
+        '<div class="qaproof-cat-panel-header">' +
+        '  <h3>' + escapeHtml(displayName) + '</h3>' +
+        (description ? '  <div class="qaproof-cat-evaluates">' + escapeHtml(description) + '</div>' : '') +
+        '</div>' +
+        '<p>' + escapeHtml(cat.notes || '') + '</p>';
+      panels.appendChild(panel);
     }
+
+    // Sliding indicator
+    var slider = document.createElement('div');
+    slider.className = 'qaproof-cat-tab-slider';
+    nav.appendChild(slider);
+
+    container.appendChild(nav);
+    container.appendChild(panels);
+
+    // Position slider on active tab
+    function moveSlider(tab) {
+      var navRect = nav.getBoundingClientRect();
+      var tabRect = tab.getBoundingClientRect();
+      slider.style.width = tabRect.width + 'px';
+      slider.style.height = tabRect.height + 'px';
+      slider.style.transform = 'translateX(' + (tabRect.left - navRect.left - nav.clientLeft) + 'px) translateY(' + (tabRect.top - navRect.top - nav.clientTop) + 'px)';
+    }
+
+    // Initial position (no transition)
+    requestAnimationFrame(function () {
+      var firstTab = nav.querySelector('.qaproof-cat-tab.active');
+      if (firstTab) {
+        slider.style.transition = 'none';
+        moveSlider(firstTab);
+        // Enable transition after initial placement
+        requestAnimationFrame(function () {
+          slider.style.transition = '';
+        });
+      }
+    });
+
+    // Tab click handler
+    nav.addEventListener('click', function (e) {
+      var btn = e.target.closest('.qaproof-cat-tab');
+      if (!btn || btn.classList.contains('active')) return;
+      var key = btn.getAttribute('data-tab');
+
+      nav.querySelectorAll('.qaproof-cat-tab').forEach(function (t) { t.classList.remove('active'); });
+      btn.classList.add('active');
+      moveSlider(btn);
+
+      panels.querySelectorAll('.qaproof-cat-tab-panel').forEach(function (p) { p.classList.remove('active'); });
+      var target = panels.querySelector('[data-panel="' + key + '"]');
+      if (target) target.classList.add('active');
+    });
   }
 
   function renderDifferencesInto(containerId, countId, differences, showDevice) {

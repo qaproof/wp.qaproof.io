@@ -30,7 +30,7 @@ class QAProof_Admin {
             self::CAPABILITY,
             self::MENU_SLUG,
             [ __CLASS__, 'render_dashboard_page' ],
-            'dashicons-welcome-view-site',
+            'data:image/svg+xml;base64,' . base64_encode( file_get_contents( plugin_dir_path( __FILE__ ) . 'images/icon.svg' ) ),
             80
         );
 
@@ -2054,7 +2054,7 @@ class QAProof_Admin {
 
             <!-- Brand Badge -->
             <div class="qaproof-brand-badge">
-                <span class="dashicons dashicons-shield"></span>
+                <span class="qaproof-brand-dot"></span>
                 <span>QAProof v<?php echo esc_html( QAPROOF_VERSION ); ?></span>
             </div>
         </div>
