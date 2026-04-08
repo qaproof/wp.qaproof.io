@@ -141,16 +141,72 @@ class QAProof_Scheduler {
      * @param array $monitor
      */
     private static function run_regression_for_monitor( $monitor ) {
-        $result = QAProof_API_Client::run_test( array(
+        // Step 1: Submit test job (returns jobId immediately)
+        $job_response = QAProof_API_Client::run_test( array(
             'pageUrl'  => $monitor['page_url'],
             'testType' => 'regression',
         ) );
 
-        if ( is_wp_error( $result ) ) {
+        if ( is_wp_error( $job_response ) ) {
             QAProof_Result::create( array(
                 'monitor_id'    => $monitor['id'],
                 'status'        => 'failed',
-                'error_message' => $result->get_error_message(),
+                'error_message' => $job_response->get_error_message(),
+            ) );
+
+            QAProof_Monitor::update( $monitor['id'], array(
+                'last_run_at' => current_time( 'mysql' ),
+            ) );
+            return;
+        }
+
+        $job_id = isset( $job_response['jobId'] ) ? $job_response['jobId'] : null;
+        if ( empty( $job_id ) ) {
+            QAProof_Result::create( array(
+                'monitor_id'    => $monitor['id'],
+                'status'        => 'failed',
+                'error_message' => 'API did not return a job ID.',
+            ) );
+            return;
+        }
+
+        // Step 2: Poll for results (max 5 minutes, every 10 seconds)
+        $max_attempts = 30;
+        $result = null;
+
+        for ( $i = 0; $i < $max_attempts; $i++ ) {
+            sleep( 10 );
+
+            $poll = QAProof_API_Client::poll_job( $job_id );
+
+            if ( is_wp_error( $poll ) ) {
+                continue; // Transient error — retry
+            }
+
+            if ( isset( $poll['status'] ) && $poll['status'] === 'done' && isset( $poll['result'] ) ) {
+                $result = $poll['result'];
+                break;
+            }
+
+            if ( isset( $poll['status'] ) && $poll['status'] === 'failed' ) {
+                QAProof_Result::create( array(
+                    'monitor_id'    => $monitor['id'],
+                    'status'        => 'failed',
+                    'error_message' => isset( $poll['error'] ) ? $poll['error'] : 'Test failed on the server.',
+                ) );
+
+                QAProof_Monitor::update( $monitor['id'], array(
+                    'last_run_at' => current_time( 'mysql' ),
+                ) );
+                return;
+            }
+        }
+
+        if ( $result === null ) {
+            QAProof_Result::create( array(
+                'monitor_id'    => $monitor['id'],
+                'status'        => 'failed',
+                'error_message' => 'Test timed out after 5 minutes.',
             ) );
 
             QAProof_Monitor::update( $monitor['id'], array(

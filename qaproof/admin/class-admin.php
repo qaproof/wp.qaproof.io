@@ -16,6 +16,8 @@ class QAProof_Admin {
         add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
         add_action( 'rest_api_init', [ __CLASS__, 'register_rest_routes' ] );
         add_action( 'wp_ajax_qaproof_health_check', [ __CLASS__, 'ajax_health_check' ] );
+        add_action( 'wp_ajax_qaproof_save_history', [ __CLASS__, 'ajax_save_history' ] );
+        add_action( 'wp_ajax_qaproof_diagnose', [ __CLASS__, 'ajax_diagnose' ] );
     }
 
     // ============================
@@ -161,6 +163,8 @@ class QAProof_Admin {
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
+            // apiEndpoint and apiKey removed — browser no longer calls API directly
+            // All requests go through WP proxy (job queue pattern)
         ]);
     }
 
@@ -200,6 +204,20 @@ class QAProof_Admin {
         register_rest_route( self::REST_NAMESPACE, '/run-test', [
             'methods'             => 'POST',
             'callback'            => [ __CLASS__, 'handle_run_test' ],
+            'permission_callback' => $permission,
+        ]);
+
+        // Job polling — browser polls this to check async test status
+        register_rest_route( self::REST_NAMESPACE, '/poll-job/(?P<jobId>[a-f0-9]+)', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'handle_poll_job' ],
+            'permission_callback' => $permission,
+        ]);
+
+        // Job screenshots — fetched separately after poll returns "done" (large base64 response)
+        register_rest_route( self::REST_NAMESPACE, '/job-screenshots/(?P<jobId>[a-f0-9]+)', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'handle_job_screenshots' ],
             'permission_callback' => $permission,
         ]);
 
@@ -297,6 +315,13 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        // Save test result to history (used by direct-API flow)
+        register_rest_route( self::REST_NAMESPACE, '/save-test-result', [
+            'methods'             => 'POST',
+            'callback'            => [ __CLASS__, 'handle_save_test_result' ],
+            'permission_callback' => $permission,
+        ]);
+
         // Test History — list
         register_rest_route( self::REST_NAMESPACE, '/test-history', [
             'methods'             => 'GET',
@@ -376,6 +401,7 @@ class QAProof_Admin {
             }
         }
 
+        // API now returns { jobId, status: 'pending' } immediately
         $result = QAProof_API_Client::run_test( $api_params );
 
         if ( is_wp_error( $result ) ) {
@@ -391,26 +417,102 @@ class QAProof_Admin {
             ], $status );
         }
 
-        // Save to test history
-        // Note: get_option returns '' for unchecked checkbox, which is falsy.
-        // Use !== false so the default (option not set) still saves.
-        $auto_save = get_option( 'qaproof_auto_save_history' );
-        if ( $auto_save === false || $auto_save === '' ) {
-            // Option not set (fresh install) or unchecked checkbox — default to true
-            $auto_save = ( $auto_save === false );
+        // Return jobId to browser — it will poll for results
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $result,
+        ], 200 );
+    }
+
+    /**
+     * Poll a background job for status and results.
+     * When job is done, auto-saves result to test history.
+     */
+    public static function handle_poll_job( WP_REST_Request $request ) {
+        $job_id = sanitize_text_field( $request->get_param( 'jobId' ) );
+
+        if ( empty( $job_id ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Job ID is required.', 'qaproof' ) ],
+            ], 400 );
         }
-        // Always save for now — the option handling was unreliable
+
+        $result = QAProof_API_Client::poll_job( $job_id );
+
+        if ( is_wp_error( $result ) ) {
+            $code = $result->get_error_code();
+            $status = $code === 'qaproof_job_not_found' ? 404 : 502;
+
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => $result->get_error_message() ],
+            ], $status );
+        }
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $result,
+        ], 200 );
+    }
+
+    /**
+     * Fetch screenshots for a completed job.
+     * Called separately from polling to avoid multi-MB JSON responses timing out
+     * through the WP proxy.
+     */
+    public static function handle_job_screenshots( WP_REST_Request $request ) {
+        $job_id = sanitize_text_field( $request->get_param( 'jobId' ) );
+
+        if ( empty( $job_id ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Job ID is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        $result = QAProof_API_Client::get_job_screenshots( $job_id );
+
+        if ( is_wp_error( $result ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => $result->get_error_message() ],
+            ], 502 );
+        }
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $result,
+        ], 200 );
+    }
+
+    /**
+     * Save a test result to history (used when browser calls SaaS API directly).
+     */
+    public static function handle_save_test_result( WP_REST_Request $request ) {
+        $params = $request->get_json_params();
+
+        if ( empty( $params['testType'] ) || empty( $params['pageUrl'] ) || empty( $params['result'] ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Missing required fields.', 'qaproof' ) ],
+            ], 400 );
+        }
+
         $save_data = array_merge(
-            [ 'test_type' => $test_type, 'page_url' => $api_params['pageUrl'] ],
-            is_array( $result ) ? $result : []
+            [
+                'test_type' => sanitize_text_field( $params['testType'] ),
+                'page_url'  => sanitize_url( $params['pageUrl'] ),
+            ],
+            is_array( $params['result'] ) ? $params['result'] : []
         );
+
         $saved_id = QAProof_Test_History::save( $save_data );
         $max = (int) get_option( 'qaproof_max_history', 30 );
         QAProof_Test_History::purge_old( $max > 0 ? $max : 30 );
 
         return new WP_REST_Response( [
-            'success'  => true,
-            'data'     => $result,
+            'success'      => true,
             'historySaved' => $saved_id ? true : false,
         ], 200 );
     }
@@ -432,6 +534,188 @@ class QAProof_Admin {
         }
 
         wp_send_json_success( $result );
+    }
+
+    /**
+     * AJAX handler: detailed network diagnostics.
+     * Tests connectivity from PHP to the API server.
+     */
+    public static function ajax_diagnose() {
+        check_ajax_referer( 'qaproof_ajax', 'nonce' );
+
+        if ( ! current_user_can( self::CAPABILITY ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
+        }
+
+        $api_endpoint = QAProof_Settings::get_api_endpoint();
+        $api_key      = QAProof_Settings::get_api_key();
+        $api_host     = wp_parse_url( $api_endpoint, PHP_URL_HOST );
+        $results      = [];
+
+        // 1. Config check
+        $results['config'] = [
+            'api_endpoint'          => $api_endpoint,
+            'api_key_set'           => ! empty( $api_key ),
+            'api_key_prefix'        => $api_key ? substr( $api_key, 0, 8 ) . '...' : '(empty)',
+            'env_override'          => getenv( 'QAPROOF_API_ENDPOINT' ) ?: '(not set)',
+            'wp_http_block_external'=> defined( 'WP_HTTP_BLOCK_EXTERNAL' ) ? WP_HTTP_BLOCK_EXTERNAL : false,
+            'wp_accessible_hosts'   => defined( 'WP_ACCESSIBLE_HOSTS' ) ? WP_ACCESSIBLE_HOSTS : '(not set)',
+            'wp_proxy_host'         => defined( 'WP_PROXY_HOST' ) ? WP_PROXY_HOST : '(not set)',
+            'php_version'           => phpversion(),
+            'curl_version'          => function_exists( 'curl_version' ) ? curl_version()['version'] : 'N/A',
+            'openssl_version'       => defined( 'OPENSSL_VERSION_TEXT' ) ? OPENSSL_VERSION_TEXT : 'N/A',
+        ];
+
+        // 2. DNS resolution
+        $dns_start = microtime( true );
+        $ips = gethostbynamel( $api_host );
+        $dns_time = round( ( microtime( true ) - $dns_start ) * 1000, 1 );
+        $results['dns'] = [
+            'host'    => $api_host,
+            'ips'     => $ips ?: [],
+            'ok'      => ! empty( $ips ),
+            'time_ms' => $dns_time,
+        ];
+
+        // 3. Health check via wp_remote_get (simplest test)
+        $health_start = microtime( true );
+        $health_resp = wp_remote_get( $api_endpoint . '/api/health', [
+            'timeout'   => 15,
+            'sslverify' => true,
+        ]);
+        $health_time = round( ( microtime( true ) - $health_start ) * 1000, 1 );
+
+        if ( is_wp_error( $health_resp ) ) {
+            $results['health'] = [
+                'ok'      => false,
+                'error'   => $health_resp->get_error_message(),
+                'time_ms' => $health_time,
+            ];
+        } else {
+            $results['health'] = [
+                'ok'          => true,
+                'http_code'   => wp_remote_retrieve_response_code( $health_resp ),
+                'body'        => substr( wp_remote_retrieve_body( $health_resp ), 0, 300 ),
+                'time_ms'     => $health_time,
+            ];
+        }
+
+        // 4a. POST /api/compare — NO pageUrl (fails at validation BEFORE DNS/DB)
+        $results['test_no_url'] = self::diagnose_post( $api_endpoint, $api_key, [
+            'testType' => 'responsive',
+        ], 'No pageUrl — should fail at validation before DNS/DB' );
+
+        // 4b. POST /api/compare — pageUrl is an IP (skips DNS, still hits DB)
+        $results['test_ip_url'] = self::diagnose_post( $api_endpoint, $api_key, [
+            'testType' => 'responsive',
+            'pageUrl'  => 'https://93.184.216.34',
+        ], 'IP pageUrl — skips DNS, tests DB' );
+
+        // 4c. POST /api/compare — normal URL (DNS + DB)
+        $results['test_normal_url'] = self::diagnose_post( $api_endpoint, $api_key, [
+            'testType' => 'responsive',
+            'pageUrl'  => 'https://example.com',
+        ], 'Normal URL — tests DNS + DB' );
+
+        // 4d. GET /api/jobs-stats (tests PostgreSQL read - no body parsing issues)
+        $stats_start = microtime( true );
+        $stats_resp = wp_remote_get( $api_endpoint . '/api/jobs-stats', [
+            'headers' => [ 'Authorization' => 'Bearer ' . $api_key ],
+            'timeout' => 10,
+            'sslverify' => true,
+        ]);
+        $stats_time = round( ( microtime( true ) - $stats_start ) * 1000, 1 );
+
+        if ( is_wp_error( $stats_resp ) ) {
+            $results['jobs_stats'] = [
+                'ok'    => false,
+                'error' => $stats_resp->get_error_message(),
+                'time_ms' => $stats_time,
+                'note'  => 'Tests PostgreSQL connection via GET (no body parsing)',
+            ];
+        } else {
+            $results['jobs_stats'] = [
+                'ok'        => true,
+                'http_code' => wp_remote_retrieve_response_code( $stats_resp ),
+                'body'      => substr( wp_remote_retrieve_body( $stats_resp ), 0, 300 ),
+                'time_ms'   => $stats_time,
+                'note'      => 'Tests PostgreSQL connection via GET (no body parsing)',
+            ];
+        }
+
+        wp_send_json_success( $results );
+    }
+
+    /**
+     * Helper: POST to /api/compare with specific payload and return result.
+     */
+    private static function diagnose_post( $api_endpoint, $api_key, $payload, $note ) {
+        $start = microtime( true );
+        $resp  = wp_remote_post( $api_endpoint . '/api/compare', [
+            'headers' => [
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ],
+            'body'      => wp_json_encode( $payload ),
+            'timeout'   => 12,
+            'sslverify' => true,
+            'httpversion' => '1.1',
+        ]);
+        $time = round( ( microtime( true ) - $start ) * 1000, 1 );
+
+        if ( is_wp_error( $resp ) ) {
+            return [
+                'ok'      => false,
+                'error'   => $resp->get_error_message(),
+                'time_ms' => $time,
+                'note'    => $note,
+            ];
+        }
+
+        $code = wp_remote_retrieve_response_code( $resp );
+        return [
+            'ok'        => $code === 200,
+            'http_code' => $code,
+            'body'      => substr( wp_remote_retrieve_body( $resp ), 0, 300 ),
+            'time_ms'   => $time,
+            'note'      => $note,
+        ];
+    }
+
+    /**
+     * AJAX handler: save test result to history.
+     * Uses admin-ajax.php which bypasses Varnish cache.
+     */
+    public static function ajax_save_history() {
+        check_ajax_referer( 'qaproof_ajax', 'nonce' );
+
+        if ( ! current_user_can( self::CAPABILITY ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
+        }
+
+        $test_type = isset( $_POST['testType'] ) ? sanitize_text_field( $_POST['testType'] ) : '';
+        $page_url  = isset( $_POST['pageUrl'] ) ? sanitize_url( $_POST['pageUrl'] ) : '';
+        $result    = isset( $_POST['result'] ) ? $_POST['result'] : [];
+
+        if ( empty( $test_type ) || empty( $page_url ) || empty( $result ) ) {
+            wp_send_json_error( [ 'message' => 'Missing required fields.' ] );
+        }
+
+        // Sanitize result array recursively
+        if ( is_string( $result ) ) {
+            $result = json_decode( stripslashes( $result ), true );
+        }
+
+        $save_data = array_merge(
+            [ 'test_type' => $test_type, 'page_url' => $page_url ],
+            is_array( $result ) ? $result : []
+        );
+
+        $saved_id = QAProof_Test_History::save( $save_data );
+        $max = (int) get_option( 'qaproof_max_history', 30 );
+        QAProof_Test_History::purge_old( $max > 0 ? $max : 30 );
+
+        wp_send_json_success( [ 'saved' => $saved_id ? true : false ] );
     }
 
     // ============================
@@ -472,6 +756,10 @@ class QAProof_Admin {
                 <a href="<?php echo esc_url( $base_url . '&tab=monitors' ); ?>"
                    class="qaproof-settings-tab <?php echo $active_tab === 'monitors' ? 'active' : ''; ?>">
                     <?php esc_html_e( 'Monitors', 'qaproof' ); ?>
+                </a>
+                <a href="<?php echo esc_url( $base_url . '&tab=uninstall' ); ?>"
+                   class="qaproof-settings-tab <?php echo $active_tab === 'uninstall' ? 'active' : ''; ?>">
+                    <?php esc_html_e( 'Data Cleanup', 'qaproof' ); ?>
                 </a>
             </div>
 
@@ -519,10 +807,22 @@ class QAProof_Admin {
                     <?php elseif ( $active_tab === 'monitors' ) : ?>
                         <?php settings_fields( QAProof_Settings::GROUP_MONITORS ); ?>
                         <?php do_settings_sections( 'qaproof-settings-monitors' ); ?>
+                    <?php elseif ( $active_tab === 'uninstall' ) : ?>
+                        <?php settings_fields( QAProof_Settings::GROUP_UNINSTALL ); ?>
+                        <?php do_settings_sections( 'qaproof-settings-uninstall' ); ?>
                     <?php endif; ?>
 
                     <?php submit_button(); ?>
                 </form>
+
+                <?php if ( $active_tab === 'general' ) : ?>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="margin-top:0;">Network Diagnostics</h3>
+                    <p style="opacity:0.7; margin-bottom:12px;">Test connectivity from this WordPress server to the QAProof API. Useful for troubleshooting connection issues.</p>
+                    <button type="button" id="qaproof-diagnose-btn" class="button button-secondary" style="margin-bottom:12px;">Run Diagnostics</button>
+                    <pre id="qaproof-diagnose-output" style="display:none; background:rgba(0,0,0,0.3); color:#00FFC6; padding:16px; border-radius:10px; white-space:pre-wrap; word-break:break-all; font-size:12px; line-height:1.6; max-height:500px; overflow:auto;"></pre>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Brand Badge -->
@@ -654,17 +954,17 @@ class QAProof_Admin {
             ], 404 );
         }
 
-        QAProof_Scheduler::run_single_monitor( $id );
-
-        // Return updated monitor + latest result
-        $updated_monitor = QAProof_Monitor::get( $id );
-        $latest_result   = QAProof_Result::get_latest( $id );
+        // Schedule the monitor run as a background cron event (runs async)
+        // This prevents the REST request from timing out via Varnish
+        wp_schedule_single_event( time(), 'qaproof_run_monitor', [ $id ] );
+        // Trigger cron immediately
+        spawn_cron();
 
         return new WP_REST_Response( [
             'success' => true,
             'data'    => [
-                'monitor' => $updated_monitor,
-                'result'  => $latest_result,
+                'monitor' => $monitor,
+                'message' => __( 'Monitor test started in background. Results will appear shortly.', 'qaproof' ),
             ],
         ], 200 );
     }
@@ -1045,8 +1345,14 @@ class QAProof_Admin {
 
             <!-- Loading -->
             <div id="qaproof-monitors-loading" class="hidden">
-                <span class="spinner is-active" style="float: none; margin: 0 10px 0 0;"></span>
-                <strong><?php esc_html_e( 'Loading monitors...', 'qaproof' ); ?></strong>
+                <div class="qaproof-loading-inner">
+                    <div class="qaproof-loading-left">
+                        <div class="qaproof-loading-spinner"></div>
+                        <div class="qaproof-loading-info">
+                            <strong id="qaproof-monitors-loading-text"><?php esc_html_e( 'Loading monitors...', 'qaproof' ); ?></strong>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Monitors Table -->

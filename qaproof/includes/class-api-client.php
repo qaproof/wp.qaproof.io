@@ -3,24 +3,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class QAProof_API_Client {
 
-    const TIMEOUT = 300; // 5 minutes — matches server timeout
+    const TIMEOUT = 30; // Short timeout — API now returns jobId immediately
 
     /**
-     * Run a comparison test against the SaaS API.
+     * Submit a test job to the SaaS API (async — returns jobId).
+     *
+     * The API creates a background job and returns immediately with a jobId.
+     * Use poll_job() to check status and retrieve results.
      *
      * @param array $params Test parameters (pageUrl, testType, etc.)
-     * @return array|WP_Error Decoded response data on success, WP_Error on failure.
+     * @return array|WP_Error { jobId, status } on success, WP_Error on failure.
      */
     public static function run_test( $params ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/compare';
         $api_key  = QAProof_Settings::get_api_key();
-
-        // DEBUG: temporary logging — remove after fixing auth issue
-        error_log( '[QAProof DEBUG] endpoint: ' . $endpoint );
-        error_log( '[QAProof DEBUG] api_key length: ' . strlen( $api_key ) );
-        error_log( '[QAProof DEBUG] api_key first 10: ' . substr( $api_key, 0, 10 ) );
-        error_log( '[QAProof DEBUG] api_key last 10: ' . substr( $api_key, -10 ) );
-        error_log( '[QAProof DEBUG] api_key hex dump first 20 bytes: ' . bin2hex( substr( $api_key, 0, 20 ) ) );
 
         if ( empty( $api_key ) ) {
             return new WP_Error(
@@ -37,9 +33,9 @@ class QAProof_API_Client {
             'body'      => wp_json_encode( $params ),
             'timeout'   => self::TIMEOUT,
             'sslverify' => true,
+            'httpversion' => '1.1',
         ]);
 
-        // Network-level error (DNS, timeout, SSL)
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
@@ -54,14 +50,12 @@ class QAProof_API_Client {
         $body        = wp_remote_retrieve_body( $response );
         $decoded     = json_decode( $body, true );
 
-        // Invalid JSON response
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
 
-        // API returned an error response
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
@@ -75,6 +69,117 @@ class QAProof_API_Client {
                 'status'     => $status_code,
                 'error_code' => $error_code,
             ]);
+        }
+
+        return $decoded['data'];
+    }
+
+    /**
+     * Poll a job for status and results.
+     *
+     * @param string $job_id The job ID returned by run_test().
+     * @return array|WP_Error Job data { id, status, result?, error?, elapsed? }
+     */
+    public static function poll_job( $job_id ) {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/jobs/' . sanitize_text_field( $job_id );
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'qaproof_no_api_key',
+                __( 'API key not configured. Go to Settings to add your API key.', 'qaproof' )
+            );
+        }
+
+        $response = wp_remote_get( $endpoint, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $api_key,
+            ],
+            'timeout'   => 15,
+            'sslverify' => true,
+        ]);
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'qaproof_api_network_error',
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null ) {
+            return new WP_Error( 'qaproof_api_invalid_json',
+                sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
+            );
+        }
+
+        if ( $status_code === 404 ) {
+            return new WP_Error( 'qaproof_job_not_found', __( 'Job not found or expired.', 'qaproof' ) );
+        }
+
+        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+            $error_msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+
+            return new WP_Error( 'qaproof_api_error', $error_msg );
+        }
+
+        return $decoded['data'];
+    }
+
+    /**
+     * Fetch screenshots for a completed job (separate from poll to avoid large responses).
+     *
+     * @param string $job_id The job ID.
+     * @return array|WP_Error Screenshots data { id, screenshots: { desktop, tablet, mobile, ... } }
+     */
+    public static function get_job_screenshots( $job_id ) {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/jobs/' . sanitize_text_field( $job_id ) . '/screenshots';
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'qaproof_no_api_key',
+                __( 'API key not configured. Go to Settings to add your API key.', 'qaproof' )
+            );
+        }
+
+        // Screenshots response is large (multi-MB base64) — use longer timeout + more memory
+        @ini_set( 'memory_limit', '256M' );
+
+        $response = wp_remote_get( $endpoint, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $api_key,
+            ],
+            'timeout'   => 120,
+            'sslverify' => true,
+        ]);
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'qaproof_api_network_error',
+                sprintf( __( 'Could not fetch screenshots: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null ) {
+            return new WP_Error( 'qaproof_api_invalid_json',
+                sprintf( __( 'Screenshots response invalid (HTTP %d)', 'qaproof' ), $status_code )
+            );
+        }
+
+        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+            $error_msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+
+            return new WP_Error( 'qaproof_api_error', $error_msg );
         }
 
         return $decoded['data'];

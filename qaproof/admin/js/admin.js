@@ -3,6 +3,288 @@
   'use strict';
 
   // ============================
+  // Safe JSON parsing helper
+  // ============================
+  function safeJson(response) {
+    if (!response.ok) {
+      return response.text().then(function (text) {
+        var msg = 'Server returned HTTP ' + response.status;
+        if (response.status === 404) {
+          msg = 'REST API endpoint not found (404). Check that the plugin is activated and permalinks are flushed (Settings → Permalinks → Save).';
+        } else if (response.status === 403) {
+          msg = 'Access denied (403). Your login session may have expired — try refreshing the page.';
+        } else if (response.status === 500) {
+          msg = 'Internal server error (500). Check the server error log for details.';
+        }
+        throw new Error(msg);
+      });
+    }
+    return response.json().catch(function () {
+      throw new Error('Invalid JSON response from server. The API endpoint may be misconfigured.');
+    });
+  }
+
+  // ============================
+  // Job persistence — survive page reloads & tab switches
+  // Stores one job per page (tests / accessibility) so they don't overwrite each other
+  // ============================
+  var JOB_KEY_PREFIX = 'qaproof_job_';
+
+  /**
+   * Save active job to localStorage.
+   * phase: 'submitting' (before API responds) or 'polling' (jobId known, polling for results)
+   */
+  function saveActiveJob(jobId, testType, pageUrl, page, phase, retries) {
+    try {
+      localStorage.setItem(JOB_KEY_PREFIX + page, JSON.stringify({
+        jobId: jobId, testType: testType, pageUrl: pageUrl, page: page,
+        phase: phase || 'polling', startedAt: Date.now(),
+        retries: retries || 0,
+      }));
+    } catch (e) { /* quota exceeded or private mode */ }
+  }
+
+  function clearActiveJob(page) {
+    try { localStorage.removeItem(JOB_KEY_PREFIX + page); } catch (e) { /* noop */ }
+  }
+
+  function getActiveJob(page) {
+    try {
+      var raw = localStorage.getItem(JOB_KEY_PREFIX + page);
+      if (!raw) return null;
+      var job = JSON.parse(raw);
+      // Expire after 10 minutes
+      if (Date.now() - job.startedAt > 10 * 60 * 1000) {
+        clearActiveJob(page);
+        return null;
+      }
+      return job;
+    } catch (e) { return null; }
+  }
+
+  /**
+   * Build a poll URL that works with both pretty permalinks and ?rest_route= format.
+   */
+  function buildPollUrl(jobId) {
+    var pollUrl = qaproof.restBase + '/poll-job/' + jobId;
+    if (qaproof.restBase.indexOf('rest_route=') !== -1) {
+      pollUrl = qaproof.restBase + '%2Fpoll-job%2F' + jobId;
+    }
+    return pollUrl;
+  }
+
+  /**
+   * Build URL for fetching job screenshots separately.
+   */
+  function buildScreenshotsUrl(jobId) {
+    var base = qaproof.restBase;
+    var sep = base.indexOf('?') !== -1 ? '&' : '?';
+    return base + '/job-screenshots/' + encodeURIComponent(jobId) + sep + '_=' + Date.now();
+  }
+
+  /**
+   * Fetch screenshots for a completed job and inject into existing DOM.
+   * Screenshots are fetched separately to avoid multi-MB responses
+   * through the WP proxy during polling.
+   */
+  function fetchAndInjectScreenshots(jobId, resultData, onComplete) {
+    console.log('[QAProof] Fetching screenshots separately for job:', jobId);
+
+    fetch(buildScreenshotsUrl(jobId), {
+      method: 'GET',
+      headers: { 'X-WP-Nonce': qaproof.nonce },
+      credentials: 'same-origin',
+    })
+    .then(safeJson)
+    .then(function (resp) {
+      if (!resp.success || !resp.data || !resp.data.screenshots) {
+        console.warn('[QAProof] Screenshots fetch failed or empty');
+        // Remove loading placeholder
+        var placeholder = document.getElementById('qaproof-screenshots-loading');
+        if (placeholder) placeholder.remove();
+        if (onComplete) onComplete(resultData);
+        return;
+      }
+
+      var screenshots = resp.data.screenshots;
+      console.log('[QAProof] Screenshots received:', Object.keys(screenshots).length, 'viewports');
+
+      // Inject screenshots into existing img elements
+      var viewports = ['desktop', 'tablet', 'tablet_landscape', 'mobile', 'mobile_landscape'];
+      for (var i = 0; i < viewports.length; i++) {
+        var vp = viewports[i];
+        if (screenshots[vp]) {
+          var img = document.getElementById('qaproof-screenshot-' + vp);
+          if (img) {
+            img.src = screenshots[vp];
+            // Render markers for this viewport after screenshot loads
+            (function(imgEl, device) {
+              waitForImage(imgEl).then(function () {
+                var markersLayer = document.getElementById('qaproof-markers-' + device);
+                if (markersLayer && markersLayer.children.length === 0 && resultData.differences) {
+                  console.log('[QAProof] Rendering markers after screenshot load for:', device);
+                  renderMarkersIntoLayer(markersLayer, resultData.differences, function (diff) {
+                    return !diff.device || diff.device === device;
+                  });
+                }
+              });
+            })(img, vp);
+          }
+        }
+      }
+
+      // Handle fidelity (figma/live) and regression (baseline/current) screenshots
+      // Both test types reuse the same img IDs: qaproof-screenshot-figma + qaproof-screenshot-live
+      var figmaSrc = screenshots.figma || screenshots.baseline || null;
+      var liveSrc = screenshots.live || screenshots.current || null;
+      if (figmaSrc) {
+        var figmaImg = document.getElementById('qaproof-screenshot-figma');
+        if (figmaImg && (!figmaImg.getAttribute('src') || figmaImg.getAttribute('src') === '')) {
+          figmaImg.src = figmaSrc;
+        }
+      }
+      if (liveSrc) {
+        var liveImg = document.getElementById('qaproof-screenshot-live');
+        if (liveImg && (!liveImg.getAttribute('src') || liveImg.getAttribute('src') === '')) {
+          liveImg.src = liveSrc;
+        }
+      }
+      // Render markers for fidelity/regression after both images load
+      if (figmaSrc || liveSrc) {
+        var figmaImgEl = document.getElementById('qaproof-screenshot-figma');
+        var liveImgEl = document.getElementById('qaproof-screenshot-live');
+        var markerImgs = [figmaImgEl, liveImgEl].filter(function(el) { return el && el.src; });
+        var loadPromises = markerImgs.map(function(el) { return waitForImage(el); });
+        Promise.all(loadPromises).then(function () {
+          if (resultData.differences) {
+            var markersFigma = document.getElementById('qaproof-markers-figma');
+            var markersLive = document.getElementById('qaproof-markers-live');
+            if (markersFigma && markersFigma.children.length === 0) {
+              renderMarkersIntoLayer(markersFigma, resultData.differences);
+            }
+            if (markersLive && markersLive.children.length === 0) {
+              renderMarkersIntoLayer(markersLive, resultData.differences);
+            }
+          }
+        });
+      }
+
+      // Also check for single-screenshot tests (accessibility, design-audit)
+      if (screenshots.desktop) {
+        var singleImgs = ['qaproof-screenshot-a11y', 'qaproof-screenshot-da', 'qaproof-screenshot-fidelity'];
+        for (var j = 0; j < singleImgs.length; j++) {
+          var sImg = document.getElementById(singleImgs[j]);
+          if (sImg && (!sImg.getAttribute('src') || sImg.getAttribute('src') === '')) {
+            sImg.src = screenshots.desktop;
+            // Render markers after screenshot loads (they were skipped during
+            // initial report render because screenshots weren't available yet)
+            (function(imgEl) {
+              waitForImage(imgEl).then(function () {
+                var imgId = imgEl.id; // e.g. 'qaproof-screenshot-da'
+                var suffix = imgId.replace('qaproof-screenshot-', ''); // e.g. 'da', 'a11y', 'fidelity'
+                var markersLayerId = 'qaproof-markers-' + suffix;
+                // For fidelity, markers use 'figma' and 'live' layers, not 'fidelity'
+                if (suffix === 'fidelity') return;
+                var markersLayer = document.getElementById(markersLayerId);
+                if (markersLayer && markersLayer.children.length === 0 && resultData.differences) {
+                  console.log('[QAProof] Rendering markers after screenshot load for:', markersLayerId);
+                  renderMarkersIntoLayer(markersLayer, resultData.differences);
+                }
+              });
+            })(sImg);
+          }
+        }
+      }
+
+      // Remove loading placeholder
+      var placeholder = document.getElementById('qaproof-screenshots-loading');
+      if (placeholder) {
+        placeholder.textContent = '';
+        placeholder.remove();
+      }
+
+      // Store screenshots on resultData for PDF export etc
+      resultData.screenshots = screenshots;
+      if (onComplete) onComplete(resultData);
+    })
+    .catch(function (err) {
+      console.warn('[QAProof] Screenshots fetch error:', err.message);
+      var placeholder = document.getElementById('qaproof-screenshots-loading');
+      if (placeholder) placeholder.textContent = 'Screenshots could not be loaded.';
+      if (onComplete) onComplete(resultData);
+    });
+  }
+
+  /**
+   * Start polling a job. Calls onDone(resultData) or onFailed(errorMsg) when finished.
+   * Returns a function to cancel polling.
+   *
+   * Screenshots are stripped from poll responses to keep them small (<100KB).
+   * When the job is done, screenshots are fetched separately via /job-screenshots/:id.
+   */
+  function startJobPolling(jobId, opts) {
+    var onDone = opts.onDone || function () {};
+    var onFailed = opts.onFailed || function () {};
+    var onPoll = opts.onPoll || function () {};
+    var onScreenshotsDone = opts.onScreenshotsDone || null;
+    var page = opts.page || 'tests';
+    var cancelled = false;
+
+    var pollInterval = setInterval(function () {
+      if (cancelled) return;
+
+      fetch(buildPollUrl(jobId), {
+        method: 'GET',
+        headers: { 'X-WP-Nonce': qaproof.nonce },
+        credentials: 'same-origin',
+      })
+        .then(safeJson)
+        .then(function (pollData) {
+          if (cancelled) return;
+          if (!pollData.success) {
+            clearInterval(pollInterval);
+            clearActiveJob(page);
+            onFailed((pollData.error && pollData.error.message) || 'Polling failed.');
+            return;
+          }
+
+          var job = pollData.data;
+          onPoll(job.status, job.elapsed);
+
+          if (job.status === 'done' && job.result) {
+            clearInterval(pollInterval);
+            clearActiveJob(page);
+
+            // Render results immediately (without screenshots for fast display)
+            onDone(job.result);
+
+            // Fetch screenshots separately if they were stripped from poll response
+            if (job.result.screenshotsAvailable && !job.result.screenshots) {
+              fetchAndInjectScreenshots(jobId, job.result, function (resultWithScreenshots) {
+                if (onScreenshotsDone) onScreenshotsDone(resultWithScreenshots);
+              });
+            } else {
+              // Screenshots already included or not applicable — fire callback immediately
+              if (onScreenshotsDone) onScreenshotsDone(job.result);
+            }
+          } else if (job.status === 'failed') {
+            clearInterval(pollInterval);
+            clearActiveJob(page);
+            onFailed(job.error || 'Test failed on the server.');
+          }
+        })
+        .catch(function (pollErr) {
+          console.warn('[QAProof] Poll error (retrying):', pollErr.message);
+        });
+    }, 5000);
+
+    return function cancel() {
+      cancelled = true;
+      clearInterval(pollInterval);
+    };
+  }
+
+  // ============================
   // DOM References
   // ============================
   const form = document.getElementById('qaproof-test-form');
@@ -126,7 +408,7 @@
         body: data,
         credentials: 'same-origin',
       })
-        .then(function (r) { return r.json(); })
+        .then(safeJson)
         .then(function (resp) {
           if (resp.success) {
             connectionStatus.textContent = 'Connected! API status: ' + (resp.data.status || 'ok');
@@ -139,6 +421,103 @@
         .catch(function () {
           connectionStatus.textContent = 'Network error — could not reach API.';
           connectionStatus.className = 'error';
+        });
+    });
+  }
+
+  // ============================
+  // Network Diagnostics (Settings page)
+  // ============================
+  var diagnoseBtn = document.getElementById('qaproof-diagnose-btn');
+  var diagnoseOutput = document.getElementById('qaproof-diagnose-output');
+  if (diagnoseBtn) {
+    diagnoseBtn.addEventListener('click', function () {
+      diagnoseBtn.disabled = true;
+      diagnoseBtn.textContent = 'Running diagnostics...';
+      diagnoseOutput.textContent = 'Please wait (up to 60 seconds)...';
+      diagnoseOutput.style.display = 'block';
+
+      var data = new FormData();
+      data.append('action', 'qaproof_diagnose');
+      data.append('nonce', qaproof.ajaxNonce);
+
+      fetch(qaproof.ajaxUrl, {
+        method: 'POST',
+        body: data,
+        credentials: 'same-origin',
+      })
+        .then(safeJson)
+        .then(function (resp) {
+          diagnoseBtn.disabled = false;
+          diagnoseBtn.textContent = 'Run Diagnostics';
+          if (resp.success) {
+            var d = resp.data;
+            var lines = [];
+            lines.push('=== QAProof Network Diagnostics ===');
+            lines.push('');
+
+            // Config
+            lines.push('--- Config ---');
+            lines.push('API Endpoint: ' + d.config.api_endpoint);
+            lines.push('API Key: ' + d.config.api_key_prefix);
+            lines.push('ENV Override: ' + d.config.env_override);
+            lines.push('WP_HTTP_BLOCK_EXTERNAL: ' + d.config.wp_http_block_external);
+            lines.push('WP_ACCESSIBLE_HOSTS: ' + d.config.wp_accessible_hosts);
+            lines.push('WP_PROXY_HOST: ' + d.config.wp_proxy_host);
+            lines.push('PHP: ' + d.config.php_version + ' | cURL: ' + d.config.curl_version + ' | SSL: ' + d.config.openssl_version);
+            lines.push('');
+
+            // DNS
+            lines.push('--- DNS ---');
+            lines.push((d.dns.ok ? 'OK' : 'FAIL') + ': ' + d.dns.host + ' → ' + (d.dns.ips.length ? d.dns.ips.join(', ') : 'no IPs') + ' (' + d.dns.time_ms + 'ms)');
+            lines.push('');
+
+            // Health
+            lines.push('--- GET /api/health (sslverify=true) ---');
+            if (d.health.ok) {
+              lines.push('OK: HTTP ' + d.health.http_code + ' in ' + d.health.time_ms + 'ms');
+              lines.push('Body: ' + d.health.body);
+            } else {
+              lines.push('FAIL: ' + d.health.error + ' (' + d.health.time_ms + 'ms)');
+            }
+            lines.push('');
+
+            // Compare
+            lines.push('--- POST /api/compare (auth test) ---');
+            if (d.compare.error) {
+              lines.push('FAIL: ' + d.compare.error + ' (' + d.compare.time_ms + 'ms)');
+            } else {
+              lines.push((d.compare.ok ? 'OK' : 'HTTP ' + d.compare.http_code) + ' in ' + d.compare.time_ms + 'ms');
+              lines.push('Body: ' + d.compare.body);
+            }
+            lines.push('');
+
+            // Health no SSL
+            lines.push('--- GET /api/health (sslverify=false) ---');
+            if (d.health_nossl.ok) {
+              lines.push('OK: HTTP ' + d.health_nossl.http_code + ' in ' + d.health_nossl.time_ms + 'ms');
+            } else {
+              lines.push('FAIL: ' + d.health_nossl.error + ' (' + d.health_nossl.time_ms + 'ms)');
+            }
+            lines.push('');
+
+            // Control
+            lines.push('--- Control (api.wordpress.org) ---');
+            if (d.control.ok) {
+              lines.push('OK: HTTP ' + d.control.http_code + ' in ' + d.control.time_ms + 'ms');
+            } else {
+              lines.push('FAIL: ' + d.control.error + ' (' + d.control.time_ms + 'ms)');
+            }
+
+            diagnoseOutput.textContent = lines.join('\n');
+          } else {
+            diagnoseOutput.textContent = 'Error: ' + ((resp.data && resp.data.message) || 'Unknown');
+          }
+        })
+        .catch(function (err) {
+          diagnoseBtn.disabled = false;
+          diagnoseBtn.textContent = 'Run Diagnostics';
+          diagnoseOutput.textContent = 'Request failed: ' + err.message;
         });
     });
   }
@@ -363,7 +742,7 @@
       credentials: 'same-origin',
     };
     if (body) opts.body = JSON.stringify(body);
-    return fetch(qaproof.restBase + path, opts).then(function (r) { return r.json(); });
+    return fetch(qaproof.restBase + path, opts).then(safeJson);
   }
 
   function loadMonitors() {
@@ -549,6 +928,59 @@
     });
   }
 
+  // Track active monitor polling
+  var monitorPollTimer = null;
+  var monitorPollCount = 0;
+  var monitorPollMaxAttempts = 60; // 5 minutes (every 5s)
+
+  function stopMonitorPoll() {
+    if (monitorPollTimer) {
+      clearTimeout(monitorPollTimer);
+      monitorPollTimer = null;
+    }
+    monitorPollCount = 0;
+  }
+
+  function pollForMonitorResult(monitorId, expectedResultCount) {
+    monitorPollCount++;
+    if (monitorPollCount > monitorPollMaxAttempts) {
+      stopMonitorPoll();
+      // Update UI to show timeout
+      var loadingText = document.getElementById('qaproof-monitors-loading-text');
+      if (loadingText) loadingText.textContent = 'Test timed out. Check back later.';
+      var runBtn = document.getElementById('qaproof-detail-run');
+      if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Now'; }
+      // Hide loading after a moment
+      setTimeout(function () {
+        if (monitorsLoading) monitorsLoading.classList.add('hidden');
+      }, 3000);
+      return;
+    }
+
+    apiCall('GET', '/monitors/' + monitorId + '/results?limit=1').then(function (resp) {
+      if (resp.success && resp.data && resp.data.length > 0) {
+        var latestResult = resp.data[0];
+        var newTotal = resp.total || 0;
+        // Check if we got a NEW result (total increased)
+        if (newTotal > expectedResultCount) {
+          stopMonitorPoll();
+          // Refresh detail view with new results
+          showMonitorDetail(monitorId);
+          return;
+        }
+      }
+      // Keep polling
+      monitorPollTimer = setTimeout(function () {
+        pollForMonitorResult(monitorId, expectedResultCount);
+      }, 5000);
+    }).catch(function () {
+      // Retry on error
+      monitorPollTimer = setTimeout(function () {
+        pollForMonitorResult(monitorId, expectedResultCount);
+      }, 5000);
+    });
+  }
+
   function runMonitor(id, btn) {
     // Add running animation to the row
     var row = btn ? btn.closest('tr[data-id]') : null;
@@ -584,11 +1016,16 @@
   function showMonitorDetail(id) {
     if (!monitorDetail) return;
 
+    // Stop any active polling
+    stopMonitorPoll();
+    // Hide loading bar
+    if (monitorsLoading) monitorsLoading.classList.add('hidden');
+
     // Hide list, show detail
     if (monitorsListEl) monitorsListEl.classList.add('hidden');
     if (addMonitorBtn) addMonitorBtn.classList.add('hidden');
     monitorDetail.classList.remove('hidden');
-    monitorDetail.innerHTML = '<span class="spinner is-active" style="float:none;"></span> Loading...';
+    monitorDetail.innerHTML = '<div id="qaproof-monitors-loading" style="margin-top:16px;"><div class="qaproof-loading-inner"><div class="qaproof-loading-left"><div class="qaproof-loading-spinner"></div><div class="qaproof-loading-info"><strong id="qaproof-monitors-loading-text">Loading monitor...</strong></div></div></div></div>';
 
     Promise.all([
       apiCall('GET', '/monitors/' + id),
@@ -602,11 +1039,12 @@
         return;
       }
 
-      renderMonitorDetail(monitorResp.data, resultsResp.success ? resultsResp.data : []);
+      var totalResults = resultsResp.total || (resultsResp.data ? resultsResp.data.length : 0);
+      renderMonitorDetail(monitorResp.data, resultsResp.success ? resultsResp.data : [], totalResults);
     });
   }
 
-  function renderMonitorDetail(monitor, monitorResults) {
+  function renderMonitorDetail(monitor, monitorResults, totalResultCount) {
     if (!monitorDetail) return;
 
     var html = '';
@@ -656,27 +1094,46 @@
 
     // Bind events
     document.getElementById('qaproof-back-to-list').addEventListener('click', function () {
+      stopMonitorPoll();
       monitorDetail.classList.add('hidden');
       monitorDetail.innerHTML = '';
       if (monitorsListEl) monitorsListEl.classList.remove('hidden');
       if (addMonitorBtn) addMonitorBtn.classList.remove('hidden');
+      if (monitorsLoading) monitorsLoading.classList.add('hidden');
       loadMonitors();
     });
 
     var runBtn = document.getElementById('qaproof-detail-run');
     if (runBtn) {
       runBtn.addEventListener('click', function () {
+        stopMonitorPoll();
         runBtn.disabled = true;
         runBtn.textContent = 'Running...';
+
+        // Show loading bar below button
+        if (monitorsLoading) {
+          monitorsLoading.classList.remove('hidden');
+          var loadingText = document.getElementById('qaproof-monitors-loading-text');
+          if (loadingText) loadingText.textContent = 'Running regression test...';
+        }
+
         apiCall('POST', '/monitors/' + monitor.id + '/run').then(function (resp) {
-          runBtn.disabled = false;
-          runBtn.textContent = 'Run Now';
           if (resp.success) {
-            showMonitorDetail(monitor.id);
+            // Update loading text
+            var loadingText = document.getElementById('qaproof-monitors-loading-text');
+            if (loadingText) loadingText.textContent = 'Test started. Waiting for results...';
+            // Start polling for new results
+            pollForMonitorResult(monitor.id, totalResultCount || 0);
+          } else {
+            runBtn.disabled = false;
+            runBtn.textContent = 'Run Now';
+            if (monitorsLoading) monitorsLoading.classList.add('hidden');
+            alert((resp.error && resp.error.message) || 'Failed to run monitor.');
           }
         }).catch(function () {
           runBtn.disabled = false;
           runBtn.textContent = 'Run Now';
+          if (monitorsLoading) monitorsLoading.classList.add('hidden');
         });
       });
     }
@@ -1364,7 +1821,7 @@
               },
               body: JSON.stringify({ designId: designId, imageBase64: json.data.imageBase64 }),
             })
-            .then(function (r) { return r.json(); })
+            .then(safeJson)
             .then(function (saveJson) {
               if (saveJson.success) {
                 // Update in-memory data
@@ -2141,7 +2598,7 @@
               source:   detectionSource,
             }),
           })
-          .then(function (r) { return r.json(); })
+          .then(safeJson)
           .then(function (saveJson) {
             if (saveJson.success) {
               console.log('[QAProof] Elements saved to design', autoSaveDesignId);
@@ -2307,13 +2764,23 @@
   // ============================
   // Form Submit
   // ============================
+  // Track whether a test is currently running on this page
+  var testsPageBusy = false;
+
   if (form) form.addEventListener('submit', function (e) {
     e.preventDefault();
+
+    if (testsPageBusy) {
+      showError('A test is already running. Please wait for it to finish.');
+      return;
+    }
 
     if (!qaproof.hasApiKey) {
       showErrorHtml('API key not configured. <a href="' + escapeAttr(qaproof.settingsUrl) + '">Go to Settings</a> to add your key.');
       return;
     }
+
+    testsPageBusy = true;
 
     // Reset UI
     resultsContainer.classList.add('hidden');
@@ -2359,6 +2826,7 @@
           showError('Please upload a design image or select a saved design.');
           loading.classList.add('hidden');
           submitBtn.disabled = false;
+          testsPageBusy = false;
           return;
         }
       }
@@ -2474,6 +2942,13 @@
       }, step.time);
     });
 
+    // Save to localStorage BEFORE the API call so reload during submission can recover.
+    // Carry forward retry count from recovery flow (window.__qaproofPendingRetries).
+    var _pendingRetries = window.__qaproofPendingRetries || 0;
+    window.__qaproofPendingRetries = 0;
+    saveActiveJob(null, body.testType, body.pageUrl, 'tests', 'submitting', _pendingRetries);
+
+    // Submit test via WP proxy → get jobId → poll for results
     fetch(qaproof.restUrl, {
       method: 'POST',
       headers: {
@@ -2483,38 +2958,90 @@
       body: JSON.stringify(body),
       credentials: 'same-origin',
     })
-      .then(function (r) { return r.json(); })
+      .then(safeJson)
       .then(function (data) {
-        loadingTimers.forEach(clearTimeout);
-
-        if (!data.success) {
-          throw new Error((data.error && data.error.message) || 'Analysis failed. Please try again.');
+        if (!data.success || !data.data || !data.data.jobId) {
+          throw new Error((data.error && data.error.message) || 'Failed to create test job.');
         }
 
-        if (data.data.testType === 'responsive') {
-          renderResponsiveResults(data.data);
-        } else if (data.data.testType === 'accessibility') {
-          renderAccessibilityResults(data.data);
-        } else if (data.data.testType === 'design-audit') {
-          renderDesignAuditResults(data.data);
-        } else {
-          renderFidelityResults(data.data);
-        }
+        var jobId = data.data.jobId;
+        console.log('[QAProof] Job created:', jobId);
+        // Upgrade localStorage entry with real jobId and polling phase
+        saveActiveJob(jobId, body.testType, body.pageUrl, 'tests', 'polling');
 
-        // Refresh history list after test completes
-        if (testsHistoryMgr) testsHistoryMgr.load(true);
+        startJobPolling(jobId, {
+          page: 'tests',
+          onPoll: function (status, elapsed) {
+            console.log('[QAProof] Poll:', status, elapsed);
+          },
+          onDone: function (resultData) {
+            loadingTimers.forEach(clearTimeout);
+
+            if (resultData.testType === 'responsive') {
+              renderResponsiveResults(resultData);
+            } else if (resultData.testType === 'accessibility') {
+              renderAccessibilityResults(resultData);
+            } else if (resultData.testType === 'design-audit') {
+              renderDesignAuditResults(resultData);
+            } else {
+              renderFidelityResults(resultData);
+            }
+
+            loading.classList.add('hidden');
+            submitBtn.disabled = false;
+            testsPageBusy = false;
+          },
+          onScreenshotsDone: function (resultData) {
+            // Save result to WP history AFTER screenshots are fetched.
+            // Strip base64 screenshots from payload to avoid exceeding PHP post_max_size.
+            // History stores metadata only; screenshots are re-fetched when viewing.
+            var historyData = Object.assign({}, resultData);
+            delete historyData.screenshots;
+            var saveData = new FormData();
+            saveData.append('action', 'qaproof_save_history');
+            saveData.append('nonce', qaproof.ajaxNonce);
+            saveData.append('testType', body.testType);
+            saveData.append('pageUrl', body.pageUrl);
+            saveData.append('result', JSON.stringify(historyData));
+            fetch(qaproof.ajaxUrl, {
+              method: 'POST',
+              body: saveData,
+              credentials: 'same-origin',
+            })
+            .then(safeJson)
+            .then(function (saveResp) {
+              console.log('[QAProof] History saved (with screenshots):', saveResp);
+              if (testsHistoryMgr) testsHistoryMgr.load(true);
+            })
+            .catch(function (err) {
+              console.error('[QAProof] Failed to save history:', err.message);
+              if (testsHistoryMgr) testsHistoryMgr.load(true);
+            });
+          },
+          onFailed: function (errorMsg) {
+            loadingTimers.forEach(clearTimeout);
+            showError(escapeHtml(errorMsg));
+            loading.classList.add('hidden');
+            submitBtn.disabled = false;
+            testsPageBusy = false;
+          },
+        });
       })
       .catch(function (err) {
         loadingTimers.forEach(clearTimeout);
+        // Keep localStorage entry (phase='submitting') so page reload can re-submit.
+        // Only clear if the error is a client-side validation issue, not a server/network error.
         if (err.message === 'Failed to fetch') {
-          showError('Could not reach the API server. Check your API endpoint in Settings.');
-        } else {
+          showError('Could not reach the server. Check your connection. Reload the page to retry.');
+        } else if (err.message && err.message.indexOf('Rate limit') !== -1) {
+          clearActiveJob('tests');
           showError(escapeHtml(err.message));
+        } else {
+          showError(escapeHtml(err.message) + ' Reload the page to retry.');
         }
-      })
-      .finally(function () {
         loading.classList.add('hidden');
         submitBtn.disabled = false;
+        testsPageBusy = false;
       });
   });
 
@@ -3300,8 +3827,9 @@
     // Categories
     html += '<div class="qaproof-categories" id="qaproof-resp-categories"></div>';
 
-    // Device Tabs + Panels
-    if (data.screenshots) {
+    // Device Tabs + Panels — show section if screenshots exist OR are loading asynchronously
+    var hasScreenshots = data.screenshots || data.screenshotsAvailable;
+    if (hasScreenshots) {
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
@@ -3318,6 +3846,14 @@
       html += '      </div>';
       html += '    </div>';
 
+      // Show loading indicator when screenshots are being fetched asynchronously
+      if (!data.screenshots && data.screenshotsAvailable) {
+        html += '  <div id="qaproof-screenshots-loading" style="text-align:center;padding:40px 20px;color:#999;font-size:14px;">';
+        html += '    <span class="dashicons dashicons-format-image" style="font-size:32px;width:32px;height:32px;display:block;margin:0 auto 10px;"></span>';
+        html += '    Loading screenshots...';
+        html += '  </div>';
+      }
+
       var devices = ['desktop', 'tablet', 'tablet_landscape', 'mobile', 'mobile_landscape'];
       var frameClasses = { desktop: '', tablet: 'tablet-frame', tablet_landscape: 'tablet-landscape-frame', mobile: 'mobile-frame', mobile_landscape: 'mobile-landscape-frame' };
       var deviceLabels = { desktop: 'Desktop', tablet: 'Tablet', tablet_landscape: 'Tablet Landscape', mobile: 'Mobile', mobile_landscape: 'Mobile Landscape' };
@@ -3325,7 +3861,9 @@
         var device = devices[i];
         var isActive = device === 'desktop' ? ' active' : '';
         var src = (data.screenshots && data.screenshots[device]) || '';
-        if (!src && (device === 'tablet_landscape' || device === 'mobile_landscape')) continue;
+        // For async loading, always render panels for known available screenshots
+        var isAvailable = data.screenshotsAvailable && data.screenshotsAvailable.indexOf(device) !== -1;
+        if (!src && !isAvailable && (device === 'tablet_landscape' || device === 'mobile_landscape')) continue;
         html += '  <div class="qaproof-device-panel' + isActive + '" id="qaproof-panel-' + device + '">';
         html += '    <div class="qaproof-device-screenshot-wrapper ' + frameClasses[device] + '">';
         html += '      <div class="qaproof-screenshot-inner">';
@@ -3457,8 +3995,10 @@
     // Categories (8 accessibility categories)
     html += '<div class="qaproof-categories" id="qaproof-a11y-categories"></div>';
 
-    // Screenshot with markers
-    if (data.screenshots && data.screenshots.desktop) {
+    // Screenshot with markers — show if available or loading async
+    var hasA11yScreenshot = (data.screenshots && data.screenshots.desktop) || data.screenshotsAvailable;
+    if (hasA11yScreenshot) {
+      var a11ySrc = (data.screenshots && data.screenshots.desktop) || '';
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
@@ -3470,7 +4010,12 @@
       html += '    </div>';
       html += '    <div class="qaproof-screenshot-viewport">';
       html += '      <div class="qaproof-screenshot-inner">';
-      html += '        <img id="qaproof-screenshot-a11y" src="' + escapeAttr(data.screenshots.desktop) + '" alt="Page Screenshot" style="display:block;width:100%;height:auto;" />';
+      if (a11ySrc) {
+        html += '        <img id="qaproof-screenshot-a11y" src="' + escapeAttr(a11ySrc) + '" alt="Page Screenshot" style="display:block;width:100%;height:auto;" />';
+      } else {
+        html += '        <img id="qaproof-screenshot-a11y" src="" alt="Page Screenshot" style="display:block;width:100%;height:auto;" />';
+        html += '        <div id="qaproof-screenshots-loading" style="text-align:center;padding:40px 20px;color:#999;font-size:14px;">Loading screenshot...</div>';
+      }
       html += '        <div class="qaproof-markers-layer" id="qaproof-markers-a11y"></div>';
       html += '      </div>';
       html += '    </div>';
@@ -3909,8 +4454,10 @@
     html += '<h2>Categories</h2>';
     html += '<div class="qaproof-categories" id="qaproof-da-categories"></div>';
 
-    // Screenshot with markers
-    if (data.screenshots && data.screenshots.desktop) {
+    // Screenshot with markers — show if available or loading async
+    var hasDaScreenshot = (data.screenshots && data.screenshots.desktop) || data.screenshotsAvailable;
+    if (hasDaScreenshot) {
+      var daSrc = (data.screenshots && data.screenshots.desktop) || '';
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
@@ -3922,7 +4469,12 @@
       html += '    </div>';
       html += '    <div class="qaproof-screenshot-viewport">';
       html += '      <div class="qaproof-screenshot-inner">';
-      html += '        <img id="qaproof-screenshot-da" src="' + escapeAttr(data.screenshots.desktop) + '" alt="Page Screenshot" style="display:block;width:100%;height:auto;" />';
+      if (daSrc) {
+        html += '        <img id="qaproof-screenshot-da" src="' + escapeAttr(daSrc) + '" alt="Page Screenshot" style="display:block;width:100%;height:auto;" />';
+      } else {
+        html += '        <img id="qaproof-screenshot-da" src="" alt="Page Screenshot" style="display:block;width:100%;height:auto;" />';
+        html += '        <div id="qaproof-screenshots-loading" style="text-align:center;padding:40px 20px;color:#999;font-size:14px;">Loading screenshot...</div>';
+      }
       html += '        <div class="qaproof-markers-layer" id="qaproof-markers-da"></div>';
       html += '      </div>';
       html += '    </div>';
@@ -5957,12 +6509,7 @@
         headers: { 'X-WP-Nonce': qaproof.nonce },
         credentials: 'same-origin'
       })
-        .then(function (r) {
-          if (!r.ok) {
-            if (typeof console !== 'undefined') console.warn('[QAProof] History fetch HTTP', r.status, url);
-          }
-          return r.json();
-        })
+        .then(safeJson)
         .then(function (resp) {
           if (hLoading) hLoading.classList.add('hidden');
           if (!resp.success) {
@@ -6073,7 +6620,7 @@
         headers: { 'X-WP-Nonce': qaproof.nonce },
         credentials: 'same-origin'
       })
-        .then(function (r) { return r.json(); })
+        .then(safeJson)
         .then(function (resp) {
           if (rLoading) rLoading.classList.add('hidden');
           if (!resp.success || !resp.data) {
@@ -6116,7 +6663,7 @@
         headers: { 'X-WP-Nonce': qaproof.nonce },
         credentials: 'same-origin'
       })
-        .then(function (r) { return r.json(); })
+        .then(safeJson)
         .then(function (resp) {
           if (resp.success) {
             rowEl.style.transition = 'opacity 0.3s, transform 0.3s';
@@ -6138,7 +6685,7 @@
         headers: { 'X-WP-Nonce': qaproof.nonce },
         credentials: 'same-origin'
       })
-        .then(function (r) { return r.json(); })
+        .then(safeJson)
         .then(function (resp) {
           if (resp.success && resp.data) {
             var resultData = parseResultData(resp.data);
@@ -6260,41 +6807,95 @@
         }, step.time);
       });
 
-      // API call
+      // Submit accessibility test via WP proxy → poll for results
+      var a11yBody = {
+        pageUrl: pageUrl,
+        testType: 'accessibility',
+        wcagLevel: qaproof.wcagLevel || 'AA'
+      };
+
+      // Save to localStorage BEFORE the API call so reload during submission can recover.
+      // Carry forward retry count from recovery flow.
+      var _a11yPendingRetries = window.__qaproofPendingRetries || 0;
+      window.__qaproofPendingRetries = 0;
+      saveActiveJob(null, 'accessibility', pageUrl, 'accessibility', 'submitting', _a11yPendingRetries);
+
       fetch(qaproof.restUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-WP-Nonce': qaproof.nonce
+          'X-WP-Nonce': qaproof.nonce,
         },
-        body: JSON.stringify({
-          pageUrl: pageUrl,
-          testType: 'accessibility'
-        })
+        body: JSON.stringify(a11yBody),
+        credentials: 'same-origin',
       })
-      .then(function (res) { return res.json(); })
-      .then(function (result) {
-        a11yTimers.forEach(clearTimeout);
-
-        if (result.success && result.data) {
-          var resultData = result.data;
-          // Render using existing renderAccessibilityResults
-          resultsContainer = a11yResults;
-          renderAccessibilityResults(resultData);
-          // Note: test history is saved server-side in handle_run_test
-          // Refresh history list if manager is initialized
-          if (a11yHistoryMgr) a11yHistoryMgr.load(true);
-        } else {
-          a11yErrorMsg.textContent = (result.error && result.error.message) || (result.data && result.data.message) || result.message || 'Unknown error occurred.';
-          a11yErrorDiv.classList.remove('hidden');
+      .then(safeJson)
+      .then(function (data) {
+        if (!data.success || !data.data || !data.data.jobId) {
+          throw new Error((data.error && data.error.message) || 'Failed to create accessibility test job.');
         }
+
+        var jobId = data.data.jobId;
+        console.log('[QAProof] A11y job created:', jobId);
+        // Upgrade localStorage entry with real jobId and polling phase
+        saveActiveJob(jobId, 'accessibility', pageUrl, 'accessibility', 'polling');
+
+        startJobPolling(jobId, {
+          page: 'accessibility',
+          onPoll: function (status, elapsed) {
+            console.log('[QAProof] A11y poll:', status, elapsed);
+          },
+          onDone: function (resultData) {
+            a11yTimers.forEach(clearTimeout);
+            resultsContainer = a11yResults;
+            renderAccessibilityResults(resultData);
+
+            a11yLoading.classList.add('hidden');
+            a11ySubmitBtn.disabled = false;
+          },
+          onScreenshotsDone: function (resultData) {
+            // Save result to WP history AFTER screenshots are fetched.
+            // Strip base64 screenshots to avoid exceeding PHP post_max_size.
+            var a11yHistoryData = Object.assign({}, resultData);
+            delete a11yHistoryData.screenshots;
+            var a11ySaveData = new FormData();
+            a11ySaveData.append('action', 'qaproof_save_history');
+            a11ySaveData.append('nonce', qaproof.ajaxNonce);
+            a11ySaveData.append('testType', 'accessibility');
+            a11ySaveData.append('pageUrl', pageUrl);
+            a11ySaveData.append('result', JSON.stringify(a11yHistoryData));
+            fetch(qaproof.ajaxUrl, {
+              method: 'POST',
+              body: a11ySaveData,
+              credentials: 'same-origin',
+            })
+            .then(safeJson)
+            .then(function (saveResp) {
+              console.log('[QAProof] A11y history saved (with screenshots):', saveResp);
+              if (a11yHistoryMgr) a11yHistoryMgr.load(true);
+            })
+            .catch(function (err) {
+              console.error('[QAProof] Failed to save a11y history:', err.message);
+              if (a11yHistoryMgr) a11yHistoryMgr.load(true);
+            });
+          },
+          onFailed: function (errorMsg) {
+            a11yTimers.forEach(clearTimeout);
+            a11yErrorMsg.textContent = errorMsg;
+            a11yErrorDiv.classList.remove('hidden');
+            a11yLoading.classList.add('hidden');
+            a11ySubmitBtn.disabled = false;
+          },
+        });
       })
       .catch(function (err) {
         a11yTimers.forEach(clearTimeout);
-        a11yErrorMsg.textContent = err.message || 'Network error. Please check your connection.';
+        // Keep localStorage entry so page reload can re-submit (unless rate-limited)
+        if (err.message && err.message.indexOf('Rate limit') !== -1) {
+          clearActiveJob('accessibility');
+        }
+        a11yErrorMsg.textContent = (err.message || 'Network error.') + ' Reload the page to retry.';
         a11yErrorDiv.classList.remove('hidden');
-      })
-      .finally(function () {
         a11yLoading.classList.add('hidden');
         a11ySubmitBtn.disabled = false;
       });
@@ -6700,5 +7301,174 @@
 
     // Init all selects in #qaproof-app
     app.querySelectorAll('select').forEach(buildCustomSelect);
+  })();
+
+  // ============================
+  // Job Recovery on Page Reload
+  // ============================
+  // Check for active jobs on the CURRENT page and resume polling.
+  // Two phases:
+  //   'submitting' — test was submitted but API hadn't responded yet (no jobId).
+  //                  Re-submit the test automatically.
+  //   'polling'    — jobId is known, resume polling for results.
+  (function () {
+    var isTestsPage = !!document.getElementById('qaproof-test-form');
+    var isA11yPage = !!document.getElementById('qaproof-a11y-form');
+
+    // Determine which page we're on and recover that page's job
+    var currentPage = isA11yPage ? 'accessibility' : (isTestsPage ? 'tests' : null);
+    if (!currentPage) return;
+
+    var activeJob = getActiveJob(currentPage);
+    if (!activeJob) return;
+
+    // Phase 'submitting' — the API call was in-flight when the page was reloaded.
+    // Re-submit the test by programmatically clicking the submit button.
+    // Limit retries to 3 to prevent infinite re-submission loops.
+    if (activeJob.phase === 'submitting') {
+      var retryCount = activeJob.retries || 0;
+      if (retryCount >= 3) {
+        console.warn('[QAProof] Max retries reached (' + retryCount + ') — giving up on', activeJob.testType);
+        clearActiveJob(currentPage);
+        if (currentPage === 'tests') {
+          showError('Test submission failed after multiple retries. Please try again.');
+        } else if (currentPage === 'accessibility') {
+          var a11yErrDivR = document.getElementById('qaproof-a11y-error');
+          var a11yErrMsgR = document.getElementById('qaproof-a11y-error-message');
+          if (a11yErrMsgR) a11yErrMsgR.textContent = 'Test submission failed after multiple retries. Please try again.';
+          if (a11yErrDivR) a11yErrDivR.classList.remove('hidden');
+        }
+        return;
+      }
+
+      console.log('[QAProof] Recovering submitting job — re-submitting (retry ' + (retryCount + 1) + '/3)', activeJob.testType, 'on', currentPage);
+      // Save incremented retry count BEFORE clearing, so the new submission carries it forward
+      var pendingRetries = retryCount + 1;
+      clearActiveJob(currentPage);
+
+      // Stash retry count so the form submit handler can pick it up
+      window.__qaproofPendingRetries = pendingRetries;
+
+      if (currentPage === 'tests') {
+        // Pre-fill the URL if it differs
+        var urlInput = document.getElementById('qaproof-page-url');
+        if (urlInput && activeJob.pageUrl) urlInput.value = activeJob.pageUrl;
+        // Click the submit button to re-run the test
+        if (submitBtn) submitBtn.click();
+      } else if (currentPage === 'accessibility') {
+        var a11yUrlInput = document.getElementById('qaproof-a11y-url');
+        if (a11yUrlInput && activeJob.pageUrl) a11yUrlInput.value = activeJob.pageUrl;
+        var a11ySubmit = document.getElementById('qaproof-a11y-submit-btn');
+        if (a11ySubmit) a11ySubmit.click();
+      }
+      return;
+    }
+
+    // Phase 'polling' (or legacy entries without phase) — jobId is known, resume polling
+    console.log('[QAProof] Recovering active job:', activeJob.jobId, activeJob.testType, 'on', currentPage);
+
+    // Show loading state
+    if (currentPage === 'tests' && loading) {
+      testsPageBusy = true;
+      loading.classList.remove('hidden');
+      if (submitBtn) submitBtn.disabled = true;
+      if (loadingText) loadingText.textContent = 'Resuming test — waiting for results...';
+      if (loadingSubtext) loadingSubtext.textContent = 'Test is still running on the server';
+      // Hide step indicators if present
+      var stepsEl = document.getElementById('qaproof-loading-steps');
+      if (stepsEl) stepsEl.style.display = 'none';
+
+      startJobPolling(activeJob.jobId, {
+        page: 'tests',
+        onPoll: function (status, elapsed) {
+          if (loadingSubtext) loadingSubtext.textContent = 'Status: ' + status + ' (' + elapsed + ')';
+        },
+        onDone: function (resultData) {
+          if (resultData.testType === 'responsive') {
+            renderResponsiveResults(resultData);
+          } else if (resultData.testType === 'accessibility') {
+            renderAccessibilityResults(resultData);
+          } else if (resultData.testType === 'design-audit') {
+            renderDesignAuditResults(resultData);
+          } else {
+            renderFidelityResults(resultData);
+          }
+
+          loading.classList.add('hidden');
+          if (submitBtn) submitBtn.disabled = false;
+          testsPageBusy = false;
+        },
+        onScreenshotsDone: function (resultData) {
+          // Save to history AFTER screenshots are fetched.
+          // Strip base64 screenshots to avoid exceeding PHP post_max_size.
+          var historyData = Object.assign({}, resultData);
+          delete historyData.screenshots;
+          var saveData = new FormData();
+          saveData.append('action', 'qaproof_save_history');
+          saveData.append('nonce', qaproof.ajaxNonce);
+          saveData.append('testType', activeJob.testType);
+          saveData.append('pageUrl', activeJob.pageUrl);
+          saveData.append('result', JSON.stringify(historyData));
+          fetch(qaproof.ajaxUrl, { method: 'POST', body: saveData, credentials: 'same-origin' })
+            .then(safeJson)
+            .then(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); })
+            .catch(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); });
+        },
+        onFailed: function (errorMsg) {
+          showError(escapeHtml(errorMsg));
+          loading.classList.add('hidden');
+          if (submitBtn) submitBtn.disabled = false;
+          testsPageBusy = false;
+        },
+      });
+    } else if (currentPage === 'accessibility') {
+      var a11yLoad = document.getElementById('qaproof-a11y-loading');
+      var a11yBtn = document.getElementById('qaproof-a11y-submit');
+      var a11yLoadText = document.getElementById('qaproof-a11y-loading-text');
+      var a11yLoadSub = document.getElementById('qaproof-a11y-loading-subtext');
+      var a11yErrDiv = document.getElementById('qaproof-a11y-error');
+      var a11yErrMsg = document.getElementById('qaproof-a11y-error-message');
+      var a11yRes = document.getElementById('qaproof-a11y-results');
+
+      if (a11yLoad) a11yLoad.classList.remove('hidden');
+      if (a11yBtn) a11yBtn.disabled = true;
+      if (a11yLoadText) a11yLoadText.textContent = 'Resuming accessibility test — waiting for results...';
+      if (a11yLoadSub) a11yLoadSub.textContent = 'Test is still running on the server';
+
+      startJobPolling(activeJob.jobId, {
+        page: 'accessibility',
+        onPoll: function (status, elapsed) {
+          if (a11yLoadSub) a11yLoadSub.textContent = 'Status: ' + status + ' (' + elapsed + ')';
+        },
+        onDone: function (resultData) {
+          resultsContainer = a11yRes;
+          renderAccessibilityResults(resultData);
+
+          if (a11yLoad) a11yLoad.classList.add('hidden');
+          if (a11yBtn) a11yBtn.disabled = false;
+        },
+        onScreenshotsDone: function (resultData) {
+          // Strip base64 screenshots to avoid exceeding PHP post_max_size.
+          var historyData = Object.assign({}, resultData);
+          delete historyData.screenshots;
+          var saveData = new FormData();
+          saveData.append('action', 'qaproof_save_history');
+          saveData.append('nonce', qaproof.ajaxNonce);
+          saveData.append('testType', 'accessibility');
+          saveData.append('pageUrl', activeJob.pageUrl);
+          saveData.append('result', JSON.stringify(historyData));
+          fetch(qaproof.ajaxUrl, { method: 'POST', body: saveData, credentials: 'same-origin' })
+            .then(safeJson)
+            .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
+            .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
+        },
+        onFailed: function (errorMsg) {
+          if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
+          if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
+          if (a11yLoad) a11yLoad.classList.add('hidden');
+          if (a11yBtn) a11yBtn.disabled = false;
+        },
+      });
+    }
   })();
 })();

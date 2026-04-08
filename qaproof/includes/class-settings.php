@@ -10,6 +10,7 @@ class QAProof_Settings {
     const GROUP_TESTS_FIDELITY   = 'qaproof_group_tests_fidelity';
     const GROUP_TESTS_RESPONSIVE = 'qaproof_group_tests_responsive';
     const GROUP_TESTS_A11Y       = 'qaproof_group_tests_a11y';
+    const GROUP_UNINSTALL        = 'qaproof_group_uninstall';
     const PAGE_SLUG              = 'qaproof-settings';
 
     public static function init() {
@@ -263,6 +264,82 @@ class QAProof_Settings {
             [ __CLASS__, 'render_wcag_level_field' ],
             'qaproof-settings-tests-accessibility',
             'qaproof_tests_accessibility_section'
+        );
+
+        // ============================
+        // Data Cleanup tab — Uninstall preferences
+        // ============================
+        register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_api_key', [
+            'type'              => 'boolean',
+            'sanitize_callback' => 'rest_sanitize_boolean',
+            'default'           => true,
+        ]);
+        register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_settings', [
+            'type'              => 'boolean',
+            'sanitize_callback' => 'rest_sanitize_boolean',
+            'default'           => true,
+        ]);
+        register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_saved_designs', [
+            'type'              => 'boolean',
+            'sanitize_callback' => 'rest_sanitize_boolean',
+            'default'           => true,
+        ]);
+        register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_test_history', [
+            'type'              => 'boolean',
+            'sanitize_callback' => 'rest_sanitize_boolean',
+            'default'           => true,
+        ]);
+        register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_monitors', [
+            'type'              => 'boolean',
+            'sanitize_callback' => 'rest_sanitize_boolean',
+            'default'           => true,
+        ]);
+
+        add_settings_section(
+            'qaproof_uninstall_section',
+            __( 'Data Cleanup on Uninstall', 'qaproof' ),
+            [ __CLASS__, 'render_uninstall_section_description' ],
+            'qaproof-settings-uninstall'
+        );
+
+        add_settings_field(
+            'qaproof_uninstall_delete_api_key',
+            __( 'API Key', 'qaproof' ),
+            [ __CLASS__, 'render_uninstall_api_key_field' ],
+            'qaproof-settings-uninstall',
+            'qaproof_uninstall_section'
+        );
+
+        add_settings_field(
+            'qaproof_uninstall_delete_settings',
+            __( 'Plugin Settings', 'qaproof' ),
+            [ __CLASS__, 'render_uninstall_settings_field' ],
+            'qaproof-settings-uninstall',
+            'qaproof_uninstall_section'
+        );
+
+        add_settings_field(
+            'qaproof_uninstall_delete_saved_designs',
+            __( 'Saved Designs', 'qaproof' ),
+            [ __CLASS__, 'render_uninstall_saved_designs_field' ],
+            'qaproof-settings-uninstall',
+            'qaproof_uninstall_section'
+        );
+
+        add_settings_field(
+            'qaproof_uninstall_delete_test_history',
+            __( 'Test History', 'qaproof' ),
+            [ __CLASS__, 'render_uninstall_test_history_field' ],
+            'qaproof-settings-uninstall',
+            'qaproof_uninstall_section'
+        );
+
+        add_settings_field(
+            'qaproof_uninstall_delete_monitors',
+            __( 'Monitors & Results', 'qaproof' ),
+            [ __CLASS__, 'render_uninstall_monitors_field' ],
+            'qaproof-settings-uninstall',
+            'qaproof_uninstall_section'
         );
     }
 
@@ -551,6 +628,48 @@ class QAProof_Settings {
         </select>
         <p class="description"><?php esc_html_e( 'WCAG 2.1 conformance level to test against. AA is the standard for most websites.', 'qaproof' ); ?></p>
         <?php
+    }
+
+    // ============================
+    // Data Cleanup — Uninstall Fields
+    // ============================
+    public static function render_uninstall_section_description() {
+        echo '<p>' . esc_html__( 'Choose which data to delete when the plugin is removed. Unchecked items will be preserved in the database so they are available if you reinstall later.', 'qaproof' ) . '</p>';
+    }
+
+    public static function render_uninstall_api_key_field() {
+        $value = get_option( 'qaproof_uninstall_delete_api_key', true );
+        echo '<input type="hidden" name="qaproof_uninstall_delete_api_key" value="0" />';
+        echo '<label><input type="checkbox" name="qaproof_uninstall_delete_api_key" value="1" ' . checked( $value, true, false ) . ' /> ';
+        echo esc_html__( 'Delete API key on uninstall', 'qaproof' ) . '</label>';
+    }
+
+    public static function render_uninstall_settings_field() {
+        $value = get_option( 'qaproof_uninstall_delete_settings', true );
+        echo '<input type="hidden" name="qaproof_uninstall_delete_settings" value="0" />';
+        echo '<label><input type="checkbox" name="qaproof_uninstall_delete_settings" value="1" ' . checked( $value, true, false ) . ' /> ';
+        echo esc_html__( 'Delete notification, threshold, viewport, and test settings', 'qaproof' ) . '</label>';
+    }
+
+    public static function render_uninstall_saved_designs_field() {
+        $value = get_option( 'qaproof_uninstall_delete_saved_designs', true );
+        echo '<input type="hidden" name="qaproof_uninstall_delete_saved_designs" value="0" />';
+        echo '<label><input type="checkbox" name="qaproof_uninstall_delete_saved_designs" value="1" ' . checked( $value, true, false ) . ' /> ';
+        echo esc_html__( 'Delete saved designs (including cached images)', 'qaproof' ) . '</label>';
+    }
+
+    public static function render_uninstall_test_history_field() {
+        $value = get_option( 'qaproof_uninstall_delete_test_history', true );
+        echo '<input type="hidden" name="qaproof_uninstall_delete_test_history" value="0" />';
+        echo '<label><input type="checkbox" name="qaproof_uninstall_delete_test_history" value="1" ' . checked( $value, true, false ) . ' /> ';
+        echo esc_html__( 'Delete all test history records', 'qaproof' ) . '</label>';
+    }
+
+    public static function render_uninstall_monitors_field() {
+        $value = get_option( 'qaproof_uninstall_delete_monitors', true );
+        echo '<input type="hidden" name="qaproof_uninstall_delete_monitors" value="0" />';
+        echo '<label><input type="checkbox" name="qaproof_uninstall_delete_monitors" value="1" ' . checked( $value, true, false ) . ' /> ';
+        echo esc_html__( 'Delete all monitors and their regression results', 'qaproof' ) . '</label>';
     }
 
     /**

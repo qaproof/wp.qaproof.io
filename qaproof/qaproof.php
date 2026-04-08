@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'QAPROOF_VERSION', '1.0.0' );
+define( 'QAPROOF_VERSION', '1.2.1' );
 define( 'QAPROOF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -39,6 +39,12 @@ add_action( 'plugins_loaded', function() {
     QAProof_Admin::init();
     QAProof_Scheduler::init();
     QAProof_Notifications::init();
+
+    // Auto-upgrade DB schema if plugin was updated without deactivation
+    $installed_db_version = get_option( 'qaproof_db_version', '0' );
+    if ( version_compare( $installed_db_version, '1.1.0', '<' ) ) {
+        QAProof_Database::create_tables();
+    }
 });
 
 // Activation: create tables and schedule events
