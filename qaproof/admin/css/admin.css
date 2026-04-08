@@ -314,6 +314,20 @@
   padding: 3px;
   border: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  position: relative;
+}
+
+/* Sliding pill indicator */
+#qaproof-app .qaproof-test-type-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--qp-accent);
+  border-radius: var(--qp-radius-pill);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 
 #qaproof-app .qaproof-test-type-btn {
@@ -331,8 +345,10 @@
   cursor: pointer;
   background: transparent;
   color: rgba(238, 238, 238, 0.5);
-  transition: all var(--qp-transition);
+  transition: color 0.3s ease;
   line-height: 120%;
+  position: relative;
+  z-index: 1;
 }
 
 #qaproof-app .qaproof-test-type-btn .dashicons {
@@ -343,14 +359,11 @@
 }
 
 #qaproof-app .qaproof-test-type-btn.active {
-  background: var(--qp-accent);
   color: var(--qp-white);
-  box-shadow: 0 2px 12px rgba(0, 173, 181, 0.3);
 }
 
 #qaproof-app .qaproof-test-type-btn:hover:not(.active) {
   color: #EEEEEE;
-  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ============================
@@ -1107,70 +1120,86 @@
 /* ============================
    Categories Grid
    ============================ */
+/* ============================
+   Categories — Tabs Layout
+   ============================ */
 #qaproof-app .qaproof-categories {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
   margin-bottom: 20px;
 }
 
-#qaproof-app .qaproof-category-card {
-  background: #fff;
-  border: 1px solid #E8EAED;
-  border-radius: 14px;
-  padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  position: relative;
-  overflow: hidden;
+/* Tabs navigation row — pill style with sliding indicator */
+#qaproof-app .qaproof-cat-tabs-nav {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 3px;
+  background: #222831;
+  border-radius: 15px;
+  padding: 3px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  margin-bottom: 12px;
+  position: relative;
 }
 
-#qaproof-app .qaproof-category-card::before {
-  content: '';
+/* Sliding pill indicator */
+#qaproof-app .qaproof-cat-tab-slider {
   position: absolute;
   top: 0;
   left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--qp-accent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  border-radius: 0 2px 2px 0;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 
-#qaproof-app .qaproof-category-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 173, 181, 0.35);
-}
-
-#qaproof-app .qaproof-category-card:hover::before {
-  opacity: 1;
-}
-
-/* Card header: score + title row — dark accent */
-#qaproof-app .qaproof-cat-header {
+/* Single tab button */
+#qaproof-app .qaproof-cat-tab {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 14px 10px;
-  background: #222831;
-  border-radius: 14px 14px 0 0;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  white-space: nowrap;
+  border: none;
+  border-radius: var(--qp-radius-pill);
+  cursor: pointer;
+  background: transparent;
+  color: rgba(238, 238, 238, 0.5);
+  transition: color 0.3s ease;
+  line-height: 120%;
+  position: relative;
+  z-index: 1;
 }
 
-/* Circular score badge */
+#qaproof-app .qaproof-cat-tab:hover:not(.active) {
+  color: #EEEEEE;
+}
+
+#qaproof-app .qaproof-cat-tab.active {
+  color: var(--qp-white);
+}
+
+#qaproof-app .qaproof-cat-tab-label {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qp-accent);
+}
+
+/* Score ring inside tab */
 #qaproof-app .qaproof-cat-score-ring {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
 #qaproof-app .qaproof-cat-score-ring svg {
-  width: 44px;
-  height: 44px;
+  width: 28px;
+  height: 28px;
   transform: rotate(-90deg);
 }
 
@@ -1178,6 +1207,10 @@
   fill: none;
   stroke: rgba(238, 238, 238, 0.15);
   stroke-width: 4.5;
+}
+
+#qaproof-app .qaproof-cat-tab.active .qaproof-ring-bg {
+  stroke: rgba(238, 238, 238, 0.15);
 }
 
 #qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill {
@@ -1198,54 +1231,55 @@
   align-items: center;
   justify-content: center;
   font-family: 'Kodchasan', sans-serif;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
-  color: #EEEEEE;
+  color: rgba(238, 238, 238, 0.7);
+  transition: color 0.3s ease;
 }
 
-/* Title and subtitle */
-#qaproof-app .qaproof-cat-title-group {
-  flex: 1;
-  min-width: 0;
+#qaproof-app .qaproof-cat-tab.active .qaproof-cat-score-num {
+  color: #fff;
 }
 
-#qaproof-app .qaproof-category-card h3 {
+/* Tab panels */
+#qaproof-app .qaproof-cat-tabs-panels {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+#qaproof-app .qaproof-cat-tab-panel {
+  display: none;
+  padding: 20px 24px;
+}
+
+#qaproof-app .qaproof-cat-tab-panel.active {
+  display: block;
+}
+
+#qaproof-app .qaproof-cat-panel-header h3 {
   font-family: 'Kodchasan', sans-serif;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 700;
-  color: #EEEEEE;
-  text-transform: none;
-  letter-spacing: 0;
-  margin: 0 0 3px;
-  line-height: 1.3;
+  color: #222831;
+  margin: 0 0 4px;
 }
 
 #qaproof-app .qaproof-cat-evaluates {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  color: rgba(238, 238, 238, 0.5);
-  text-transform: none;
-  letter-spacing: 0;
-  margin: 0;
+  color: var(--qp-text-secondary);
+  margin: 0 0 12px;
   line-height: 1.4;
 }
 
-/* Divider */
-#qaproof-app .qaproof-cat-divider {
-  height: 0;
-  background: transparent;
-  margin: 0;
-}
-
-/* Notes / description body */
-#qaproof-app .qaproof-category-card p {
-  font-size: 12.5px;
+#qaproof-app .qaproof-cat-tab-panel p {
+  font-size: 13px;
   font-weight: 400;
   color: var(--qp-text-secondary);
-  line-height: 1.55;
+  line-height: 1.6;
   margin: 0;
-  padding: 10px 14px 12px;
-  flex: 1;
 }
 
 /* Legacy bar — hidden (replaced by ring) */
@@ -1735,7 +1769,7 @@
   font-family: 'Kodchasan', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(238, 238, 238, 0.5);
+  color: var(--qp-accent);
   cursor: pointer;
   transition: all 0.2s ease;
   line-height: 1.2;
@@ -3853,6 +3887,7 @@
   color: #EEEEEE;
   position: relative;
   overflow: hidden;
+  margin-bottom: 15px;
 }
 
 #qaproof-app #qaproof-loading::after,
@@ -4215,13 +4250,13 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: rgba(238, 238, 238, 0.3);
+  color: rgba(255, 255, 255);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-top: 32px;
   padding: 8px 16px;
   border-radius: var(--qp-radius-pill);
-  background: rgba(34, 40, 49, 0.5);
+  background: var(--qp-accent);
   user-select: none;
 }
 
@@ -4229,7 +4264,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--qp-accent);
+  background: var(--qp-white);
   display: inline-block;
 }
 
@@ -5426,6 +5461,10 @@
 }
 #qaproof-app .qaproof-form-left {
   min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 #qaproof-app .qaproof-form-left .form-table th {
   padding-top: 12px;
