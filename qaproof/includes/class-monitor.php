@@ -79,10 +79,11 @@ class QAProof_Monitor {
             'notify_email'    => isset( $data['notify_email'] ) ? (int) $data['notify_email'] : 1,
             'notify_admin'    => isset( $data['notify_admin'] ) ? (int) $data['notify_admin'] : 1,
             'threshold_score' => isset( $data['threshold_score'] ) ? (int) $data['threshold_score'] : 90,
+            'scheduled_at'    => ! empty( $data['scheduled_at'] ) ? $data['scheduled_at'] : current_time( 'mysql' ),
             'created_at'      => current_time( 'mysql' ),
         );
 
-        $result = $wpdb->insert( $table, $insert, array( '%s', '%s', '%d', '%d', '%d', '%d', '%s' ) );
+        $result = $wpdb->insert( $table, $insert, array( '%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s' ) );
         return $result ? $wpdb->insert_id : false;
     }
 
@@ -100,7 +101,7 @@ class QAProof_Monitor {
         $allowed = array(
             'page_url', 'baseline_key', 'schedule', 'is_enabled',
             'notify_email', 'notify_admin', 'threshold_score',
-            'last_run_at', 'last_score', 'has_baseline',
+            'scheduled_at', 'last_run_at', 'last_score', 'has_baseline',
         );
 
         $update = array();
@@ -109,7 +110,7 @@ class QAProof_Monitor {
         foreach ( $allowed as $field ) {
             if ( isset( $data[ $field ] ) ) {
                 $update[ $field ] = $data[ $field ];
-                $format[] = in_array( $field, array( 'page_url', 'baseline_key', 'schedule', 'last_run_at' ), true ) ? '%s' : '%d';
+                $format[] = in_array( $field, array( 'page_url', 'baseline_key', 'schedule', 'scheduled_at', 'last_run_at' ), true ) ? '%s' : '%d';
             }
         }
 
@@ -155,8 +156,9 @@ class QAProof_Monitor {
 
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table} WHERE is_enabled = 1 AND schedule = %s",
-                $schedule
+                "SELECT * FROM {$table} WHERE is_enabled = 1 AND schedule = %s AND (scheduled_at IS NULL OR scheduled_at <= %s)",
+                $schedule,
+                current_time( 'mysql' )
             ),
             ARRAY_A
         );

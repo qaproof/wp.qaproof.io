@@ -644,9 +644,15 @@
     row.innerHTML =
       '<div class="qaproof-design-row-fields">' +
         '<input type="text" placeholder="Design Name" value="' + (data.name || '') + '" data-field="name" class="regular-text" />' +
-        '<input type="url" placeholder="Page URL" value="' + (data.pageUrl || '') + '" data-field="pageUrl" class="regular-text" />' +
-        '<input type="password" placeholder="figd_..." value="' + (data.figmaToken || '') + '" data-field="figmaToken" class="regular-text" autocomplete="off" />' +
         '<input type="url" placeholder="Figma URL" value="' + (data.figmaUrl || '') + '" data-field="figmaUrl" class="regular-text" />' +
+        '<div class="qaproof-token-field-wrap">' +
+          '<input type="password" placeholder="Figma Token (figd_...)" value="' + (data.figmaToken || '') + '" data-field="figmaToken" class="regular-text" autocomplete="off" />' +
+          '<button type="button" class="qaproof-token-toggle" title="Show / Hide token">' +
+            '<svg class="qaproof-eye-icon qaproof-eye-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' +
+            '<svg class="qaproof-eye-icon qaproof-eye-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+          '</button>' +
+          '<span class="qaproof-token-fade"></span>' +
+        '</div>' +
         '<input type="hidden" value="' + (data.id || generateId()) + '" data-field="id" />' +
       '</div>' +
       '<button type="button" class="button qaproof-design-remove" title="Remove">' +
@@ -661,7 +667,45 @@
       row.remove();
       syncDesignsToHidden();
     });
+    // Token visibility toggle
+    wireTokenToggle(row);
     return row;
+  }
+
+  function wireTokenToggle(container) {
+    container.querySelectorAll('.qaproof-token-field-wrap').forEach(function (wrap) {
+      var btn    = wrap.querySelector('.qaproof-token-toggle');
+      var inp    = wrap.querySelector('input[data-field="figmaToken"]');
+      var eyeOff = wrap.querySelector('.qaproof-eye-off');
+      var eyeOn  = wrap.querySelector('.qaproof-eye-on');
+      var fadeEl = wrap.querySelector('.qaproof-token-fade');
+      if (!btn || !inp) return;
+
+      // Sync fade gradient to input background (same as API Key)
+      function syncFade() {
+        if (!fadeEl) return;
+        var bg = getComputedStyle(inp).backgroundColor;
+        fadeEl.style.background = 'linear-gradient(to right, transparent, ' + bg + ' 70%)';
+      }
+      syncFade();
+      inp.addEventListener('focus', function () { setTimeout(syncFade, 50); });
+      inp.addEventListener('blur',  function () { setTimeout(syncFade, 50); });
+      var themeBtn = document.getElementById('qaproof-theme-toggle');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function () { setTimeout(syncFade, 100); });
+      }
+
+      // Eye toggle
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var isPassword = inp.type === 'password';
+        inp.type = isPassword ? 'text' : 'password';
+        if (eyeOff && eyeOn) {
+          eyeOff.style.display = isPassword ? 'none'  : 'block';
+          eyeOn.style.display  = isPassword ? 'block' : 'none';
+        }
+      });
+    });
   }
 
   if (addDesignBtn && designsList) {
@@ -672,7 +716,7 @@
       row.querySelector('input').focus();
     });
 
-    // Wire up existing rows' remove buttons and input sync
+    // Wire up existing rows' remove buttons, input sync, and token toggles
     designsList.querySelectorAll('.qaproof-design-row').forEach(function (row) {
       row.querySelectorAll('input').forEach(function (inp) {
         inp.addEventListener('input', syncDesignsToHidden);
@@ -684,6 +728,7 @@
           syncDesignsToHidden();
         });
       }
+      wireTokenToggle(row);
     });
   }
 
@@ -697,6 +742,261 @@
   var monitorForm = document.getElementById('qaproof-monitor-form');
   var addMonitorBtn = document.getElementById('qaproof-add-monitor');
   var monitorCancelBtn = document.getElementById('qaproof-monitor-cancel');
+
+  // ---- Custom Datepicker ----
+  var qaproofDatepicker = (function () {
+    var trigger = document.getElementById('qaproof-datepicker-trigger');
+    var dropdown = document.getElementById('qaproof-datepicker-dropdown');
+    var label = document.getElementById('qaproof-datepicker-label');
+    var hiddenInput = document.getElementById('qaproof-monitor-scheduled-at');
+    if (!trigger || !dropdown) return { set: function(){}, setNow: function(){}, getValue: function(){ return ''; } };
+
+    var isNowMode = true;
+    var selectedDate = new Date();
+    var viewYear = selectedDate.getFullYear();
+    var viewMonth = selectedDate.getMonth();
+    var selectedHour = selectedDate.getHours();
+    var selectedMinute = selectedDate.getMinutes();
+
+    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    var dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function formatLabel(d, h, m) {
+      return pad(d.getDate()) + ' ' + monthNames[d.getMonth()].slice(0, 3) + ' ' + d.getFullYear() + ', ' + pad(h) + ':' + pad(m);
+    }
+
+    function updateHidden() {
+      if (isNowMode) {
+        hiddenInput.value = '';
+      } else {
+        var d = new Date(selectedDate);
+        hiddenInput.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(selectedHour) + ':' + pad(selectedMinute) + ':00';
+      }
+    }
+
+    function updateLabel() {
+      if (isNowMode) {
+        label.textContent = 'Now';
+      } else {
+        label.textContent = formatLabel(selectedDate, selectedHour, selectedMinute);
+      }
+      updateHidden();
+    }
+
+    function render() {
+      var now = new Date();
+      var todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+      var selStr = selectedDate.getFullYear() + '-' + pad(selectedDate.getMonth() + 1) + '-' + pad(selectedDate.getDate());
+
+      var firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      var daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+
+      var html = '<div class="qaproof-dp-header">';
+      html += '<button type="button" class="qaproof-dp-nav" data-dir="-1">&lsaquo;</button>';
+      html += '<span>' + monthNames[viewMonth] + ' ' + viewYear + '</span>';
+      html += '<button type="button" class="qaproof-dp-nav" data-dir="1">&rsaquo;</button>';
+      html += '</div>';
+
+      html += '<div class="qaproof-dp-weekdays">';
+      for (var w = 0; w < 7; w++) html += '<span>' + dayNames[w] + '</span>';
+      html += '</div>';
+
+      html += '<div class="qaproof-dp-days">';
+      // Previous month padding
+      for (var p = firstDay - 1; p >= 0; p--) {
+        var pd = daysInPrev - p;
+        html += '<button type="button" class="qaproof-dp-day other-month" data-y="' + (viewMonth === 0 ? viewYear - 1 : viewYear) + '" data-m="' + (viewMonth === 0 ? 11 : viewMonth - 1) + '" data-d="' + pd + '">' + pd + '</button>';
+      }
+      // Current month
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = viewYear + '-' + pad(viewMonth + 1) + '-' + pad(d);
+        var cls = 'qaproof-dp-day';
+        if (dateStr === todayStr) cls += ' today';
+        if (dateStr === selStr && !isNowMode) cls += ' selected';
+        // Don't disable past dates — user might want to set "from now"
+        html += '<button type="button" class="' + cls + '" data-y="' + viewYear + '" data-m="' + viewMonth + '" data-d="' + d + '">' + d + '</button>';
+      }
+      // Next month padding
+      var totalCells = firstDay + daysInMonth;
+      var remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (var n = 1; n <= remaining; n++) {
+        html += '<button type="button" class="qaproof-dp-day other-month" data-y="' + (viewMonth === 11 ? viewYear + 1 : viewYear) + '" data-m="' + (viewMonth === 11 ? 0 : viewMonth + 1) + '" data-d="' + n + '">' + n + '</button>';
+      }
+      html += '</div>';
+
+      // Time row — custom scroll selectors
+      var roundedMin = selectedMinute - (selectedMinute % 5);
+      html += '<div class="qaproof-dp-time">';
+      html += '<label>Time</label>';
+      html += '<div class="qaproof-dp-scroll-wrap">';
+      html += '<div class="qaproof-dp-scroll" data-role="hour">';
+      for (var h = 0; h < 24; h++) html += '<div class="qaproof-dp-scroll-item' + (h === selectedHour ? ' selected' : '') + '" data-val="' + h + '">' + pad(h) + '</div>';
+      html += '</div></div>';
+      html += '<span class="qaproof-dp-colon">:</span>';
+      html += '<div class="qaproof-dp-scroll-wrap">';
+      html += '<div class="qaproof-dp-scroll" data-role="minute">';
+      for (var mi = 0; mi < 60; mi += 5) html += '<div class="qaproof-dp-scroll-item' + (mi === roundedMin ? ' selected' : '') + '" data-val="' + mi + '">' + pad(mi) + '</div>';
+      html += '</div></div>';
+      html += '</div>';
+
+      // Actions
+      html += '<div class="qaproof-dp-actions">';
+      html += '<button type="button" class="qaproof-dp-btn-now">Now</button>';
+      html += '<button type="button" class="qaproof-dp-btn-apply">Apply</button>';
+      html += '</div>';
+
+      dropdown.innerHTML = html;
+
+      // Wire events
+      dropdown.querySelectorAll('.qaproof-dp-nav').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var dir = parseInt(b.dataset.dir, 10);
+          viewMonth += dir;
+          if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+          if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+          render();
+        });
+      });
+
+      dropdown.querySelectorAll('.qaproof-dp-day').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          isNowMode = false;
+          selectedDate = new Date(parseInt(b.dataset.y), parseInt(b.dataset.m), parseInt(b.dataset.d));
+          viewYear = selectedDate.getFullYear();
+          viewMonth = selectedDate.getMonth();
+          render();
+        });
+      });
+
+      // Wire scroll time selectors
+      dropdown.querySelectorAll('.qaproof-dp-scroll').forEach(function (scroller) {
+        var role = scroller.dataset.role;
+        // Scroll selected item into view
+        var selItem = scroller.querySelector('.selected');
+        if (selItem) selItem.scrollIntoView({ block: 'center' });
+
+        scroller.querySelectorAll('.qaproof-dp-scroll-item').forEach(function (item) {
+          item.addEventListener('click', function (e) {
+            e.stopPropagation();
+            scroller.querySelectorAll('.qaproof-dp-scroll-item').forEach(function (s) { s.classList.remove('selected'); });
+            item.classList.add('selected');
+            isNowMode = false;
+            if (role === 'hour') selectedHour = parseInt(item.dataset.val, 10);
+            if (role === 'minute') selectedMinute = parseInt(item.dataset.val, 10);
+          });
+        });
+      });
+
+      var nowBtn = dropdown.querySelector('.qaproof-dp-btn-now');
+      if (nowBtn) nowBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        isNowMode = true;
+        selectedDate = new Date();
+        selectedHour = selectedDate.getHours();
+        selectedMinute = selectedDate.getMinutes();
+        viewYear = selectedDate.getFullYear();
+        viewMonth = selectedDate.getMonth();
+        updateLabel();
+        dropdown.classList.add('hidden');
+      });
+
+      var applyBtn = dropdown.querySelector('.qaproof-dp-btn-apply');
+      if (applyBtn) applyBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (isNowMode) {
+          selectedDate = new Date();
+          selectedHour = selectedDate.getHours();
+          selectedMinute = selectedDate.getMinutes();
+        }
+        updateLabel();
+        dropdown.classList.add('hidden');
+      });
+    }
+
+    function positionDropdown() {
+      var rect = trigger.getBoundingClientRect();
+      // Reset max-height so we can measure real height
+      dropdown.style.maxHeight = '';
+      var dpH = dropdown.scrollHeight;
+      var vpH = window.innerHeight;
+      var top;
+      var spaceAbove = rect.top - 10;
+      var spaceBelow = vpH - rect.bottom - 10;
+
+      if (spaceAbove >= dpH) {
+        // Fits above — preferred
+        top = rect.top - dpH - 6;
+      } else if (spaceBelow >= dpH) {
+        // Fits below
+        top = rect.bottom + 6;
+      } else if (spaceAbove > spaceBelow) {
+        // More space above — anchor to top of viewport, scroll inside
+        top = 10;
+        dropdown.style.maxHeight = (rect.top - 16) + 'px';
+      } else {
+        // More space below — anchor below trigger, scroll inside
+        top = rect.bottom + 6;
+        dropdown.style.maxHeight = (vpH - rect.bottom - 16) + 'px';
+      }
+      dropdown.style.top = top + 'px';
+      dropdown.style.left = rect.left + 'px';
+    }
+
+    trigger.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dropdown.classList.contains('hidden')) {
+        render();
+        dropdown.classList.remove('hidden');
+        positionDropdown();
+      } else {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    // Keep dropdown in place on scroll (don't move, don't close)
+
+    // Close on outside click
+    document.addEventListener('click', function (e) {
+      if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && e.target !== trigger && !trigger.contains(e.target)) {
+        updateLabel();
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    return {
+      set: function (date) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) { this.setNow(); return; }
+        isNowMode = false;
+        selectedDate = date;
+        selectedHour = date.getHours();
+        selectedMinute = date.getMinutes();
+        viewYear = date.getFullYear();
+        viewMonth = date.getMonth();
+        updateLabel();
+      },
+      setNow: function () {
+        isNowMode = true;
+        selectedDate = new Date();
+        selectedHour = selectedDate.getHours();
+        selectedMinute = selectedDate.getMinutes();
+        viewYear = selectedDate.getFullYear();
+        viewMonth = selectedDate.getMonth();
+        updateLabel();
+      },
+      getValue: function () {
+        if (isNowMode) return '';
+        return selectedDate.getFullYear() + '-' + pad(selectedDate.getMonth() + 1) + '-' + pad(selectedDate.getDate()) + ' ' + pad(selectedHour) + ':' + pad(selectedMinute) + ':00';
+      }
+    };
+  })();
+  // ---- End Datepicker ----
 
   if (monitorsListEl) {
     initMonitorsPage();
@@ -788,7 +1088,14 @@
 
       html += '<tr data-id="' + m.id + '" class="qaproof-monitor-row-clickable">';
       html += '<td class="qaproof-monitor-url"><a href="#" class="qaproof-monitor-detail-link" data-id="' + m.id + '">' + escapeHtml(truncateUrl(m.page_url, 60)) + '</a> <span class="qaproof-monitor-view-hint">View Results &rsaquo;</span></td>';
-      html += '<td>' + escapeHtml(capitalize(m.schedule)) + '</td>';
+      var scheduleText = capitalize(m.schedule);
+      if (m.scheduled_at) {
+        var sa = new Date(m.scheduled_at.replace(' ', 'T'));
+        if (!isNaN(sa.getTime()) && sa > new Date()) {
+          scheduleText += ' (from ' + formatDate(m.scheduled_at) + ')';
+        }
+      }
+      html += '<td>' + escapeHtml(scheduleText) + '</td>';
       html += '<td><span class="qaproof-monitor-score ' + scoreClass + '">' + scoreText + '</span></td>';
       html += '<td>' + escapeHtml(lastRun) + '</td>';
       html += '<td><span class="' + statusClass + '">' + escapeHtml(statusText + baselineText) + '</span></td>';
@@ -861,14 +1168,20 @@
       if (editIdEl) editIdEl.value = monitor.id;
       if (urlInput) urlInput.value = monitor.page_url;
       if (scheduleSelect) scheduleSelect.value = monitor.schedule;
+      if (monitor.scheduled_at) {
+        qaproofDatepicker.set(new Date(monitor.scheduled_at.replace(' ', 'T')));
+      } else {
+        qaproofDatepicker.setNow();
+      }
       if (thresholdInput) thresholdInput.value = monitor.threshold_score;
       if (notifyEmailCb) notifyEmailCb.checked = parseInt(monitor.notify_email, 10) === 1;
       if (notifyAdminCb) notifyAdminCb.checked = parseInt(monitor.notify_admin, 10) === 1;
     } else {
       if (titleEl) titleEl.textContent = 'Add Monitor';
       if (editIdEl) editIdEl.value = '';
-      if (urlInput) urlInput.value = qaproof.siteUrl;
+      if (urlInput) urlInput.value = '';
       if (scheduleSelect) scheduleSelect.value = 'daily';
+      qaproofDatepicker.setNow();
       if (thresholdInput) thresholdInput.value = qaproof.defaultThreshold || 90;
       if (notifyEmailCb) notifyEmailCb.checked = true;
       if (notifyAdminCb) notifyAdminCb.checked = true;
@@ -887,6 +1200,7 @@
     var data = {
       page_url: document.getElementById('qaproof-monitor-url').value.trim(),
       schedule: document.getElementById('qaproof-monitor-schedule').value,
+      scheduled_at: qaproofDatepicker.getValue(),
       threshold_score: parseInt(document.getElementById('qaproof-monitor-threshold').value, 10),
       notify_email: document.getElementById('qaproof-monitor-notify-email').checked ? 1 : 0,
       notify_admin: document.getElementById('qaproof-monitor-notify-admin').checked ? 1 : 0,
@@ -1052,7 +1366,14 @@
     html += '  <button type="button" id="qaproof-back-to-list" class="button">&larr; Back to Monitors</button>';
     html += '  <h2>' + escapeHtml(monitor.page_url) + '</h2>';
     html += '  <div class="qaproof-detail-meta">';
-    html += '    <span>Schedule: <strong>' + escapeHtml(capitalize(monitor.schedule)) + '</strong></span>';
+    var detailSchedule = capitalize(monitor.schedule);
+    if (monitor.scheduled_at) {
+      var saD = new Date(monitor.scheduled_at.replace(' ', 'T'));
+      if (!isNaN(saD.getTime()) && saD > new Date()) {
+        detailSchedule += ' (starts ' + formatDate(monitor.scheduled_at) + ')';
+      }
+    }
+    html += '    <span>Schedule: <strong>' + escapeHtml(detailSchedule) + '</strong></span>';
     html += '    <span>Threshold: <strong>' + monitor.threshold_score + '</strong></span>';
     html += '    <span>Last Score: <strong class="' + getScoreClass(parseInt(monitor.last_score, 10)) + '">' + (monitor.last_score != null ? monitor.last_score : '—') + '</strong></span>';
     html += '  </div>';
@@ -1502,11 +1823,9 @@
       if (!found) return;
 
       // Auto-fill form fields
-      var pageUrlEl    = document.getElementById('qaproof-page-url');
       var figmaTokenEl = document.getElementById('qaproof-figma-token');
       var figmaUrlEl   = document.getElementById('qaproof-figma-url');
 
-      if (pageUrlEl && found.pageUrl)    pageUrlEl.value = found.pageUrl;
       if (figmaTokenEl && found.figmaToken) figmaTokenEl.value = found.figmaToken;
       if (figmaUrlEl && found.figmaUrl)  figmaUrlEl.value = found.figmaUrl;
 
@@ -2825,7 +3144,7 @@
       loadingSubtext.textContent = 'This may take 1-2 minutes (3 screenshots + AI analysis)';
     } else if (testType === 'accessibility') {
       loadingText.textContent = 'Capturing page and running accessibility audit...';
-      var wcagLvl = (typeof qaproof !== 'undefined' && qaproof.wcagLevel) ? qaproof.wcagLevel : 'AA';
+      var wcagLvl = (document.getElementById('qaproof-a11y-wcag-level') || {}).value || (typeof qaproof !== 'undefined' && qaproof.wcagLevel) || 'AA';
       loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level ' + wcagLvl + ' compliance (30-60 seconds)';
     } else if (testType === 'design-audit') {
       loadingText.textContent = 'Scanning page and extracting design tokens...';
@@ -6901,7 +7220,7 @@
       var a11yBody = {
         pageUrl: pageUrl,
         testType: 'accessibility',
-        wcagLevel: qaproof.wcagLevel || 'AA'
+        wcagLevel: (document.getElementById('qaproof-a11y-wcag-level') || {}).value || qaproof.wcagLevel || 'AA'
       };
 
       // Save to localStorage BEFORE the API call so reload during submission can recover.
@@ -7181,6 +7500,23 @@
     if (settingsForm) {
       settingsForm.addEventListener('submit', function () {
         sessionStorage.setItem('qaproof_settings_saved', '1');
+        // Animate the submit button while the page reloads
+        var btn = settingsForm.querySelector('#submit, input[type="submit"], button[type="submit"]');
+        if (!btn) return;
+        btn.disabled = true;
+        // Create a spinner div that matches the button exactly
+        var w = btn.offsetWidth;
+        var h = btn.offsetHeight;
+        var btnCs = getComputedStyle(btn);
+        var spinner = document.createElement('div');
+        spinner.className = 'qaproof-btn-saving';
+        spinner.style.cssText = 'width:' + w + 'px;height:' + h + 'px;'
+          + 'background:' + btnCs.background + ';'
+          + 'border-radius:' + btnCs.borderRadius + ';'
+          + 'margin:' + btnCs.margin + ';';
+        spinner.innerHTML = '<span class="qaproof-btn-saving-spinner"></span>';
+        btn.parentNode.insertBefore(spinner, btn);
+        btn.style.setProperty('display', 'none', 'important');
       });
     }
   })();
@@ -7464,9 +7800,68 @@
       if (submitBtn) submitBtn.disabled = true;
       if (loadingText) loadingText.textContent = 'Resuming test — waiting for results...';
       if (loadingSubtext) loadingSubtext.textContent = 'Test is still running on the server';
-      // Hide step indicators if present
+
+      // Build progress steps (same as normal flow, but start from step 2)
+      var checkSvgR = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var resumeTestType = activeJob.testType || 'fidelity';
+      var resumeSteps = resumeTestType === 'design-audit' ? [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 0, text: 'Extracting design tokens from DOM' },
+        { time: 0, text: 'Analyzing color palette & typography' },
+        { time: 8000, text: 'AI auditing design consistency' },
+        { time: 30000, text: 'Building design debt report' },
+      ] : [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 0, text: 'Processing images' },
+        { time: 0, text: 'Running AI analysis' },
+        { time: 12000, text: 'Generating report' },
+        { time: 40000, text: 'Finalizing results' },
+      ];
       var stepsEl = document.getElementById('qaproof-loading-steps');
-      if (stepsEl) stepsEl.style.display = 'none';
+      if (stepsEl) {
+        stepsEl.style.display = '';
+        stepsEl.innerHTML = '';
+        for (var si = 0; si < resumeSteps.length; si++) {
+          if (si > 0) {
+            var conn = document.createElement('div');
+            conn.className = 'qaproof-step-connector' + (si <= 2 ? ' completed' : '');
+            conn.id = 'qaproof-connector-' + si;
+            stepsEl.appendChild(conn);
+          }
+          var stepEl = document.createElement('div');
+          // First 2 steps already completed, 3rd is active
+          if (si < 2) {
+            stepEl.className = 'qaproof-loading-step completed';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + checkSvgR + '</span>';
+          } else if (si === 2) {
+            stepEl.className = 'qaproof-loading-step active';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          } else {
+            stepEl.className = 'qaproof-loading-step';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          }
+          stepEl.id = 'qaproof-lstep-' + si;
+          stepsEl.appendChild(stepEl);
+        }
+        // Update loading text to match current step
+        loadingText.textContent = resumeSteps[2].text + '...';
+      }
+      // Animate remaining steps
+      var resumeTimers = resumeSteps.map(function (step, idx) {
+        if (step.time === 0) return null;
+        return setTimeout(function () {
+          for (var j = 0; j < idx; j++) {
+            var prev = document.getElementById('qaproof-lstep-' + j);
+            if (prev) { prev.classList.remove('active'); prev.classList.add('completed'); var ind = prev.querySelector('.qaproof-step-indicator'); if (ind) ind.innerHTML = checkSvgR; }
+            var c = document.getElementById('qaproof-connector-' + (j + 1));
+            if (c) c.classList.add('completed');
+          }
+          var curr = document.getElementById('qaproof-lstep-' + idx);
+          if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
+          if (loadingText) loadingText.textContent = step.text + '...';
+          if (loadingSubtext) loadingSubtext.textContent = idx < resumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        }, step.time);
+      });
 
       startJobPolling(activeJob.jobId, {
         page: 'tests',
@@ -7474,6 +7869,7 @@
           if (loadingSubtext) loadingSubtext.textContent = 'Status: ' + status + ' (' + elapsed + ')';
         },
         onDone: function (resultData) {
+          resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           if (resultData.testType === 'responsive') {
             renderResponsiveResults(resultData);
           } else if (resultData.testType === 'accessibility') {
@@ -7525,12 +7921,66 @@
       if (a11yLoadText) a11yLoadText.textContent = 'Resuming accessibility test — waiting for results...';
       if (a11yLoadSub) a11yLoadSub.textContent = 'Test is still running on the server';
 
+      // Build progress steps for accessibility resume (same pattern as tests page)
+      var checkSvgA = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var a11yResumeSteps = [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 0, text: 'Processing images' },
+        { time: 0, text: 'Running accessibility analysis' },
+        { time: 12000, text: 'Evaluating WCAG compliance' },
+        { time: 40000, text: 'Generating audit report' },
+      ];
+      var a11yStepsEl = document.getElementById('qaproof-a11y-loading-steps');
+      if (a11yStepsEl) {
+        a11yStepsEl.style.display = '';
+        a11yStepsEl.innerHTML = '';
+        for (var si = 0; si < a11yResumeSteps.length; si++) {
+          if (si > 0) {
+            var conn = document.createElement('div');
+            conn.className = 'qaproof-step-connector' + (si <= 2 ? ' completed' : '');
+            conn.id = 'qaproof-a11y-connector-' + si;
+            a11yStepsEl.appendChild(conn);
+          }
+          var stepEl = document.createElement('div');
+          if (si < 2) {
+            stepEl.className = 'qaproof-loading-step completed';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + checkSvgA + '</span>';
+          } else if (si === 2) {
+            stepEl.className = 'qaproof-loading-step active';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          } else {
+            stepEl.className = 'qaproof-loading-step';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          }
+          stepEl.id = 'qaproof-a11y-lstep-' + si;
+          a11yStepsEl.appendChild(stepEl);
+        }
+        if (a11yLoadText) a11yLoadText.textContent = a11yResumeSteps[2].text + '...';
+      }
+      // Animate remaining steps on timers
+      var a11yResumeTimers = a11yResumeSteps.map(function (step, idx) {
+        if (step.time === 0) return null;
+        return setTimeout(function () {
+          for (var j = 0; j < idx; j++) {
+            var prev = document.getElementById('qaproof-a11y-lstep-' + j);
+            if (prev) { prev.classList.remove('active'); prev.classList.add('completed'); var ind = prev.querySelector('.qaproof-step-indicator'); if (ind) ind.innerHTML = checkSvgA; }
+            var c = document.getElementById('qaproof-a11y-connector-' + (j + 1));
+            if (c) c.classList.add('completed');
+          }
+          var curr = document.getElementById('qaproof-a11y-lstep-' + idx);
+          if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
+          if (a11yLoadText) a11yLoadText.textContent = step.text + '...';
+          if (a11yLoadSub) a11yLoadSub.textContent = idx < a11yResumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        }, step.time);
+      });
+
       startJobPolling(activeJob.jobId, {
         page: 'accessibility',
         onPoll: function (status, elapsed) {
           if (a11yLoadSub) a11yLoadSub.textContent = 'Status: ' + status + ' (' + elapsed + ')';
         },
         onDone: function (resultData) {
+          a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           resultsContainer = a11yRes;
           renderAccessibilityResults(resultData);
 
@@ -7553,6 +8003,7 @@
             .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
         },
         onFailed: function (errorMsg) {
+          a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
           if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
           if (a11yLoad) a11yLoad.classList.add('hidden');

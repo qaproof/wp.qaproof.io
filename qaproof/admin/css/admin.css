@@ -3723,7 +3723,7 @@
 #qaproof-app .qaproof-design-row-fields {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 #qaproof-app .qaproof-design-row-fields input.regular-text {
@@ -3731,6 +3731,52 @@
   max-width: 100% !important;
   font-size: 13px !important;
   padding: 8px 12px !important;
+}
+/* Token field with eye toggle (mirrors API Key eye toggle) */
+#qaproof-app .qaproof-token-field-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+#qaproof-app .qaproof-token-field-wrap input.regular-text {
+  padding-right: 44px !important;
+}
+/* Fade gradient before the eye icon — matches API Key fade */
+#qaproof-app .qaproof-token-fade {
+  position: absolute;
+  right: 34px;
+  top: 2px;
+  bottom: 2px;
+  width: 36px;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 var(--qp-radius, 12px) var(--qp-radius, 12px) 0;
+}
+#qaproof-app .qaproof-token-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer;
+  padding: 4px !important;
+  color: var(--qp-gray, #9CA3AF) !important;
+  font-size: 0 !important;
+  box-shadow: none !important;
+  z-index: 2;
+  transition: color 0.2s ease;
+}
+#qaproof-app .qaproof-token-toggle:hover {
+  color: var(--qp-accent, #00ADB5) !important;
+}
+#qaproof-app .qaproof-token-toggle:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+#qaproof-app .qaproof-token-toggle .qaproof-eye-icon {
+  display: block;
 }
 #qaproof-app .qaproof-design-remove {
   flex-shrink: 0;
@@ -3883,6 +3929,7 @@
   background: #222831;
   border-radius: var(--qp-radius-card);
   padding: 28px 32px;
+  margin-bottom: 20px;
   box-shadow: var(--qp-shadow);
   color: #EEEEEE;
   position: relative;
@@ -3931,6 +3978,275 @@
   border-radius: 50%;
   animation: qaproof-spinner 0.8s linear infinite;
   flex-shrink: 0;
+}
+
+/* ============================
+   Custom Datepicker
+   ============================ */
+#qaproof-app .qaproof-datepicker-wrap {
+  position: relative;
+  display: inline-block;
+}
+#qaproof-app .qaproof-datepicker-trigger {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px !important;
+  background: var(--qp-white) !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: var(--qp-radius, 12px) !important;
+  color: var(--qp-text-primary) !important;
+  font-family: var(--qp-font) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: border-color var(--qp-transition), box-shadow var(--qp-transition);
+  box-shadow: none !important;
+  min-width: 180px;
+}
+#qaproof-app .qaproof-datepicker-trigger:hover {
+  border-color: var(--qp-accent) !important;
+}
+#qaproof-app .qaproof-datepicker-trigger:focus {
+  border-color: var(--qp-accent) !important;
+  box-shadow: 0 0 0 2px var(--qp-accent-dim) !important;
+  outline: none;
+}
+#qaproof-app .qaproof-datepicker-trigger svg {
+  color: var(--qp-text-muted);
+  flex-shrink: 0;
+}
+#qaproof-app .qaproof-datepicker-dropdown {
+  position: fixed;
+  z-index: 9999;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--qp-accent-dim) transparent;
+  background: var(--qp-white);
+  border-radius: var(--qp-radius-sm);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e5e7eb;
+  padding: 14px;
+  min-width: 290px;
+  animation: qaproof-fade-in 0.15s ease;
+}
+@keyframes qaproof-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+#qaproof-app .qaproof-dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+#qaproof-app .qaproof-dp-header span {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--qp-text-primary);
+}
+#qaproof-app .qaproof-dp-nav {
+  background: none !important;
+  border: none !important;
+  padding: 4px 8px !important;
+  cursor: pointer;
+  color: var(--qp-text-muted) !important;
+  font-size: 16px !important;
+  border-radius: 8px !important;
+  transition: background var(--qp-transition);
+  box-shadow: none !important;
+}
+#qaproof-app .qaproof-dp-nav:hover {
+  background: var(--qp-accent-dim) !important;
+  color: var(--qp-accent) !important;
+}
+#qaproof-app .qaproof-dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 4px;
+}
+#qaproof-app .qaproof-dp-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--qp-text-muted);
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+#qaproof-app .qaproof-dp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+#qaproof-app .qaproof-dp-day {
+  text-align: center;
+  padding: 6px 0;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--qp-text-primary);
+  transition: background var(--qp-transition), color var(--qp-transition);
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  font-family: var(--qp-font) !important;
+}
+#qaproof-app .qaproof-dp-day:hover {
+  background: var(--qp-accent-dim) !important;
+}
+#qaproof-app .qaproof-dp-day.other-month {
+  color: #ccc;
+}
+#qaproof-app .qaproof-dp-day.today {
+  font-weight: 700;
+  color: var(--qp-accent);
+}
+#qaproof-app .qaproof-dp-day.selected {
+  background: var(--qp-accent) !important;
+  color: var(--qp-white) !important;
+  font-weight: 600;
+}
+#qaproof-app .qaproof-dp-day.past {
+  color: #ccc;
+  pointer-events: none;
+  opacity: 0.5;
+}
+#qaproof-app .qaproof-dp-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+#qaproof-app .qaproof-dp-time label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qp-text-secondary);
+  white-space: nowrap;
+}
+#qaproof-app .qaproof-dp-scroll-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  flex: 1;
+}
+#qaproof-app .qaproof-dp-scroll {
+  max-height: 100px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--qp-accent-dim) transparent;
+}
+#qaproof-app .qaproof-dp-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+#qaproof-app .qaproof-dp-scroll::-webkit-scrollbar-thumb {
+  background: var(--qp-accent-dim);
+  border-radius: 4px;
+}
+#qaproof-app .qaproof-dp-scroll-item {
+  padding: 4px 12px;
+  font-size: 13px;
+  font-family: var(--qp-font);
+  color: var(--qp-text-primary);
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--qp-transition), color var(--qp-transition);
+}
+#qaproof-app .qaproof-dp-scroll-item:hover {
+  background: var(--qp-accent-dim);
+}
+#qaproof-app .qaproof-dp-scroll-item.selected {
+  background: var(--qp-accent);
+  color: var(--qp-white);
+  font-weight: 600;
+}
+#qaproof-app .qaproof-dp-time .qaproof-dp-colon {
+  font-weight: 700;
+  color: var(--qp-text-muted);
+}
+#qaproof-app .qaproof-dp-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+#qaproof-app .qaproof-dp-actions button {
+  padding: 5px 14px !important;
+  font-size: 12px !important;
+  font-family: var(--qp-font) !important;
+  border-radius: var(--qp-radius-pill) !important;
+  cursor: pointer;
+  border: none !important;
+  box-shadow: none !important;
+  transition: all var(--qp-transition);
+}
+#qaproof-app .qaproof-dp-btn-now {
+  background: var(--qp-accent-dim) !important;
+  color: var(--qp-accent) !important;
+  font-weight: 600 !important;
+}
+#qaproof-app .qaproof-dp-btn-now:hover {
+  background: var(--qp-accent) !important;
+  color: var(--qp-white) !important;
+}
+#qaproof-app .qaproof-dp-btn-apply {
+  background: var(--qp-accent) !important;
+  color: var(--qp-white) !important;
+  font-weight: 600 !important;
+}
+#qaproof-app .qaproof-dp-btn-apply:hover {
+  background: var(--qp-accent-hover) !important;
+}
+
+/* Dark theme overrides */
+body.qaproof-dark #qaproof-app .qaproof-datepicker-trigger {
+  background: var(--qp-card-bg) !important;
+  border-color: var(--qp-card-border) !important;
+  color: var(--qp-text-primary) !important;
+}
+body.qaproof-dark #qaproof-app .qaproof-datepicker-dropdown {
+  background: var(--qp-card-bg);
+  border-color: var(--qp-card-border);
+}
+body.qaproof-dark #qaproof-app .qaproof-dp-day {
+  color: var(--qp-text-primary);
+}
+body.qaproof-dark #qaproof-app .qaproof-dp-day.other-month {
+  color: #555;
+}
+body.qaproof-dark #qaproof-app .qaproof-dp-scroll-wrap {
+  border-color: var(--qp-card-border);
+}
+body.qaproof-dark #qaproof-app .qaproof-dp-scroll-item {
+  color: var(--qp-text-primary);
+}
+body.qaproof-dark #qaproof-app .qaproof-dp-scroll-item:hover {
+  background: rgba(0, 173, 181, 0.15);
+}
+body.qaproof-dark #qaproof-app .qaproof-dp-time,
+body.qaproof-dark #qaproof-app .qaproof-dp-actions {
+  border-top-color: var(--qp-card-border);
+}
+
+#qaproof-app .qaproof-btn-saving {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.85;
+}
+#qaproof-app .qaproof-btn-saving-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: qaproof-spinner 0.7s linear infinite;
 }
 
 #qaproof-app .qaproof-loading-info {
