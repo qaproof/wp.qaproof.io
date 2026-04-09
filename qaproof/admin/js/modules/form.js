@@ -190,14 +190,38 @@
   // Design Source Toggle (Saved Design / Upload Image)
   // ============================
   if (S.sourceToggle) {
+    // Create sliding indicator
+    var srcSlider = document.createElement('div');
+    srcSlider.className = 'qaproof-source-toggle-slider';
+    S.sourceToggle.appendChild(srcSlider);
+
+    function moveSourceSlider(btn) {
+      var navRect = S.sourceToggle.getBoundingClientRect();
+      var btnRect = btn.getBoundingClientRect();
+      srcSlider.style.width = btnRect.width + 'px';
+      srcSlider.style.height = btnRect.height + 'px';
+      srcSlider.style.transform = 'translateX(' + (btnRect.left - navRect.left - S.sourceToggle.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - S.sourceToggle.clientTop) + 'px)';
+    }
+
+    // Initial position without transition
+    requestAnimationFrame(function () {
+      var activeBtn = S.sourceToggle.querySelector('.qaproof-source-btn.active');
+      if (activeBtn) {
+        srcSlider.style.transition = 'none';
+        moveSourceSlider(activeBtn);
+        requestAnimationFrame(function () { srcSlider.style.transition = ''; });
+      }
+    });
+
     S.sourceToggle.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-source-btn');
-      if (!btn) return;
+      if (!btn || btn.classList.contains('active')) return;
 
       S.sourceToggle.querySelectorAll('.qaproof-source-btn').forEach(function (b) {
         b.classList.remove('active');
       });
       btn.classList.add('active');
+      moveSourceSlider(btn);
 
       var source = btn.dataset.source;
       if (S.sourceSaved) S.sourceSaved.classList.toggle('hidden', source !== 'saved');
