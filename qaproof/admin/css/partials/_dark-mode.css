@@ -1,0 +1,554 @@
+/* ============================
+   Theme Toggle Button
+   ============================ */
+#qaproof-app .qaproof-theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--qp-border);
+  background: var(--qp-bg-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--qp-text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+#qaproof-app .qaproof-theme-toggle:hover {
+  background: var(--qp-accent);
+  color: #fff;
+  border-color: var(--qp-accent);
+  transform: rotate(15deg);
+}
+/* Light mode: show moon, hide sun */
+#qaproof-app .qaproof-theme-icon-sun { display: none; }
+#qaproof-app .qaproof-theme-icon-moon { display: block; }
+/* Dark mode: show sun, hide moon */
+#qaproof-app.qaproof-dark .qaproof-theme-icon-sun { display: block; }
+#qaproof-app.qaproof-dark .qaproof-theme-icon-moon { display: none; }
+
+/* ============================
+   DARK THEME
+   Activated via .qaproof-dark class on #qaproof-app
+   4-level shade hierarchy: page → card → surface → elevated
+   ============================ */
+#qaproof-app.qaproof-dark {
+  --qp-bg-dark: #2a3240;
+  --qp-bg-card: #323b4a;
+  --qp-bg-card-dark: #2a3240;
+  --qp-bg-surface: #3a4352;
+  --qp-bg-input: #3a4352;
+  --qp-bg-elevated: #424c5c;
+  --qp-border: rgba(255, 255, 255, 0.12);
+  --qp-border-light: rgba(255, 255, 255, 0.08);
+  --qp-text-primary: #f0f3f7;
+  --qp-text-secondary: #a8b2c1;
+  --qp-text-muted: #7b8698;
+  --qp-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --qp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --qp-card-border: rgba(255, 255, 255, 0.10);
+  --qp-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --qp-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --qp-divider: rgba(255, 255, 255, 0.09);
+
+  background: #0d1117;
+  color: #f0f3f7;
+}
+
+/* Dark: same two gradient blobs as light theme, toned for dark bg */
+#qaproof-app.qaproof-dark::before {
+  background: radial-gradient(37.88% 37.88% at 53.49% 55.2%, rgba(0, 173, 181, 0.3) 19.23%, rgba(13, 17, 23, 0) 100%);
+}
+#qaproof-app.qaproof-dark::after {
+  background: radial-gradient(37.88% 37.88% at 53.49% 55.2%, rgba(0, 173, 181, 0.2) 19.23%, rgba(13, 17, 23, 0) 100%);
+}
+
+/* Dark: headings, subtitles */
+#qaproof-app.qaproof-dark h1,
+#qaproof-app.qaproof-dark h2,
+#qaproof-app.qaproof-dark h3,
+#qaproof-app.qaproof-dark h4 {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-subtitle,
+#qaproof-app.qaproof-dark .qaproof-page-subtitle {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-section-title {
+  color: #f0f3f7;
+}
+
+/* Dark: main cards — level 2 (lifted from page) */
+#qaproof-app.qaproof-dark .qaproof-card {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-card h2 {
+  color: #f0f3f7;
+}
+
+/* Dark: preview panel */
+#qaproof-app.qaproof-dark .qaproof-preview-panel {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-preview-header {
+  background: #f0f2f5;
+  color: #1a1e24;
+  border-bottom: 1px solid #e0e3e8;
+  background-image: linear-gradient(90deg, #00ADB5 0%, rgba(0, 173, 181, 0.08) 100%);
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: bottom left;
+}
+#qaproof-app.qaproof-dark .qaproof-preview-header .dashicons {
+  color: #00ADB5;
+}
+#qaproof-app.qaproof-dark .qaproof-preview-empty p {
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-preview-empty .dashicons {
+  color: #4b5563;
+}
+
+/* Dark: history section — white header */
+#qaproof-app.qaproof-dark .qaproof-history-header {
+  background: #f0f2f5;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+#qaproof-app.qaproof-dark .qaproof-history-header::before {
+  background: radial-gradient(circle, rgba(0, 173, 181, 0.08) 0%, transparent 70%);
+}
+#qaproof-app.qaproof-dark .qaproof-history-header h2 {
+  color: #1a1e24;
+}
+#qaproof-app.qaproof-dark .qaproof-history-header h2 .dashicons {
+  color: var(--qp-accent);
+}
+#qaproof-app.qaproof-dark .qaproof-history-header .button.button-small {
+  background: rgba(0, 173, 181, 0.1) !important;
+  border-color: rgba(0, 173, 181, 0.3) !important;
+  color: #1a1e24 !important;
+}
+#qaproof-app.qaproof-dark .qaproof-history-content {
+  background: #2a3240;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+#qaproof-app.qaproof-dark .qaproof-history-row {
+  background: #323b4a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-history-row:hover {
+  background: #3a4352;
+  border-color: rgba(0, 173, 181, 0.4);
+  box-shadow: 0 2px 12px rgba(0, 173, 181, 0.1);
+}
+#qaproof-app.qaproof-dark .qaproof-history-date {
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-history-url {
+  color: #9ca3af;
+}
+#qaproof-app.qaproof-dark .qaproof-history-type {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-history-actions .button {
+  background: #3a4352 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f0f3f7 !important;
+}
+#qaproof-app.qaproof-dark .qaproof-history-actions .button:hover {
+  background: #424c5c !important;
+  border-color: rgba(0, 173, 181, 0.3) !important;
+}
+
+/* Dark: stat cards (results overview) */
+#qaproof-app.qaproof-dark .qaproof-stat-card {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-stat-value {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-stat-label {
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-stat-detail {
+  color: #4b5563;
+}
+
+/* Dark: chart cards — white title bar */
+#qaproof-app.qaproof-dark .qaproof-chart-card {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+  padding-top: 0;
+}
+#qaproof-app.qaproof-dark .qaproof-chart-title {
+  color: #1a1e24;
+  background: #f0f2f5;
+  margin: 0 -20px 16px;
+  padding: 16px 20px 12px;
+  border-radius: 16px 16px 0 0;
+  background-image: linear-gradient(90deg, #00ADB5 0%, rgba(0, 173, 181, 0.08) 100%);
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: bottom left;
+}
+
+/* Dark: form inputs — white/light */
+#qaproof-app.qaproof-dark input[type="text"],
+#qaproof-app.qaproof-dark input[type="url"],
+#qaproof-app.qaproof-dark input[type="email"],
+#qaproof-app.qaproof-dark input[type="number"],
+#qaproof-app.qaproof-dark input[type="password"],
+#qaproof-app.qaproof-dark select,
+#qaproof-app.qaproof-dark textarea {
+  background: #f0f2f5 !important;
+  border-color: #d1d5db !important;
+  color: #1f2937 !important;
+}
+#qaproof-app.qaproof-dark input:focus,
+#qaproof-app.qaproof-dark textarea:focus,
+#qaproof-app.qaproof-dark select:focus {
+  border-color: var(--qp-accent) !important;
+  box-shadow: 0 0 0 2px rgba(0, 173, 181, 0.25) !important;
+  background: #fff !important;
+}
+#qaproof-app.qaproof-dark input::placeholder,
+#qaproof-app.qaproof-dark textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Dark: form labels & descriptions */
+#qaproof-app.qaproof-dark label,
+#qaproof-app.qaproof-dark .qaproof-form-label,
+#qaproof-app.qaproof-dark .qaproof-field-hint,
+#qaproof-app.qaproof-dark .form-table th,
+#qaproof-app.qaproof-dark .form-table th label,
+#qaproof-app.qaproof-dark p.description,
+#qaproof-app.qaproof-dark .form-table td p.description,
+#qaproof-app.qaproof-dark .description {
+  color: #9ca3af !important;
+}
+#qaproof-app.qaproof-dark .form-table td p.description {
+  color: #6b7280 !important;
+}
+
+/* Dark: tables */
+#qaproof-app.qaproof-dark table {
+  border-color: var(--qp-divider);
+}
+#qaproof-app.qaproof-dark th {
+  background: #2a3240;
+  color: #a8b2c1;
+  border-color: var(--qp-divider);
+}
+#qaproof-app.qaproof-dark td {
+  background: transparent;
+  border-color: var(--qp-divider);
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark tr:nth-child(even) td {
+  background: none;
+}
+
+/* Dark: links */
+#qaproof-app.qaproof-dark a {
+  color: #22d3ee;
+}
+
+/* Dark: buttons */
+#qaproof-app.qaproof-dark .button {
+  background: #3a4352;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .button:hover {
+  background: #424c5c;
+  border-color: rgba(0, 173, 181, 0.3);
+  color: #fff;
+}
+
+/* Dark: hr */
+#qaproof-app.qaproof-dark hr {
+  border-color: var(--qp-divider);
+}
+
+/* Dark: notices */
+#qaproof-app.qaproof-dark .qaproof-dash-notice {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+  color: #f0f3f7;
+}
+
+/* Dark: settings tabs */
+#qaproof-app.qaproof-dark .qaproof-settings-tabs a {
+  color: #7b8698;
+}
+#qaproof-app.qaproof-dark .qaproof-settings-tabs a:hover {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-settings-tabs a.active {
+  color: #f0f3f7;
+  border-bottom-color: var(--qp-accent);
+}
+
+/* Dark: toggle switches */
+#qaproof-app.qaproof-dark .qaproof-toggle-slider {
+  background: #424c5c;
+}
+
+/* Dark: monitor table */
+#qaproof-app.qaproof-dark .qaproof-monitors-table {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-monitors-table th {
+  color: #a8b2c1 !important;
+  border-color: var(--qp-divider);
+}
+#qaproof-app.qaproof-dark .qaproof-monitors-table td {
+  color: #f0f3f7;
+  border-color: var(--qp-divider);
+}
+#qaproof-app.qaproof-dark .qaproof-monitors-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+#qaproof-app.qaproof-dark .qaproof-monitors-table tbody tr.qaproof-monitor-running {
+  animation-name: qaproof-row-pulse-dark;
+}
+@keyframes qaproof-row-pulse-dark {
+  0%, 100% { background: rgba(0, 173, 181, 0.06); }
+  50% { background: rgba(0, 173, 181, 0.15); }
+}
+
+/* Dark: form sections */
+#qaproof-app.qaproof-dark .qaproof-form-section {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+
+/* Dark: score overview */
+#qaproof-app.qaproof-dark .qaproof-summary {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-score-label {
+  color: #7b8698;
+}
+
+/* Dark: dashboard hero — white card */
+#qaproof-app.qaproof-dark .qaproof-dash-hero {
+  background: #f0f2f5;
+  border: 1px solid #e0e3e8;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-hero h1 {
+  color: #1a1e24;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-hero-tagline {
+  color: #4b5563;
+}
+/* Dark hero: score ring + value + label — dark text on white bg */
+#qaproof-app.qaproof-dark .qaproof-dash-hero .ring-bg {
+  stroke: rgba(0, 0, 0, 0.08) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-score-val {
+  color: #1a1e24 !important;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-score-label {
+  color: #374151 !important;
+}
+/* Dashboard mini stat cards inside hero — dark cards on white hero */
+#qaproof-app.qaproof-dark .qaproof-dash-stat-card {
+  background: #2a3240;
+  border-color: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-stat-name {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-stat-val {
+  color: #f0f3f7;
+}
+
+/* Dark: dashboard stat & tool cards */
+#qaproof-app.qaproof-dark .qaproof-dash-stat {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool:hover {
+  background: #323b4a;
+  border-color: rgba(0, 173, 181, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 173, 181, 0.08);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide:hover {
+  background: #323b4a;
+  border-color: rgba(0, 173, 181, 0.3);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide-content h3 { color: #f0f3f7; }
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide-content p { color: #7b8698; }
+#qaproof-app.qaproof-dark .qaproof-dash-tag {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tag { color: #A78BFA; }
+#qaproof-app.qaproof-dark .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tag { color: #FBBF24; }
+
+/* Dark: Quick Links — white cards with dark text */
+#qaproof-app.qaproof-dark .qaproof-dash-link {
+  background: #f0f2f5;
+  border: 1px solid #e0e3e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-link:hover {
+  background: #e8eaef;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-link-title {
+  color: #1a1e24;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-link-desc {
+  color: #4b5563;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-link-arrow {
+  color: #9ca3af;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-link:hover .qaproof-dash-link-arrow {
+  color: var(--qp-accent);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-link-icon {
+  background: rgba(0, 173, 181, 0.10);
+}
+
+/* Dark: Token usage card */
+#qaproof-app.qaproof-dark .qaproof-dash-usage {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-title {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-title .dashicons {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-plan {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-nums {
+  color: #7b8698;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-nums strong {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-breakdown {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-item {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-count {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-dash-usage-footer {
+  color: #6b7380;
+}
+
+/* Dark: recommendation items — elevated surface */
+#qaproof-app.qaproof-dark .qaproof-rec-item {
+  background: #323b4a;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f0f3f7;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+#qaproof-app.qaproof-dark .qaproof-rec-item:hover {
+  background: #3a4352;
+  border-color: rgba(0, 173, 181, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 173, 181, 0.1);
+}
+#qaproof-app.qaproof-dark .qaproof-rec-num {
+  color: #222831;
+}
+#qaproof-app.qaproof-dark .qaproof-rec-text {
+  color: #a8b2c1;
+}
+#qaproof-app.qaproof-dark .qaproof-rec-code {
+  background: rgba(0, 173, 181, 0.12);
+  border-color: rgba(0, 173, 181, 0.25);
+  color: #22d3ee;
+}
+#qaproof-app.qaproof-dark .qaproof-rec-tag {
+  color: #a78bfa;
+}
+#qaproof-app.qaproof-dark .qaproof-rec-group-code .qaproof-rec-indicator { background: #ffffff; }
+#qaproof-app.qaproof-dark .qaproof-rec-group-quick .qaproof-rec-indicator { background: #ffffff; }
+#qaproof-app.qaproof-dark .qaproof-rec-group-structural .qaproof-rec-indicator { background: #ffffff; }
+
+/* Dark: Component Inventory cards */
+#qaproof-app.qaproof-dark .qaproof-component-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-card-border);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-component-card:hover {
+  border-color: rgba(0, 173, 181, 0.4);
+}
+#qaproof-app.qaproof-dark .qaproof-comp-name {
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-comp-count {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-comp-variations {
+  color: var(--qp-text-muted);
+}
+#qaproof-app.qaproof-dark .qaproof-comp-icon {
+  background: rgba(0, 173, 181, 0.15);
+}
+
+/* Dark: category cards — white header, dark body */
+#qaproof-app.qaproof-dark .qaproof-category-card {
+  background: #2a3240;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--qp-card-shadow);
+  color: #f0f3f7;
+}
+#qaproof-app.qaproof-dark .qaproof-cat-header {
+  background: #f0f2f5;
+}
+#qaproof-app.qaproof-dark .qaproof-cat-score-num {
+  color: #222831;
+}
+#qaproof-app.qaproof-dark .qaproof-category
