@@ -427,6 +427,168 @@
   });
   if (testsHistoryMgr) testsHistoryMgr.init();
 
+  // ============================
+  // Accessibility Page — Form Submit Handler
+  // ============================
+  var a11yForm = document.getElementById('qaproof-a11y-form');
+  if (a11yForm) {
+    var a11ySubmitBtn = document.getElementById('qaproof-a11y-submit-btn');
+    var a11yLoading = document.getElementById('qaproof-a11y-loading');
+    var a11yLoadingText = document.getElementById('qaproof-a11y-loading-text');
+    var a11yLoadingSubtext = document.getElementById('qaproof-a11y-loading-subtext');
+    var a11yErrorDiv = document.getElementById('qaproof-a11y-error');
+    var a11yErrorMsg = document.getElementById('qaproof-a11y-error-message');
+    var a11yResults = document.getElementById('qaproof-a11y-results');
+
+    a11yForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var pageUrl = document.getElementById('qaproof-a11y-url').value.trim();
+      if (!pageUrl) return;
+
+      a11yLoading.classList.remove('hidden');
+      a11yLoading.style.display = '';
+      a11yErrorDiv.classList.add('hidden');
+      a11yResults.classList.add('hidden');
+      a11yResults.innerHTML = '';
+      a11ySubmitBtn.disabled = true;
+
+      // Loading steps
+      var checkSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var a11yLoadingSteps = [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 8000, text: 'Processing images' },
+        { time: 20000, text: 'Running accessibility analysis' },
+        { time: 50000, text: 'Evaluating WCAG compliance' },
+        { time: 90000, text: 'Generating audit report' },
+      ];
+
+      var a11yStepsContainer = document.getElementById('qaproof-a11y-loading-steps');
+      if (a11yStepsContainer) {
+        a11yStepsContainer.innerHTML = '';
+        for (var si = 0; si < a11yLoadingSteps.length; si++) {
+          if (si > 0) {
+            var connector = document.createElement('div');
+            connector.className = 'qaproof-step-connector';
+            connector.id = 'qaproof-a11y-connector-' + si;
+            a11yStepsContainer.appendChild(connector);
+          }
+          var stepEl = document.createElement('div');
+          stepEl.className = 'qaproof-loading-step' + (si === 0 ? ' active' : '');
+          stepEl.id = 'qaproof-a11y-lstep-' + si;
+          stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          a11yStepsContainer.appendChild(stepEl);
+        }
+      }
+
+      var a11yTimers = a11yLoadingSteps.map(function (step, idx) {
+        return setTimeout(function () {
+          for (var j = 0; j < idx; j++) {
+            var prev = document.getElementById('qaproof-a11y-lstep-' + j);
+            if (prev) {
+              prev.classList.remove('active');
+              prev.classList.add('completed');
+              var ind = prev.querySelector('.qaproof-step-indicator');
+              if (ind) ind.innerHTML = checkSvg;
+            }
+            var conn = document.getElementById('qaproof-a11y-connector-' + (j + 1));
+            if (conn) conn.classList.add('completed');
+          }
+          var curr = document.getElementById('qaproof-a11y-lstep-' + idx);
+          if (curr) {
+            curr.classList.add('active');
+            curr.classList.remove('completed');
+          }
+          a11yLoadingText.textContent = step.text + '...';
+          a11yLoadingSubtext.textContent = idx < a11yLoadingSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        }, step.time);
+      });
+
+      // Read WCAG level from dropdown or fallback to settings
+      var wcagLevelEl = document.getElementById('qaproof-a11y-wcag-level');
+      var wcagLevel = (wcagLevelEl && wcagLevelEl.value) ? wcagLevelEl.value : (qaproof.wcagLevel || 'AA');
+
+      var a11yBody = {
+        pageUrl: pageUrl,
+        testType: 'accessibility',
+        wcagLevel: wcagLevel,
+      };
+
+      var _a11yPendingRetries = window.__qaproofPendingRetries || 0;
+      window.__qaproofPendingRetries = 0;
+      Q.saveActiveJob(null, 'accessibility', pageUrl, 'accessibility', 'submitting', _a11yPendingRetries);
+
+      fetch(qaproof.restUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': qaproof.nonce,
+        },
+        body: JSON.stringify(a11yBody),
+        credentials: 'same-origin',
+      })
+      .then(Q.safeJson)
+      .then(function (data) {
+        if (!data.success || !data.data || !data.data.jobId) {
+          throw new Error((data.error && data.error.message) || 'Failed to create accessibility test job.');
+        }
+
+        var jobId = data.data.jobId;
+        Q.saveActiveJob(jobId, 'accessibility', pageUrl, 'accessibility', 'polling');
+
+        Q.startJobPolling(jobId, {
+          page: 'accessibility',
+          onPoll: function (status, elapsed) {
+            console.log('[QAProof] A11y poll:', status, elapsed);
+          },
+          onDone: function (resultData) {
+            a11yTimers.forEach(clearTimeout);
+            S.resultsContainer = a11yResults;
+            if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(resultData);
+
+            a11yLoading.classList.add('hidden');
+            a11ySubmitBtn.disabled = false;
+          },
+          onScreenshotsDone: function (resultData) {
+            var a11yHistoryData = Object.assign({}, resultData);
+            delete a11yHistoryData.screenshots;
+            var a11ySaveData = new FormData();
+            a11ySaveData.append('action', 'qaproof_save_history');
+            a11ySaveData.append('nonce', qaproof.ajaxNonce);
+            a11ySaveData.append('testType', 'accessibility');
+            a11ySaveData.append('pageUrl', pageUrl);
+            a11ySaveData.append('result', JSON.stringify(a11yHistoryData));
+            fetch(qaproof.ajaxUrl, {
+              method: 'POST',
+              body: a11ySaveData,
+              credentials: 'same-origin',
+            })
+            .then(Q.safeJson)
+            .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
+            .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
+          },
+          onFailed: function (errorMsg) {
+            a11yTimers.forEach(clearTimeout);
+            a11yErrorMsg.textContent = errorMsg;
+            a11yErrorDiv.classList.remove('hidden');
+            a11yLoading.classList.add('hidden');
+            a11ySubmitBtn.disabled = false;
+          },
+        });
+      })
+      .catch(function (err) {
+        a11yTimers.forEach(clearTimeout);
+        if (err.message && err.message.indexOf('Rate limit') !== -1) {
+          Q.clearActiveJob('accessibility');
+        }
+        a11yErrorMsg.textContent = (err.message || 'Network error.') + ' Reload the page to retry.';
+        a11yErrorDiv.classList.remove('hidden');
+        a11yLoading.classList.add('hidden');
+        a11ySubmitBtn.disabled = false;
+      });
+    });
+  }
+
   // ---- Accessibility Page History Instance ----
   var a11yHistoryMgr = Q.createHistoryManager({
     sectionId:    'qaproof-a11y-history-section',
@@ -945,7 +1107,7 @@
       });
     } else if (currentPage === 'accessibility') {
       var a11yLoad = document.getElementById('qaproof-a11y-loading');
-      var a11yBtn = document.getElementById('qaproof-a11y-submit');
+      var a11yBtn = document.getElementById('qaproof-a11y-submit-btn');
       var a11yLoadText = document.getElementById('qaproof-a11y-loading-text');
       var a11yLoadSub = document.getElementById('qaproof-a11y-loading-subtext');
       var a11yErrDiv = document.getElementById('qaproof-a11y-error');
