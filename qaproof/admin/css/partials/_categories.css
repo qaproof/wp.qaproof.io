@@ -1,0 +1,169 @@
+/* ============================
+   Categories Grid
+   ============================ */
+/* ============================
+   Categories — Tabs Layout
+   ============================ */
+#qaproof-app .qaproof-categories {
+  margin-bottom: 20px;
+}
+
+/* Tabs navigation row — pill style with sliding indicator */
+#qaproof-app .qaproof-cat-tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  background: #222831;
+  border-radius: 15px;
+  padding: 3px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  margin-bottom: 12px;
+  position: relative;
+}
+
+/* Sliding pill indicator */
+#qaproof-app .qaproof-cat-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Single tab button */
+#qaproof-app .qaproof-cat-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  white-space: nowrap;
+  border: none;
+  border-radius: var(--qp-radius-pill);
+  cursor: pointer;
+  background: transparent;
+  color: rgba(238, 238, 238, 0.5);
+  transition: color 0.3s ease;
+  line-height: 120%;
+  position: relative;
+  z-index: 1;
+}
+
+#qaproof-app .qaproof-cat-tab:hover:not(.active) {
+  color: #EEEEEE;
+}
+
+#qaproof-app .qaproof-cat-tab.active {
+  color: var(--qp-white);
+}
+
+#qaproof-app .qaproof-cat-tab-label {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qp-accent);
+}
+
+/* Score ring inside tab */
+#qaproof-app .qaproof-cat-score-ring {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-cat-score-ring svg {
+  width: 28px;
+  height: 28px;
+  transform: rotate(-90deg);
+}
+
+#qaproof-app .qaproof-cat-score-ring .qaproof-ring-bg {
+  fill: none;
+  stroke: rgba(238, 238, 238, 0.15);
+  stroke-width: 4.5;
+}
+
+#qaproof-app .qaproof-cat-tab.active .qaproof-ring-bg {
+  stroke: rgba(238, 238, 238, 0.15);
+}
+
+#qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill {
+  fill: none;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+#qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-high { stroke: var(--qp-score-high); }
+#qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-medium { stroke: var(--qp-score-medium); }
+#qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-low { stroke: var(--qp-score-low); }
+
+#qaproof-app .qaproof-cat-score-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(238, 238, 238, 0.7);
+  transition: color 0.3s ease;
+}
+
+#qaproof-app .qaproof-cat-tab.active .qaproof-cat-score-num {
+  color: #fff;
+}
+
+/* Tab panels */
+#qaproof-app .qaproof-cat-tabs-panels {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+#qaproof-app .qaproof-cat-tab-panel {
+  display: none;
+  padding: 20px 24px;
+}
+
+#qaproof-app .qaproof-cat-tab-panel.active {
+  display: block;
+}
+
+#qaproof-app .qaproof-cat-panel-header h3 {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #222831;
+  margin: 0 0 4px;
+}
+
+#qaproof-app .qaproof-cat-evaluates {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--qp-text-secondary);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+#qaproof-app .qaproof-cat-tab-panel p {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--qp-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Legacy bar — hidden (replaced by ring) */
+#qaproof-app .qaproof-cat-bar { display: none; }
+#qaproof-app .qaproof-cat-bar-fill { display: none; }
+#qaproof-app .qaproof-cat-score { display: none; }

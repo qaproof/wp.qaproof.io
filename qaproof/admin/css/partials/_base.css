@@ -1,0 +1,257 @@
+/* ============================
+   Base Overrides
+   ============================ */
+#qaproof-app {
+  font-family: var(--qp-font);
+  color: var(--qp-text-primary);
+  margin-left: -20px;
+  margin-right: 0;
+  margin-top: -10px;
+  padding: 32px 40px 40px;
+  background: #FFFFFF;
+  min-height: calc(100vh - 32px);
+  line-height: 120%;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* Decorative gradient ellipses from website design — two blobs */
+#qaproof-app::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  width: 1400px;
+  height: 1340px;
+  right: -300px;
+  top: -136px;
+  background: radial-gradient(37.88% 37.88% at 53.49% 55.2%, rgba(0, 173, 181, 0.5) 19.23%, rgba(255, 255, 255, 0) 100%);
+  transform: rotate(-18.17deg);
+}
+
+#qaproof-app::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  width: 1400px;
+  height: 1340px;
+  left: -700px;
+  bottom: -200px;
+  background: radial-gradient(37.88% 37.88% at 53.49% 55.2%, rgba(0, 173, 181, 0.35) 19.23%, rgba(255, 255, 255, 0) 100%);
+  transform: rotate(-18.17deg);
+}
+
+/* Ensure all content sits above the gradient blobs */
+#qaproof-app > * {
+  position: relative;
+  z-index: 1;
+}
+
+#qaproof-app *:not(.dashicons):not(.dashicons-before)::before,
+#qaproof-app *:not(.dashicons):not(.dashicons-before) {
+  font-family: var(--qp-font);
+}
+
+/* Preserve dashicons font — must override the wildcard above */
+#qaproof-app .dashicons,
+#qaproof-app .dashicons-before::before {
+  font-family: dashicons !important;
+}
+
+#qaproof-app h1 {
+  color: var(--qp-text-primary);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 24px;
+  padding: 0;
+  line-height: 120%;
+}
+
+#qaproof-app .qaproof-subtitle {
+  color: var(--qp-text-secondary);
+  font-size: 15px;
+  font-weight: 400;
+  margin-bottom: 28px;
+  line-height: 120%;
+}
+
+/* Inside page-header: tighten spacing */
+.qaproof-page-header h1 {
+  margin-bottom: 4px !important;
+}
+.qaproof-page-header .qaproof-subtitle {
+  margin-bottom: 0 !important;
+}
+
+/* ============================
+   Page Header + Page Tabs (Test | History)
+   ============================ */
+.qaproof-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.qaproof-page-header-left {
+  flex: 1;
+  min-width: 0;
+}
+.qaproof-page-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+/* Theme toggle inside page header — override absolute positioning */
+.qaproof-page-header-right .qaproof-theme-toggle {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  flex-shrink: 0;
+}
+.qaproof-page-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f3f5;
+  border-radius: 14px;
+  padding: 5px;
+  flex-shrink: 0;
+}
+.qaproof-page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--qp-text-secondary) !important;
+  font-family: var(--qp-font) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  line-height: 1.2 !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+.qaproof-page-tab:hover {
+  color: var(--qp-text-primary) !important;
+  background: rgba(0,0,0,0.04) !important;
+}
+.qaproof-page-tab.active {
+  background: #fff !important;
+  color: var(--qp-text-primary) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  font-weight: 600 !important;
+}
+.qaproof-page-tab svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.qaproof-page-tab.active svg {
+  opacity: 1;
+  color: var(--qp-accent);
+}
+
+/* Tab Panels */
+.qaproof-tab-panel {
+  display: none;
+}
+.qaproof-tab-panel.active {
+  display: block;
+}
+
+/* Inline history (inside tab panel — no collapse header) */
+.qaproof-history-inline {
+  border-radius: var(--qp-radius) !important;
+  padding: 0 !important;
+}
+.qaproof-history-inline .qaproof-history-content {
+  display: block !important;
+  max-height: none !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Back button in results */
+.qaproof-back-nav {
+  margin-bottom: 20px;
+}
+.qaproof-back-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: var(--qp-text-primary) !important;
+  font-family: var(--qp-font) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: none !important;
+  line-height: 1.2 !important;
+  min-height: 0 !important;
+}
+.qaproof-back-btn:hover {
+  background: #f9fafb !important;
+  border-color: var(--qp-accent) !important;
+  color: var(--qp-accent) !important;
+}
+.qaproof-back-btn svg {
+  flex-shrink: 0;
+}
+
+/* Dark theme — page tabs */
+#qaproof-app.qaproof-dark .qaproof-page-tabs {
+  background: rgba(255,255,255,0.06);
+}
+#qaproof-app.qaproof-dark .qaproof-page-tab {
+  color: rgba(238,238,238,0.55) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-page-tab:hover {
+  color: #EEEEEE !important;
+  background: rgba(255,255,255,0.06) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-page-tab.active {
+  background: var(--qp-bg-card) !important;
+  color: #EEEEEE !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+/* Dark theme — back button */
+#qaproof-app.qaproof-dark .qaproof-back-btn {
+  background: var(--qp-bg-card) !important;
+  border-color: var(--qp-border) !important;
+  color: #EEEEEE !important;
+}
+#qaproof-app.qaproof-dark .qaproof-back-btn:hover {
+  background: var(--qp-bg-card-hover) !important;
+  border-color: var(--qp-accent) !important;
+  color: var(--qp-accent) !important;
+}
+
+/* ============================
+   Card — matches Rectangle 196 / card style (#00ADB5 on #222831)
+   ============================ */
+#qaproof-app .qaproof-card {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: var(--qp-radius-card);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--qp-shadow);
+  color: var(--qp-text-primary);
+}
