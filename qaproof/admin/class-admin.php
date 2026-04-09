@@ -248,6 +248,7 @@ class QAProof_Admin {
         include QAPROOF_PLUGIN_DIR . 'admin/partials/page-monitors.php';
     }
 
+
     public static function render_dashboard_page() {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
 

@@ -250,9 +250,15 @@
     row.innerHTML =
       '<div class="qaproof-design-row-fields">' +
         '<input type="text" placeholder="Design Name" value="' + (data.name || '') + '" data-field="name" class="regular-text" />' +
-        '<input type="url" placeholder="Page URL" value="' + (data.pageUrl || '') + '" data-field="pageUrl" class="regular-text" />' +
-        '<input type="password" placeholder="figd_..." value="' + (data.figmaToken || '') + '" data-field="figmaToken" class="regular-text" autocomplete="off" />' +
         '<input type="url" placeholder="Figma URL" value="' + (data.figmaUrl || '') + '" data-field="figmaUrl" class="regular-text" />' +
+        '<div class="qaproof-token-field-wrap">' +
+          '<input type="password" placeholder="Figma Token (figd_...)" value="' + (data.figmaToken || '') + '" data-field="figmaToken" class="regular-text" autocomplete="off" />' +
+          '<button type="button" class="qaproof-token-toggle" title="Show / Hide token">' +
+            '<svg class="qaproof-eye-icon qaproof-eye-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' +
+            '<svg class="qaproof-eye-icon qaproof-eye-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+          '</button>' +
+          '<span class="qaproof-token-fade"></span>' +
+        '</div>' +
         '<input type="hidden" value="' + (data.id || generateId()) + '" data-field="id" />' +
       '</div>' +
       '<button type="button" class="button qaproof-design-remove" title="Remove">' +
@@ -265,7 +271,45 @@
       row.remove();
       syncDesignsToHidden();
     });
+    // Token visibility toggle
+    wireTokenToggle(row);
     return row;
+  }
+
+  function wireTokenToggle(container) {
+    container.querySelectorAll('.qaproof-token-field-wrap').forEach(function (wrap) {
+      var btn    = wrap.querySelector('.qaproof-token-toggle');
+      var inp    = wrap.querySelector('input[data-field="figmaToken"]');
+      var eyeOff = wrap.querySelector('.qaproof-eye-off');
+      var eyeOn  = wrap.querySelector('.qaproof-eye-on');
+      var fadeEl = wrap.querySelector('.qaproof-token-fade');
+      if (!btn || !inp) return;
+
+      // Sync fade gradient to input background (same as API Key)
+      function syncFade() {
+        if (!fadeEl) return;
+        var bg = getComputedStyle(inp).backgroundColor;
+        fadeEl.style.background = 'linear-gradient(to right, transparent, ' + bg + ' 70%)';
+      }
+      syncFade();
+      inp.addEventListener('focus', function () { setTimeout(syncFade, 50); });
+      inp.addEventListener('blur',  function () { setTimeout(syncFade, 50); });
+      var themeBtn = document.getElementById('qaproof-theme-toggle');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function () { setTimeout(syncFade, 100); });
+      }
+
+      // Eye toggle
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var isPassword = inp.type === 'password';
+        inp.type = isPassword ? 'text' : 'password';
+        if (eyeOff && eyeOn) {
+          eyeOff.style.display = isPassword ? 'none'  : 'block';
+          eyeOn.style.display  = isPassword ? 'block' : 'none';
+        }
+      });
+    });
   }
 
   if (addDesignBtn && designsList) {
@@ -287,6 +331,7 @@
           syncDesignsToHidden();
         });
       }
+      wireTokenToggle(row);
     });
   }
 
@@ -518,6 +563,23 @@
     if (settingsForm) {
       settingsForm.addEventListener('submit', function () {
         sessionStorage.setItem('qaproof_settings_saved', '1');
+        // Animate the submit button while the page reloads
+        var btn = settingsForm.querySelector('#submit, input[type="submit"], button[type="submit"]');
+        if (!btn) return;
+        btn.disabled = true;
+        // Create a spinner div that matches the button exactly
+        var w = btn.offsetWidth;
+        var h = btn.offsetHeight;
+        var btnCs = getComputedStyle(btn);
+        var spinner = document.createElement('div');
+        spinner.className = 'qaproof-btn-saving';
+        spinner.style.cssText = 'width:' + w + 'px;height:' + h + 'px;'
+          + 'background:' + btnCs.background + ';'
+          + 'border-radius:' + btnCs.borderRadius + ';'
+          + 'margin:' + btnCs.margin + ';';
+        spinner.innerHTML = '<span class="qaproof-btn-saving-spinner"></span>';
+        btn.parentNode.insertBefore(spinner, btn);
+        btn.style.setProperty('display', 'none', 'important');
       });
     }
   })();
@@ -776,8 +838,68 @@
       if (S.submitBtn) S.submitBtn.disabled = true;
       if (S.loadingText) S.loadingText.textContent = 'Resuming test — waiting for results...';
       if (S.loadingSubtext) S.loadingSubtext.textContent = 'Test is still running on the server';
+
+      // Build progress steps (same as normal flow, but start from step 2)
+      var checkSvgR = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var resumeTestType = activeJob.testType || 'fidelity';
+      var resumeSteps = resumeTestType === 'design-audit' ? [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 0, text: 'Extracting design tokens from DOM' },
+        { time: 0, text: 'Analyzing color palette & typography' },
+        { time: 8000, text: 'AI auditing design consistency' },
+        { time: 30000, text: 'Building design debt report' },
+      ] : [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 0, text: 'Processing images' },
+        { time: 0, text: 'Running AI analysis' },
+        { time: 12000, text: 'Generating report' },
+        { time: 40000, text: 'Finalizing results' },
+      ];
       var stepsEl = document.getElementById('qaproof-loading-steps');
-      if (stepsEl) stepsEl.style.display = 'none';
+      if (stepsEl) {
+        stepsEl.style.display = '';
+        stepsEl.innerHTML = '';
+        for (var si = 0; si < resumeSteps.length; si++) {
+          if (si > 0) {
+            var conn = document.createElement('div');
+            conn.className = 'qaproof-step-connector' + (si <= 2 ? ' completed' : '');
+            conn.id = 'qaproof-connector-' + si;
+            stepsEl.appendChild(conn);
+          }
+          var stepEl = document.createElement('div');
+          // First 2 steps already completed, 3rd is active
+          if (si < 2) {
+            stepEl.className = 'qaproof-loading-step completed';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + checkSvgR + '</span>';
+          } else if (si === 2) {
+            stepEl.className = 'qaproof-loading-step active';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          } else {
+            stepEl.className = 'qaproof-loading-step';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          }
+          stepEl.id = 'qaproof-lstep-' + si;
+          stepsEl.appendChild(stepEl);
+        }
+        // Update loading text to match current step
+        S.loadingText.textContent = resumeSteps[2].text + '...';
+      }
+      // Animate remaining steps
+      var resumeTimers = resumeSteps.map(function (step, idx) {
+        if (step.time === 0) return null;
+        return setTimeout(function () {
+          for (var j = 0; j < idx; j++) {
+            var prev = document.getElementById('qaproof-lstep-' + j);
+            if (prev) { prev.classList.remove('active'); prev.classList.add('completed'); var ind = prev.querySelector('.qaproof-step-indicator'); if (ind) ind.innerHTML = checkSvgR; }
+            var c = document.getElementById('qaproof-connector-' + (j + 1));
+            if (c) c.classList.add('completed');
+          }
+          var curr = document.getElementById('qaproof-lstep-' + idx);
+          if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
+          if (S.loadingText) S.loadingText.textContent = step.text + '...';
+          if (S.loadingSubtext) S.loadingSubtext.textContent = idx < resumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        }, step.time);
+      });
 
       Q.startJobPolling(activeJob.jobId, {
         page: 'tests',
@@ -785,6 +907,7 @@
           if (S.loadingSubtext) S.loadingSubtext.textContent = 'Status: ' + status + ' (' + elapsed + ')';
         },
         onDone: function (resultData) {
+          resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           if (resultData.testType === 'responsive') {
             Q.renderResponsiveResults(resultData);
           } else if (resultData.testType === 'accessibility') {
@@ -834,12 +957,66 @@
       if (a11yLoadText) a11yLoadText.textContent = 'Resuming accessibility test — waiting for results...';
       if (a11yLoadSub) a11yLoadSub.textContent = 'Test is still running on the server';
 
+      // Build progress steps for accessibility resume (same pattern as tests page)
+      var checkSvgA = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var a11yResumeSteps = [
+        { time: 0, text: 'Capturing page screenshot' },
+        { time: 0, text: 'Processing images' },
+        { time: 0, text: 'Running accessibility analysis' },
+        { time: 12000, text: 'Evaluating WCAG compliance' },
+        { time: 40000, text: 'Generating audit report' },
+      ];
+      var a11yStepsEl = document.getElementById('qaproof-a11y-loading-steps');
+      if (a11yStepsEl) {
+        a11yStepsEl.style.display = '';
+        a11yStepsEl.innerHTML = '';
+        for (var si = 0; si < a11yResumeSteps.length; si++) {
+          if (si > 0) {
+            var conn = document.createElement('div');
+            conn.className = 'qaproof-step-connector' + (si <= 2 ? ' completed' : '');
+            conn.id = 'qaproof-a11y-connector-' + si;
+            a11yStepsEl.appendChild(conn);
+          }
+          var stepEl = document.createElement('div');
+          if (si < 2) {
+            stepEl.className = 'qaproof-loading-step completed';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + checkSvgA + '</span>';
+          } else if (si === 2) {
+            stepEl.className = 'qaproof-loading-step active';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          } else {
+            stepEl.className = 'qaproof-loading-step';
+            stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
+          }
+          stepEl.id = 'qaproof-a11y-lstep-' + si;
+          a11yStepsEl.appendChild(stepEl);
+        }
+        if (a11yLoadText) a11yLoadText.textContent = a11yResumeSteps[2].text + '...';
+      }
+      // Animate remaining steps on timers
+      var a11yResumeTimers = a11yResumeSteps.map(function (step, idx) {
+        if (step.time === 0) return null;
+        return setTimeout(function () {
+          for (var j = 0; j < idx; j++) {
+            var prev = document.getElementById('qaproof-a11y-lstep-' + j);
+            if (prev) { prev.classList.remove('active'); prev.classList.add('completed'); var ind = prev.querySelector('.qaproof-step-indicator'); if (ind) ind.innerHTML = checkSvgA; }
+            var c = document.getElementById('qaproof-a11y-connector-' + (j + 1));
+            if (c) c.classList.add('completed');
+          }
+          var curr = document.getElementById('qaproof-a11y-lstep-' + idx);
+          if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
+          if (a11yLoadText) a11yLoadText.textContent = step.text + '...';
+          if (a11yLoadSub) a11yLoadSub.textContent = idx < a11yResumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        }, step.time);
+      });
+
       Q.startJobPolling(activeJob.jobId, {
         page: 'accessibility',
         onPoll: function (status, elapsed) {
           if (a11yLoadSub) a11yLoadSub.textContent = 'Status: ' + status + ' (' + elapsed + ')';
         },
         onDone: function (resultData) {
+          a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           S.resultsContainer = a11yRes;
           if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(resultData);
 
@@ -861,6 +1038,7 @@
             .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
         },
         onFailed: function (errorMsg) {
+          a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
           if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
           if (a11yLoad) a11yLoad.classList.add('hidden');

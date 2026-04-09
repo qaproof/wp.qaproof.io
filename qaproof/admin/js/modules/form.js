@@ -134,11 +134,9 @@
       if (!found) return;
 
       // Auto-fill form fields
-      var pageUrlEl    = document.getElementById('qaproof-page-url');
       var figmaTokenEl = document.getElementById('qaproof-figma-token');
       var figmaUrlEl   = document.getElementById('qaproof-figma-url');
 
-      if (pageUrlEl && found.pageUrl)    pageUrlEl.value = found.pageUrl;
       if (figmaTokenEl && found.figmaToken) figmaTokenEl.value = found.figmaToken;
       if (figmaUrlEl && found.figmaUrl)  figmaUrlEl.value = found.figmaUrl;
 
@@ -1350,7 +1348,7 @@
       S.loadingSubtext.textContent = 'This may take 1-2 minutes (3 screenshots + AI analysis)';
     } else if (S.testType === 'accessibility') {
       S.loadingText.textContent = 'Capturing page and running accessibility audit...';
-      var wcagLvl = (typeof qaproof !== 'undefined' && qaproof.wcagLevel) ? qaproof.wcagLevel : 'AA';
+      var wcagLvl = (document.getElementById('qaproof-a11y-wcag-level') || {}).value || (typeof qaproof !== 'undefined' && qaproof.wcagLevel) || 'AA';
       S.loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level ' + wcagLvl + ' compliance (30-60 seconds)';
     } else if (S.testType === 'design-audit') {
       S.loadingText.textContent = 'Scanning page and extracting design tokens...';
@@ -1389,8 +1387,8 @@
     // Build body
     var body = { pageUrl: pageUrl, testType: S.testType };
 
-    if (S.testType === 'accessibility' && typeof qaproof !== 'undefined' && qaproof.wcagLevel) {
-      body.wcagLevel = qaproof.wcagLevel;
+    if (S.testType === 'accessibility') {
+      body.wcagLevel = (document.getElementById('qaproof-a11y-wcag-level') || {}).value || (typeof qaproof !== 'undefined' && qaproof.wcagLevel) || 'AA';
     }
 
     if (S.testType === 'fidelity') {

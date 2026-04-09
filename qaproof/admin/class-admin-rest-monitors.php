@@ -29,13 +29,17 @@ class QAProof_Admin_REST_Monitors {
             ], 400 );
         }
 
-        $id = QAProof_Monitor::create( [
+        $create_data = [
             'page_url'        => sanitize_url( $params['page_url'] ),
             'schedule'        => isset( $params['schedule'] ) ? sanitize_text_field( $params['schedule'] ) : 'daily',
             'notify_email'    => isset( $params['notify_email'] ) ? (int) $params['notify_email'] : 1,
             'notify_admin'    => isset( $params['notify_admin'] ) ? (int) $params['notify_admin'] : 1,
             'threshold_score' => isset( $params['threshold_score'] ) ? (int) $params['threshold_score'] : (int) get_option( 'qaproof_default_threshold', 95 ),
-        ] );
+        ];
+        if ( ! empty( $params['scheduled_at'] ) ) {
+            $create_data['scheduled_at'] = sanitize_text_field( $params['scheduled_at'] );
+        }
+        $id = QAProof_Monitor::create( $create_data );
 
         if ( ! $id ) {
             return new WP_REST_Response( [
@@ -80,6 +84,9 @@ class QAProof_Admin_REST_Monitors {
         }
         if ( isset( $params['threshold_score'] ) ) {
             $update['threshold_score'] = (int) $params['threshold_score'];
+        }
+        if ( ! empty( $params['scheduled_at'] ) ) {
+            $update['scheduled_at'] = sanitize_text_field( $params['scheduled_at'] );
         }
 
         QAProof_Monitor::update( $id, $update );

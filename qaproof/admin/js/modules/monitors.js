@@ -18,6 +18,252 @@
   var monitorPollCount = 0;
   var monitorPollMaxAttempts = 60; // 5 minutes (every 5s)
 
+  // ---- Custom Datepicker ----
+  var qaproofDatepicker = (function () {
+    var trigger = document.getElementById('qaproof-datepicker-trigger');
+    var dropdown = document.getElementById('qaproof-datepicker-dropdown');
+    var label = document.getElementById('qaproof-datepicker-label');
+    var hiddenInput = document.getElementById('qaproof-monitor-scheduled-at');
+    if (!trigger || !dropdown) return { set: function(){}, setNow: function(){}, getValue: function(){ return ''; } };
+
+    var isNowMode = true;
+    var selectedDate = new Date();
+    var viewYear = selectedDate.getFullYear();
+    var viewMonth = selectedDate.getMonth();
+    var selectedHour = selectedDate.getHours();
+    var selectedMinute = selectedDate.getMinutes();
+
+    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    var dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function formatLabel(d, h, m) {
+      return pad(d.getDate()) + ' ' + monthNames[d.getMonth()].slice(0, 3) + ' ' + d.getFullYear() + ', ' + pad(h) + ':' + pad(m);
+    }
+
+    function updateHidden() {
+      if (isNowMode) {
+        hiddenInput.value = '';
+      } else {
+        var d = new Date(selectedDate);
+        hiddenInput.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(selectedHour) + ':' + pad(selectedMinute) + ':00';
+      }
+    }
+
+    function updateLabel() {
+      if (isNowMode) {
+        label.textContent = 'Now';
+      } else {
+        label.textContent = formatLabel(selectedDate, selectedHour, selectedMinute);
+      }
+      updateHidden();
+    }
+
+    function render() {
+      var now = new Date();
+      var todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+      var selStr = selectedDate.getFullYear() + '-' + pad(selectedDate.getMonth() + 1) + '-' + pad(selectedDate.getDate());
+
+      var firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      var daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+
+      var html = '<div class="qaproof-dp-header">';
+      html += '<button type="button" class="qaproof-dp-nav" data-dir="-1">&lsaquo;</button>';
+      html += '<span>' + monthNames[viewMonth] + ' ' + viewYear + '</span>';
+      html += '<button type="button" class="qaproof-dp-nav" data-dir="1">&rsaquo;</button>';
+      html += '</div>';
+
+      html += '<div class="qaproof-dp-weekdays">';
+      for (var w = 0; w < 7; w++) html += '<span>' + dayNames[w] + '</span>';
+      html += '</div>';
+
+      html += '<div class="qaproof-dp-days">';
+      // Previous month padding
+      for (var p = firstDay - 1; p >= 0; p--) {
+        var pd = daysInPrev - p;
+        html += '<button type="button" class="qaproof-dp-day other-month" data-y="' + (viewMonth === 0 ? viewYear - 1 : viewYear) + '" data-m="' + (viewMonth === 0 ? 11 : viewMonth - 1) + '" data-d="' + pd + '">' + pd + '</button>';
+      }
+      // Current month
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = viewYear + '-' + pad(viewMonth + 1) + '-' + pad(d);
+        var cls = 'qaproof-dp-day';
+        if (dateStr === todayStr) cls += ' today';
+        if (dateStr === selStr && !isNowMode) cls += ' selected';
+        html += '<button type="button" class="' + cls + '" data-y="' + viewYear + '" data-m="' + viewMonth + '" data-d="' + d + '">' + d + '</button>';
+      }
+      // Next month padding
+      var totalCells = firstDay + daysInMonth;
+      var remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (var n = 1; n <= remaining; n++) {
+        html += '<button type="button" class="qaproof-dp-day other-month" data-y="' + (viewMonth === 11 ? viewYear + 1 : viewYear) + '" data-m="' + (viewMonth === 11 ? 0 : viewMonth + 1) + '" data-d="' + n + '">' + n + '</button>';
+      }
+      html += '</div>';
+
+      // Time row
+      var roundedMin = selectedMinute - (selectedMinute % 5);
+      html += '<div class="qaproof-dp-time">';
+      html += '<label>Time</label>';
+      html += '<div class="qaproof-dp-scroll-wrap">';
+      html += '<div class="qaproof-dp-scroll" data-role="hour">';
+      for (var h = 0; h < 24; h++) html += '<div class="qaproof-dp-scroll-item' + (h === selectedHour ? ' selected' : '') + '" data-val="' + h + '">' + pad(h) + '</div>';
+      html += '</div></div>';
+      html += '<span class="qaproof-dp-colon">:</span>';
+      html += '<div class="qaproof-dp-scroll-wrap">';
+      html += '<div class="qaproof-dp-scroll" data-role="minute">';
+      for (var mi = 0; mi < 60; mi += 5) html += '<div class="qaproof-dp-scroll-item' + (mi === roundedMin ? ' selected' : '') + '" data-val="' + mi + '">' + pad(mi) + '</div>';
+      html += '</div></div>';
+      html += '</div>';
+
+      // Actions
+      html += '<div class="qaproof-dp-actions">';
+      html += '<button type="button" class="qaproof-dp-btn-now">Now</button>';
+      html += '<button type="button" class="qaproof-dp-btn-apply">Apply</button>';
+      html += '</div>';
+
+      dropdown.innerHTML = html;
+
+      // Wire events
+      dropdown.querySelectorAll('.qaproof-dp-nav').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var dir = parseInt(b.dataset.dir, 10);
+          viewMonth += dir;
+          if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+          if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+          render();
+        });
+      });
+
+      dropdown.querySelectorAll('.qaproof-dp-day').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          isNowMode = false;
+          selectedDate = new Date(parseInt(b.dataset.y), parseInt(b.dataset.m), parseInt(b.dataset.d));
+          viewYear = selectedDate.getFullYear();
+          viewMonth = selectedDate.getMonth();
+          render();
+        });
+      });
+
+      // Wire scroll time selectors
+      dropdown.querySelectorAll('.qaproof-dp-scroll').forEach(function (scroller) {
+        var role = scroller.dataset.role;
+        var selItem = scroller.querySelector('.selected');
+        if (selItem) selItem.scrollIntoView({ block: 'center' });
+
+        scroller.querySelectorAll('.qaproof-dp-scroll-item').forEach(function (item) {
+          item.addEventListener('click', function (e) {
+            e.stopPropagation();
+            scroller.querySelectorAll('.qaproof-dp-scroll-item').forEach(function (s) { s.classList.remove('selected'); });
+            item.classList.add('selected');
+            isNowMode = false;
+            if (role === 'hour') selectedHour = parseInt(item.dataset.val, 10);
+            if (role === 'minute') selectedMinute = parseInt(item.dataset.val, 10);
+          });
+        });
+      });
+
+      var nowBtn = dropdown.querySelector('.qaproof-dp-btn-now');
+      if (nowBtn) nowBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        isNowMode = true;
+        selectedDate = new Date();
+        selectedHour = selectedDate.getHours();
+        selectedMinute = selectedDate.getMinutes();
+        viewYear = selectedDate.getFullYear();
+        viewMonth = selectedDate.getMonth();
+        updateLabel();
+        dropdown.classList.add('hidden');
+      });
+
+      var applyBtn = dropdown.querySelector('.qaproof-dp-btn-apply');
+      if (applyBtn) applyBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (isNowMode) {
+          selectedDate = new Date();
+          selectedHour = selectedDate.getHours();
+          selectedMinute = selectedDate.getMinutes();
+        }
+        updateLabel();
+        dropdown.classList.add('hidden');
+      });
+    }
+
+    function positionDropdown() {
+      var rect = trigger.getBoundingClientRect();
+      dropdown.style.maxHeight = '';
+      var dpH = dropdown.scrollHeight;
+      var vpH = window.innerHeight;
+      var top;
+      var spaceAbove = rect.top - 10;
+      var spaceBelow = vpH - rect.bottom - 10;
+
+      if (spaceAbove >= dpH) {
+        top = rect.top - dpH - 6;
+      } else if (spaceBelow >= dpH) {
+        top = rect.bottom + 6;
+      } else if (spaceAbove > spaceBelow) {
+        top = 10;
+        dropdown.style.maxHeight = (rect.top - 16) + 'px';
+      } else {
+        top = rect.bottom + 6;
+        dropdown.style.maxHeight = (vpH - rect.bottom - 16) + 'px';
+      }
+      dropdown.style.top = top + 'px';
+      dropdown.style.left = rect.left + 'px';
+    }
+
+    trigger.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dropdown.classList.contains('hidden')) {
+        render();
+        dropdown.classList.remove('hidden');
+        positionDropdown();
+      } else {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function (e) {
+      if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && e.target !== trigger && !trigger.contains(e.target)) {
+        updateLabel();
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    return {
+      set: function (date) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) { this.setNow(); return; }
+        isNowMode = false;
+        selectedDate = date;
+        selectedHour = date.getHours();
+        selectedMinute = date.getMinutes();
+        viewYear = date.getFullYear();
+        viewMonth = date.getMonth();
+        updateLabel();
+      },
+      setNow: function () {
+        isNowMode = true;
+        selectedDate = new Date();
+        selectedHour = selectedDate.getHours();
+        selectedMinute = selectedDate.getMinutes();
+        viewYear = selectedDate.getFullYear();
+        viewMonth = selectedDate.getMonth();
+        updateLabel();
+      },
+      getValue: function () {
+        if (isNowMode) return '';
+        return selectedDate.getFullYear() + '-' + pad(selectedDate.getMonth() + 1) + '-' + pad(selectedDate.getDate()) + ' ' + pad(selectedHour) + ':' + pad(selectedMinute) + ':00';
+      }
+    };
+  })();
+  // ---- End Datepicker ----
+
   if (monitorsListEl) {
     initMonitorsPage();
   }
@@ -108,7 +354,14 @@
 
       html += '<tr data-id="' + m.id + '" class="qaproof-monitor-row-clickable">';
       html += '<td class="qaproof-monitor-url"><a href="#" class="qaproof-monitor-detail-link" data-id="' + m.id + '">' + Q.escapeHtml(truncateUrl(m.page_url, 60)) + '</a> <span class="qaproof-monitor-view-hint">View Results &rsaquo;</span></td>';
-      html += '<td>' + Q.escapeHtml(Q.capitalize(m.schedule)) + '</td>';
+      var scheduleText = Q.capitalize(m.schedule);
+      if (m.scheduled_at) {
+        var sa = new Date(m.scheduled_at.replace(' ', 'T'));
+        if (!isNaN(sa.getTime()) && sa > new Date()) {
+          scheduleText += ' (from ' + formatDate(m.scheduled_at) + ')';
+        }
+      }
+      html += '<td>' + Q.escapeHtml(scheduleText) + '</td>';
       html += '<td><span class="qaproof-monitor-score ' + scoreClass + '">' + scoreText + '</span></td>';
       html += '<td>' + Q.escapeHtml(lastRun) + '</td>';
       html += '<td><span class="' + statusClass + '">' + Q.escapeHtml(statusText + baselineText) + '</span></td>';
@@ -181,14 +434,20 @@
       if (editIdEl) editIdEl.value = monitor.id;
       if (urlInput) urlInput.value = monitor.page_url;
       if (scheduleSelect) scheduleSelect.value = monitor.schedule;
+      if (monitor.scheduled_at) {
+        qaproofDatepicker.set(new Date(monitor.scheduled_at.replace(' ', 'T')));
+      } else {
+        qaproofDatepicker.setNow();
+      }
       if (thresholdInput) thresholdInput.value = monitor.threshold_score;
       if (notifyEmailCb) notifyEmailCb.checked = parseInt(monitor.notify_email, 10) === 1;
       if (notifyAdminCb) notifyAdminCb.checked = parseInt(monitor.notify_admin, 10) === 1;
     } else {
       if (titleEl) titleEl.textContent = 'Add Monitor';
       if (editIdEl) editIdEl.value = '';
-      if (urlInput) urlInput.value = qaproof.siteUrl;
+      if (urlInput) urlInput.value = '';
       if (scheduleSelect) scheduleSelect.value = 'daily';
+      qaproofDatepicker.setNow();
       if (thresholdInput) thresholdInput.value = qaproof.defaultThreshold || 90;
       if (notifyEmailCb) notifyEmailCb.checked = true;
       if (notifyAdminCb) notifyAdminCb.checked = true;
@@ -207,6 +466,7 @@
     var data = {
       page_url: document.getElementById('qaproof-monitor-url').value.trim(),
       schedule: document.getElementById('qaproof-monitor-schedule').value,
+      scheduled_at: qaproofDatepicker.getValue(),
       threshold_score: parseInt(document.getElementById('qaproof-monitor-threshold').value, 10),
       notify_email: document.getElementById('qaproof-monitor-notify-email').checked ? 1 : 0,
       notify_admin: document.getElementById('qaproof-monitor-notify-admin').checked ? 1 : 0,
@@ -367,7 +627,14 @@
     html += '  <button type="button" id="qaproof-back-to-list" class="button">&larr; Back to Monitors</button>';
     html += '  <h2>' + Q.escapeHtml(monitor.page_url) + '</h2>';
     html += '  <div class="qaproof-detail-meta">';
-    html += '    <span>Schedule: <strong>' + Q.escapeHtml(Q.capitalize(monitor.schedule)) + '</strong></span>';
+    var detailSchedule = Q.capitalize(monitor.schedule);
+    if (monitor.scheduled_at) {
+      var saD = new Date(monitor.scheduled_at.replace(' ', 'T'));
+      if (!isNaN(saD.getTime()) && saD > new Date()) {
+        detailSchedule += ' (starts ' + formatDate(monitor.scheduled_at) + ')';
+      }
+    }
+    html += '    <span>Schedule: <strong>' + Q.escapeHtml(detailSchedule) + '</strong></span>';
     html += '    <span>Threshold: <strong>' + monitor.threshold_score + '</strong></span>';
     html += '    <span>Last Score: <strong class="' + Q.getScoreClass(parseInt(monitor.last_score, 10)) + '">' + (monitor.last_score != null ? monitor.last_score : '—') + '</strong></span>';
     html += '  </div>';
