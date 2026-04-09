@@ -1,0 +1,752 @@
+/* ============================
+   Marker Tooltip
+   ============================ */
+/* Element highlight overlay (WAVE-style) */
+#qaproof-app .qaproof-element-highlight {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 3px;
+  transition: opacity 0.15s ease;
+}
+
+#qaproof-app .qaproof-highlight-high {
+  background: rgba(239, 68, 68, 0.12);
+  border: 2px solid rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
+}
+
+#qaproof-app .qaproof-highlight-medium {
+  background: rgba(240, 180, 41, 0.12);
+  border: 2px solid rgba(240, 180, 41, 0.7);
+  box-shadow: 0 0 8px rgba(240, 180, 41, 0.25);
+}
+
+#qaproof-app .qaproof-highlight-low {
+  background: rgba(59, 130, 246, 0.12);
+  border: 2px solid rgba(59, 130, 246, 0.7);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.25);
+}
+
+#qaproof-app .qaproof-marker-tooltip {
+  position: fixed;
+  background: linear-gradient(135deg, #1a1e25 0%, #222831 100%);
+  color: #E8E8E8;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 0;
+  border-radius: 12px;
+  min-width: 200px;
+  max-width: 340px;
+  width: max-content;
+  white-space: normal;
+  line-height: 1.5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform: translateY(4px);
+  z-index: 9999;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  font-family: 'Kodchasan', sans-serif;
+}
+
+/* Tooltip header bar with severity color */
+#qaproof-app .qaproof-marker-tooltip .tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-header.sev-high {
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.2) 0%, transparent 100%);
+  color: #FCA5A5;
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-header.sev-medium {
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.2) 0%, transparent 100%);
+  color: #FCD34D;
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-header.sev-low {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.2) 0%, transparent 100%);
+  color: #93C5FD;
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-header.sev-multi {
+  background: linear-gradient(90deg, rgba(107, 114, 128, 0.2) 0%, transparent 100%);
+  color: #D1D5DB;
+}
+
+/* Severity dot in header */
+#qaproof-app .qaproof-marker-tooltip .sev-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#qaproof-app .qaproof-marker-tooltip .sev-high .sev-dot { background: #DC2626; }
+#qaproof-app .qaproof-marker-tooltip .sev-medium .sev-dot { background: #D97706; }
+#qaproof-app .qaproof-marker-tooltip .sev-low .sev-dot { background: #2563EB; }
+#qaproof-app .qaproof-marker-tooltip .sev-multi .sev-dot { background: #6B7280; }
+
+/* Tooltip body content */
+#qaproof-app .qaproof-marker-tooltip .tooltip-body {
+  padding: 10px 14px;
+  color: #D1D5DB;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Category badge in tooltip */
+#qaproof-app .qaproof-marker-tooltip .tooltip-category {
+  display: inline-block;
+  background: rgba(0, 173, 181, 0.15);
+  color: #5EEAD4;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
+}
+
+/* Pie/multi-issue tooltip items */
+#qaproof-app .qaproof-marker-tooltip .tooltip-item {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-item:last-child {
+  border-bottom: none;
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-item .sev-indicator {
+  width: 4px;
+  min-height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+#qaproof-app .qaproof-marker-tooltip .tooltip-item .sev-indicator.ind-high { background: #DC2626; }
+#qaproof-app .qaproof-marker-tooltip .tooltip-item .sev-indicator.ind-medium { background: #D97706; }
+#qaproof-app .qaproof-marker-tooltip .tooltip-item .sev-indicator.ind-low { background: #2563EB; }
+
+/* Arrow */
+#qaproof-app .qaproof-marker-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: #222831;
+}
+
+#qaproof-app .qaproof-marker-tooltip.tooltip-below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: #1a1e25;
+}
+
+#qaproof-app .qaproof-marker-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================
+   Differences List
+   ============================ */
+#qaproof-app .qaproof-diff-count {
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--qp-accent);
+  color: var(--qp-white);
+  padding: 3px 12px;
+  border-radius: var(--qp-radius-pill);
+  margin-left: 4px;
+  min-width: 24px;
+  text-align: center;
+}
+
+#qaproof-app .qaproof-filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #E8EAED;
+}
+
+#qaproof-app .qaproof-severity-filter,
+#qaproof-app .qaproof-device-filter {
+  display: flex;
+  gap: 6px;
+}
+
+/* Filter buttons */
+#qaproof-app .qaproof-filter-btn {
+  padding: 7px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: #222831;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qp-accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+#qaproof-app .qaproof-filter-btn.active {
+  background: var(--qp-accent);
+  color: #fff;
+  border-color: var(--qp-accent);
+  box-shadow: 0 2px 8px rgba(0, 173, 181, 0.3);
+}
+
+#qaproof-app .qaproof-filter-btn:hover:not(.active) {
+  border-color: rgba(0, 173, 181, 0.4);
+  color: #EEEEEE;
+  background: #2A2F38;
+}
+
+/* ============================
+   Issues — Severity Summary Bar
+   ============================ */
+#qaproof-app .qaproof-diff-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #E8EAED;
+}
+
+#qaproof-app .qaproof-diff-sev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+#qaproof-app .qaproof-diff-sev-chip svg { flex-shrink: 0; }
+#qaproof-app .qaproof-diff-sev-chip-high { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+#qaproof-app .qaproof-diff-sev-chip-medium { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+#qaproof-app .qaproof-diff-sev-chip-low { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
+
+/* Stacked severity bar */
+#qaproof-app .qaproof-diff-severity-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 100px;
+  background: #E8EAED;
+}
+
+#qaproof-app .qaproof-sbar-seg { height: 100%; transition: width 0.5s ease; }
+#qaproof-app .qaproof-sbar-high { background: #EF4444; }
+#qaproof-app .qaproof-sbar-med { background: #F0B429; }
+#qaproof-app .qaproof-sbar-low { background: #3B82F6; }
+
+/* ============================
+   Issues — Category Groups
+   ============================ */
+#qaproof-app .qaproof-diff-group {
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: #222831;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+#qaproof-app .qaproof-diff-group:last-child {
+  margin-bottom: 0;
+}
+
+#qaproof-app .qaproof-diff-group:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Group header — clickable to collapse */
+#qaproof-app .qaproof-diff-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+#qaproof-app .qaproof-diff-group-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+#qaproof-app .qaproof-diff-group-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#qaproof-app .qaproof-diff-group-accent {
+  width: 4px;
+  height: 20px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-diff-group-accent-high { background: #EF4444; }
+#qaproof-app .qaproof-diff-group-accent-medium { background: #F0B429; }
+#qaproof-app .qaproof-diff-group-accent-low { background: #3B82F6; }
+
+#qaproof-app .qaproof-diff-group-title {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #EEEEEE;
+  letter-spacing: 0.01em;
+}
+
+#qaproof-app .qaproof-diff-group-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(238, 238, 238, 0.6);
+  padding: 2px 8px;
+  border-radius: 10px;
+  line-height: 1.3;
+}
+
+#qaproof-app .qaproof-diff-group-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mini severity count chips in group header */
+#qaproof-app .qaproof-diff-mini-chip {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  line-height: 1.3;
+}
+
+#qaproof-app .qaproof-diff-mini-high { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+#qaproof-app .qaproof-diff-mini-med { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+#qaproof-app .qaproof-diff-mini-low { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+
+#qaproof-app .qaproof-diff-group-chevron {
+  font-size: 12px;
+  color: rgba(238, 238, 238, 0.4);
+  transition: transform 0.25s ease;
+  line-height: 1;
+}
+
+/* Collapse behavior */
+#qaproof-app .qaproof-diff-group.collapsed .qaproof-diff-group-chevron {
+  transform: rotate(-90deg);
+}
+
+#qaproof-app .qaproof-diff-group-body {
+  padding: 8px 10px 10px;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+
+#qaproof-app .qaproof-diff-group.collapsed .qaproof-diff-group-body {
+  display: none;
+}
+
+/* ============================
+   Difference Item (inside groups)
+   ============================ */
+#qaproof-app .qaproof-difference {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(238, 238, 238, 0.75);
+  line-height: 1.5;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #2A2F38;
+  overflow: hidden;
+}
+
+#qaproof-app .qaproof-difference:last-child {
+  margin-bottom: 0;
+}
+
+#qaproof-app .qaproof-difference:hover {
+  background: #393E46;
+  border-color: rgba(0, 173, 181, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#qaproof-app .qaproof-difference.active {
+  border-color: var(--qp-accent);
+  background: rgba(0, 173, 181, 0.12);
+  box-shadow: 0 0 0 1px rgba(0, 173, 181, 0.3), 0 2px 8px rgba(0, 173, 181, 0.15);
+}
+
+#qaproof-app .qaproof-difference.filtered-out {
+  display: none;
+}
+
+/* Left indicator strip with number */
+#qaproof-app .qaproof-diff-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-diff-indicator-high { background: rgba(239, 68, 68, 0.18); }
+#qaproof-app .qaproof-diff-indicator-medium { background: rgba(245, 158, 11, 0.15); }
+#qaproof-app .qaproof-diff-indicator-low { background: rgba(59, 130, 246, 0.15); }
+
+#qaproof-app .qaproof-diff-num {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(238, 238, 238, 0.5);
+}
+
+/* Legacy number circle — hidden */
+#qaproof-app .qaproof-diff-number { display: none; }
+
+#qaproof-app .qaproof-diff-body {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+}
+
+/* Header row: severity tag */
+#qaproof-app .qaproof-diff-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+/* Severity tag with icon */
+#qaproof-app .qaproof-severity-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+#qaproof-app .qaproof-severity-tag svg {
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-severity-tag-high {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+}
+
+#qaproof-app .qaproof-severity-tag-medium {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FBBF24;
+}
+
+#qaproof-app .qaproof-severity-tag-low {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60A5FA;
+}
+
+/* Category label (legacy — no longer rendered in diff item) */
+#qaproof-app .qaproof-diff-category {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(238, 238, 238, 0.4);
+  letter-spacing: 0.01em;
+}
+
+#qaproof-app .qaproof-diff-category::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ccc;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Description text */
+#qaproof-app .qaproof-diff-description {
+  color: rgba(238, 238, 238, 0.65);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* Legacy diff-meta — hidden */
+#qaproof-app .qaproof-diff-meta { display: none; }
+
+/* ============================
+   Badges — pill shape
+   ============================ */
+#qaproof-app .qaproof-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+#qaproof-app .qaproof-badge-high { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+#qaproof-app .qaproof-badge-medium { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+#qaproof-app .qaproof-badge-low { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+#qaproof-app .qaproof-badge-category { background: #F0F0F0; color: var(--qp-text-muted); }
+#qaproof-app .qaproof-badge-device { background: var(--qp-accent-dim); color: #0E7490; }
+
+/* ============================
+   Recommendations
+   ============================ */
+#qaproof-app .qaproof-recommendations {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+}
+
+/* Summary bar */
+#qaproof-app .qaproof-rec-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #E8EAED;
+}
+
+#qaproof-app .qaproof-rec-summary-total {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--qp-text-secondary);
+  margin-right: 4px;
+}
+
+#qaproof-app .qaproof-rec-chip {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  letter-spacing: 0.02em;
+}
+
+#qaproof-app .qaproof-rec-chip-code { background: rgba(13, 148, 136, 0.1); color: #0D9488; }
+#qaproof-app .qaproof-rec-chip-quick { background: rgba(0, 173, 181, 0.1); color: #0E7490; }
+#qaproof-app .qaproof-rec-chip-structural { background: rgba(124, 58, 237, 0.1); color: #7C3AED; }
+
+/* Recommendation group */
+#qaproof-app .qaproof-rec-group {
+  animation: qaproof-fade-up 0.3s ease both;
+}
+
+#qaproof-app .qaproof-rec-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#qaproof-app .qaproof-rec-group-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-rec-group-code .qaproof-rec-group-icon { background: rgba(13, 148, 136, 0.1); color: #0D9488; }
+#qaproof-app .qaproof-rec-group-quick .qaproof-rec-group-icon { background: rgba(0, 173, 181, 0.1); color: #0E7490; }
+#qaproof-app .qaproof-rec-group-structural .qaproof-rec-group-icon { background: rgba(124, 58, 237, 0.1); color: #7C3AED; }
+
+#qaproof-app .qaproof-rec-group-label {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--qp-text-primary);
+  letter-spacing: 0.02em;
+}
+
+#qaproof-app .qaproof-rec-group-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #E8EAED;
+  color: var(--qp-text-muted);
+  padding: 2px 7px;
+  border-radius: 8px;
+  line-height: 1.3;
+}
+
+/* Grid for rec items */
+#qaproof-app .qaproof-rec-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#qaproof-app .qaproof-rec-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  background: #2A2F38;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  animation: qaproof-fade-up 0.3s ease both;
+}
+
+#qaproof-app .qaproof-rec-item:hover {
+  background: #393E46;
+  border-color: rgba(0, 173, 181, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Left indicator with number */
+#qaproof-app .qaproof-rec-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-rec-group-code .qaproof-rec-indicator { background: rgba(13, 148, 136, 0.06); }
+#qaproof-app .qaproof-rec-group-quick .qaproof-rec-indicator { background: rgba(0, 173, 181, 0.06); }
+#qaproof-app .qaproof-rec-group-structural .qaproof-rec-indicator { background: rgba(124, 58, 237, 0.06); }
+
+#qaproof-app .qaproof-rec-num {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(238, 238, 238, 0.5);
+}
+
+/* Legacy number circle — hidden */
+#qaproof-app .qaproof-rec-number { display: none; }
+
+#qaproof-app .qaproof-rec-body {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+}
+
+#qaproof-app .qaproof-rec-text {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: rgba(238, 238, 238, 0.7);
+  line-height: 1.55;
+}
+
+/* Inline code highlights */
+#qaproof-app .qaproof-rec-code {
+  display: inline;
+  padding: 2px 7px;
+  margin: 0 1px;
+  background: rgba(0, 173, 181, 0.15);
+  border: 1px solid rgba(0, 173, 181, 0.25);
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: #22D3EE;
+  word-break: break-all;
+}
+
+#qaproof-app .qaproof-rec-tag {
+  display: inline;
+  padding: 2px 7px;
+  margin: 0 1px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: #7C3AED;
+}
+
+/* WCAG reference highlight */
+#qaproof-app .qaproof-rec-wcag {
+  display: inline;
+  padding: 1px 6px;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4F46E5;
+  white-space: nowrap;
+}
+
+/* Color swatch next to hex values */
+#qaproof-app .qaproof-rec-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4B5563;
+}
+
+#qaproof-app .qaproof-rec-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  vertical-align: middle;
+}
+
+#qaproof-app .qaproof-rec-empty {
+  color: #9CA3AF;
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}

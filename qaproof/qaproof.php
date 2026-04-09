@@ -32,9 +32,16 @@ require_once QAPROOF_PLUGIN_DIR . 'includes/class-test-history.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-scheduler.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-notifications.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-assets.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-ajax.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-tests.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-monitors.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-designs.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-history.php';
 
 // Initialize
 add_action( 'plugins_loaded', function() {
+    load_plugin_textdomain( 'qaproof', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     QAProof_Settings::init();
     QAProof_Admin::init();
     QAProof_Scheduler::init();

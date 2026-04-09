@@ -1,0 +1,393 @@
+/* ============================
+   Loading
+   ============================ */
+/* Old loading base styles overridden by dark theme below */
+
+/* Scroll offset — prevents WP admin bar from covering report top */
+#qaproof-results {
+  scroll-margin-top: 46px;
+}
+
+/* ============================
+   Score Header — matches CTA card style (border-radius: 30px)
+   ============================ */
+/* Legacy score-header (kept for backward compat) */
+#qaproof-app .qaproof-score-header {
+  text-align: center;
+  background: #222831;
+  border: none;
+  border-radius: var(--qp-radius-card-lg);
+  padding: 48px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+#qaproof-app .qaproof-score-header::before {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(0, 173, 181, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#qaproof-app .qaproof-score-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================
+   Report Hero — combined score + stats block
+   ============================ */
+#qaproof-app .qaproof-report-hero {
+  background: #222831;
+  border: none;
+  border-radius: var(--qp-radius-card-lg);
+  padding: 28px 32px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+  animation: qaproof-scale-in 0.4s ease both;
+}
+
+#qaproof-app .qaproof-report-hero::before {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  top: -80px;
+  left: -60px;
+  background: radial-gradient(circle, rgba(0, 173, 181, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#qaproof-app .qaproof-report-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+#qaproof-app .qaproof-report-hero-top {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-report-hero-score {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#qaproof-app .qaproof-report-hero-score .qaproof-score-ring-wrap {
+  margin: 0;
+}
+
+#qaproof-app .qaproof-report-hero-score .qaproof-score-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+#qaproof-app .qaproof-report-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+#qaproof-app .qaproof-report-hero-info .qaproof-summary {
+  max-width: none;
+  margin: 0 0 14px 0;
+  text-align: left;
+}
+
+#qaproof-app .qaproof-report-hero-actions {
+  display: flex;
+  gap: 10px;
+  position: relative;
+}
+
+/* Inline stats row */
+#qaproof-app .qaproof-stats-inline {
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+#qaproof-app .qaproof-stats-inline .qaproof-stat-value {
+  font-size: 22px;
+}
+
+/* Responsive hero: stack on narrow screens */
+@media (max-width: 782px) {
+  #qaproof-app .qaproof-report-hero-top {
+    flex-direction: column;
+    text-align: center;
+  }
+  #qaproof-app .qaproof-report-hero-info .qaproof-summary {
+    text-align: center;
+  }
+  #qaproof-app .qaproof-report-hero-actions {
+    justify-content: center;
+  }
+}
+
+/* Animated SVG Score Ring */
+@keyframes qaproof-ring-fill {
+  from { stroke-dashoffset: 339.292; }
+}
+#qaproof-app .qaproof-score-ring-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+}
+
+#qaproof-app .qaproof-score-ring-wrap svg {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+#qaproof-app .qaproof-score-ring-bg {
+  fill: none;
+  stroke: rgba(238, 238, 238, 0.12);
+  stroke-width: 8;
+}
+
+#qaproof-app .qaproof-score-ring-fill {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  animation: qaproof-ring-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transition: stroke 0.3s;
+}
+
+#qaproof-app .qaproof-score-ring-fill.score-high { stroke: var(--qp-score-high); }
+#qaproof-app .qaproof-score-ring-fill.score-medium { stroke: var(--qp-score-medium); }
+#qaproof-app .qaproof-score-ring-fill.score-low { stroke: var(--qp-score-low); }
+
+#qaproof-app .qaproof-score-ring-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+
+#qaproof-app .qaproof-overall-score {
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
+  letter-spacing: -0.03em;
+  animation: qaproof-score-countup 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.4s;
+}
+
+#qaproof-app .qaproof-score-out-of {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(238, 238, 238, 0.35);
+  letter-spacing: 0.05em;
+  margin: 0;
+  line-height: 1;
+}
+
+/* Score ring + level in one row */
+#qaproof-app .qaproof-score-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+#qaproof-app .qaproof-score-level {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#qaproof-app .qaproof-score-level-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-score-level-dot.score-high { background: var(--qp-score-high); }
+#qaproof-app .qaproof-score-level-dot.score-medium { background: var(--qp-score-medium); }
+#qaproof-app .qaproof-score-level-dot.score-low { background: var(--qp-score-low); }
+
+#qaproof-app .qaproof-score-level-text {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#qaproof-app .qaproof-score-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(238, 238, 238, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 18px;
+  line-height: 120%;
+}
+
+#qaproof-app .qaproof-summary {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(238, 238, 238, 0.65);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 165%;
+}
+
+/* Score colors */
+#qaproof-app .score-high { color: var(--qp-score-high); }
+#qaproof-app .score-medium { color: var(--qp-score-medium); }
+#qaproof-app .score-low { color: var(--qp-score-low); }
+
+/* ============================
+   Report Statistics & Charts
+   ============================ */
+#qaproof-app .qaproof-report-stats {
+  margin: 16px 0;
+}
+
+#qaproof-app .qaproof-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+#qaproof-app .qaproof-stat-card {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 12px;
+  padding: 12px 16px 10px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+#qaproof-app .qaproof-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #222831;
+  line-height: 1;
+}
+
+#qaproof-app .qaproof-stat-value.score-high { color: #00ADB5; }
+#qaproof-app .qaproof-stat-value.score-medium { color: #F0B429; }
+#qaproof-app .qaproof-stat-value.score-low { color: #EF4444; }
+
+#qaproof-app .qaproof-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+#qaproof-app .qaproof-stat-detail {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin-top: 3px;
+}
+
+#qaproof-app .qaproof-stat-high { color: #EF4444; }
+#qaproof-app .qaproof-stat-med { color: #F0B429; }
+#qaproof-app .qaproof-stat-low { color: #00ADB5; }
+
+#qaproof-app .qaproof-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+#qaproof-app .qaproof-charts-row.qaproof-charts-single {
+  grid-template-columns: 1fr;
+  max-width: 600px;
+}
+
+#qaproof-app .qaproof-chart-card {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+#qaproof-app .qaproof-chart-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+#qaproof-app .qaproof-chart-card.qaproof-chart-full {
+  max-width: 600px;
+}
+
+#qaproof-app .qaproof-chart-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+}
+
+#qaproof-app .qaproof-chart-wrap canvas {
+  max-height: 260px;
+}
+
+#qaproof-app .qaproof-donut-wrap {
+  min-height: 200px;
+}
+
+#qaproof-app .qaproof-donut-wrap canvas {
+  max-height: 240px;
+}
+
+#qaproof-app .qaproof-chart-title {
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #222831;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: none;
+  background: linear-gradient(90deg, #00ADB5 0%, rgba(0, 173, 181, 0.08) 100%);
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  background-position: bottom left;
+}
+
+/* Responsive: stack on mobile */
+@media (max-width: 782px) {
+  #qaproof-app .qaproof-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  #qaproof-app .qaproof-charts-row {
+    grid-template-columns: 1fr;
+  }
+}

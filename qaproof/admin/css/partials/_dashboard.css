@@ -1,0 +1,1000 @@
+/* ============================
+   Dashboard
+   ============================ */
+/* ============================
+   Dashboard — Bento Grid
+   ============================ */
+/* ============================
+   Dashboard — Professional Bento Layout
+   ============================ */
+
+#qaproof-app .qaproof-dash {
+  max-width: 1200px;
+}
+
+/* --- Hero banner: full-width, dark with integrated score ring --- */
+#qaproof-app .qaproof-dash-hero {
+  background: linear-gradient(135deg, #1a1e25 0%, #222831 50%, #293040 100%);
+  border-radius: 16px;
+  padding: 40px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -60px;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(0, 173, 181, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+#qaproof-app .qaproof-dash-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -100px;
+  left: 20%;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+#qaproof-app .qaproof-dash-hero-left {
+  position: relative;
+  z-index: 1;
+}
+
+#qaproof-app .qaproof-dash-hero h1 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+#qaproof-app .qaproof-dash-hero-tagline {
+  font-size: 14px;
+  color: rgba(238, 238, 238, 0.45);
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+#qaproof-app .qaproof-dash-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--qp-accent);
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 11px 24px;
+  border-radius: var(--qp-radius-pill);
+  text-decoration: none !important;
+  transition: all 0.25s ease;
+}
+
+#qaproof-app .qaproof-dash-hero-cta:hover {
+  background: #00C4CC;
+  box-shadow: 0 6px 24px rgba(0, 173, 181, 0.35);
+  transform: translateY(-1px);
+}
+
+#qaproof-app .qaproof-dash-hero-cta .dashicons {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Score ring inside hero */
+#qaproof-app .qaproof-dash-hero-score {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#qaproof-app .qaproof-dash-score-ring {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin-bottom: 8px;
+}
+
+#qaproof-app .qaproof-dash-score-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+#qaproof-app .qaproof-dash-score-ring .ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 5;
+}
+
+#qaproof-app .qaproof-dash-score-ring .ring-fill {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s ease;
+}
+
+#qaproof-app .qaproof-dash-score-val {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+#qaproof-app .qaproof-dash-score-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(238, 238, 238, 0.35);
+}
+
+/* --- Notice banner --- */
+#qaproof-app .qaproof-dash-notice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(0, 173, 181, 0.05);
+  border: 1px solid rgba(0, 173, 181, 0.15);
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-notice.notice-warn {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+#qaproof-app .qaproof-dash-notice .dashicons {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-notice.notice-warn .dashicons { color: #EF4444; }
+#qaproof-app .qaproof-dash-notice:not(.notice-warn) .dashicons { color: var(--qp-accent); }
+
+#qaproof-app .qaproof-dash-notice strong {
+  font-size: 13px;
+  color: #222831;
+}
+
+#qaproof-app .qaproof-dash-notice p {
+  font-size: 12px;
+  color: #7a8290;
+  margin: 2px 0 0;
+}
+
+#qaproof-app .qaproof-dash-notice a {
+  color: var(--qp-accent);
+  font-weight: 600;
+}
+
+/* --- Stats bar: 4 inline stats --- */
+#qaproof-app .qaproof-dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-stat {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+#qaproof-app .qaproof-dash-stat:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+#qaproof-app .qaproof-dash-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-stat-icon .dashicons {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+#qaproof-app .qaproof-dash-stat-icon.icon-tests { background: rgba(59, 130, 246, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-tests .dashicons { color: #3B82F6; }
+#qaproof-app .qaproof-dash-stat-icon.icon-score { background: rgba(139, 92, 246, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-score .dashicons { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-stat-icon.icon-monitors { background: rgba(0, 173, 181, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-monitors .dashicons { color: var(--qp-accent); }
+#qaproof-app .qaproof-dash-stat-icon.icon-alerts { background: rgba(245, 158, 11, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-alerts .dashicons { color: #F59E0B; }
+#qaproof-app .qaproof-dash-stat-icon.icon-tokens { background: rgba(16, 185, 129, 0.1); }
+#qaproof-app .qaproof-dash-stat-icon.icon-tokens .dashicons { color: #10B981; }
+
+#qaproof-app .qaproof-dash-stat-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: #222831;
+  line-height: 1;
+}
+
+#qaproof-app .qaproof-dash-stat-val.score-high { color: var(--qp-accent); }
+#qaproof-app .qaproof-dash-stat-val.score-medium { color: #F0B429; }
+#qaproof-app .qaproof-dash-stat-val.score-low { color: #EF4444; }
+
+#qaproof-app .qaproof-dash-stat-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a8290;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+/* --- Token Usage Card --- */
+#qaproof-app .qaproof-dash-usage {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-usage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+#qaproof-app .qaproof-dash-usage-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #222831;
+}
+
+#qaproof-app .qaproof-dash-usage-title .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #7a8290;
+}
+
+#qaproof-app .qaproof-dash-usage-plan {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #7a8290;
+  font-weight: 600;
+}
+
+#qaproof-app .qaproof-dash-plan-badge {
+  background: linear-gradient(135deg, var(--qp-accent), #0891B2);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+#qaproof-app .qaproof-dash-usage-bar-wrap {
+  margin-bottom: 10px;
+}
+
+#qaproof-app .qaproof-dash-usage-bar {
+  height: 7px;
+  background: #F0F2F5;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+#qaproof-app .qaproof-dash-usage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--qp-accent), #0891B2);
+  border-radius: 100px;
+  transition: width 0.6s ease;
+}
+
+#qaproof-app .qaproof-dash-usage-nums {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #7a8290;
+}
+
+#qaproof-app .qaproof-dash-usage-nums strong {
+  color: #222831;
+  font-weight: 700;
+}
+
+#qaproof-app .qaproof-dash-usage-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 16px;
+  padding-top: 10px;
+  border-top: 1px solid #F0F2F5;
+  margin-bottom: 8px;
+}
+
+#qaproof-app .qaproof-dash-usage-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #4b5563;
+}
+
+#qaproof-app .qaproof-dash-usage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-usage-item[data-color="teal"] .qaproof-dash-usage-dot { background: var(--qp-accent); }
+#qaproof-app .qaproof-dash-usage-item[data-color="blue"] .qaproof-dash-usage-dot { background: #3B82F6; }
+#qaproof-app .qaproof-dash-usage-item[data-color="purple"] .qaproof-dash-usage-dot { background: #8B5CF6; }
+#qaproof-app .qaproof-dash-usage-item[data-color="green"] .qaproof-dash-usage-dot { background: #10B981; }
+#qaproof-app .qaproof-dash-usage-item[data-color="amber"] .qaproof-dash-usage-dot { background: #F59E0B; }
+
+#qaproof-app .qaproof-dash-usage-label {
+  font-weight: 500;
+}
+
+#qaproof-app .qaproof-dash-usage-count {
+  font-weight: 700;
+  color: #222831;
+}
+
+#qaproof-app .qaproof-dash-usage-footer {
+  font-size: 10px;
+  color: #9CA3AF;
+}
+
+#qaproof-app .qaproof-dash-usage-sep {
+  margin: 0 4px;
+}
+
+#qaproof-app .qaproof-dash-usage-footer a {
+  color: var(--qp-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#qaproof-app .qaproof-dash-usage-footer a:hover {
+  text-decoration: underline;
+}
+
+/* --- Section heading --- */
+#qaproof-app .qaproof-dash-section {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222831;
+  margin: 0 0 14px;
+  padding-left: 2px;
+}
+
+/* --- Tools layout: 3 top + 2 bottom --- */
+#qaproof-app .qaproof-dash-tools-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+#qaproof-app .qaproof-dash-tools-bottom {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+/* --- Wide horizontal cards (Accessibility + Regression) --- */
+#qaproof-app .qaproof-dash-tool-wide {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: var(--qp-radius-card);
+  padding: 20px 24px;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: var(--qp-shadow);
+}
+
+#qaproof-app .qaproof-dash-tool-wide::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 4px 0 0 4px;
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"]::before { background: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"]::before { background: #F59E0B; }
+
+#qaproof-app .qaproof-dash-tool-wide:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+#qaproof-app .qaproof-dash-tool-wide-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tool-wide-icon {
+  background: rgba(139, 92, 246, 0.1);
+}
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tool-wide-icon {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+#qaproof-app .qaproof-dash-tool-wide-icon .dashicons {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tool-wide-icon .dashicons { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tool-wide-icon .dashicons { color: #F59E0B; }
+
+#qaproof-app .qaproof-dash-tool-wide-content {
+  flex: 1;
+  min-width: 0;
+}
+
+#qaproof-app .qaproof-dash-tool-wide-content h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--qp-text-primary);
+  margin: 0 0 4px 0;
+  font-family: var(--qp-font);
+}
+
+#qaproof-app .qaproof-dash-tool-wide-content p {
+  font-size: 12.5px;
+  color: #7a8290;
+  margin: 0;
+  line-height: 1.4;
+}
+
+#qaproof-app .qaproof-dash-tool-wide-tags {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-tag {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--qp-font);
+  background: rgba(0, 0, 0, 0.04);
+  color: #6b7280;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"] .qaproof-dash-tag {
+  background: rgba(139, 92, 246, 0.06);
+  color: #7C3AED;
+  border-color: rgba(139, 92, 246, 0.15);
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"] .qaproof-dash-tag {
+  background: rgba(245, 158, 11, 0.06);
+  color: #D97706;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+#qaproof-app .qaproof-dash-tool-wide .qaproof-dash-tool-arrow {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #ccc;
+  opacity: 0;
+  transition: all 0.2s ease;
+  transform: translateX(-4px);
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-tool-wide:hover .qaproof-dash-tool-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+#qaproof-app .qaproof-dash-tool-wide[data-color="purple"]:hover .qaproof-dash-tool-arrow { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool-wide[data-color="amber"]:hover .qaproof-dash-tool-arrow { color: #F59E0B; }
+
+/* --- Tool cards: white, clean, colored left accent --- */
+#qaproof-app .qaproof-dash-tools {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-tool {
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 14px;
+  padding: 22px 20px;
+  text-decoration: none !important;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+#qaproof-app .qaproof-dash-tool::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 3px 0 0 3px;
+}
+
+#qaproof-app .qaproof-dash-tool[data-color="teal"]::before { background: var(--qp-accent); }
+#qaproof-app .qaproof-dash-tool[data-color="blue"]::before { background: #3B82F6; }
+#qaproof-app .qaproof-dash-tool[data-color="purple"]::before { background: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool[data-color="amber"]::before { background: #F59E0B; }
+#qaproof-app .qaproof-dash-tool[data-color="green"]::before { background: #10B981; }
+
+#qaproof-app .qaproof-dash-tool:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  border-color: transparent;
+}
+
+#qaproof-app .qaproof-dash-tool-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+#qaproof-app .qaproof-dash-tool[data-color="teal"] .qaproof-dash-tool-icon { background: rgba(0, 173, 181, 0.1); }
+#qaproof-app .qaproof-dash-tool[data-color="blue"] .qaproof-dash-tool-icon { background: rgba(59, 130, 246, 0.1); }
+#qaproof-app .qaproof-dash-tool[data-color="purple"] .qaproof-dash-tool-icon { background: rgba(139, 92, 246, 0.1); }
+#qaproof-app .qaproof-dash-tool[data-color="amber"] .qaproof-dash-tool-icon { background: rgba(245, 158, 11, 0.1); }
+#qaproof-app .qaproof-dash-tool[data-color="green"] .qaproof-dash-tool-icon { background: rgba(16, 185, 129, 0.1); }
+
+#qaproof-app .qaproof-dash-tool-icon .dashicons {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+#qaproof-app .qaproof-dash-tool[data-color="teal"] .qaproof-dash-tool-icon .dashicons { color: var(--qp-accent); }
+#qaproof-app .qaproof-dash-tool[data-color="blue"] .qaproof-dash-tool-icon .dashicons { color: #3B82F6; }
+#qaproof-app .qaproof-dash-tool[data-color="purple"] .qaproof-dash-tool-icon .dashicons { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool[data-color="amber"] .qaproof-dash-tool-icon .dashicons { color: #F59E0B; }
+#qaproof-app .qaproof-dash-tool[data-color="green"] .qaproof-dash-tool-icon .dashicons { color: #10B981; }
+
+#qaproof-app .qaproof-dash-tool h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222831;
+  margin: 0 0 6px;
+}
+
+#qaproof-app .qaproof-dash-tool p {
+  font-size: 12px;
+  color: #7a8290;
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+#qaproof-app .qaproof-dash-tool-arrow {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-top: 14px;
+  color: #ccc;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.25s ease;
+}
+
+#qaproof-app .qaproof-dash-tool:hover .qaproof-dash-tool-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+#qaproof-app .qaproof-dash-tool[data-color="teal"]:hover .qaproof-dash-tool-arrow { color: var(--qp-accent); }
+#qaproof-app .qaproof-dash-tool[data-color="blue"]:hover .qaproof-dash-tool-arrow { color: #3B82F6; }
+#qaproof-app .qaproof-dash-tool[data-color="purple"]:hover .qaproof-dash-tool-arrow { color: #8B5CF6; }
+#qaproof-app .qaproof-dash-tool[data-color="amber"]:hover .qaproof-dash-tool-arrow { color: #F59E0B; }
+#qaproof-app .qaproof-dash-tool[data-color="green"]:hover .qaproof-dash-tool-arrow { color: #10B981; }
+
+/* --- Quick links: 2-col grid, dark cards --- */
+#qaproof-app .qaproof-dash-links {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+#qaproof-app .qaproof-dash-link {
+  background: #222831;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+#qaproof-app .qaproof-dash-link:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(-2px);
+}
+
+#qaproof-app .qaproof-dash-link-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(0, 173, 181, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-link-icon .dashicons {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: var(--qp-accent);
+}
+
+#qaproof-app .qaproof-dash-link-info {
+  flex: 1;
+}
+
+#qaproof-app .qaproof-dash-link-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #EEEEEE;
+}
+
+#qaproof-app .qaproof-dash-link-desc {
+  font-size: 12px;
+  color: rgba(238, 238, 238, 0.4);
+  margin-top: 2px;
+}
+
+#qaproof-app .qaproof-dash-link-arrow {
+  color: rgba(238, 238, 238, 0.2);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-dash-link:hover .qaproof-dash-link-arrow {
+  color: var(--qp-accent);
+  transform: translateX(3px);
+}
+
+/* Dashboard responsive */
+@media (max-width: 1100px) {
+  #qaproof-app .qaproof-dash-stats { grid-template-columns: repeat(2, 1fr); }
+  #qaproof-app .qaproof-dash-tools { grid-template-columns: repeat(2, 1fr); }
+  #qaproof-app .qaproof-dash-tools-top { grid-template-columns: repeat(2, 1fr); }
+  #qaproof-app .qaproof-dash-tools-bottom { grid-template-columns: 1fr; }
+  #qaproof-app .qaproof-dash-links { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 782px) {
+  #qaproof-app .qaproof-dash-hero {
+    flex-direction: column;
+    gap: 28px;
+    padding: 28px 24px;
+  }
+  #qaproof-app .qaproof-dash-hero-score { align-self: center; }
+  #qaproof-app .qaproof-dash-stats { grid-template-columns: 1fr 1fr; }
+  #qaproof-app .qaproof-dash-tools { grid-template-columns: 1fr; }
+  #qaproof-app .qaproof-dash-tools-top { grid-template-columns: 1fr; }
+  #qaproof-app .qaproof-dash-tool-wide-tags { display: none; }
+}
+
+/* ============================
+   Settings Tabs
+   ============================ */
+#qaproof-app .qaproof-settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: #222831;
+  border-radius: var(--qp-radius-pill);
+  padding: 4px;
+  width: fit-content;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+#qaproof-app .qaproof-settings-tab {
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--qp-radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(238, 238, 238, 0.5);
+  transition: all var(--qp-transition);
+  line-height: 120%;
+  text-decoration: none;
+  display: inline-block;
+}
+
+#qaproof-app .qaproof-settings-tab.active {
+  background: var(--qp-accent);
+  color: var(--qp-white);
+  box-shadow: 0 2px 8px rgba(0, 173, 181, 0.25);
+}
+
+#qaproof-app .qaproof-settings-tab:hover:not(.active) {
+  color: #EEEEEE;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#qaproof-app .qaproof-settings-section {
+  display: none;
+}
+
+#qaproof-app .qaproof-settings-section.active {
+  display: block;
+}
+
+/* Settings Subtabs (inside Tests card) */
+#qaproof-app .qaproof-settings-subtabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 20px;
+  background: #222831;
+  border-radius: var(--qp-radius-pill);
+  padding: 3px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+#qaproof-app .qaproof-settings-subtab {
+  padding: 7px 16px;
+  border: none;
+  border-radius: var(--qp-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(238, 238, 238, 0.5);
+  transition: all var(--qp-transition);
+  line-height: 120%;
+  text-decoration: none;
+  display: inline-block;
+}
+#qaproof-app .qaproof-settings-subtab.active {
+  background: var(--qp-accent);
+  color: var(--qp-white);
+  box-shadow: 0 1px 6px rgba(0, 173, 181, 0.2);
+}
+#qaproof-app .qaproof-settings-subtab:hover:not(.active) {
+  color: #EEEEEE;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Saved Designs Repeater (Settings page) */
+#qaproof-app .qaproof-design-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  background: #F8F9FA;
+  border: 1px solid #E8EAED;
+  border-radius: 12px;
+}
+#qaproof-app .qaproof-design-row-fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+#qaproof-app .qaproof-design-row-fields input.regular-text {
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: 13px !important;
+  padding: 8px 12px !important;
+}
+#qaproof-app .qaproof-design-remove {
+  flex-shrink: 0;
+  margin-top: 4px;
+  background: transparent !important;
+  border: 1px solid rgba(231, 76, 60, 0.3) !important;
+  color: #e74c3c !important;
+  border-radius: 8px !important;
+  padding: 6px 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+#qaproof-app .qaproof-design-remove:hover {
+  background: rgba(231, 76, 60, 0.15) !important;
+  border-color: #e74c3c !important;
+}
+#qaproof-app .qaproof-design-remove .dashicons {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+#qaproof-app #qaproof-add-design {
+  margin-top: 6px;
+  background: rgba(0, 173, 181, 0.1) !important;
+  border: 1px solid rgba(0, 173, 181, 0.25) !important;
+  color: #00ADB5 !important;
+  border-radius: var(--qp-radius-pill) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 6px 16px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+#qaproof-app #qaproof-add-design:hover {
+  background: rgba(0, 173, 181, 0.2) !important;
+  border-color: #00ADB5 !important;
+}
+#qaproof-app #qaproof-add-design .dashicons {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+#qaproof-app .qaproof-no-designs {
+  color: #9CA3AF !important;
+  font-style: italic;
+}
+
+/* Saved Design Selector (Tests page) */
+#qaproof-app .qaproof-saved-design-selector select {
+  min-width: 280px;
+}
+
+/* ============================
+   Entrance Animations
+   ============================ */
+@keyframes qaproof-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qaproof-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes qaproof-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 173, 181, 0); }
+  50% { box-shadow: 0 0 24px 4px rgba(0, 173, 181, 0.15); }
+}
+
+#qaproof-app .qaproof-category-card {
+  animation: qaproof-fade-up 0.4s ease both;
+}
+
+#qaproof-app .qaproof-card {
+  animation: qaproof-scale-in 0.35s ease both;
+}
+
+#qaproof-app .qaproof-score-header,
+#qaproof-app .qaproof-report-hero {
+  animation: qaproof-scale-in 0.4s ease both;
+}
+
+
+/* ============================
+   Enhanced Stat Cards — accent indicator
+   ============================ */
+#qaproof-app .qaproof-stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+#qaproof-app .qaproof-stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--qp-accent);
+  opacity: 0.6;
+  transition: all var(--qp-transition);
+}
+
+#qaproof-app .qaproof-stat-card:hover::after {
+  width: 60px;
+  opacity: 1;
+}
+
+/* Color the accent bar based on score class inside the card */
+#qaproof-app .qaproof-stat-card:has(.score-high)::after { background: var(--qp-score-high); }
+#qaproof-app .qaproof-stat-card:has(.score-medium)::after { background: var(--qp-score-medium); }
+#qaproof-app .qaproof-stat-card:has(.score-low)::after { background: var(--qp-score-low); }
+
+
+/* Enhanced Differences — animation */
+#qaproof-app .qaproof-diff-group {
+  animation: qaproof-fade-up 0.3s ease both;
+}
+
+#qaproof-app .qaproof-diff-group:nth-child(2) { animation-delay: 0.05s; }
+#qaproof-app .qaproof-diff-group:nth-child(3) { animation-delay: 0.1s; }
+#qaproof-app .qaproof-diff-group:nth-child(4) { animation-delay: 0.15s; }
+#qaproof-app .qaproof-diff-group:nth-child(5) { animation-delay: 0.2s; }
+#qaproof-app .qaproof-diff-group:nth-child(6) { animation-delay: 0.25s; }
+#qaproof-app .qaproof-diff-group:nth-child(7) { animation-delay: 0.3s; }
+#qaproof-app .qaproof-diff-group:nth-child(8) { animation-delay: 0.35s; }
+
+/* (Enhanced recommendations moved to main block) */

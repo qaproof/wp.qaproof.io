@@ -1,0 +1,45 @@
+/* QAProof — WP Admin Styles */
+/* Matching Plagino/website Figma design system */
+/* Scoped under #qaproof-app to prevent leaking into WP admin */
+
+/* ============================
+   CSS Custom Properties
+   ============================ */
+#qaproof-app {
+  /* Light theme palette based on website design */
+  --qp-bg-dark: #FFFFFF;
+  --qp-bg-card: #FFFFFF;
+  --qp-bg-card-dark: #F5F5F5;
+  --qp-bg-surface: #F0F0F0;
+  --qp-bg-input: #FFFFFF;
+  --qp-border: #E0E0E0;
+  --qp-border-light: #EEEEEE;
+  --qp-accent: #00ADB5;
+  --qp-accent-hover: #00c9d2;
+  --qp-accent-dim: rgba(0, 173, 181, 0.12);
+  --qp-text-primary: #222831;
+  --qp-text-secondary: #393E46;
+  --qp-text-muted: #7a8290;
+  --qp-white: #FFFFFF;
+  --qp-black: #000000;
+  --qp-score-high: #00ADB5;
+  --qp-score-medium: #f0b429;
+  --qp-score-low: #ef4444;
+
+  /* From Figma: border-radius tokens */
+  --qp-radius-pill: 100px;
+  --qp-radius-card: 25px;
+  --qp-radius-card-lg: 30px;
+  --qp-radius-sm: 15px;
+
+  /* Glassmorphism — light version */
+  --qp-glass-bg: radial-gradient(110.62% 948.94% at -4.94% 146.81%, rgba(0, 173, 181, 0.05) 0%, rgba(200, 200, 200, 0.05) 31.46%, rgba(240, 240, 240, 0.08) 100%);
+  --qp-glass-bg-strong: radial-gradient(110.62% 948.94% at -4.94% 146.81%, rgba(0, 173, 181, 0.1) 0%, rgba(200, 200, 200, 0.08) 31.46%, rgba(240, 240, 240, 0.12) 100%);
+
+  --qp-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --qp-shadow-sm: 0px 4px 12px rgba(0, 0, 0, 0.06);
+  --qp-transition: 0.2s ease;
+
+  /* Kodchasan from Google Fonts, fallback to system */
+  --qp-font: 'Kodchasan', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
