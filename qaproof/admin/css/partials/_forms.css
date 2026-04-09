@@ -40,7 +40,7 @@
   font-weight: 600;
   cursor: pointer;
   background: transparent;
-  color: rgba(238, 238, 238, 0.5);
+  color: var(--qp-accent-hover);
   transition: color 0.3s ease;
   line-height: 120%;
   position: relative;
@@ -74,6 +74,20 @@
   padding: 3px;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+/* Sliding pill indicator */
+#qaproof-app .qaproof-source-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--qp-accent);
+  border-radius: var(--qp-radius-pill);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 
 #qaproof-app .qaproof-source-btn {
@@ -85,24 +99,24 @@
   font-weight: 600;
   cursor: pointer;
   background: transparent;
-  color: rgba(238, 238, 238, 0.5);
-  transition: all var(--qp-transition);
+  color: var(--qp-accent-hover);
+  transition: color 0.3s ease;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   vertical-align: middle;
+  position: relative;
+  z-index: 1;
 }
 
 #qaproof-app .qaproof-source-btn.active {
-  background: var(--qp-accent);
   color: var(--qp-white);
 }
 
 #qaproof-app .qaproof-source-btn:hover:not(.active) {
   color: #EEEEEE;
-  background: rgba(255, 255, 255, 0.08);
 }
 
 #qaproof-app .qaproof-recommended-badge {
