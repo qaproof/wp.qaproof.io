@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                     <td>
                         <input type="url" id="qaproof-monitor-url" class="regular-text" required
                                placeholder="https://example.com"
-                               value="<?php echo esc_url( home_url( '/' ) ); ?>" />
+                               value="" />
                     </td>
                 </tr>
                 <tr>
