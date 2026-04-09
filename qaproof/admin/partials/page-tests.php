@@ -116,7 +116,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                 <input type="url" id="qaproof-page-url" name="pageUrl"
                                        class="regular-text" required
                                        placeholder="https://example.com"
-                                       value="<?php echo esc_url( home_url( '/' ) ); ?>" />
+                                       value="" />
                                 <p class="description"><?php esc_html_e( 'The live page URL to test.', 'qaproof' ); ?></p>
                             </td>
                         </tr>
