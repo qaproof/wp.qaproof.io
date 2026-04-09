@@ -551,4 +551,36 @@
 #qaproof-app.qaproof-dark .qaproof-cat-score-num {
   color: #222831;
 }
-#qaproof-app.qaproof-dark .qaproof-category
+#qaproof-app.qaproof-dark .qaproof-category {}
+
+/* ============================
+   Datepicker — Dark Theme
+   ============================ */
+#qaproof-app.qaproof-dark .qaproof-datepicker-trigger {
+  background: var(--qp-card-bg) !important;
+  border-color: var(--qp-card-border) !important;
+  color: var(--qp-text-primary) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-datepicker-dropdown {
+  background: var(--qp-card-bg);
+  border-color: var(--qp-card-border);
+}
+#qaproof-app.qaproof-dark .qaproof-dp-day {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-dp-day.other-month {
+  color: #555;
+}
+#qaproof-app.qaproof-dark .qaproof-dp-scroll-wrap {
+  border-color: var(--qp-card-border);
+}
+#qaproof-app.qaproof-dark .qaproof-dp-scroll-item {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-dp-scroll-item:hover {
+  background: rgba(0, 173, 181, 0.15);
+}
+#qaproof-app.qaproof-dark .qaproof-dp-time,
+#qaproof-app.qaproof-dark .qaproof-dp-actions {
+  border-top-color: var(--qp-card-border);
+}

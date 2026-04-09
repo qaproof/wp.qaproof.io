@@ -30,6 +30,7 @@ class QAProof_Database {
             notify_email tinyint(1) DEFAULT 1 NOT NULL,
             notify_admin tinyint(1) DEFAULT 1 NOT NULL,
             threshold_score int(3) DEFAULT 90 NOT NULL,
+            scheduled_at datetime DEFAULT NULL,
             last_run_at datetime DEFAULT NULL,
             last_score int(3) DEFAULT NULL,
             has_baseline tinyint(1) DEFAULT 0 NOT NULL,
@@ -77,7 +78,7 @@ class QAProof_Database {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.1.0' );
+        update_option( 'qaproof_db_version', '1.2.0' );
     }
 
     /**
