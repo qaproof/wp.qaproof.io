@@ -857,14 +857,28 @@
 #qaproof-app .qaproof-design-row-fields {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
-#qaproof-app .qaproof-design-row-fields input.regular-text {
+#qaproof-app .qaproof-design-row-fields input[type="hidden"] {
+  display: none;
+}
+#qaproof-app .qaproof-design-row-fields input.regular-text,
+#qaproof-app .form-table td .qaproof-design-row-fields input.regular-text {
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
   font-size: 13px !important;
   padding: 8px 12px !important;
+  box-sizing: border-box !important;
+}
+/* Token input needs extra right padding for the eye icon */
+#qaproof-app .qaproof-design-row-fields .qaproof-token-field-wrap input.regular-text,
+#qaproof-app .form-table td .qaproof-design-row-fields .qaproof-token-field-wrap input.regular-text {
+  padding-right: 52px !important;
+}
+#qaproof-app .qaproof-design-row-fields .qaproof-token-field-wrap {
+  min-width: 0;
 }
 #qaproof-app .qaproof-design-remove {
   flex-shrink: 0;

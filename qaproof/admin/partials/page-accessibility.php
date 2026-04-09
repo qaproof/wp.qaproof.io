@@ -58,8 +58,30 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         <input type="url" id="qaproof-a11y-url" name="pageUrl"
                                class="regular-text" required
                                placeholder="https://example.com"
-                               value="<?php echo esc_url( home_url( '/' ) ); ?>" />
+                               value="" />
                         <p class="description"><?php esc_html_e( 'The page URL to audit for accessibility issues.', 'qaproof' ); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="qaproof-a11y-wcag-level"><?php esc_html_e( 'WCAG Level', 'qaproof' ); ?></label>
+                    </th>
+                    <td>
+                        <?php $wcag_level = get_option( 'qaproof_wcag_level', 'AA' ); ?>
+                        <select id="qaproof-a11y-wcag-level" name="wcagLevel">
+                            <option value="A" <?php selected( $wcag_level, 'A' ); ?>>Level A (minimum)<?php if ( 'A' === $wcag_level ) echo ' — default'; ?></option>
+                            <option value="AA" <?php selected( $wcag_level, 'AA' ); ?>>Level AA (recommended)<?php if ( 'AA' === $wcag_level ) echo ' — default'; ?></option>
+                            <option value="AAA" <?php selected( $wcag_level, 'AAA' ); ?>>Level AAA (enhanced)<?php if ( 'AAA' === $wcag_level ) echo ' — default'; ?></option>
+                        </select>
+                        <p class="description">
+                            <?php
+                                printf(
+                                    /* translators: %s: link to Settings page */
+                                    esc_html__( 'WCAG 2.1 conformance level to test against. Default level can be changed in %s.', 'qaproof' ),
+                                    '<a href="' . esc_url( admin_url( 'admin.php?page=qaproof-settings&tab=tests&subtab=accessibility' ) ) . '">' . esc_html__( 'Settings', 'qaproof' ) . '</a>'
+                                );
+                            ?>
+                        </p>
                     </td>
                 </tr>
             </table>
