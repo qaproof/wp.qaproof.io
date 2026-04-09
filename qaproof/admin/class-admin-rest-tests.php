@@ -51,12 +51,15 @@ class QAProof_Admin_REST_Tests {
             }
             // Element-level fidelity: pass region coordinates
             if ( ! empty( $params['elementRegion'] ) && is_array( $params['elementRegion'] ) ) {
-                $api_params['elementRegion'] = [
-                    'top'    => (float) $params['elementRegion']['top'],
-                    'left'   => (float) $params['elementRegion']['left'],
-                    'width'  => (float) $params['elementRegion']['width'],
-                    'height' => (float) $params['elementRegion']['height'],
+                $region = [
+                    'top'    => max( 0, (float) ( $params['elementRegion']['top'] ?? 0 ) ),
+                    'left'   => max( 0, (float) ( $params['elementRegion']['left'] ?? 0 ) ),
+                    'width'  => max( 0, (float) ( $params['elementRegion']['width'] ?? 0 ) ),
+                    'height' => max( 0, (float) ( $params['elementRegion']['height'] ?? 0 ) ),
                 ];
+                if ( $region['width'] > 0 && $region['height'] > 0 ) {
+                    $api_params['elementRegion'] = $region;
+                }
             }
         }
 
