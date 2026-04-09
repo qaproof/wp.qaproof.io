@@ -863,13 +863,17 @@ class QAProof_Admin {
             ], 400 );
         }
 
-        $id = QAProof_Monitor::create( [
+        $create_data = [
             'page_url'        => sanitize_url( $params['page_url'] ),
             'schedule'        => isset( $params['schedule'] ) ? sanitize_text_field( $params['schedule'] ) : 'daily',
             'notify_email'    => isset( $params['notify_email'] ) ? (int) $params['notify_email'] : 1,
             'notify_admin'    => isset( $params['notify_admin'] ) ? (int) $params['notify_admin'] : 1,
             'threshold_score' => isset( $params['threshold_score'] ) ? (int) $params['threshold_score'] : (int) get_option( 'qaproof_default_threshold', 95 ),
-        ] );
+        ];
+        if ( ! empty( $params['scheduled_at'] ) ) {
+            $create_data['scheduled_at'] = sanitize_text_field( $params['scheduled_at'] );
+        }
+        $id = QAProof_Monitor::create( $create_data );
 
         if ( ! $id ) {
             return new WP_REST_Response( [
@@ -914,6 +918,9 @@ class QAProof_Admin {
         }
         if ( isset( $params['threshold_score'] ) ) {
             $update['threshold_score'] = (int) $params['threshold_score'];
+        }
+        if ( ! empty( $params['scheduled_at'] ) ) {
+            $update['scheduled_at'] = sanitize_text_field( $params['scheduled_at'] );
         }
 
         QAProof_Monitor::update( $id, $update );
@@ -1287,8 +1294,7 @@ class QAProof_Admin {
                             </th>
                             <td>
                                 <input type="url" id="qaproof-monitor-url" class="regular-text" required
-                                       placeholder="https://example.com"
-                                       value="<?php echo esc_url( home_url( '/' ) ); ?>" />
+                                       placeholder="https://example.com" />
                             </td>
                         </tr>
                         <tr>
@@ -1301,6 +1307,22 @@ class QAProof_Admin {
                                     <option value="weekly"><?php esc_html_e( 'Weekly', 'qaproof' ); ?></option>
                                     <option value="monthly"><?php esc_html_e( 'Monthly', 'qaproof' ); ?></option>
                                 </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="qaproof-monitor-scheduled-at"><?php esc_html_e( 'Start Date', 'qaproof' ); ?></label>
+                            </th>
+                            <td>
+                                <div class="qaproof-datepicker-wrap" id="qaproof-datepicker-wrap">
+                                    <input type="hidden" id="qaproof-monitor-scheduled-at" />
+                                    <button type="button" class="qaproof-datepicker-trigger" id="qaproof-datepicker-trigger">
+                                        <span id="qaproof-datepicker-label"><?php esc_html_e( 'Now', 'qaproof' ); ?></span>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    </button>
+                                    <div class="qaproof-datepicker-dropdown hidden" id="qaproof-datepicker-dropdown"></div>
+                                </div>
+                                <p class="description"><?php esc_html_e( 'When to start checking. Defaults to now.', 'qaproof' ); ?></p>
                             </td>
                         </tr>
                         <tr>
@@ -1802,8 +1824,7 @@ class QAProof_Admin {
                                     <td>
                                         <input type="url" id="qaproof-page-url" name="pageUrl"
                                                class="regular-text" required
-                                               placeholder="https://example.com"
-                                               value="<?php echo esc_url( home_url( '/' ) ); ?>" />
+                                               placeholder="https://example.com" />
                                         <p class="description"><?php esc_html_e( 'The live page URL to test.', 'qaproof' ); ?></p>
                                     </td>
                                 </tr>
@@ -2007,9 +2028,22 @@ class QAProof_Admin {
                             <td>
                                 <input type="url" id="qaproof-a11y-url" name="pageUrl"
                                        class="regular-text" required
-                                       placeholder="https://example.com"
-                                       value="<?php echo esc_url( home_url( '/' ) ); ?>" />
+                                       placeholder="https://example.com" />
                                 <p class="description"><?php esc_html_e( 'The page URL to audit for accessibility issues.', 'qaproof' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="qaproof-a11y-wcag-level"><?php esc_html_e( 'WCAG Level', 'qaproof' ); ?></label>
+                            </th>
+                            <td>
+                                <?php $default_level = get_option( 'qaproof_wcag_level', 'AA' ); ?>
+                                <select id="qaproof-a11y-wcag-level" name="wcagLevel" class="regular-text">
+                                    <option value="A"<?php selected( $default_level, 'A' ); ?>>Level A<?php if ( $default_level === 'A' ) echo ' (default)'; ?></option>
+                                    <option value="AA"<?php selected( $default_level, 'AA' ); ?>>Level AA<?php if ( $default_level === 'AA' ) echo ' (default)'; ?></option>
+                                    <option value="AAA"<?php selected( $default_level, 'AAA' ); ?>>Level AAA<?php if ( $default_level === 'AAA' ) echo ' (default)'; ?></option>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'WCAG 2.1 conformance level. Default is set in Settings.', 'qaproof' ); ?></p>
                             </td>
                         </tr>
                     </table>
