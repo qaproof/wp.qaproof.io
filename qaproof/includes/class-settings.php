@@ -632,7 +632,7 @@ class QAProof_Settings {
             <option value="AA" <?php selected( $value, 'AA' ); ?>>Level AA (recommended)</option>
             <option value="AAA" <?php selected( $value, 'AAA' ); ?>>Level AAA (enhanced)</option>
         </select>
-        <p class="description"><?php esc_html_e( 'WCAG 2.1 conformance level to test against. AA is the standard for most websites.', 'qaproof' ); ?></p>
+        <p class="description"><?php esc_html_e( 'Default WCAG 2.1 conformance level used on the Accessibility Test page. AA is the standard for most websites.', 'qaproof' ); ?></p>
         <?php
     }
 
