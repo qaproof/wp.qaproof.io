@@ -96,6 +96,41 @@
   }
 
   // ============================
+  // Parse Warning Banner
+  // ============================
+
+  /**
+   * Show a warning banner when AI analysis data is empty or parsing failed.
+   * This helps users understand why they see 0 issues / 0% pass rate.
+   */
+  function buildParseWarningHtml(data) {
+    var categories = data.categories || {};
+    var catCount = Object.keys(categories).length;
+    var hasDiffs = (data.differences || []).length > 0;
+
+    // Explicit parse failure from backend
+    if (data._parseFailed) {
+      return '<div class="qaproof-parse-warning">' +
+        '<span class="dashicons dashicons-warning"></span> ' +
+        '<strong>Analysis incomplete:</strong> The AI response could not be fully parsed. ' +
+        'Category scores and some details may be missing. Please try running the test again.' +
+        (data._rawPreview ? '<br><small style="opacity:0.7">Debug: ' + Q.escapeHtml(data._rawPreview.substring(0, 120)) + '...</small>' : '') +
+        '</div>';
+    }
+
+    // Empty categories without explicit flag (e.g., old data)
+    if (catCount === 0 && !hasDiffs && data.score == null) {
+      return '<div class="qaproof-parse-warning">' +
+        '<span class="dashicons dashicons-warning"></span> ' +
+        '<strong>No analysis data available.</strong> The AI analysis may have failed to produce results. ' +
+        'Try running the test again.' +
+        '</div>';
+    }
+
+    return '';
+  }
+
+  // ============================
   // Report Charts & Statistics
   // ============================
   function buildReportStatsHtml(data, containerId) {
@@ -653,6 +688,9 @@
     html += '  </div>';
     html += '</div>';
 
+    // Parse failure warning
+    html += buildParseWarningHtml(data);
+
     // Stats + Charts rows (outside hero, light theme)
     html += buildReportStatsInlineHtml(data);
     html += buildReportChartsHtml(data, 'qaproof-chart-fidelity');
@@ -791,6 +829,9 @@
     html += '    </div>';
     html += '  </div>';
     html += '</div>';
+
+    // Parse failure warning
+    html += buildParseWarningHtml(data);
 
     // Stats + Charts rows (outside hero, light theme)
     html += buildReportStatsInlineHtml(data);
@@ -959,6 +1000,9 @@
     html += '    </div>';
     html += '  </div>';
     html += '</div>';
+
+    // Parse failure warning
+    html += buildParseWarningHtml(data);
 
     // Stats + Charts rows (outside hero, light theme)
     html += buildReportStatsInlineHtml(data);
@@ -1150,6 +1194,9 @@
     html += '    </div>';
     html += '  </div>';
     html += '</div>';
+
+    // Parse failure warning
+    html += buildParseWarningHtml(data);
 
     // Report stats + charts
     var colorCount = (ds.colors) ? ds.colors.total : 0;
