@@ -136,8 +136,10 @@
 }
 #qaproof-app.qaproof-dark .qaproof-history-header .button.button-small {
   background: rgba(0, 173, 181, 0.1) !important;
-  border-color: rgba(0, 173, 181, 0.3) !important;
+  border: 1px solid rgba(0, 173, 181, 0.3) !important;
+  border-radius: var(--qp-radius-pill) !important;
   color: #1a1e24 !important;
+  transition: all 0.25s ease !important;
 }
 #qaproof-app.qaproof-dark .qaproof-history-content {
   background: #2a3240;
@@ -165,8 +167,10 @@
 }
 #qaproof-app.qaproof-dark .qaproof-history-actions .button {
   background: #3a4352 !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #f0f3f7 !important;
+  border-radius: var(--qp-radius-pill) !important;
+  transition: all 0.25s ease !important;
 }
 #qaproof-app.qaproof-dark .qaproof-history-actions .button:hover {
   background: #424c5c !important;
@@ -273,8 +277,10 @@
 /* Dark: buttons */
 #qaproof-app.qaproof-dark .button {
   background: #3a4352;
-  border-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--qp-radius-pill);
   color: #f0f3f7;
+  transition: all 0.25s ease;
 }
 #qaproof-app.qaproof-dark .button:hover {
   background: #424c5c;
