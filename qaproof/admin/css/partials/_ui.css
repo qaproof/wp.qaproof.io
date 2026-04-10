@@ -1,4 +1,43 @@
 /* ============================
+   Parse Warning Banner
+   ============================ */
+.qaproof-parse-warning {
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #92400E;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.qaproof-parse-warning .dashicons {
+  color: #F59E0B;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.qaproof-parse-warning strong {
+  color: #78350F;
+}
+
+/* Dark mode override */
+[data-theme="dark"] .qaproof-parse-warning {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #FDE68A;
+}
+[data-theme="dark"] .qaproof-parse-warning strong {
+  color: #FCD34D;
+}
+
+/* ============================
    Enhanced Loading — step-based animated progress
    ============================ */
 @keyframes qaproof-loading-bar {
