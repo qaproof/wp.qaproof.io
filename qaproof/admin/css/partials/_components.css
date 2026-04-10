@@ -523,20 +523,22 @@
 }
 
 #qaproof-app input[type="file"]::file-selector-button {
-  background: transparent;
-  border: 1px solid var(--qp-accent);
-  border-radius: var(--qp-radius-pill);
-  color: var(--qp-accent);
-  padding: 8px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--qp-accent);
+  color: var(--qp-white) ;
   font-size: 14px;
-  font-weight: 600;
-  font-family: var(--qp-font);
-  cursor: pointer;
-  margin-right: 12px;
-  transition: all var(--qp-transition);
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: var(--qp-radius-pill);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
 }
 
 #qaproof-app input[type="file"]::file-selector-button:hover {
-  background: var(--qp-accent-dim);
-  color: var(--qp-accent);
+  color: var(--qp-text-primary);
+  border: 1px solid var(--qp-text-primary);
+  transform: translateY(-1px);
 }
