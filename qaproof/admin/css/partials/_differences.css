@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 8px 10px 8px 14px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -158,6 +158,28 @@
 #qaproof-app .qaproof-marker-tooltip.visible {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Close button */
+#qaproof-app .qaproof-marker-tooltip .tooltip-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+#qaproof-app .qaproof-marker-tooltip .tooltip-close:hover {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ============================

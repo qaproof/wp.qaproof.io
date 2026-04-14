@@ -1743,7 +1743,6 @@
       showElementHighlight(this, diff);
     });
     marker.addEventListener('mouseleave', function () {
-      hideTooltip();
       hideElementHighlight();
     });
     marker.addEventListener('click', function (e) {
@@ -1851,7 +1850,6 @@
       }
     });
     marker.addEventListener('mouseleave', function () {
-      hideTooltip();
       hideElementHighlight();
     });
     marker.addEventListener('click', function (e) {
@@ -2414,6 +2412,22 @@
       S.globalTooltip = document.createElement('div');
       S.globalTooltip.className = 'qaproof-marker-tooltip';
       document.getElementById('qaproof-app').appendChild(S.globalTooltip);
+
+      // Close button click
+      S.globalTooltip.addEventListener('click', function (e) {
+        if (e.target.closest('.tooltip-close')) {
+          hideTooltip();
+        }
+      });
+
+      // Close on click outside tooltip and markers
+      document.addEventListener('click', function (e) {
+        if (!S.globalTooltip || !S.globalTooltip.classList.contains('visible')) return;
+        if (e.target.closest('.tooltip-close')) return; // handled above
+        if (S.globalTooltip.contains(e.target)) return; // click inside tooltip — keep open
+        if (e.target.closest('.qaproof-marker')) return; // marker click — keep open
+        hideTooltip();
+      });
     }
     return S.globalTooltip;
   }
@@ -2425,9 +2439,11 @@
     var html = '';
     var sevLabels = { high: 'High Severity', medium: 'Medium', low: 'Low Severity', multi: 'Multiple Issues' };
 
+    var closeBtn = '<button type="button" class="tooltip-close" aria-label="Close">\u00d7</button>';
+
     if (data.items) {
       // Multi-issue tooltip
-      html += '<div class="tooltip-header sev-multi"><span class="sev-dot"></span>' + data.items.length + ' Issues Found</div>';
+      html += '<div class="tooltip-header sev-multi"><span class="sev-dot"></span>' + data.items.length + ' Issues Found' + closeBtn + '</div>';
       html += '<div class="tooltip-body">';
       for (var i = 0; i < data.items.length; i++) {
         var item = data.items[i];
@@ -2440,7 +2456,7 @@
     } else {
       // Single issue tooltip
       var sev = data.severity || 'low';
-      html += '<div class="tooltip-header sev-' + Q.escapeHtml(sev) + '"><span class="sev-dot"></span>' + Q.escapeHtml(sevLabels[sev] || sev) + '</div>';
+      html += '<div class="tooltip-header sev-' + Q.escapeHtml(sev) + '"><span class="sev-dot"></span>' + Q.escapeHtml(sevLabels[sev] || sev) + closeBtn + '</div>';
       html += '<div class="tooltip-body">';
       if (data.category) {
         html += '<span class="tooltip-category">' + Q.escapeHtml(data.category) + '</span>';
