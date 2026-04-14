@@ -204,6 +204,39 @@
     };
   }
 
+  /**
+   * Save a test result to WP history.
+   *
+   * Screenshots are NOT sent from the browser. Instead we pass `jobId` so the
+   * PHP handler can fetch full-quality screenshots directly from the API
+   * (server-to-server), completely bypassing admin-ajax.php POST size limits.
+   *
+   * @param {string} testType  e.g. 'responsive', 'accessibility'
+   * @param {string} pageUrl   URL that was tested
+   * @param {string} jobId     API job ID — PHP uses this to fetch screenshots
+   * @param {object} resultData  Result object (score, categories, differences, etc.)
+   */
+  function saveTestHistory(testType, pageUrl, jobId, resultData) {
+    // Strip screenshots from the payload — PHP fetches them server-to-server.
+    var payload = Object.assign({}, resultData);
+    delete payload.screenshots;
+
+    var saveData = new FormData();
+    saveData.append('action', 'qaproof_save_history');
+    saveData.append('nonce', qaproof.ajaxNonce);
+    saveData.append('testType', testType);
+    saveData.append('pageUrl', pageUrl);
+    if (jobId) saveData.append('jobId', jobId);
+    saveData.append('result', JSON.stringify(payload));
+
+    return fetch(qaproof.ajaxUrl, {
+      method: 'POST',
+      body: saveData,
+      credentials: 'same-origin',
+    }).then(Q.safeJson);
+  }
+
   Q.fetchAndInjectScreenshots = fetchAndInjectScreenshots;
   Q.startJobPolling = startJobPolling;
+  Q.saveTestHistory = saveTestHistory;
 })();

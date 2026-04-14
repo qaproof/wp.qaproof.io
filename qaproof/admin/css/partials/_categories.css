@@ -11,11 +11,12 @@
 /* Tabs navigation row — pill style with sliding indicator */
 #qaproof-app .qaproof-cat-tabs-nav {
   display: flex;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 3px;
   background: #222831;
   border-radius: 15px;
-  padding: 3px;
+  padding: 10px;
   border: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   margin-bottom: 12px;
@@ -27,7 +28,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: #fff;
+  background: var(--qp-accent-hover);
   border-radius: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -37,12 +38,12 @@
 
 /* Single tab button */
 #qaproof-app .qaproof-cat-tab {
-  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
-  padding: 10px 16px;
+  min-width: 20%;
+  padding: 10px 30px;
   white-space: nowrap;
   border: none;
   border-radius: var(--qp-radius-pill);
@@ -65,22 +66,26 @@
 
 #qaproof-app .qaproof-cat-tab-label {
   font-family: 'Kodchasan', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--qp-accent);
+}
+
+#qaproof-app .qaproof-cat-tab.active .qaproof-cat-tab-label {
+  color: var(--qp-text-primary);
 }
 
 /* Score ring inside tab */
 #qaproof-app .qaproof-cat-score-ring {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
 }
 
 #qaproof-app .qaproof-cat-score-ring svg {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   transform: rotate(-90deg);
 }
 
@@ -91,7 +96,7 @@
 }
 
 #qaproof-app .qaproof-cat-tab.active .qaproof-ring-bg {
-  stroke: rgba(238, 238, 238, 0.15);
+  stroke: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill {
@@ -112,55 +117,105 @@
   align-items: center;
   justify-content: center;
   font-family: 'Kodchasan', sans-serif;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   color: rgba(238, 238, 238, 0.7);
   transition: color 0.3s ease;
 }
 
 #qaproof-app .qaproof-cat-tab.active .qaproof-cat-score-num {
-  color: #fff;
+  color: var(--qp-text-primary);
 }
 
 /* Tab panels */
 #qaproof-app .qaproof-cat-tabs-panels {
   background: #fff;
   border: 1px solid #E8EAED;
-  border-radius: 14px;
+  border-radius: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
 }
 
 #qaproof-app .qaproof-cat-tab-panel {
   display: none;
-  padding: 20px 24px;
+  padding: 25px 50px 25px 25px;
 }
 
 #qaproof-app .qaproof-cat-tab-panel.active {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Content area — clipped with ellipsis */
+#qaproof-app .qaproof-cat-panel-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#qaproof-app .qaproof-cat-tab-panel:not(.expanded):not(.measuring) .qaproof-cat-panel-content p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#qaproof-app .qaproof-cat-panel-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  line-height: 1.5;
 }
 
 #qaproof-app .qaproof-cat-panel-header h3 {
   font-family: 'Kodchasan', sans-serif;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #222831;
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 #qaproof-app .qaproof-cat-evaluates {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--qp-text-secondary);
-  margin: 0 0 12px;
   line-height: 1.4;
 }
 
 #qaproof-app .qaproof-cat-tab-panel p {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 400;
   color: var(--qp-text-secondary);
-  line-height: 1.6;
+  line-height: 1.5;
   margin: 0;
+}
+
+/* Expand button — bottom right corner */
+#qaproof-app .qaproof-cat-panel-expand {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.3s ease;
+  color: var(--qp-text-secondary);
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-cat-panel-expand:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+#qaproof-app .qaproof-cat-panel-expand.rotated {
+  transform: rotate(180deg);
 }
 
 /* Legacy bar — hidden (replaced by ring) */

@@ -719,7 +719,7 @@
 
 #qaproof-app .qaproof-dash-link-desc {
   font-size: 12px;
-  color: rgba(238, 238, 238, 0.4);
+  color: var(--qp-accent-hover);
   margin-top: 2px;
 }
 
