@@ -20,11 +20,12 @@ class QAProof_Test_History {
             'differences_json'     => isset( $data['differences'] ) ? wp_json_encode( $data['differences'] ) : null,
             'recommendations_json' => isset( $data['recommendations'] ) ? wp_json_encode( $data['recommendations'] ) : null,
             'screenshots_json'     => isset( $data['screenshots'] ) ? wp_json_encode( $data['screenshots'] ) : null,
+            'extracted_data_json'  => self::build_extracted_data( $data ),
         ];
 
         $formats = [ '%s', '%s' ];
         $formats[] = $row['score'] !== null ? '%d' : '%s';
-        $formats = array_merge( $formats, [ '%s', '%s', '%s', '%s', '%s' ] );
+        $formats = array_merge( $formats, [ '%s', '%s', '%s', '%s', '%s', '%s' ] );
 
         $result = $wpdb->insert( self::table_name(), $row, $formats );
 
@@ -145,6 +146,48 @@ class QAProof_Test_History {
             'below_threshold' => $below,
             'by_type'         => $by_type ?: [],
         ];
+    }
+
+    /**
+     * Build extracted_data_json from a result data array.
+     * Captures designSystem, components, and designDebtScore for design-audit history.
+     *
+     * @param array $data Raw result data.
+     * @return string|null JSON string or null.
+     */
+    private static function build_extracted_data( $data ) {
+        $extracted = [];
+
+        if ( isset( $data['designSystem'] ) ) {
+            $extracted['designSystem'] = $data['designSystem'];
+        }
+        if ( isset( $data['components'] ) ) {
+            $extracted['components'] = $data['components'];
+        }
+        if ( isset( $data['designDebtScore'] ) ) {
+            $extracted['designDebtScore'] = $data['designDebtScore'];
+        }
+
+        return ! empty( $extracted ) ? wp_json_encode( $extracted ) : null;
+    }
+
+    /**
+     * Update the screenshots_json column for an existing history record.
+     * Called after a server-side screenshots fetch to store full-quality images.
+     *
+     * @param int    $id              History record ID.
+     * @param string $screenshots_json JSON-encoded screenshots map.
+     * @return bool True on success.
+     */
+    public static function update_screenshots( $id, $screenshots_json ) {
+        global $wpdb;
+        return (bool) $wpdb->update(
+            self::table_name(),
+            [ 'screenshots_json' => $screenshots_json ],
+            [ 'id' => (int) $id ],
+            [ '%s' ],
+            [ '%d' ]
+        );
     }
 
     public static function purge_old( $keep = 100 ) {
