@@ -6,14 +6,18 @@
    ============================ */
 #qaproof-app .qaproof-categories {
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
 }
 
 /* Tabs navigation row — pill style with sliding indicator */
 #qaproof-app .qaproof-cat-tabs-nav {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 10px;
+  min-width: 50%;
   background: #222831;
   border-radius: 15px;
   padding: 10px;
@@ -41,8 +45,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  min-width: 20%;
+  gap: 10px;
+  min-width: 49%;
   padding: 10px 30px;
   white-space: nowrap;
   border: none;
@@ -92,7 +96,7 @@
 #qaproof-app .qaproof-cat-score-ring .qaproof-ring-bg {
   fill: none;
   stroke: rgba(238, 238, 238, 0.15);
-  stroke-width: 4.5;
+  stroke-width: 6.5;
 }
 
 #qaproof-app .qaproof-cat-tab.active .qaproof-ring-bg {
@@ -106,7 +110,7 @@
   transition: stroke-dashoffset 0.6s ease;
 }
 
-#qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-high { stroke: var(--qp-score-high); }
+#qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-high { stroke: var(--qp-accent-hover); }
 #qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-medium { stroke: var(--qp-score-medium); }
 #qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill.score-low { stroke: var(--qp-score-low); }
 
@@ -154,15 +158,13 @@
 }
 
 #qaproof-app .qaproof-cat-tab-panel:not(.expanded):not(.measuring) .qaproof-cat-panel-content p {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: block;
+  overflow: visible;
 }
 
 #qaproof-app .qaproof-cat-panel-header {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   margin-bottom: 10px;
   line-height: 1.5;
@@ -184,39 +186,13 @@
 }
 
 #qaproof-app .qaproof-cat-tab-panel p {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--qp-text-secondary);
   line-height: 1.5;
   margin: 0;
 }
 
-/* Expand button — bottom right corner */
-#qaproof-app .qaproof-cat-panel-expand {
-  position: absolute;
-  bottom: 8px;
-  right: 12px;
-  background: rgba(0, 0, 0, 0.05);
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.3s ease;
-  color: var(--qp-text-secondary);
-  flex-shrink: 0;
-}
-
-#qaproof-app .qaproof-cat-panel-expand:hover {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-#qaproof-app .qaproof-cat-panel-expand.rotated {
-  transform: rotate(180deg);
-}
 
 /* Legacy bar — hidden (replaced by ring) */
 #qaproof-app .qaproof-cat-bar { display: none; }
