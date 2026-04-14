@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'QAPROOF_VERSION', '1.2.1' );
+define( 'QAPROOF_VERSION', '1.2.11' );
 define( 'QAPROOF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -49,7 +49,7 @@ add_action( 'plugins_loaded', function() {
 
     // Auto-upgrade DB schema if plugin was updated without deactivation
     $installed_db_version = get_option( 'qaproof_db_version', '0' );
-    if ( version_compare( $installed_db_version, '1.2.0', '<' ) ) {
+    if ( version_compare( $installed_db_version, '1.3.0', '<' ) ) {
         QAProof_Database::create_tables();
     }
 });
@@ -65,10 +65,4 @@ register_deactivation_hook( __FILE__, function() {
     QAProof_Scheduler::unschedule_events();
 });
 
-// Add "Settings" link on plugins list page
-add_filter( 'plugin_action_links_' . QAPROOF_PLUGIN_BASENAME, function( $links ) {
-    $settings_link = '<a href="' . admin_url( 'admin.php?page=qaproof-settings' ) . '">'
-        . __( 'Settings', 'qaproof' ) . '</a>';
-    array_unshift( $links, $settings_link );
-    return $links;
-});
+// Add "Settings" link on 

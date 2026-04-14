@@ -179,17 +179,40 @@
       return row;
     }
 
+    function parseJson(raw) {
+      if (!raw) return null;
+      if (typeof raw !== 'string') return raw;
+      try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+
     function parseResultData(item) {
-      return {
+      var screenshots = parseJson(item.screenshots_json) || {};
+      var extractedData = parseJson(item.extracted_data_json) || {};
+
+      // Reconstruct screenshotsAvailable so the screenshot section renders
+      // even when screenshots were compressed+saved (desktop key present) or
+      // when the save failed (no screenshots — at least show that they existed).
+      var screenshotKeys = Object.keys(screenshots).filter(function (k) { return !!screenshots[k]; });
+      var screenshotsAvailable = screenshotKeys.length > 0 ? screenshotKeys : null;
+
+      var result = {
         testType: item.test_type,
         score: item.score != null ? parseInt(item.score, 10) : null,
         summary: item.summary || '',
-        categories: item.categories_json ? (typeof item.categories_json === 'string' ? JSON.parse(item.categories_json) : item.categories_json) : {},
-        differences: item.differences_json ? (typeof item.differences_json === 'string' ? JSON.parse(item.differences_json) : item.differences_json) : [],
-        recommendations: item.recommendations_json ? (typeof item.recommendations_json === 'string' ? JSON.parse(item.recommendations_json) : item.recommendations_json) : [],
-        screenshots: item.screenshots_json ? (typeof item.screenshots_json === 'string' ? JSON.parse(item.screenshots_json) : item.screenshots_json) : {},
-        pageUrl: item.page_url
+        categories: parseJson(item.categories_json) || {},
+        differences: parseJson(item.differences_json) || [],
+        recommendations: parseJson(item.recommendations_json) || [],
+        screenshots: screenshots,
+        screenshotsAvailable: screenshotsAvailable,
+        pageUrl: item.page_url,
       };
+
+      // Restore design-audit extracted data (designSystem, components, designDebtScore)
+      if (extractedData.designSystem) result.designSystem = extractedData.designSystem;
+      if (extractedData.components) result.components = extractedData.components;
+      if (extractedData.designDebtScore != null) result.designDebtScore = extractedData.designDebtScore;
+
+      return result;
     }
 
     function viewItem(id) {
