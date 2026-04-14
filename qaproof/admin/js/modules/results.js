@@ -2439,6 +2439,9 @@
         if (e.target.closest('.qaproof-marker')) return; // marker click — keep open
         hideTooltip();
       });
+
+      // Close on any scroll anywhere on the page
+      window.addEventListener('scroll', function () { hideTooltip(); }, true);
     }
     return S.globalTooltip;
   }
