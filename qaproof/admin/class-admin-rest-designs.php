@@ -193,6 +193,9 @@ class QAProof_Admin_REST_Designs {
         // Sketch
         if ( ! empty( $params['sketchFileBase64'] ) ) $api_params['sketchFileBase64'] = $params['sketchFileBase64'];
 
+        // Pixel-perfect flag — disables AI vision fallback on the API side.
+        if ( ! empty( $params['pixelPerfectOnly'] ) ) $api_params['pixelPerfectOnly'] = true;
+
         // Validate: at least one source
         $has_source = ! empty( $api_params['figmaUrl'] )
             || ! empty( $api_params['figmaImageBase64'] )

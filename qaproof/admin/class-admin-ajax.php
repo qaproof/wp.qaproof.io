@@ -167,7 +167,11 @@ class QAProof_Admin_AJAX {
 
     /**
      * AJAX handler: save test result to history.
-     * Uses admin-ajax.php which bypasses Varnish cache.
+     *
+     * Screenshots are NOT sent from the browser — the client passes jobId instead.
+     * This handler saves the analysis data first (fast), then fetches full-quality
+     * screenshots from the API server-to-server and updates the record.
+     * This completely bypasses admin-ajax.php POST size limits.
      */
     public static function ajax_save_history() {
         check_ajax_referer( 'qaproof_ajax', 'nonce' );
@@ -178,26 +182,69 @@ class QAProof_Admin_AJAX {
 
         $test_type = isset( $_POST['testType'] ) ? sanitize_text_field( $_POST['testType'] ) : '';
         $page_url  = isset( $_POST['pageUrl'] ) ? sanitize_url( $_POST['pageUrl'] ) : '';
+        $job_id    = isset( $_POST['jobId'] ) ? sanitize_text_field( $_POST['jobId'] ) : '';
         $result    = isset( $_POST['result'] ) ? $_POST['result'] : [];
 
+        $payload_bytes = isset( $_POST['result'] ) ? strlen( $_POST['result'] ) : 0;
+        error_log( sprintf(
+            '[QAProof] ajax_save_history start: testType=%s payloadBytes=%d jobId=%s',
+            $test_type, $payload_bytes, $job_id ?: '(none)'
+        ) );
+
         if ( empty( $test_type ) || empty( $page_url ) || empty( $result ) ) {
+            error_log( '[QAProof] ajax_save_history: missing fields' );
             wp_send_json_error( [ 'message' => 'Missing required fields.' ] );
         }
 
-        // Sanitize result array recursively
         if ( is_string( $result ) ) {
             $result = json_decode( stripslashes( $result ), true );
         }
 
+        if ( ! is_array( $result ) ) {
+            error_log( '[QAProof] ajax_save_history: json_decode failed — payloadBytes=' . $payload_bytes );
+            wp_send_json_error( [ 'message' => 'Invalid result data.' ] );
+        }
+
+        // Save history record without screenshots first (fast, no size limit concerns).
         $save_data = array_merge(
             [ 'test_type' => $test_type, 'page_url' => $page_url ],
-            is_array( $result ) ? $result : []
+            $result
         );
+        unset( $save_data['screenshots'] ); // ensure no screenshots in initial insert
 
         $saved_id = QAProof_Test_History::save( $save_data );
+
+        if ( ! $saved_id ) {
+            global $wpdb;
+            error_log( '[QAProof] ajax_save_history: DB insert failed — ' . $wpdb->last_error );
+            wp_send_json_error( [ 'message' => 'DB insert failed.' ] );
+        }
+
+        error_log( '[QAProof] ajax_save_history: record saved id=' . $saved_id );
+
+        // Fetch full-quality screenshots from the API server-to-server.
+        // This bypasses all browser POST size limits and preserves full quality.
+        $has_screenshots = false;
+        if ( ! empty( $job_id ) ) {
+            $screenshots_data = QAProof_API_Client::get_job_screenshots( $job_id );
+            if ( ! is_wp_error( $screenshots_data ) && ! empty( $screenshots_data['screenshots'] ) ) {
+                $screenshots_json = wp_json_encode( $screenshots_data['screenshots'] );
+                $updated = QAProof_Test_History::update_screenshots( $saved_id, $screenshots_json );
+                $has_screenshots = (bool) $updated;
+                error_log( sprintf(
+                    '[QAProof] ajax_save_history: screenshots fetched server-side — viewports=%s updated=%s',
+                    implode( ',', array_keys( $screenshots_data['screenshots'] ) ),
+                    $updated ? 'yes' : 'no'
+                ) );
+            } else {
+                $err = is_wp_error( $screenshots_data ) ? $screenshots_data->get_error_message() : 'empty response';
+                error_log( '[QAProof] ajax_save_history: screenshots fetch failed — ' . $err );
+            }
+        }
+
         $max = (int) get_option( 'qaproof_max_history', 30 );
         QAProof_Test_History::purge_old( $max > 0 ? $max : 30 );
 
-        wp_send_json_success( [ 'saved' => $saved_id ? true : false ] );
+        wp_send_json_success( [ 'saved' => true, 'id' => $saved_id, 'hasScreenshots' => $has_screenshots ] );
     }
 }

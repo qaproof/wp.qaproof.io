@@ -387,6 +387,11 @@ class QAProof_API_Client {
                 $body[ $key ] = $params[ $key ];
             }
         }
+        // Pixel-perfect flag: when true, the API will NOT fall back to AI vision
+        // if Figma API fails (e.g. rate-limited). Used by Settings auto-cache.
+        if ( ! empty( $params['pixelPerfectOnly'] ) ) {
+            $body['pixelPerfectOnly'] = true;
+        }
 
         $response = wp_remote_post( $endpoint, array(
             'headers' => array(

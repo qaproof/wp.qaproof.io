@@ -247,6 +247,8 @@
   function createDesignRow(data) {
     var row = document.createElement('div');
     row.className = 'qaproof-design-row';
+    var designId = data.id || generateId();
+    row.setAttribute('data-design-id', designId);
     row.innerHTML =
       '<div class="qaproof-design-row-fields">' +
         '<input type="text" placeholder="Design Name" value="' + (data.name || '') + '" data-field="name" class="regular-text" />' +
@@ -259,7 +261,11 @@
           '</button>' +
           '<span class="qaproof-token-fade"></span>' +
         '</div>' +
-        '<input type="hidden" value="' + (data.id || generateId()) + '" data-field="id" />' +
+        '<input type="hidden" value="' + designId + '" data-field="id" />' +
+      '</div>' +
+      '<div class="qaproof-design-status qaproof-status-empty" data-status="empty" title="Not cached — open Tests page and click Save">' +
+        '<span class="qaproof-design-status-dot"></span>' +
+        '<span class="qaproof-design-status-label">Not cached — open Tests page and click Save</span>' +
       '</div>' +
       '<button type="button" class="button qaproof-design-remove" title="Remove">' +
         '<span class="dashicons dashicons-trash"></span>' +
@@ -333,6 +339,176 @@
       }
       wireTokenToggle(row);
     });
+
+    // Live status updates from the Tests page (via localStorage `storage` event).
+    // form.js writes `qaproof:design:<id>` with { state, count?, source? } while
+    // saving/detecting, so the badge reflects progress even on another tab.
+    function updateDesignStatus(designId, state, count, source) {
+      if (!designId) return;
+      var row = designsList.querySelector('.qaproof-design-row[data-design-id="' + designId + '"]');
+      if (!row) return;
+      var badge = row.querySelector('.qaproof-design-status');
+      if (!badge) return;
+      var labelEl = badge.querySelector('.qaproof-design-status-label');
+      badge.classList.remove('qaproof-status-empty', 'qaproof-status-partial', 'qaproof-status-ready', 'qaproof-status-saving', 'qaproof-status-detecting', 'qaproof-status-error');
+      badge.classList.add('qaproof-status-' + state);
+      badge.setAttribute('data-status', state);
+      var label = '';
+      switch (state) {
+        case 'saving':    label = 'Saving image…'; break;
+        case 'detecting': label = 'Detecting elements…'; break;
+        case 'ready':
+          label = 'Ready · ' + (count || 0) + ' elements';
+          if (source) label += ' (' + source + ')';
+          break;
+        case 'partial':   label = 'Image cached · elements missing'; break;
+        case 'error':     label = 'Detection failed'; break;
+        default:          label = 'Not cached — open Tests page and click Save';
+      }
+      if (labelEl) labelEl.textContent = label;
+      badge.setAttribute('title', label);
+    }
+
+    window.addEventListener('storage', function (e) {
+      if (!e.key || e.key.indexOf('qaproof:design:') !== 0) return;
+      var designId = e.key.substring('qaproof:design:'.length);
+      if (!e.newValue) return;
+      try {
+        var payload = JSON.parse(e.newValue);
+        updateDesignStatus(designId, payload.state, payload.count, payload.source);
+      } catch (err) { /* ignore malformed payload */ }
+    });
+
+    // Expose for same-tab updates (e.g. if Tests and Settings are rendered in the same admin page in future)
+    window.qaproofUpdateDesignStatus = updateDesignStatus;
+
+    // ------------------------------------------------------------------
+    // Auto-cache saved designs on the Settings page
+    // ------------------------------------------------------------------
+    // When a design has a Figma URL + token but no cached image/elements
+    // yet, run the fetch → save image → detect elements → save elements
+    // pipeline automatically (sequentially, one design at a time) so the
+    // user never has to open the Tests page to trigger it manually.
+    function broadcastStatus(designId, state, count, source) {
+      if (!designId) return;
+      try {
+        var payload = { state: state, ts: Date.now() };
+        if (typeof count === 'number') payload.count = count;
+        if (source) payload.source = source;
+        localStorage.setItem('qaproof:design:' + designId, JSON.stringify(payload));
+      } catch (err) { /* noop */ }
+      updateDesignStatus(designId, state, count, source);
+    }
+
+    function autoCacheDesign(row) {
+      var designId = row.getAttribute('data-design-id');
+      var figmaUrlInp   = row.querySelector('[data-field="figmaUrl"]');
+      var figmaTokenInp = row.querySelector('[data-field="figmaToken"]');
+      if (!designId || !figmaUrlInp || !figmaTokenInp) return Promise.resolve();
+      var figmaUrl   = figmaUrlInp.value.trim();
+      var figmaToken = figmaTokenInp.value.trim();
+      if (!figmaUrl || !figmaToken) return Promise.resolve();
+
+      broadcastStatus(designId, 'saving');
+
+      return fetch(qaproof.restBase + '/figma-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+        body: JSON.stringify({ figmaUrl: figmaUrl, figmaToken: figmaToken }),
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (!json || !json.success || !json.data || !json.data.imageBase64) {
+          var code = json && json.error && json.error.code ? json.error.code : '';
+          console.warn('[QAProof] Auto-cache: figma-preview failed for design ' + designId, code);
+          broadcastStatus(designId, 'error');
+          return null;
+        }
+        var imageData = json.data.imageBase64;
+        return fetch(qaproof.restBase + '/save-design-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+          body: JSON.stringify({ designId: designId, imageBase64: imageData }),
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (saveJson) {
+          if (!saveJson || !saveJson.success) {
+            broadcastStatus(designId, 'error');
+            return null;
+          }
+          return imageData;
+        });
+      })
+      .then(function (imageData) {
+        if (!imageData) return null;
+        broadcastStatus(designId, 'detecting');
+        return fetch(qaproof.restBase + '/detect-elements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+          // pixelPerfectOnly: require Figma API (pixel-perfect). If Figma API
+          // fails (rate-limited, etc.), the API will NOT fall back to AI vision;
+          // we'd rather keep the design uncached and retry later than save
+          // inaccurate overlays.
+          body: JSON.stringify({ figmaUrl: figmaUrl, figmaToken: figmaToken, pixelPerfectOnly: true }),
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (!json || !json.success || !json.data || !json.data.elements || !json.data.elements.length) {
+            broadcastStatus(designId, 'partial');
+            return null;
+          }
+          var source = json.data.source || '';
+          // Defense-in-depth: even if the API ignored pixelPerfectOnly, reject
+          // any non-Figma-API source so we never persist approximate overlays.
+          if (source !== 'figma-api') {
+            console.warn('[QAProof] Auto-cache: rejecting non-figma-api source', source);
+            broadcastStatus(designId, 'partial');
+            return null;
+          }
+          var elements = json.data.elements;
+          return fetch(qaproof.restBase + '/save-design-elements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+            body: JSON.stringify({ designId: designId, elements: elements, source: source }),
+          })
+          .then(function (res) { return res.json(); })
+          .then(function () {
+            broadcastStatus(designId, 'ready', elements.length, source);
+          });
+        });
+      })
+      .catch(function (err) {
+        console.warn('[QAProof] Auto-cache pipeline error for design ' + designId, err && err.message);
+        broadcastStatus(designId, 'error');
+      });
+    }
+
+    function runAutoCacheQueue() {
+      var rows = designsList.querySelectorAll('.qaproof-design-row[data-design-id]');
+      var queue = [];
+      rows.forEach(function (row) {
+        var badge = row.querySelector('.qaproof-design-status');
+        if (!badge) return;
+        var state = badge.getAttribute('data-status');
+        // Only cache rows that need work: empty (no image) or partial (image, no elements).
+        if (state !== 'empty' && state !== 'partial') return;
+        var figmaUrlInp   = row.querySelector('[data-field="figmaUrl"]');
+        var figmaTokenInp = row.querySelector('[data-field="figmaToken"]');
+        if (!figmaUrlInp || !figmaTokenInp) return;
+        if (!figmaUrlInp.value.trim() || !figmaTokenInp.value.trim()) return;
+        queue.push(row);
+      });
+      if (!queue.length) return;
+      // Run sequentially to avoid hammering Figma's rate-limited API.
+      queue.reduce(function (p, row) {
+        return p.then(function () { return autoCacheDesign(row); });
+      }, Promise.resolve());
+    }
+
+    // Kick off shortly after load so the UI paints first.
+    if (window.qaproof && window.qaproof.restBase) {
+      setTimeout(runAutoCacheQueue, 500);
+    }
   }
 
   // ============================
@@ -550,22 +726,9 @@
             a11ySubmitBtn.disabled = false;
           },
           onScreenshotsDone: function (resultData) {
-            var a11yHistoryData = Object.assign({}, resultData);
-            delete a11yHistoryData.screenshots;
-            var a11ySaveData = new FormData();
-            a11ySaveData.append('action', 'qaproof_save_history');
-            a11ySaveData.append('nonce', qaproof.ajaxNonce);
-            a11ySaveData.append('testType', 'accessibility');
-            a11ySaveData.append('pageUrl', pageUrl);
-            a11ySaveData.append('result', JSON.stringify(a11yHistoryData));
-            fetch(qaproof.ajaxUrl, {
-              method: 'POST',
-              body: a11ySaveData,
-              credentials: 'same-origin',
-            })
-            .then(Q.safeJson)
-            .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
-            .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
+            Q.saveTestHistory('accessibility', pageUrl, jobId, resultData)
+              .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
+              .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
           },
           onFailed: function (errorMsg) {
             a11yTimers.forEach(clearTimeout);
@@ -1085,16 +1248,7 @@
           S.testsPageBusy = false;
         },
         onScreenshotsDone: function (resultData) {
-          var historyData = Object.assign({}, resultData);
-          delete historyData.screenshots;
-          var saveData = new FormData();
-          saveData.append('action', 'qaproof_save_history');
-          saveData.append('nonce', qaproof.ajaxNonce);
-          saveData.append('testType', activeJob.testType);
-          saveData.append('pageUrl', activeJob.pageUrl);
-          saveData.append('result', JSON.stringify(historyData));
-          fetch(qaproof.ajaxUrl, { method: 'POST', body: saveData, credentials: 'same-origin' })
-            .then(Q.safeJson)
+          Q.saveTestHistory(activeJob.testType, activeJob.pageUrl, activeJob.jobId, resultData)
             .then(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); })
             .catch(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); });
         },
@@ -1186,16 +1340,7 @@
           if (a11yBtn) a11yBtn.disabled = false;
         },
         onScreenshotsDone: function (resultData) {
-          var historyData = Object.assign({}, resultData);
-          delete historyData.screenshots;
-          var saveData = new FormData();
-          saveData.append('action', 'qaproof_save_history');
-          saveData.append('nonce', qaproof.ajaxNonce);
-          saveData.append('testType', 'accessibility');
-          saveData.append('pageUrl', activeJob.pageUrl);
-          saveData.append('result', JSON.stringify(historyData));
-          fetch(qaproof.ajaxUrl, { method: 'POST', body: saveData, credentials: 'same-origin' })
-            .then(Q.safeJson)
+          Q.saveTestHistory('accessibility', activeJob.pageUrl, activeJob.jobId, resultData)
             .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
             .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
         },
