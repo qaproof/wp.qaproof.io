@@ -1706,7 +1706,7 @@
   }
 
   function createMarkerEl(idx, diff) {
-    var number = idx + 1;
+    var number = diff._displayNum || (idx + 1);
     var severity = diff.severity || 'low';
     var severityClass = 'qaproof-marker-' + severity;
     // Pin by default. No-pin only for page-level issues we can't logically point to.
@@ -2280,6 +2280,7 @@
       for (var j = 0; j < items.length; j++) {
         globalNum++;
         var diff = items[j];
+        diff._displayNum = globalNum; // sync marker number with list number
         var severity = diff.severity || 'low';
 
         var deviceLabelMap = { desktop: 'Desktop', tablet: 'Tablet', tablet_landscape: 'Tablet Landscape', mobile: 'Mobile', mobile_landscape: 'Mobile Landscape' };
