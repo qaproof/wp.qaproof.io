@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 8px 10px 8px 14px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -99,6 +99,16 @@
   color: #D1D5DB;
   font-size: 12px;
   line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+#qaproof-app .qaproof-marker-tooltip .tooltip-body > div {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Category badge in tooltip */
@@ -158,6 +168,51 @@
 #qaproof-app .qaproof-marker-tooltip.visible {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Diff number link in tooltip */
+#qaproof-app .qaproof-marker-tooltip .tooltip-diff-link {
+  flex-shrink: 0;
+  background: rgba(0, 173, 181, 0.15);
+  border: none;
+  border-radius: 4px;
+  color: #5EEAD4;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Kodchasan', sans-serif;
+  padding: 1px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+#qaproof-app .qaproof-marker-tooltip .tooltip-diff-link:hover {
+  background: rgba(0, 173, 181, 0.35);
+  color: #fff;
+}
+
+/* Close button */
+#qaproof-app .qaproof-marker-tooltip .tooltip-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+#qaproof-app .qaproof-marker-tooltip .tooltip-close:hover {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ============================

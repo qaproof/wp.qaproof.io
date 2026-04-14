@@ -1706,7 +1706,6 @@
   }
 
   function createMarkerEl(idx, diff) {
-    var number = idx + 1;
     var severity = diff.severity || 'low';
     var severityClass = 'qaproof-marker-' + severity;
     // Pin by default. No-pin only for page-level issues we can't logically point to.
@@ -1719,10 +1718,10 @@
     // No-pin markers (page-level issues) are always centered horizontally
     marker.style.left = isNoPin ? '50%' : (diff.location.left + '%');
 
-    // Pin head (circle with number)
+    // Pin head shows count (always 1 for single marker)
     var head = document.createElement('div');
     head.className = 'marker-head';
-    head.textContent = number;
+    head.textContent = '1';
     marker.appendChild(head);
 
     // Pin tail (triangle) — only for element-specific markers
@@ -1735,7 +1734,9 @@
     var tooltipData = {
       severity: severity,
       category: diff.category || '',
-      description: Q.truncate(diff.description, 180)
+      description: Q.truncate(diff.description, 180),
+      num: diff._displayNum || (idx + 1),
+      origIdx: idx
     };
 
     marker.addEventListener('mouseenter', function () {
@@ -1743,7 +1744,6 @@
       showElementHighlight(this, diff);
     });
     marker.addEventListener('mouseleave', function () {
-      hideTooltip();
       hideElementHighlight();
     });
     marker.addEventListener('click', function (e) {
@@ -1807,7 +1807,9 @@
       items: diffs.map(function(d) {
         return {
           severity: (d.diff.severity || 'low').toLowerCase(),
-          description: Q.truncate(d.diff.description, 100)
+          description: Q.truncate(d.diff.description, 100),
+          num: d.diff._displayNum || (d.idx + 1),
+          origIdx: d.idx
         };
       })
     };
@@ -1851,7 +1853,6 @@
       }
     });
     marker.addEventListener('mouseleave', function () {
-      hideTooltip();
       hideElementHighlight();
     });
     marker.addEventListener('click', function (e) {
@@ -2019,10 +2020,7 @@
         (description ? '    <div class="qaproof-cat-evaluates">' + Q.escapeHtml(description) + '</div>' : '') +
         '  </div>' +
         '  <p>' + Q.escapeHtml(cat.notes || '') + '</p>' +
-        '</div>' +
-        '<button type="button" class="qaproof-cat-panel-expand" title="Expand">' +
-        '  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-        '</button>';
+        '</div>';
       panels.appendChild(panel);
     }
 
@@ -2068,29 +2066,90 @@
 
       panels.querySelectorAll('.qaproof-cat-tab-panel').forEach(function (p) {
         p.classList.remove('active');
-        p.classList.remove('expanded');
-        var btn = p.querySelector('.qaproof-cat-panel-expand');
-        if (btn) btn.classList.remove('rotated');
       });
       var target = panels.querySelector('[data-panel="' + key + '"]');
       if (target) target.classList.add('active');
+
+      // Reset expand state on tab switch
+      panels.classList.remove('expanded');
+      var expandBtn = panels.querySelector('.qaproof-cat-panel-expand');
+      if (expandBtn) expandBtn.classList.remove('rotated');
+      checkOverflow();
     });
 
-    // Expand/collapse panel
-    panels.addEventListener('click', function (e) {
-      var expandBtn = e.target.closest('.qaproof-cat-panel-expand');
-      if (!expandBtn) return;
-      var panel = expandBtn.closest('.qaproof-cat-tab-panel');
-      if (!panel) return;
+    // Expand button logic
+    var expandBtn = document.createElement('button');
+    expandBtn.type = 'button';
+    expandBtn.className = 'qaproof-cat-panel-expand';
+    expandBtn.title = 'Expand';
+    expandBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    expandBtn.style.display = 'none';
+    panels.appendChild(expandBtn);
 
-      if (panel.classList.contains('expanded')) {
-        panel.classList.remove('expanded');
-        expandBtn.classList.remove('rotated');
+    function applyClamp(activePanel, navH) {
+      var p = activePanel ? activePanel.querySelector('p') : null;
+      if (!p) return;
+      var header = activePanel.querySelector('.qaproof-cat-panel-header');
+      var panelStyle = getComputedStyle(activePanel);
+      var paddingTop = parseFloat(panelStyle.paddingTop) || 25;
+      var paddingBottom = parseFloat(panelStyle.paddingBottom) || 25;
+      var headerH = header ? header.offsetHeight : 0;
+      var headerMarginBottom = header ? (parseFloat(getComputedStyle(header).marginBottom) || 10) : 0;
+      var lineHeight = parseFloat(getComputedStyle(p).lineHeight);
+      var availH = navH - paddingTop - paddingBottom - headerH - headerMarginBottom;
+      var maxLines = Math.max(1, Math.floor(availH / lineHeight));
+      p.style.display = '-webkit-box';
+      p.style.webkitBoxOrient = 'vertical';
+      p.style.webkitLineClamp = String(maxLines);
+      p.style.overflow = 'hidden';
+    }
+
+    function removeClamp(activePanel) {
+      var p = activePanel ? activePanel.querySelector('p') : null;
+      if (!p) return;
+      p.style.webkitLineClamp = '';
+      p.style.display = '';
+      p.style.overflow = '';
+    }
+
+    function checkOverflow() {
+      requestAnimationFrame(function () {
+        var navH = nav.offsetHeight;
+        var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
+
+        // Remove clamp so scrollHeight reflects natural content height
+        removeClamp(activePanel);
+
+        if (!panels.classList.contains('expanded')) {
+          panels.style.maxHeight = navH + 'px';
+        }
+
+        var isOverflowing = panels.scrollHeight > navH + 2;
+        expandBtn.style.display = isOverflowing ? 'flex' : 'none';
+
+        // Re-apply clamp to show whole lines + ellipsis
+        if (!panels.classList.contains('expanded') && isOverflowing) {
+          applyClamp(activePanel, navH);
+        }
+      });
+    }
+
+    expandBtn.addEventListener('click', function () {
+      var expanded = panels.classList.toggle('expanded');
+      expandBtn.classList.toggle('rotated', expanded);
+      var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
+      if (expanded) {
+        removeClamp(activePanel);
+        panels.style.maxHeight = panels.scrollHeight + 'px';
       } else {
-        panel.classList.add('expanded');
-        expandBtn.classList.add('rotated');
+        panels.style.maxHeight = nav.offsetHeight + 'px';
+        checkOverflow();
       }
     });
+
+    // Check after render
+    requestAnimationFrame(checkOverflow);
+
   }
 
   // ============================
@@ -2224,6 +2283,7 @@
       for (var j = 0; j < items.length; j++) {
         globalNum++;
         var diff = items[j];
+        diff._displayNum = globalNum; // sync marker number with list number
         var severity = diff.severity || 'low';
 
         var deviceLabelMap = { desktop: 'Desktop', tablet: 'Tablet', tablet_landscape: 'Tablet Landscape', mobile: 'Mobile', mobile_landscape: 'Mobile Landscape' };
@@ -2356,6 +2416,32 @@
       S.globalTooltip = document.createElement('div');
       S.globalTooltip.className = 'qaproof-marker-tooltip';
       document.getElementById('qaproof-app').appendChild(S.globalTooltip);
+
+      // Close button and diff-link clicks
+      S.globalTooltip.addEventListener('click', function (e) {
+        if (e.target.closest('.tooltip-close')) {
+          hideTooltip();
+          return;
+        }
+        var diffLink = e.target.closest('.tooltip-diff-link');
+        if (diffLink) {
+          var origIdx = parseInt(diffLink.dataset.diffIdx, 10);
+          hideTooltip();
+          selectDifference(origIdx, 'marker');
+        }
+      });
+
+      // Close on click outside tooltip and markers
+      document.addEventListener('click', function (e) {
+        if (!S.globalTooltip || !S.globalTooltip.classList.contains('visible')) return;
+        if (e.target.closest('.tooltip-close')) return; // handled above
+        if (S.globalTooltip.contains(e.target)) return; // click inside tooltip — keep open
+        if (e.target.closest('.qaproof-marker')) return; // marker click — keep open
+        hideTooltip();
+      });
+
+      // Close on any scroll anywhere on the page
+      window.addEventListener('scroll', function () { hideTooltip(); }, true);
     }
     return S.globalTooltip;
   }
@@ -2367,14 +2453,17 @@
     var html = '';
     var sevLabels = { high: 'High Severity', medium: 'Medium', low: 'Low Severity', multi: 'Multiple Issues' };
 
+    var closeBtn = '<button type="button" class="tooltip-close" aria-label="Close">\u00d7</button>';
+
     if (data.items) {
       // Multi-issue tooltip
-      html += '<div class="tooltip-header sev-multi"><span class="sev-dot"></span>' + data.items.length + ' Issues Found</div>';
+      html += '<div class="tooltip-header sev-multi"><span class="sev-dot"></span>' + data.items.length + ' Issues Found' + closeBtn + '</div>';
       html += '<div class="tooltip-body">';
       for (var i = 0; i < data.items.length; i++) {
         var item = data.items[i];
         html += '<div class="tooltip-item">';
         html += '<div class="sev-indicator ind-' + Q.escapeHtml(item.severity) + '"></div>';
+        html += '<button type="button" class="tooltip-diff-link" data-diff-idx="' + item.origIdx + '">#' + item.num + '</button>';
         html += '<div>' + Q.escapeHtml(item.description) + '</div>';
         html += '</div>';
       }
@@ -2382,11 +2471,12 @@
     } else {
       // Single issue tooltip
       var sev = data.severity || 'low';
-      html += '<div class="tooltip-header sev-' + Q.escapeHtml(sev) + '"><span class="sev-dot"></span>' + Q.escapeHtml(sevLabels[sev] || sev) + '</div>';
+      html += '<div class="tooltip-header sev-' + Q.escapeHtml(sev) + '"><span class="sev-dot"></span>' + Q.escapeHtml(sevLabels[sev] || sev) + closeBtn + '</div>';
       html += '<div class="tooltip-body">';
       if (data.category) {
         html += '<span class="tooltip-category">' + Q.escapeHtml(data.category) + '</span>';
       }
+      html += '<button type="button" class="tooltip-diff-link" data-diff-idx="' + data.origIdx + '">#' + data.num + '</button>';
       html += '<div>' + Q.escapeHtml(data.description) + '</div>';
       html += '</div>';
     }
@@ -2479,9 +2569,9 @@
       // Clicked from a screenshot marker → scroll DOWN to the issue in the list.
       // First, expand the parent category group if it's collapsed.
       if (diffEl) {
-        var group = diffEl.closest('.qaproof-category-group');
-        if (group && !group.classList.contains('expanded')) {
-          var groupHeader = group.querySelector('.qaproof-category-group-header');
+        var group = diffEl.closest('.qaproof-diff-group');
+        if (group && group.classList.contains('collapsed')) {
+          var groupHeader = group.querySelector('.qaproof-diff-group-header');
           if (groupHeader) groupHeader.click();
         }
         setTimeout(function () {
