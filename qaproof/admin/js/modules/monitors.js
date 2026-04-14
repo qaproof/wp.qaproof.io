@@ -366,10 +366,10 @@
       html += '<td>' + Q.escapeHtml(lastRun) + '</td>';
       html += '<td><span class="' + statusClass + '">' + Q.escapeHtml(statusText + baselineText) + '</span></td>';
       html += '<td class="qaproof-monitor-actions">';
-      html += '  <button type="button" class="button button-small qaproof-run-monitor" data-id="' + m.id + '" title="Run Now">Run</button>';
-      html += '  <button type="button" class="button button-small qaproof-toggle-monitor" data-id="' + m.id + '" data-enabled="' + m.is_enabled + '">' + (parseInt(m.is_enabled, 10) ? 'Pause' : 'Enable') + '</button>';
-      html += '  <button type="button" class="button button-small qaproof-edit-monitor" data-id="' + m.id + '">Edit</button>';
-      html += '  <button type="button" class="button button-small button-link-delete qaproof-delete-monitor" data-id="' + m.id + '">Delete</button>';
+      html += '  <button type="button" class="button qaproof-run-monitor" data-id="' + m.id + '" title="Run Now">Run</button>';
+      html += '  <button type="button" class="button qaproof-toggle-monitor" data-id="' + m.id + '" data-enabled="' + m.is_enabled + '">' + (parseInt(m.is_enabled, 10) ? 'Pause' : 'Enable') + '</button>';
+      html += '  <button type="button" class="button qaproof-edit-monitor" data-id="' + m.id + '">Edit</button>';
+      html += '  <button type="button" class="button button-link-delete qaproof-delete-monitor" data-id="' + m.id + '">Delete</button>';
       html += '</td>';
       html += '</tr>';
     }
