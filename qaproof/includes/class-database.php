@@ -69,6 +69,7 @@ class QAProof_Database {
             differences_json longtext DEFAULT NULL,
             recommendations_json longtext DEFAULT NULL,
             screenshots_json longtext DEFAULT NULL,
+            extracted_data_json longtext DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
             KEY test_type (test_type),
@@ -78,7 +79,7 @@ class QAProof_Database {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.2.0' );
+        update_option( 'qaproof_db_version', '1.3.0' );
     }
 
     /**
