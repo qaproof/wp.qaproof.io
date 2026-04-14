@@ -82,7 +82,7 @@
 }
 
 #qaproof-app .qaproof-dash-hero-cta:hover {
-  background: #00C4CC;
+  color: var(--qp-text-primary) !important;
   box-shadow: 0 6px 24px rgba(0, 173, 181, 0.35);
   transform: translateY(-1px);
 }

@@ -55,7 +55,7 @@
 }
 
 #qaproof-app .qaproof-test-type-btn.active {
-  color: var(--qp-white);
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-test-type-btn:hover:not(.active) {
@@ -112,7 +112,7 @@
 }
 
 #qaproof-app .qaproof-source-btn.active {
-  color: var(--qp-white);
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-source-btn:hover:not(.active) {
@@ -354,16 +354,16 @@
 #qaproof-app .button-hero.button-primary,
 #qaproof-app #qaproof-submit-btn {
   background: var(--qp-accent) !important;
-  border: none !important;
+  border: 1px solid transparent !important;
   border-radius: var(--qp-radius-pill) !important;
   color: var(--qp-white) !important;
   font-weight: 700 !important;
   font-size: 14px !important;
   font-family: var(--qp-font) !important;
-  padding: 12px 28px !important;
+  padding: 12px 24px !important;
   text-shadow: none !important;
   box-shadow: none !important;
-  transition: all var(--qp-transition) !important;
+  transition: all 0.25s ease !important;
   cursor: pointer !important;
   height: auto !important;
   line-height: 120% !important;
@@ -381,8 +381,9 @@
 #qaproof-app .button-primary:hover,
 #qaproof-app .button-hero.button-primary:hover,
 #qaproof-app #qaproof-submit-btn:hover {
-  background: var(--qp-accent-hover) !important;
-  box-shadow: 0 4px 16px rgba(0, 173, 181, 0.35) !important;
+  color: var(--qp-text-primary) !important;
+  border: 1px solid var(--qp-text-primary) !important;
+  box-shadow: none !important;
   transform: translateY(-1px);
 }
 
@@ -394,18 +395,21 @@
   border-radius: var(--qp-radius-pill) !important;
   color: var(--qp-accent) !important;
   font-weight: 600 !important;
+  font-size: 14px !important;
   font-family: var(--qp-font) !important;
+  padding: 12px 24px !important;
   text-shadow: none !important;
-  transition: all var(--qp-transition) !important;
+  transition: all 0.25s ease !important;
   box-shadow: none !important;
   line-height: 120% !important;
 }
 
 #qaproof-app .button-secondary:hover,
 #qaproof-app .button:not(.button-primary):not(.button-link-delete):hover {
-  background: var(--qp-accent-dim) !important;
-  border-color: var(--qp-accent) !important;
-  color: var(--qp-accent) !important;
+  color: var(--qp-text-primary) !important;
+  border-color: var(--qp-text-primary) !important;
+  box-shadow: none !important;
+  transform: translateY(-1px);
 }
 
 #qaproof-app .button-link-delete {
@@ -414,12 +418,14 @@
   border-radius: var(--qp-radius-pill) !important;
   background: rgba(239, 68, 68, 0.06) !important;
   font-weight: 600 !important;
+  font-size: 14px !important;
   font-family: var(--qp-font) !important;
+  padding: 12px 24px !important;
   line-height: 120% !important;
   text-shadow: none !important;
   box-shadow: none !important;
   text-decoration: none !important;
-  transition: all var(--qp-transition) !important;
+  transition: all 0.25s ease !important;
 }
 
 #qaproof-app .button-link-delete:hover {

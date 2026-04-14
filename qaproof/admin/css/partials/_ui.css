@@ -451,26 +451,27 @@
 #qaproof-app #submit,
 #qaproof-app .submit .button-primary {
   background: var(--qp-accent) !important;
-  border: none !important;
+  border: 1px solid transparent !important;
   border-radius: var(--qp-radius-pill) !important;
   color: var(--qp-white) !important;
   font-weight: 700 !important;
   font-size: 14px !important;
   font-family: var(--qp-font) !important;
-  padding: 12px 28px !important;
+  padding: 12px 24px !important;
   text-shadow: none !important;
   box-shadow: none !important;
   height: auto !important;
   line-height: 120% !important;
-  transition: all var(--qp-transition) !important;
+  transition: all 0.25s ease !important;
   width: auto !important;
   display: inline-block !important;
 }
 
 #qaproof-app #submit:hover,
 #qaproof-app .submit .button-primary:hover {
-  background: var(--qp-accent-hover) !important;
-  box-shadow: 0 4px 16px rgba(0, 173, 181, 0.35) !important;
+  color: var(--qp-text-primary) !important;
+  border: 1px solid var(--qp-text-primary) !important;
+  box-shadow: none !important;
   transform: translateY(-1px);
 }
 
@@ -482,23 +483,21 @@
   align-items: center;
   gap: 6px;
   margin-top: 16px;
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #222831 0%, #393E46 100%);
-  color: #fff;
-  border: 1px solid rgba(0, 173, 181, 0.3);
+  padding: 12px 24px;
+  background: var(--qp-accent);
+  color: var(--qp-white);
+  border: 1px solid transparent;
   border-radius: var(--qp-radius-pill);
   font-family: var(--qp-font);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.25s ease;
-  letter-spacing: 0.3px;
 }
 
 #qaproof-app .qaproof-pdf-btn:hover {
-  background: linear-gradient(135deg, #393E46 0%, #222831 100%);
-  border-color: var(--qp-accent);
-  box-shadow: 0 4px 16px rgba(0, 173, 181, 0.25);
+  color: var(--qp-text-primary);
+  border: 1px solid var(--qp-text-primary);
   transform: translateY(-1px);
 }
 
@@ -518,24 +517,23 @@
   align-items: center;
   gap: 6px;
   margin-top: 16px;
-  padding: 10px 24px;
+  padding: 12px 24px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #0d9488 0%, #00ADB5 100%);
-  color: #fff;
-  border: 1px solid rgba(0, 173, 181, 0.4);
+  background: var(--qp-accent);
+  color: var(--qp-white);
+  border: 1px solid transparent;
   border-radius: var(--qp-radius-pill);
   font-family: var(--qp-font);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  letter-spacing: 0.3px;
+  transition: all 0.25s ease;
 }
 
 #qaproof-app .qaproof-email-btn:hover:not(.qaproof-email-expanded) {
-  background: linear-gradient(135deg, #00ADB5 0%, #0d9488 100%);
-  border-color: #00ADB5;
-  box-shadow: 0 4px 16px rgba(0, 173, 181, 0.35);
+  color: var(--qp-text-primary);
+  border: 1px solid var(--qp-text-primary);
+  transform: translateY(-1px);
 }
 
 #qaproof-app .qaproof-email-btn .dashicons {
@@ -785,11 +783,11 @@
   background: rgba(0, 173, 181, 0.15) !important;
   border: 1px solid rgba(0, 173, 181, 0.4) !important;
   color: var(--qp-accent) !important;
-  border-radius: 12px !important;
+  border-radius: var(--qp-radius-pill) !important;
   padding: 4px 10px !important;
   min-height: 0 !important;
   line-height: 1 !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.25s ease !important;
   position: relative;
   z-index: 1;
 }
@@ -918,14 +916,14 @@
 }
 
 #qaproof-app .qaproof-history-actions .button {
-  font-size: 11px;
+  font-size: 14px;
   padding: 5px 10px !important;
   line-height: 1.4;
-  border-radius: 8px !important;
+  border-radius: var(--qp-radius-pill) !important;
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: rgba(238, 238, 238, 0.7) !important;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1016,20 +1014,20 @@
 
 #qaproof-app .qaproof-history-content .qaproof-history-load-more-wrap .button {
   background: transparent !important;
-  border: 2px solid var(--qp-accent) !important;
+  border: 1px solid var(--qp-accent) !important;
   color: var(--qp-accent) !important;
   border-radius: var(--qp-radius-pill) !important;
-  padding: 8px 28px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease;
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  transition: all 0.25s ease;
 }
 
 #qaproof-app .qaproof-history-content .qaproof-history-load-more-wrap .button:hover {
   background: var(--qp-accent) !important;
-  color: #fff !important;
+  color: var(--qp-white) !important;
   border-color: var(--qp-accent) !important;
-  box-shadow: 0 2px 10px rgba(0, 173, 181, 0.3);
+  box-shadow: none !important;
 }
 
 /* Responsive: stack on smaller screens */
