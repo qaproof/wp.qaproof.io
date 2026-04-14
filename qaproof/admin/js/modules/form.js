@@ -120,6 +120,9 @@
 
   if (savedDesignSelect) {
     savedDesignSelect.addEventListener('change', function () {
+      if (typeof window.qaproofUpdateDetectBtnLabel === 'function') {
+        window.qaproofUpdateDetectBtnLabel();
+      }
       var designId = savedDesignSelect.value;
       if (!designId) {
         S.savedDesignImageBase64 = null;
@@ -541,6 +544,53 @@
   };
 
   if (saveDesignBtn) {
+    // Small helper to ensure the button has a dedicated "working" class so
+    // CSS can show a spinner / disabled state distinct from a normal hover.
+    function setSaveBtnState(state, text) {
+      if (saveDesignLabel) saveDesignLabel.textContent = text;
+      saveDesignBtn.classList.remove('is-working', 'is-done', 'is-error');
+      if (state === 'working') {
+        saveDesignBtn.classList.add('is-working');
+        saveDesignBtn.disabled = true;
+      } else if (state === 'done') {
+        saveDesignBtn.classList.add('is-done');
+        saveDesignBtn.disabled = false;
+      } else if (state === 'error') {
+        saveDesignBtn.classList.add('is-error');
+        saveDesignBtn.disabled = false;
+      } else {
+        saveDesignBtn.disabled = false;
+      }
+    }
+
+    function flashSaveBtnDone(text) {
+      setSaveBtnState('done', text);
+      setTimeout(function () { setSaveBtnState('idle', 'Save'); }, 2500);
+    }
+
+    function flashSaveBtnError(text) {
+      setSaveBtnState('error', text);
+      setTimeout(function () { setSaveBtnState('idle', 'Save'); }, 2500);
+    }
+
+    // Broadcast saved-design status to other tabs (Settings page listens via
+    // the `storage` event in init.js). Also updates the current tab in case
+    // Tests + Settings are rendered on the same page in the future.
+    function broadcastDesignStatus(designId, state, count, source) {
+      if (!designId) return;
+      try {
+        var payload = { state: state, ts: Date.now() };
+        if (typeof count === 'number') payload.count = count;
+        if (source) payload.source = source;
+        // Always set a fresh value so the `storage` event fires even when the
+        // state repeats (localStorage only dispatches when the value changes).
+        localStorage.setItem('qaproof:design:' + designId, JSON.stringify(payload));
+      } catch (err) { /* storage may be disabled; ignore */ }
+      if (typeof window.qaproofUpdateDesignStatus === 'function') {
+        window.qaproofUpdateDesignStatus(designId, state, count, source);
+      }
+    }
+
     saveDesignBtn.addEventListener('click', function () {
       if (!savedDesignSelect || !savedDesignSelect.value) return;
       var designId = savedDesignSelect.value;
@@ -548,8 +598,8 @@
       var imageData = previewImage ? previewImage.src : null;
       if (!imageData || !imageData.startsWith('data:image')) return;
 
-      if (saveDesignLabel) saveDesignLabel.textContent = 'Saving...';
-      saveDesignBtn.disabled = true;
+      setSaveBtnState('working', 'Saving image...');
+      broadcastDesignStatus(designId, 'saving');
 
       // Helper: save elements to WP for this design
       function saveElementsToDesign(elDesignId, els, source) {
@@ -572,12 +622,18 @@
                 break;
               }
             }
+            if (typeof window.qaproofUpdateDetectBtnLabel === 'function') {
+              window.qaproofUpdateDetectBtnLabel();
+            }
           }
           return saveJson;
         });
       }
 
-      // Helper: run background detection and save results
+      // Helper: run background detection and save results.
+      // Returns a Promise that resolves when detection + saving is done (or failed).
+      // While it's running, the Save button stays in 'working' state so the user
+      // clearly sees that the operation is not finished yet.
       function bgDetectAndSave(bgDesignId) {
         var bgSd = null;
         var dsList = qaproof.savedDesigns || [];
@@ -590,17 +646,19 @@
           bgRequestBody = { figmaUrl: bgSd.figmaUrl, figmaToken: bgSd.figmaToken };
         } else if (imageData && imageData.startsWith('data:image')) {
           var bgParts = imageData.split(',');
-          if (bgParts.length < 2 || !bgParts[1]) return;
+          if (bgParts.length < 2 || !bgParts[1]) return Promise.resolve({ ok: false });
           bgRequestBody = { figmaImageBase64: bgParts[1] };
         } else {
-          return;
+          return Promise.resolve({ ok: false });
         }
 
+        setSaveBtnState('working', 'Detecting elements...');
+        broadcastDesignStatus(bgDesignId, 'detecting');
         if (previewMeta) {
           previewMeta.textContent = 'Saved image \u00B7 Detecting elements...';
         }
 
-        fetch(qaproof.restBase + '/detect-elements', {
+        return fetch(qaproof.restBase + '/detect-elements', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -612,31 +670,37 @@
         .then(function (json) {
           if (json.success && json.data && json.data.elements && json.data.elements.length > 0) {
             var bgSource = json.data.source || '';
-            console.log('[QAProof] Background detection done:', bgSource, '(' + json.data.elements.length + ' elements)');
+            var elCount = json.data.elements.length;
+            console.log('[QAProof] Background detection done:', bgSource, '(' + elCount + ' elements)');
 
             detectedElementsSource = bgSource;
             S.elementsDetectedForCache = 'saved-elements|' + bgDesignId;
             renderElementOverlays(json.data.elements);
             if (elementControlsDiv) elementControlsDiv.style.display = '';
 
-            saveElementsToDesign(bgDesignId, json.data.elements, bgSource)
-            .then(function () {
-              if (previewMeta) {
-                previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
-              }
-            });
-          } else {
-            console.log('[QAProof] Background detection returned no elements');
-            if (previewMeta) {
-              previewMeta.textContent = 'Saved image \u00B7 No API call needed';
-            }
+            return saveElementsToDesign(bgDesignId, json.data.elements, bgSource)
+              .then(function () {
+                if (previewMeta) {
+                  previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
+                }
+                broadcastDesignStatus(bgDesignId, 'ready', elCount, bgSource);
+                return { ok: true, count: elCount };
+              });
           }
-        })
-        .catch(function () {
-          console.warn('[QAProof] Background element detection failed');
+          console.log('[QAProof] Background detection returned no elements');
           if (previewMeta) {
             previewMeta.textContent = 'Saved image \u00B7 No API call needed';
           }
+          broadcastDesignStatus(bgDesignId, 'partial');
+          return { ok: true, count: 0 };
+        })
+        .catch(function (err) {
+          console.warn('[QAProof] Background element detection failed:', err && err.message);
+          if (previewMeta) {
+            previewMeta.textContent = 'Saved image \u00B7 Element detection failed';
+          }
+          broadcastDesignStatus(bgDesignId, 'error');
+          return { ok: false };
         });
       }
 
@@ -662,46 +726,59 @@
       Promise.all(savePromises)
       .then(function (results) {
         var json = results[0];
-        saveDesignBtn.disabled = false;
-        if (json.success) {
-          if (saveDesignLabel) saveDesignLabel.textContent = 'Saved!';
-          var designs = qaproof.savedDesigns || [];
-          for (var i = 0; i < designs.length; i++) {
-            if (designs[i].id === designId) {
-              designs[i].imageBase64 = imageData;
-              break;
-            }
-          }
-          S.savedDesignImageBase64 = imageData;
-
-          if (hasExistingElements && results[1] && results[1].success) {
-            if (previewMeta) {
-              previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
-            }
-          } else if (!hasExistingElements) {
-            bgDetectAndSave(designId);
-          } else {
-            if (previewMeta) {
-              previewMeta.textContent = 'Saved image \u00B7 No API call needed';
-            }
-          }
-
-          setTimeout(function () {
-            if (saveDesignLabel) saveDesignLabel.textContent = 'Save';
-          }, 2000);
-        } else {
-          if (saveDesignLabel) saveDesignLabel.textContent = 'Error';
-          setTimeout(function () {
-            if (saveDesignLabel) saveDesignLabel.textContent = 'Save';
-          }, 2000);
+        if (!json.success) {
+          flashSaveBtnError('Error');
+          broadcastDesignStatus(designId, 'error');
+          return;
         }
+
+        var designs = qaproof.savedDesigns || [];
+        for (var i = 0; i < designs.length; i++) {
+          if (designs[i].id === designId) {
+            designs[i].imageBase64 = imageData;
+            designs[i].hasImage = true;
+            break;
+          }
+        }
+        S.savedDesignImageBase64 = imageData;
+
+        // Case A: elements already existed and were saved alongside the image.
+        if (hasExistingElements && results[1] && results[1].success) {
+          if (previewMeta) {
+            previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
+          }
+          flashSaveBtnDone('Saved + elements \u2713');
+          broadcastDesignStatus(designId, 'ready', detectedElements.length, detectedElementsSource || 'ai-vision');
+          return;
+        }
+
+        // Case B: no existing elements — run background detection and keep the
+        // button in 'working' state until it finishes so the user waits.
+        if (!hasExistingElements) {
+          bgDetectAndSave(designId).then(function (bgResult) {
+            if (bgResult && bgResult.ok && bgResult.count > 0) {
+              flashSaveBtnDone('Saved + ' + bgResult.count + ' elements \u2713');
+            } else if (bgResult && bgResult.ok) {
+              // Image saved, detection found nothing — still a successful save.
+              flashSaveBtnDone('Saved \u2713');
+            } else {
+              // Image was saved but detection failed — communicate partial success.
+              flashSaveBtnError('Saved (detection failed)');
+            }
+          });
+          return;
+        }
+
+        // Case C: existing elements, but element-save failed — partial success.
+        if (previewMeta) {
+          previewMeta.textContent = 'Saved image \u00B7 No API call needed';
+        }
+        flashSaveBtnDone('Saved \u2713');
+        broadcastDesignStatus(designId, 'partial');
       })
       .catch(function () {
-        saveDesignBtn.disabled = false;
-        if (saveDesignLabel) saveDesignLabel.textContent = 'Error';
-        setTimeout(function () {
-          if (saveDesignLabel) saveDesignLabel.textContent = 'Save';
-        }, 2000);
+        flashSaveBtnError('Error');
+        broadcastDesignStatus(designId, 'error');
       });
     });
   }
@@ -715,6 +792,32 @@
 
   var detectBtn = document.getElementById('qaproof-detect-elements-btn');
   var fullPageBtn = document.getElementById('qaproof-fullpage-btn');
+
+  // Swap the detect button label between "Detect Elements" and
+  // "Show detected elements" depending on whether the currently-selected
+  // saved design already has cached pixel-perfect elements.
+  function updateDetectBtnLabel() {
+    if (!detectBtn) return;
+    var labelEl = detectBtn.querySelector('.qaproof-detect-btn-label');
+    if (!labelEl) return;
+    var selected = null;
+    if (savedDesignSelect && savedDesignSelect.value) {
+      var list = qaproof.savedDesigns || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === savedDesignSelect.value) { selected = list[i]; break; }
+      }
+    }
+    if (selected && selected.hasElements) {
+      labelEl.textContent = 'Show detected elements';
+      detectBtn.setAttribute('title', 'Load cached elements detected in Settings — no API call needed');
+    } else {
+      labelEl.textContent = 'Detect Elements';
+      detectBtn.removeAttribute('title');
+    }
+  }
+  // Make it reachable from other handlers (e.g. after saveElementsToDesign).
+  window.qaproofUpdateDetectBtnLabel = updateDetectBtnLabel;
+  updateDetectBtnLabel();
   var overlaysContainer = document.getElementById('qaproof-element-overlays');
   var detectingDiv = document.getElementById('qaproof-element-detecting');
   var selectedElementDiv = document.getElementById('qaproof-selected-element');
@@ -1204,6 +1307,9 @@
                   break;
                 }
               }
+              if (typeof window.qaproofUpdateDetectBtnLabel === 'function') {
+                window.qaproofUpdateDetectBtnLabel();
+              }
             }
           })
           .catch(function () { /* silent */ });
@@ -1250,12 +1356,11 @@
   var expandBtn = document.getElementById('qaproof-inspector-expand');
   var previewPanel = document.querySelector('.qaproof-preview-panel');
 
-  var inspectorBackdrop = document.createElement('div');
-  inspectorBackdrop.className = 'qaproof-inspector-backdrop';
-  var qaproofApp = document.getElementById('qaproof-app');
-  if (qaproofApp) {
-    qaproofApp.appendChild(inspectorBackdrop);
-  }
+  // No backdrop element — the expanded panel covers nearly the entire viewport
+  // on its own. A backdrop caused stacking-context conflicts with ancestor
+  // elements that made the panel appear blurred/dimmed. Keep a no-op stub so
+  // existing references don't break.
+  var inspectorBackdrop = { classList: { toggle: function () {} }, addEventListener: function () {} };
 
   if (expandBtn && previewPanel) {
     expandBtn.addEventListener('click', function () {
@@ -1559,28 +1664,15 @@
             S.testsPageBusy = false;
           },
           onScreenshotsDone: function (resultData) {
-            var historyData = Object.assign({}, resultData);
-            delete historyData.screenshots;
-            var saveData = new FormData();
-            saveData.append('action', 'qaproof_save_history');
-            saveData.append('nonce', qaproof.ajaxNonce);
-            saveData.append('testType', body.testType);
-            saveData.append('pageUrl', body.pageUrl);
-            saveData.append('result', JSON.stringify(historyData));
-            fetch(qaproof.ajaxUrl, {
-              method: 'POST',
-              body: saveData,
-              credentials: 'same-origin',
-            })
-            .then(Q.safeJson)
-            .then(function (saveResp) {
-              console.log('[QAProof] History saved (with screenshots):', saveResp);
-              if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
-            })
-            .catch(function (err) {
-              console.error('[QAProof] Failed to save history:', err.message);
-              if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
-            });
+            Q.saveTestHistory(body.testType, body.pageUrl, jobId, resultData)
+              .then(function (saveResp) {
+                console.log('[QAProof] History saved:', saveResp);
+                if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
+              })
+              .catch(function (err) {
+                console.error('[QAProof] Failed to save history:', err.message);
+                if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
+              });
           },
           onFailed: function (errorMsg) {
             loadingTimers.forEach(clearTimeout);

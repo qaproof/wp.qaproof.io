@@ -433,9 +433,15 @@ class QAProof_Settings {
                 'figmaToken' => isset( $d['figmaToken'] ) ? sanitize_text_field( $d['figmaToken'] ) : '',
                 'figmaUrl'   => isset( $d['figmaUrl'] ) ? sanitize_url( $d['figmaUrl'] ) : '',
             ];
-            // Preserve saved design image if present (not submitted through settings form)
+            // Preserve cached image + detected elements (not submitted through settings form)
             if ( ! empty( $d['imageBase64'] ) ) {
                 $entry['imageBase64'] = $d['imageBase64'];
+            }
+            if ( ! empty( $d['elementsJson'] ) ) {
+                $entry['elementsJson'] = $d['elementsJson'];
+            }
+            if ( ! empty( $d['elementsSource'] ) ) {
+                $entry['elementsSource'] = sanitize_text_field( $d['elementsSource'] );
             }
             $clean[] = $entry;
         }
@@ -549,8 +555,35 @@ class QAProof_Settings {
                 <?php if ( empty( $designs ) ) : ?>
                     <p class="description qaproof-no-designs"><?php esc_html_e( 'No saved designs yet. Click "Add Design" to create one.', 'qaproof' ); ?></p>
                 <?php endif; ?>
-                <?php foreach ( $designs as $i => $d ) : ?>
-                <div class="qaproof-design-row" data-index="<?php echo $i; ?>">
+                <?php foreach ( $designs as $i => $d ) :
+                    $has_image    = ! empty( $d['imageBase64'] );
+                    $has_elements = ! empty( $d['elementsJson'] );
+                    $elements_count = 0;
+                    if ( $has_elements ) {
+                        $decoded = json_decode( $d['elementsJson'], true );
+                        if ( is_array( $decoded ) ) {
+                            $elements_count = count( $decoded );
+                        }
+                    }
+                    $source = ! empty( $d['elementsSource'] ) ? $d['elementsSource'] : '';
+                    // Stale ai-vision cache upgrade path: if the design has a
+                    // Figma URL, force re-detection so we get pixel-perfect
+                    // Figma-API overlays instead of approximate AI vision ones.
+                    $has_figma_source = ! empty( $d['figmaUrl'] ) && ! empty( $d['figmaToken'] );
+                    $is_stale_ai      = ( $source === 'ai-vision' ) && $has_figma_source;
+                    if ( $has_image && $has_elements && ! $is_stale_ai ) {
+                        $status       = 'ready';
+                        $status_label = sprintf( __( 'Ready · %d elements', 'qaproof' ), $elements_count );
+                        if ( $source ) $status_label .= ' (' . esc_html( $source ) . ')';
+                    } elseif ( $has_image ) {
+                        $status       = 'partial';
+                        $status_label = __( 'Image cached · elements missing', 'qaproof' );
+                    } else {
+                        $status       = 'empty';
+                        $status_label = __( 'Not cached — open Tests page and click Save', 'qaproof' );
+                    }
+                ?>
+                <div class="qaproof-design-row" data-index="<?php echo $i; ?>" data-design-id="<?php echo esc_attr( $d['id'] ); ?>">
                     <div class="qaproof-design-row-fields">
                         <input type="text" placeholder="<?php esc_attr_e( 'Design Name', 'qaproof' ); ?>" value="<?php echo esc_attr( $d['name'] ); ?>" data-field="name" class="regular-text" />
                         <input type="url" placeholder="<?php esc_attr_e( 'Figma URL', 'qaproof' ); ?>" value="<?php echo esc_url( $d['figmaUrl'] ); ?>" data-field="figmaUrl" class="regular-text" />
@@ -563,6 +596,10 @@ class QAProof_Settings {
                             <span class="qaproof-token-fade"></span>
                         </div>
                         <input type="hidden" value="<?php echo esc_attr( $d['id'] ); ?>" data-field="id" />
+                    </div>
+                    <div class="qaproof-design-status qaproof-status-<?php echo esc_attr( $status ); ?>" data-status="<?php echo esc_attr( $status ); ?>" title="<?php echo esc_attr( $status_label ); ?>">
+                        <span class="qaproof-design-status-dot"></span>
+                        <span class="qaproof-design-status-label"><?php echo esc_html( $status_label ); ?></span>
                     </div>
                     <button type="button" class="button qaproof-design-remove" title="<?php esc_attr_e( 'Remove', 'qaproof' ); ?>">
                         <span class="dashicons dashicons-trash"></span>
