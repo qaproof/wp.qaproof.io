@@ -1706,7 +1706,6 @@
   }
 
   function createMarkerEl(idx, diff) {
-    var number = diff._displayNum || (idx + 1);
     var severity = diff.severity || 'low';
     var severityClass = 'qaproof-marker-' + severity;
     // Pin by default. No-pin only for page-level issues we can't logically point to.
@@ -1719,10 +1718,10 @@
     // No-pin markers (page-level issues) are always centered horizontally
     marker.style.left = isNoPin ? '50%' : (diff.location.left + '%');
 
-    // Pin head (circle with number)
+    // Pin head shows count (always 1 for single marker)
     var head = document.createElement('div');
     head.className = 'marker-head';
-    head.textContent = number;
+    head.textContent = '1';
     marker.appendChild(head);
 
     // Pin tail (triangle) — only for element-specific markers
@@ -1735,7 +1734,9 @@
     var tooltipData = {
       severity: severity,
       category: diff.category || '',
-      description: Q.truncate(diff.description, 180)
+      description: Q.truncate(diff.description, 180),
+      num: diff._displayNum || (idx + 1),
+      origIdx: idx
     };
 
     marker.addEventListener('mouseenter', function () {
@@ -1806,7 +1807,9 @@
       items: diffs.map(function(d) {
         return {
           severity: (d.diff.severity || 'low').toLowerCase(),
-          description: Q.truncate(d.diff.description, 100)
+          description: Q.truncate(d.diff.description, 100),
+          num: d.diff._displayNum || (d.idx + 1),
+          origIdx: d.idx
         };
       })
     };
@@ -2414,10 +2417,17 @@
       S.globalTooltip.className = 'qaproof-marker-tooltip';
       document.getElementById('qaproof-app').appendChild(S.globalTooltip);
 
-      // Close button click
+      // Close button and diff-link clicks
       S.globalTooltip.addEventListener('click', function (e) {
         if (e.target.closest('.tooltip-close')) {
           hideTooltip();
+          return;
+        }
+        var diffLink = e.target.closest('.tooltip-diff-link');
+        if (diffLink) {
+          var origIdx = parseInt(diffLink.dataset.diffIdx, 10);
+          hideTooltip();
+          selectDifference(origIdx, 'marker');
         }
       });
 
@@ -2450,6 +2460,7 @@
         var item = data.items[i];
         html += '<div class="tooltip-item">';
         html += '<div class="sev-indicator ind-' + Q.escapeHtml(item.severity) + '"></div>';
+        html += '<button type="button" class="tooltip-diff-link" data-diff-idx="' + item.origIdx + '">#' + item.num + '</button>';
         html += '<div>' + Q.escapeHtml(item.description) + '</div>';
         html += '</div>';
       }
@@ -2462,6 +2473,7 @@
       if (data.category) {
         html += '<span class="tooltip-category">' + Q.escapeHtml(data.category) + '</span>';
       }
+      html += '<button type="button" class="tooltip-diff-link" data-diff-idx="' + data.origIdx + '">#' + data.num + '</button>';
       html += '<div>' + Q.escapeHtml(data.description) + '</div>';
       html += '</div>';
     }
