@@ -2566,9 +2566,9 @@
       // Clicked from a screenshot marker → scroll DOWN to the issue in the list.
       // First, expand the parent category group if it's collapsed.
       if (diffEl) {
-        var group = diffEl.closest('.qaproof-category-group');
-        if (group && !group.classList.contains('expanded')) {
-          var groupHeader = group.querySelector('.qaproof-category-group-header');
+        var group = diffEl.closest('.qaproof-diff-group');
+        if (group && group.classList.contains('collapsed')) {
+          var groupHeader = group.querySelector('.qaproof-diff-group-header');
           if (groupHeader) groupHeader.click();
         }
         setTimeout(function () {
