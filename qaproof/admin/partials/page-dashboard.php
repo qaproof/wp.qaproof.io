@@ -105,7 +105,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <div class="qaproof-dash-stat">
                 <div class="qaproof-dash-stat-icon icon-tokens"><span class="dashicons dashicons-database"></span></div>
                 <div>
-                    <div class="qaproof-dash-stat-val"><?php echo esc_html( '4,280' ); ?></div>
+                    <div class="qaproof-dash-stat-val"><?php echo esc_html( '0' ); ?></div>
                     <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Tokens Used', 'qaproof' ); ?></div>
                 </div>
             </div>
@@ -125,10 +125,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             </div>
             <div class="qaproof-dash-usage-bar-wrap">
                 <div class="qaproof-dash-usage-bar">
-                    <div class="qaproof-dash-usage-bar-fill" style="width: 42.8%;"></div>
+                    <div class="qaproof-dash-usage-bar-fill" style="width: 0%;"></div>
                 </div>
                 <div class="qaproof-dash-usage-nums">
-                    <span><strong>4,280</strong> <?php esc_html_e( 'used', 'qaproof' ); ?></span>
+                    <span><strong>0</strong> <?php esc_html_e( 'used', 'qaproof' ); ?></span>
                     <span><strong>10,000</strong> <?php esc_html_e( 'total', 'qaproof' ); ?></span>
                 </div>
             </div>
@@ -136,27 +136,27 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <div class="qaproof-dash-usage-item" data-color="teal">
                     <span class="qaproof-dash-usage-dot"></span>
                     <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">1,420</span>
+                    <span class="qaproof-dash-usage-count">0</span>
                 </div>
                 <div class="qaproof-dash-usage-item" data-color="blue">
                     <span class="qaproof-dash-usage-dot"></span>
                     <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Responsive', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">980</span>
+                    <span class="qaproof-dash-usage-count">0</span>
                 </div>
                 <div class="qaproof-dash-usage-item" data-color="purple">
                     <span class="qaproof-dash-usage-dot"></span>
                     <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Accessibility', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">860</span>
+                    <span class="qaproof-dash-usage-count">0</span>
                 </div>
                 <div class="qaproof-dash-usage-item" data-color="green">
                     <span class="qaproof-dash-usage-dot"></span>
                     <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">620</span>
+                    <span class="qaproof-dash-usage-count">0</span>
                 </div>
                 <div class="qaproof-dash-usage-item" data-color="amber">
                     <span class="qaproof-dash-usage-dot"></span>
                     <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Regression', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">400</span>
+                    <span class="qaproof-dash-usage-count">0</span>
                 </div>
             </div>
             <div class="qaproof-dash-usage-footer">

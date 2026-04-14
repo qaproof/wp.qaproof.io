@@ -1972,10 +1972,7 @@
         (description ? '    <div class="qaproof-cat-evaluates">' + Q.escapeHtml(description) + '</div>' : '') +
         '  </div>' +
         '  <p>' + Q.escapeHtml(cat.notes || '') + '</p>' +
-        '</div>' +
-        '<button type="button" class="qaproof-cat-panel-expand" title="Expand">' +
-        '  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-        '</button>';
+        '</div>';
       panels.appendChild(panel);
     }
 
@@ -2021,29 +2018,11 @@
 
       panels.querySelectorAll('.qaproof-cat-tab-panel').forEach(function (p) {
         p.classList.remove('active');
-        p.classList.remove('expanded');
-        var btn = p.querySelector('.qaproof-cat-panel-expand');
-        if (btn) btn.classList.remove('rotated');
       });
       var target = panels.querySelector('[data-panel="' + key + '"]');
       if (target) target.classList.add('active');
     });
 
-    // Expand/collapse panel
-    panels.addEventListener('click', function (e) {
-      var expandBtn = e.target.closest('.qaproof-cat-panel-expand');
-      if (!expandBtn) return;
-      var panel = expandBtn.closest('.qaproof-cat-tab-panel');
-      if (!panel) return;
-
-      if (panel.classList.contains('expanded')) {
-        panel.classList.remove('expanded');
-        expandBtn.classList.remove('rotated');
-      } else {
-        panel.classList.add('expanded');
-        expandBtn.classList.add('rotated');
-      }
-    });
   }
 
   // ============================
