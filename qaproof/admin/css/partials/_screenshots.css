@@ -69,7 +69,7 @@
   font-family: 'Kodchasan', sans-serif;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(238, 238, 238, 0.45);
+  color: var(--qp-accent-hover);
   cursor: pointer;
   transition: all 0.2s ease;
   line-height: 1.2;
@@ -78,9 +78,9 @@
 #qaproof-app .qaproof-chrome-btn svg { flex-shrink: 0; }
 
 #qaproof-app .qaproof-chrome-btn.active {
-  background: rgba(0, 173, 181, 0.12);
+  background: var(--qp-accent);
   border-color: rgba(0, 173, 181, 0.3);
-  color: var(--qp-accent);
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-chrome-btn:hover {
