@@ -2114,6 +2114,79 @@
       }
     });
 
+    // Expand button
+    var expandBtn = document.createElement('button');
+    expandBtn.type = 'button';
+    expandBtn.className = 'qaproof-cat-panel-expand';
+    expandBtn.title = 'Expand';
+    expandBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    expandBtn.style.display = 'none';
+    panels.appendChild(expandBtn);
+
+    function applyClamp(panel, navH) {
+      var p = panel ? panel.querySelector('p') : null;
+      if (!p) return;
+      var header = panel.querySelector('.qaproof-cat-panel-header');
+      var panelStyle = getComputedStyle(panel);
+      var paddingTop = parseFloat(panelStyle.paddingTop) || 25;
+      var paddingBottom = parseFloat(panelStyle.paddingBottom) || 25;
+      var headerH = header ? header.offsetHeight : 0;
+      var headerMarginBottom = header ? (parseFloat(getComputedStyle(header).marginBottom) || 10) : 0;
+      var lineH = parseFloat(getComputedStyle(p).lineHeight);
+      var availH = navH - paddingTop - paddingBottom - headerH - headerMarginBottom;
+      var maxLines = Math.max(1, Math.floor(availH / lineH));
+      p.style.display = '-webkit-box';
+      p.style.webkitBoxOrient = 'vertical';
+      p.style.webkitLineClamp = String(maxLines);
+      p.style.overflow = 'hidden';
+    }
+
+    function removeClamp(panel) {
+      var p = panel ? panel.querySelector('p') : null;
+      if (!p) return;
+      p.style.webkitLineClamp = '';
+      p.style.display = '';
+      p.style.overflow = '';
+    }
+
+    var navNaturalH = 0;
+
+    function checkOverflow() {
+      requestAnimationFrame(function () {
+        navNaturalH = nav.offsetHeight;
+
+        var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
+        removeClamp(activePanel);
+        panels.style.maxHeight = '';
+
+        var naturalPanelsH = panels.scrollHeight;
+        var isOverflowing = naturalPanelsH > navNaturalH + 2;
+
+        if (!panels.classList.contains('expanded')) {
+          panels.style.maxHeight = navNaturalH + 'px';
+          if (isOverflowing) {
+            applyClamp(activePanel, navNaturalH);
+          }
+        }
+        expandBtn.style.display = isOverflowing ? 'flex' : 'none';
+      });
+    }
+
+    expandBtn.addEventListener('click', function () {
+      var expanded = panels.classList.toggle('expanded');
+      expandBtn.classList.toggle('rotated', expanded);
+      var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
+      if (expanded) {
+        removeClamp(activePanel);
+        panels.style.maxHeight = panels.scrollHeight + 'px';
+      } else {
+        panels.style.maxHeight = navNaturalH + 'px';
+        applyClamp(activePanel, navNaturalH);
+      }
+    });
+
+    requestAnimationFrame(checkOverflow);
+
     // Tab click handler
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-cat-tab');
@@ -2132,8 +2205,7 @@
 
       // Reset expand state on tab switch
       panels.classList.remove('expanded');
-      var expandBtn = panels.querySelector('.qaproof-cat-panel-expand');
-      if (expandBtn) expandBtn.classList.remove('rotated');
+      expandBtn.classList.remove('rotated');
       checkOverflow();
     });
 

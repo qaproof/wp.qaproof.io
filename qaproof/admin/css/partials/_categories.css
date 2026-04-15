@@ -134,8 +134,10 @@
   background: var(--qp-white);
   border: 1px solid var(--qp-border-mid);
   border-radius: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--qp-overlay-sm);
   position: relative;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
 }
 
 #qaproof-app .qaproof-cat-tab-panel {
@@ -187,6 +189,34 @@
   margin: 0;
 }
 
+
+/* Expand button — bottom right corner */
+#qaproof-app .qaproof-cat-panel-expand {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: var(--qp-overlay-sm);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.3s ease;
+  color: var(--qp-text-secondary);
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+#qaproof-app .qaproof-cat-panel-expand:hover {
+  background: var(--qp-overlay-md);
+}
+
+#qaproof-app .qaproof-cat-panel-expand.rotated {
+  transform: rotate(180deg);
+}
 
 /* Legacy bar — hidden (replaced by ring) */
 #qaproof-app .qaproof-cat-bar { display: none; }
