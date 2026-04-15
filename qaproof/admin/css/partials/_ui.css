@@ -1779,10 +1779,12 @@
 #qaproof-app .qaproof-design-status {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 0 12px;
+  height: 34px;
+  box-sizing: border-box;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 10.5px;
   line-height: 1.2;
   font-family: 'Kodchasan', sans-serif;
   white-space: nowrap;
@@ -1794,11 +1796,11 @@
   text-overflow: ellipsis;
 }
 #qaproof-app .qaproof-design-status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: currentColor;
-  flex: 0 0 8px;
+  flex: 0 0 6px;
 }
 #qaproof-app .qaproof-design-status-label {
   overflow: hidden;
@@ -1820,7 +1822,7 @@
   border-color: rgba(16, 185, 129, 0.35);
 }
 #qaproof-app .qaproof-status-ready .qaproof-design-status-dot {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
 }
 #qaproof-app .qaproof-status-saving,
 #qaproof-app .qaproof-status-detecting {
@@ -2025,6 +2027,17 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
   padding: 0;                 /* NO padding */
   margin: 0;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); /* decorative border via box-shadow, outside the box */
+}
+/* Make .qaproof-preview-image-inner the positioned ancestor for overlays so
+   the overlay container sizes to the actual image (not the scrollable wrap).
+   Without this, .qaproof-element-overlays (position:absolute; 100%x100%)
+   resolves against .qaproof-preview-image-wrap (viewport-sized), which breaks
+   the pixel-perfect hover wrapping when the image is taller than the wrap. */
+#qaproof-app .qaproof-preview-image-inner {
+  position: relative;
+  display: block;
+  line-height: 0;
+  font-size: 0;
 }
 #qaproof-app .qaproof-element-overlays {
   position: absolute;
@@ -2244,6 +2257,18 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
   border-color: #00ADB5;
   color: #00ADB5;
 }
+#qaproof-app .qaproof-detect-btn.is-showing,
+#qaproof-app .qaproof-detect-btn.is-showing:hover {
+  background: transparent;
+  border-color: transparent;
+  color: rgba(238, 238, 238, 0.65);
+  cursor: default;
+  padding: 6px 0;
+  pointer-events: none;
+}
+#qaproof-app .qaproof-detect-btn.is-showing .dashicons {
+  display: none;
+}
 
 /* ── Expanded Inspector Mode ── */
 body.qaproof-inspector-open {
@@ -2254,6 +2279,22 @@ body.qaproof-inspector-open {
 body.qaproof-inspector-open #qaproof-app .qaproof-card {
   animation: none;
   transform: none;
+  z-index: 99999;
+}
+/* .qaproof-form-right has position:sticky which creates a stacking context
+   at z-index:auto (0), trapping the expanded panel inside. Sibling buttons
+   (test-type-btn) have z-index:1 and would paint on top. Override to give
+   the form-right column a high z-index so the fixed panel within it paints
+   above everything else in the card. */
+body.qaproof-inspector-open #qaproof-app .qaproof-form-right {
+  position: relative;
+  z-index: 99999;
+}
+/* The active tab panel (stacking context at z-index:1) sits next to
+   .qaproof-brand-badge (also z-index:1) within the .wrap stacking context.
+   Because brand-badge comes after in DOM, it was painting above the
+   expanded panel. Raise the tab panel so the fixed panel inside wins. */
+body.qaproof-inspector-open #qaproof-app .qaproof-tab-panel.active {
   z-index: 99999;
 }
 .qaproof-inspector-backdrop {
@@ -2321,7 +2362,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   display: flex;
   flex-direction: column;
 }
-#qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-inspector-expand {
+#qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-inspector-expand:hover {
   background: rgba(0, 173, 181, 0.2);
   border-color: #00ADB5;
   color: #00ADB5;
@@ -2922,3 +2963,4 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   border-radius: 50%;
   animation: qaproof-spinner 0.7s linear infinite;
 }
+                                                                                                                                                                                                                       

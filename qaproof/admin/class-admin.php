@@ -206,6 +206,32 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        register_rest_route( self::REST_NAMESPACE, '/figma-api-usage', [
+            'methods'             => 'GET',
+            'callback'            => function () {
+                // Usage is now per-fileKey; byFile map carries each file's
+                // own rateLimit. Aggregate total/byType are derived for
+                // glance views.
+                return new WP_REST_Response( [
+                    'success' => true,
+                    'data'    => QAProof_Settings::get_figma_api_usage(),
+                ], 200 );
+            },
+            'permission_callback' => $permission,
+        ]);
+
+        register_rest_route( self::REST_NAMESPACE, '/figma-api-usage/reset', [
+            'methods'             => 'POST',
+            'callback'            => function () {
+                QAProof_Settings::reset_figma_api_usage();
+                return new WP_REST_Response( [
+                    'success' => true,
+                    'data'    => QAProof_Settings::get_figma_api_usage(),
+                ], 200 );
+            },
+            'permission_callback' => $permission,
+        ]);
+
         // Test History
         register_rest_route( self::REST_NAMESPACE, '/test-history', [
             'methods'             => 'GET',
