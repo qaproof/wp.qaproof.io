@@ -5,12 +5,12 @@
   display: flex;
   gap: 4px;
   margin-bottom: 14px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
   padding: 4px;
   width: fit-content;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
 }
 
 #qaproof-app .qaproof-device-tab {
@@ -27,14 +27,14 @@
 }
 
 #qaproof-app .qaproof-device-tab:hover:not(.active) {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   background: rgba(255, 255, 255, 0.08);
 }
 
 #qaproof-app .qaproof-device-tab.active {
   background: var(--qp-accent);
   color: var(--qp-white);
-  box-shadow: 0 2px 8px rgba(0, 173, 181, 0.25);
+  box-shadow: 0 2px 8px var(--qp-accent-mid);
 }
 
 /* ============================
@@ -118,9 +118,9 @@
    Notice Overrides
    ============================ */
 #qaproof-app .notice {
-  background: #222831;
+  background: var(--qp-text-primary);
   border-color: rgba(238, 238, 238, 0.1);
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   border-radius: var(--qp-radius-sm);
   box-shadow: var(--qp-shadow);
 }
@@ -141,7 +141,7 @@
    WP Admin Form Overrides
    ============================ */
 #qaproof-app h2 {
-  color: #222831;
+  color: var(--qp-text-primary);
   font-size: 20px;
   font-weight: 700;
   line-height: 120%;
@@ -161,7 +161,7 @@
 }
 
 #qaproof-app hr {
-  border-color: #E8EAED;
+  border-color: var(--qp-border-mid);
 }
 
 #qaproof-app label {
@@ -183,7 +183,7 @@
   min-width: 44px !important;
   min-height: 24px !important;
   padding: 0 !important;
-  background: linear-gradient(135deg, #2A2F38 0%, #393E46 100%) !important;
+  background: linear-gradient(135deg, #2A2F38 0%, var(--qp-text-secondary) 100%) !important;
   border: none !important;
   border-radius: 14px !important;
   position: relative !important;
@@ -212,14 +212,14 @@
 }
 
 #qaproof-app input[type="checkbox"]:checked {
-  background: linear-gradient(135deg, #009DA5 0%, #00C9D2 100%) !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 0 12px rgba(0, 173, 181, 0.25), 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  background: linear-gradient(135deg, #009DA5 0%, var(--qp-accent-hover) 100%) !important;
+  box-shadow: inset 0 2px 4px var(--qp-overlay-md), 0 0 12px var(--qp-accent-mid), 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
 #qaproof-app input[type="checkbox"]:checked::before {
   left: 23px !important;
   top: 3px !important;
-  background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%) !important;
+  background: linear-gradient(180deg, var(--qp-white) 0%, #e8e8e8 100%) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 0 6px rgba(255, 255, 255, 0.15) !important;
 }
 
@@ -232,7 +232,7 @@
 }
 
 #qaproof-app input[type="checkbox"]:checked:hover {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 0 16px rgba(0, 173, 181, 0.35), 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  box-shadow: inset 0 2px 4px var(--qp-overlay-md), 0 0 16px rgba(0, 173, 181, 0.35), 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
 #qaproof-app input[type="checkbox"]:active::before {
@@ -255,7 +255,7 @@
   font-weight: 400;
   padding: 40px;
   text-align: center;
-  background: #222831;
+  background: var(--qp-text-primary);
   border: none;
   border-radius: var(--qp-radius-card);
   box-shadow: var(--qp-shadow);
@@ -268,9 +268,9 @@
   border: none;
   border-radius: var(--qp-radius-card);
   overflow: hidden;
-  background: #fff;
+  background: var(--qp-white);
   box-shadow: var(--qp-shadow);
-  border: 1px solid #E8EAED;
+  border: 1px solid var(--qp-border-mid);
 }
 
 #qaproof-app .qaproof-monitors-table thead tr {
@@ -284,7 +284,7 @@
   letter-spacing: 0.03em;
   color: var(--qp-text-muted);
   padding: 16px 18px;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
   background: transparent;
   line-height: 120%;
 }
@@ -294,7 +294,7 @@
   font-size: 14px;
   font-weight: 400;
   padding: 16px 18px;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
   color: var(--qp-text-secondary);
   background: transparent;
   line-height: 120%;
@@ -329,7 +329,7 @@
 /* Running animation — pulsing row */
 @keyframes qaproof-row-pulse {
   0%, 100% { background: rgba(0, 173, 181, 0.04); }
-  50% { background: rgba(0, 173, 181, 0.12); }
+  50% { background: var(--qp-accent-dim); }
 }
 
 #qaproof-app .qaproof-monitors-table tbody tr.qaproof-monitor-running {
@@ -393,7 +393,7 @@
 }
 
 #qaproof-app .qaproof-status-paused {
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   font-weight: 600;
   font-size: 14px;
 }
@@ -409,7 +409,7 @@
   margin: 12px 0 10px;
   font-size: 20px;
   word-break: break-all;
-  color: #222831;
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-detail-meta {
@@ -418,13 +418,13 @@
   margin-bottom: 14px;
   font-size: 14px;
   font-weight: 400;
-  color: #7a8290;
+  color: var(--qp-text-muted);
 }
 
 /* Results Timeline — rounded card */
 #qaproof-app .qaproof-results-timeline {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: var(--qp-radius-card);
   margin-bottom: 24px;
   overflow: hidden;
@@ -436,7 +436,7 @@
   align-items: center;
   gap: 14px;
   padding: 14px 20px;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
   font-size: 14px;
   transition: background var(--qp-transition);
 }
@@ -503,7 +503,7 @@
 }
 
 #qaproof-app ::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+  background: var(--qp-text-placeholder);
 }
 
 /* ============================

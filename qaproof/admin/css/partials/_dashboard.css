@@ -14,7 +14,7 @@
 
 /* --- Hero banner: full-width, dark with integrated score ring --- */
 #qaproof-app .qaproof-dash-hero {
-  background: linear-gradient(135deg, #1a1e25 0%, #222831 50%, #293040 100%);
+  background: linear-gradient(135deg, #1a1e25 0%, var(--qp-text-primary) 50%, #293040 100%);
   border-radius: 16px;
   padding: 40px 36px;
   display: flex;
@@ -32,7 +32,7 @@
   right: -60px;
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, rgba(0, 173, 181, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--qp-accent-dim) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -55,7 +55,7 @@
 #qaproof-app .qaproof-dash-hero h1 {
   font-size: 30px;
   font-weight: 800;
-  color: #fff;
+  color: var(--qp-white);
   margin: 0 0 6px;
   letter-spacing: -0.02em;
 }
@@ -72,7 +72,7 @@
   align-items: center;
   gap: 8px;
   background: var(--qp-accent);
-  color: #fff !important;
+  color: var(--qp-white) !important;
   font-size: 13px;
   font-weight: 700;
   padding: 11px 24px;
@@ -136,7 +136,7 @@
   transform: translate(-50%, -50%);
   font-size: 30px;
   font-weight: 800;
-  color: #fff;
+  color: var(--qp-white);
   line-height: 1;
 }
 
@@ -154,7 +154,7 @@
   align-items: center;
   gap: 14px;
   background: rgba(0, 173, 181, 0.05);
-  border: 1px solid rgba(0, 173, 181, 0.15);
+  border: 1px solid var(--qp-accent-light);
   border-radius: 12px;
   padding: 14px 20px;
   margin-bottom: 20px;
@@ -172,17 +172,17 @@
   flex-shrink: 0;
 }
 
-#qaproof-app .qaproof-dash-notice.notice-warn .dashicons { color: #EF4444; }
+#qaproof-app .qaproof-dash-notice.notice-warn .dashicons { color: var(--qp-score-low); }
 #qaproof-app .qaproof-dash-notice:not(.notice-warn) .dashicons { color: var(--qp-accent); }
 
 #qaproof-app .qaproof-dash-notice strong {
   font-size: 13px;
-  color: #222831;
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-dash-notice p {
   font-size: 12px;
-  color: #7a8290;
+  color: var(--qp-text-muted);
   margin: 2px 0 0;
 }
 
@@ -200,8 +200,8 @@
 }
 
 #qaproof-app .qaproof-dash-stat {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: 14px;
   padding: 18px 20px;
   display: flex;
@@ -245,18 +245,18 @@
 #qaproof-app .qaproof-dash-stat-val {
   font-size: 22px;
   font-weight: 800;
-  color: #222831;
+  color: var(--qp-text-primary);
   line-height: 1;
 }
 
 #qaproof-app .qaproof-dash-stat-val.score-high { color: var(--qp-accent); }
 #qaproof-app .qaproof-dash-stat-val.score-medium { color: #F0B429; }
-#qaproof-app .qaproof-dash-stat-val.score-low { color: #EF4444; }
+#qaproof-app .qaproof-dash-stat-val.score-low { color: var(--qp-score-low); }
 
 #qaproof-app .qaproof-dash-stat-name {
   font-size: 11px;
   font-weight: 600;
-  color: #7a8290;
+  color: var(--qp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 3px;
@@ -264,8 +264,8 @@
 
 /* --- Token Usage Card --- */
 #qaproof-app .qaproof-dash-usage {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: 12px;
   padding: 14px 18px;
   margin-bottom: 20px;
@@ -284,14 +284,14 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-dash-usage-title .dashicons {
   font-size: 14px;
   width: 14px;
   height: 14px;
-  color: #7a8290;
+  color: var(--qp-text-muted);
 }
 
 #qaproof-app .qaproof-dash-usage-plan {
@@ -299,13 +299,13 @@
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #7a8290;
+  color: var(--qp-text-muted);
   font-weight: 600;
 }
 
 #qaproof-app .qaproof-dash-plan-badge {
   background: linear-gradient(135deg, var(--qp-accent), #0891B2);
-  color: #fff;
+  color: var(--qp-white);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -337,11 +337,11 @@
   justify-content: space-between;
   margin-top: 5px;
   font-size: 11px;
-  color: #7a8290;
+  color: var(--qp-text-muted);
 }
 
 #qaproof-app .qaproof-dash-usage-nums strong {
-  color: #222831;
+  color: var(--qp-text-primary);
   font-weight: 700;
 }
 
@@ -381,12 +381,12 @@
 
 #qaproof-app .qaproof-dash-usage-count {
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-dash-usage-footer {
   font-size: 10px;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
 }
 
 #qaproof-app .qaproof-dash-usage-sep {
@@ -407,7 +407,7 @@
 #qaproof-app .qaproof-dash-section {
   font-size: 15px;
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
   margin: 0 0 14px;
   padding-left: 2px;
 }
@@ -432,8 +432,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: var(--qp-radius-card);
   padding: 20px 24px;
   text-decoration: none;
@@ -502,7 +502,7 @@
 
 #qaproof-app .qaproof-dash-tool-wide-content p {
   font-size: 12.5px;
-  color: #7a8290;
+  color: var(--qp-text-muted);
   margin: 0;
   line-height: 1.4;
 }
@@ -564,8 +564,8 @@
 }
 
 #qaproof-app .qaproof-dash-tool {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: 14px;
   padding: 22px 20px;
   text-decoration: none !important;
@@ -630,13 +630,13 @@
 #qaproof-app .qaproof-dash-tool h3 {
   font-size: 14px;
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
   margin: 0 0 6px;
 }
 
 #qaproof-app .qaproof-dash-tool p {
   font-size: 12px;
-  color: #7a8290;
+  color: var(--qp-text-muted);
   line-height: 1.5;
   margin: 0;
   flex: 1;
@@ -673,7 +673,7 @@
 }
 
 #qaproof-app .qaproof-dash-link {
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -693,7 +693,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(0, 173, 181, 0.12);
+  background: var(--qp-accent-dim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -714,7 +714,7 @@
 #qaproof-app .qaproof-dash-link-title {
   font-size: 14px;
   font-weight: 700;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
 }
 
 #qaproof-app .qaproof-dash-link-desc {
@@ -766,12 +766,12 @@
   display: flex;
   gap: 4px;
   margin-bottom: 24px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
   padding: 4px;
   width: fit-content;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
 }
 
 #qaproof-app .qaproof-settings-tab {
@@ -792,11 +792,11 @@
 #qaproof-app .qaproof-settings-tab.active {
   background: var(--qp-accent);
   color: var(--qp-white);
-  box-shadow: 0 2px 8px rgba(0, 173, 181, 0.25);
+  box-shadow: 0 2px 8px var(--qp-accent-mid);
 }
 
 #qaproof-app .qaproof-settings-tab:hover:not(.active) {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -813,7 +813,7 @@
   display: flex;
   gap: 3px;
   margin-bottom: 20px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
   padding: 3px;
   width: fit-content;
@@ -839,7 +839,7 @@
   box-shadow: 0 1px 6px rgba(0, 173, 181, 0.2);
 }
 #qaproof-app .qaproof-settings-subtab:hover:not(.active) {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -851,7 +851,7 @@
   padding: 14px 16px;
   margin-bottom: 10px;
   background: #F8F9FA;
-  border: 1px solid #E8EAED;
+  border: 1px solid var(--qp-border-mid);
   border-radius: 12px;
 }
 #qaproof-app .qaproof-design-row-fields {
@@ -903,8 +903,8 @@
 #qaproof-app #qaproof-add-design {
   margin-top: 6px;
   background: rgba(0, 173, 181, 0.1) !important;
-  border: 1px solid rgba(0, 173, 181, 0.25) !important;
-  color: #00ADB5 !important;
+  border: 1px solid var(--qp-accent-mid) !important;
+  color: var(--qp-accent) !important;
   border-radius: var(--qp-radius-pill) !important;
   font-size: 12px !important;
   font-weight: 600 !important;
@@ -914,7 +914,7 @@
 }
 #qaproof-app #qaproof-add-design:hover {
   background: rgba(0, 173, 181, 0.2) !important;
-  border-color: #00ADB5 !important;
+  border-color: var(--qp-accent) !important;
 }
 #qaproof-app #qaproof-add-design .dashicons {
   font-size: 14px;
@@ -924,7 +924,7 @@
   margin-right: 4px;
 }
 #qaproof-app .qaproof-no-designs {
-  color: #9CA3AF !important;
+  color: var(--qp-text-placeholder) !important;
   font-style: italic;
 }
 
@@ -948,7 +948,7 @@
 
 @keyframes qaproof-glow-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(0, 173, 181, 0); }
-  50% { box-shadow: 0 0 24px 4px rgba(0, 173, 181, 0.15); }
+  50% { box-shadow: 0 0 24px 4px var(--qp-accent-light); }
 }
 
 #qaproof-app .qaproof-category-card {

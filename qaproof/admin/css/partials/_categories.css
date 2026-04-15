@@ -17,11 +17,11 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: 15px;
   padding: 10px;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
   margin-bottom: 0;
   position: relative;
 }
@@ -33,7 +33,7 @@
   left: 0;
   background: var(--qp-accent-hover);
   border-radius: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 0;
@@ -46,7 +46,7 @@
   justify-content: flex-start;
   gap: 10px;
   padding: 10px 30px;
-  white-space: nowrap;
+  white-space: normal;
   border: none;
   border-radius: var(--qp-radius-pill);
   cursor: pointer;
@@ -59,7 +59,7 @@
 }
 
 #qaproof-app .qaproof-cat-tab:hover:not(.active) {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
 }
 
 #qaproof-app .qaproof-cat-tab.active {
@@ -131,10 +131,8 @@
 
 /* Tab panels */
 #qaproof-app .qaproof-cat-tabs-panels {
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
@@ -157,10 +155,6 @@
   overflow: hidden;
 }
 
-#qaproof-app .qaproof-cat-tab-panel:not(.expanded):not(.measuring) .qaproof-cat-panel-content p {
-  display: block;
-  overflow: visible;
-}
 
 #qaproof-app .qaproof-cat-panel-header {
   display: flex;
@@ -174,7 +168,7 @@
   font-family: 'Kodchasan', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
   margin: 0;
 }
 
@@ -193,35 +187,6 @@
   margin: 0;
 }
 
-
-
-/* Expand button */
-#qaproof-app .qaproof-cat-panel-expand {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.06);
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.3s ease;
-  color: var(--qp-text-secondary);
-  flex-shrink: 0;
-  z-index: 2;
-}
-
-#qaproof-app .qaproof-cat-panel-expand:hover {
-  background: rgba(0, 0, 0, 0.12);
-}
-
-#qaproof-app .qaproof-cat-panel-expand.rotated {
-  transform: rotate(180deg);
-}
 
 /* Legacy bar — hidden (replaced by ring) */
 #qaproof-app .qaproof-cat-bar { display: none; }

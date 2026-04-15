@@ -14,12 +14,12 @@
 /* Legacy score-header (kept for backward compat) */
 #qaproof-app .qaproof-score-header {
   text-align: center;
-  background: #222831;
+  background: var(--qp-text-primary);
   border: none;
   border-radius: var(--qp-radius-card-lg);
   padding: 48px 32px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
   position: relative;
   overflow: hidden;
 }
@@ -32,7 +32,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(0, 173, 181, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--qp-accent-dim) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -46,12 +46,12 @@
    Report Hero — combined score + stats block
    ============================ */
 #qaproof-app .qaproof-report-hero {
-  background: #222831;
+  background: var(--qp-text-primary);
   border: none;
   border-radius: var(--qp-radius-card-lg);
   padding: 28px 32px 24px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
   position: relative;
   overflow: hidden;
   animation: qaproof-scale-in 0.4s ease both;
@@ -275,8 +275,8 @@
 }
 
 #qaproof-app .qaproof-stat-card {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: 12px;
   padding: 12px 16px 10px;
   text-align: center;
@@ -286,13 +286,13 @@
 #qaproof-app .qaproof-stat-value {
   font-size: 28px;
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
   line-height: 1;
 }
 
-#qaproof-app .qaproof-stat-value.score-high { color: #00ADB5; }
+#qaproof-app .qaproof-stat-value.score-high { color: var(--qp-accent); }
 #qaproof-app .qaproof-stat-value.score-medium { color: #F0B429; }
-#qaproof-app .qaproof-stat-value.score-low { color: #EF4444; }
+#qaproof-app .qaproof-stat-value.score-low { color: var(--qp-score-low); }
 
 #qaproof-app .qaproof-stat-label {
   font-size: 11px;
@@ -305,13 +305,13 @@
 
 #qaproof-app .qaproof-stat-detail {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   margin-top: 3px;
 }
 
-#qaproof-app .qaproof-stat-high { color: #EF4444; }
+#qaproof-app .qaproof-stat-high { color: var(--qp-score-low); }
 #qaproof-app .qaproof-stat-med { color: #F0B429; }
-#qaproof-app .qaproof-stat-low { color: #00ADB5; }
+#qaproof-app .qaproof-stat-low { color: var(--qp-accent); }
 
 #qaproof-app .qaproof-charts-row {
   display: grid;
@@ -326,8 +326,8 @@
 }
 
 #qaproof-app .qaproof-chart-card {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: 16px;
   padding: 20px 20px 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -370,13 +370,13 @@
   font-family: 'Kodchasan', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #222831;
+  color: var(--qp-text-primary);
   text-transform: uppercase;
   letter-spacing: 1.2px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: none;
-  background: linear-gradient(90deg, #00ADB5 0%, rgba(0, 173, 181, 0.08) 100%);
+  background: linear-gradient(90deg, var(--qp-accent) 0%, rgba(0, 173, 181, 0.08) 100%);
   background-size: 100% 2px;
   background-repeat: no-repeat;
   background-position: bottom left;

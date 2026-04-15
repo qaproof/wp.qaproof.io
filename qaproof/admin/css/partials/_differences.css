@@ -30,7 +30,7 @@
 
 #qaproof-app .qaproof-marker-tooltip {
   position: fixed;
-  background: linear-gradient(135deg, #1a1e25 0%, #222831 100%);
+  background: linear-gradient(135deg, #1a1e25 0%, var(--qp-text-primary) 100%);
   color: #E8E8E8;
   font-size: 12px;
   font-weight: 400;
@@ -114,7 +114,7 @@
 /* Category badge in tooltip */
 #qaproof-app .qaproof-marker-tooltip .tooltip-category {
   display: inline-block;
-  background: rgba(0, 173, 181, 0.15);
+  background: var(--qp-accent-light);
   color: #5EEAD4;
   font-size: 10px;
   font-weight: 600;
@@ -155,7 +155,7 @@
   left: 50%;
   transform: translateX(-50%);
   border: 7px solid transparent;
-  border-top-color: #222831;
+  border-top-color: var(--qp-text-primary);
 }
 
 #qaproof-app .qaproof-marker-tooltip.tooltip-below::after {
@@ -236,7 +236,7 @@
   margin-bottom: 20px;
   flex-wrap: wrap;
   padding-bottom: 18px;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
 }
 
 #qaproof-app .qaproof-severity-filter,
@@ -250,7 +250,7 @@
   padding: 7px 18px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  background: #222831;
+  background: var(--qp-text-primary);
   font-family: 'Kodchasan', sans-serif;
   font-size: 13px;
   font-weight: 600;
@@ -262,14 +262,14 @@
 
 #qaproof-app .qaproof-filter-btn.active {
   background: var(--qp-accent);
-  color: #fff;
+  color: var(--qp-white);
   border-color: var(--qp-accent);
   box-shadow: 0 2px 8px rgba(0, 173, 181, 0.3);
 }
 
 #qaproof-app .qaproof-filter-btn:hover:not(.active) {
   border-color: rgba(0, 173, 181, 0.4);
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   background: #2A2F38;
 }
 
@@ -283,7 +283,7 @@
   flex-wrap: wrap;
   margin-bottom: 16px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
 }
 
 #qaproof-app .qaproof-diff-sev-chip {
@@ -311,11 +311,11 @@
   overflow: hidden;
   flex: 1;
   min-width: 100px;
-  background: #E8EAED;
+  background: var(--qp-border-mid);
 }
 
 #qaproof-app .qaproof-sbar-seg { height: 100%; transition: width 0.5s ease; }
-#qaproof-app .qaproof-sbar-high { background: #EF4444; }
+#qaproof-app .qaproof-sbar-high { background: var(--qp-score-low); }
 #qaproof-app .qaproof-sbar-med { background: #F0B429; }
 #qaproof-app .qaproof-sbar-low { background: #3B82F6; }
 
@@ -325,9 +325,9 @@
 #qaproof-app .qaproof-diff-group {
   margin-bottom: 10px;
   border-radius: 12px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
   overflow: hidden;
   transition: box-shadow 0.2s ease;
 }
@@ -368,7 +368,7 @@
   flex-shrink: 0;
 }
 
-#qaproof-app .qaproof-diff-group-accent-high { background: #EF4444; }
+#qaproof-app .qaproof-diff-group-accent-high { background: var(--qp-score-low); }
 #qaproof-app .qaproof-diff-group-accent-medium { background: #F0B429; }
 #qaproof-app .qaproof-diff-group-accent-low { background: #3B82F6; }
 
@@ -376,7 +376,7 @@
   font-family: 'Kodchasan', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   letter-spacing: 0.01em;
 }
 
@@ -457,15 +457,15 @@
 }
 
 #qaproof-app .qaproof-difference:hover {
-  background: #393E46;
+  background: var(--qp-text-secondary);
   border-color: rgba(0, 173, 181, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
 }
 
 #qaproof-app .qaproof-difference.active {
   border-color: var(--qp-accent);
-  background: rgba(0, 173, 181, 0.12);
-  box-shadow: 0 0 0 1px rgba(0, 173, 181, 0.3), 0 2px 8px rgba(0, 173, 181, 0.15);
+  background: var(--qp-accent-dim);
+  box-shadow: 0 0 0 1px rgba(0, 173, 181, 0.3), 0 2px 8px var(--qp-accent-light);
 }
 
 #qaproof-app .qaproof-difference.filtered-out {
@@ -589,7 +589,7 @@
 #qaproof-app .qaproof-badge-high { background: rgba(239, 68, 68, 0.15); color: #F87171; }
 #qaproof-app .qaproof-badge-medium { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
 #qaproof-app .qaproof-badge-low { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
-#qaproof-app .qaproof-badge-category { background: #F0F0F0; color: var(--qp-text-muted); }
+#qaproof-app .qaproof-badge-category { background: var(--qp-bg-surface); color: var(--qp-text-muted); }
 #qaproof-app .qaproof-badge-device { background: var(--qp-accent-dim); color: #0E7490; }
 
 /* ============================
@@ -600,7 +600,6 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
   list-style: none;
 }
 
@@ -611,7 +610,7 @@
   gap: 8px;
   flex-wrap: wrap;
   padding-bottom: 12px;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
 }
 
 #qaproof-app .qaproof-rec-summary-total {
@@ -672,7 +671,7 @@
 #qaproof-app .qaproof-rec-group-badge {
   font-size: 10px;
   font-weight: 700;
-  background: #E8EAED;
+  background: var(--qp-border-mid);
   color: var(--qp-text-muted);
   padding: 2px 7px;
   border-radius: 8px;
@@ -700,9 +699,9 @@
 }
 
 #qaproof-app .qaproof-rec-item:hover {
-  background: #393E46;
+  background: var(--qp-text-secondary);
   border-color: rgba(0, 173, 181, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
 }
 
 /* Left indicator with number */
@@ -746,8 +745,8 @@
   display: inline;
   padding: 2px 7px;
   margin: 0 1px;
-  background: rgba(0, 173, 181, 0.15);
-  border: 1px solid rgba(0, 173, 181, 0.25);
+  background: var(--qp-accent-light);
+  border: 1px solid var(--qp-accent-mid);
   border-radius: 6px;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 12px;
@@ -795,13 +794,28 @@
   width: 10px;
   height: 10px;
   border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--qp-overlay-md);
   vertical-align: middle;
 }
 
 #qaproof-app .qaproof-rec-empty {
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   font-size: 14px;
   text-align: center;
   padding: 24px;
+}
+
+/* ============================
+   Differences + Recommendations two-column grid
+   ============================ */
+#qaproof-app .qaproof-diff-rec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+#qaproof-app .qaproof-diff-rec-col {
+  min-width: 0;
 }

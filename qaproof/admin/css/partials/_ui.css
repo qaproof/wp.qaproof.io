@@ -52,11 +52,11 @@
 #qaproof-app #qaproof-loading,
 #qaproof-app #qaproof-a11y-loading,
 #qaproof-app #qaproof-monitors-loading {
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-card);
   padding: 28px 32px;
   box-shadow: var(--qp-shadow);
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   position: relative;
   overflow: hidden;
   margin-bottom: 15px;
@@ -116,7 +116,7 @@
 #qaproof-app #qaproof-monitors-loading-text {
   font-size: 14px;
   font-weight: 600;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   white-space: nowrap;
 }
 
@@ -161,14 +161,14 @@
 #qaproof-app .qaproof-loading-step.active .qaproof-step-indicator {
   border-color: var(--qp-accent);
   color: var(--qp-accent);
-  background: rgba(0, 173, 181, 0.12);
+  background: var(--qp-accent-dim);
   box-shadow: 0 0 8px rgba(0, 173, 181, 0.3);
 }
 
 #qaproof-app .qaproof-loading-step.completed .qaproof-step-indicator {
   border-color: var(--qp-accent);
   background: var(--qp-accent);
-  color: #fff;
+  color: var(--qp-white);
 }
 
 /* Connector line between steps */
@@ -196,8 +196,8 @@
   position: fixed;
   top: 46px;
   right: 20px;
-  background: #222831;
-  color: #fff;
+  background: var(--qp-text-primary);
+  color: var(--qp-white);
   padding: 12px 20px;
   border-radius: 10px;
   font-size: 13px;
@@ -228,12 +228,12 @@
    Custom Form Validation
    ============================ */
 #qaproof-app .qaproof-input-invalid {
-  border-color: #EF4444 !important;
+  border-color: var(--qp-score-low) !important;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
 }
 
 #qaproof-app .qaproof-field-error {
-  color: #EF4444;
+  color: var(--qp-score-low);
   font-size: 12px;
   font-weight: 600;
   margin-top: 5px;
@@ -272,7 +272,7 @@
   right: 10px;
   font-size: 11px;
   font-weight: 600;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   pointer-events: none;
 }
 
@@ -307,33 +307,33 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: #fff;
+  background: var(--qp-white);
   border: 1px solid #D1D5DB;
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
-  color: #222831;
+  color: var(--qp-text-primary);
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
 }
 
 #qaproof-app .qaproof-select-trigger:hover {
-  border-color: #9CA3AF;
+  border-color: var(--qp-text-placeholder);
 }
 
 #qaproof-app .qaproof-select-trigger:focus,
 #qaproof-app .qaproof-select.open .qaproof-select-trigger {
   border-color: var(--qp-accent);
-  box-shadow: 0 0 0 2px rgba(0, 173, 181, 0.15);
+  box-shadow: 0 0 0 2px var(--qp-accent-light);
 }
 
 #qaproof-app .qaproof-select-arrow .dashicons {
   font-size: 14px;
   width: 14px;
   height: 14px;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   transition: transform 0.2s ease;
 }
 
@@ -346,10 +346,10 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--qp-white);
   border: 1px solid #E5E7EB;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px var(--qp-overlay-sm);
   z-index: 100;
   overflow: hidden;
   opacity: 0;
@@ -555,7 +555,7 @@
   align-items: center;
   gap: 12px;
   padding: 5px 5px 5px 18px !important;
-  background: #222831 !important;
+  background: var(--qp-text-primary) !important;
   border: 1px solid rgba(0, 173, 181, 0.3) !important;
   cursor: default;
   white-space: nowrap;
@@ -570,7 +570,7 @@
 }
 
 #qaproof-app .qaproof-email-confirm-text strong {
-  color: #ffffff;
+  color: var(--qp-white);
   font-weight: 700;
 }
 
@@ -595,7 +595,7 @@
 #qaproof-app .qaproof-email-confirm-cancel:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.35);
-  color: #EEEEEE;
+  color: var(--qp-border-light);
 }
 
 #qaproof-app .qaproof-email-confirm-send {
@@ -603,10 +603,10 @@
   align-items: center;
   gap: 4px;
   padding: 5px 16px;
-  background: linear-gradient(135deg, #0d9488 0%, #00ADB5 100%);
+  background: linear-gradient(135deg, #0d9488 0%, var(--qp-accent) 100%);
   border: 1px solid rgba(0, 173, 181, 0.5);
   border-radius: 100px;
-  color: #fff;
+  color: var(--qp-white);
   font-family: 'Kodchasan', sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -615,7 +615,7 @@
 }
 
 #qaproof-app .qaproof-email-confirm-send:hover {
-  background: linear-gradient(135deg, #00ADB5 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--qp-accent) 0%, #0d9488 100%);
   box-shadow: 0 2px 10px rgba(0, 173, 181, 0.3);
 }
 
@@ -660,8 +660,8 @@
 }
 
 #qaproof-app.qaproof-dark .qaproof-btn-secondary {
-  background: #393E46;
-  color: #EEEEEE;
+  background: var(--qp-text-secondary);
+  color: var(--qp-border-light);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -675,8 +675,8 @@
   align-items: center;
   gap: 6px;
   padding: 10px 24px;
-  background: linear-gradient(135deg, #0d9488 0%, #00ADB5 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #0d9488 0%, var(--qp-accent) 100%);
+  color: var(--qp-white);
   border: 1px solid rgba(0, 173, 181, 0.4);
   border-radius: 100px;
   font-family: 'Kodchasan', sans-serif;
@@ -687,7 +687,7 @@
 }
 
 .qaproof-email-send-btn:hover {
-  background: linear-gradient(135deg, #00ADB5 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--qp-accent) 0%, #0d9488 100%);
   box-shadow: 0 4px 16px rgba(0, 173, 181, 0.3);
   transform: translateY(-1px);
 }
@@ -733,7 +733,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-card) var(--qp-radius-card) 0 0;
   padding: 18px 24px;
   position: relative;
@@ -748,7 +748,7 @@
   height: 180px;
   top: -60px;
   right: -40px;
-  background: radial-gradient(circle, rgba(0, 173, 181, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--qp-accent-light) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -765,7 +765,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   font-family: var(--qp-font);
   position: relative;
   z-index: 1;
@@ -780,7 +780,7 @@
 
 /* Toggle button — high contrast on dark header */
 #qaproof-app .qaproof-history-header .button.button-small {
-  background: rgba(0, 173, 181, 0.15) !important;
+  background: var(--qp-accent-light) !important;
   border: 1px solid rgba(0, 173, 181, 0.4) !important;
   color: var(--qp-accent) !important;
   border-radius: var(--qp-radius-pill) !important;
@@ -793,7 +793,7 @@
 }
 
 #qaproof-app .qaproof-history-header .button.button-small:hover {
-  background: rgba(0, 173, 181, 0.25) !important;
+  background: var(--qp-accent-mid) !important;
   border-color: var(--qp-accent) !important;
   box-shadow: 0 0 12px rgba(0, 173, 181, 0.3);
 }
@@ -807,8 +807,8 @@
 
 /* Content area */
 #qaproof-app .qaproof-history-content {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-top: none;
   border-radius: 0 0 var(--qp-radius-card) var(--qp-radius-card);
   padding: 0 24px 24px;
@@ -832,7 +832,7 @@
   padding: 12px 14px;
   border-radius: 12px;
   margin-bottom: 4px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
@@ -941,13 +941,13 @@
 }
 
 #qaproof-app .qaproof-history-actions .qaproof-history-view:hover {
-  background: rgba(0, 173, 181, 0.12) !important;
+  background: var(--qp-accent-dim) !important;
   border-color: rgba(0, 173, 181, 0.4) !important;
   color: var(--qp-accent) !important;
 }
 
 #qaproof-app .qaproof-history-download:hover {
-  background: rgba(0, 173, 181, 0.12) !important;
+  background: var(--qp-accent-dim) !important;
   border-color: rgba(0, 173, 181, 0.4) !important;
   color: var(--qp-accent) !important;
 }
@@ -960,14 +960,14 @@
 #qaproof-app .qaproof-history-delete:hover {
   background: rgba(239, 68, 68, 0.15) !important;
   border-color: rgba(239, 68, 68, 0.4) !important;
-  color: #ef4444 !important;
+  color: var(--qp-score-low) !important;
 }
 
 /* Empty state */
 #qaproof-app .qaproof-history-content .qaproof-history-empty-state {
   text-align: center;
   padding: 40px 24px;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   font-size: 14px;
 }
 
@@ -1137,7 +1137,7 @@
 #qaproof-app .qaproof-debt-bar-track {
   flex: 1;
   height: 6px;
-  background: #E8EAED;
+  background: var(--qp-border-mid);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1168,7 +1168,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 0;
   overflow-x: auto;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: 14px 14px 0 0;
   padding: 4px 4px 0;
 }
@@ -1191,12 +1191,12 @@
   border-radius: 6px 6px 0 0;
 }
 #qaproof-app .qaproof-token-tab:hover {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   background: rgba(255, 255, 255, 0.06);
 }
 #qaproof-app .qaproof-token-tab.active {
-  color: #00ADB5;
-  border-bottom-color: #00ADB5;
+  color: var(--qp-accent);
+  border-bottom-color: var(--qp-accent);
   background: rgba(0, 173, 181, 0.1);
 }
 #qaproof-app .qaproof-tab-badge {
@@ -1213,8 +1213,8 @@
   color: rgba(238, 238, 238, 0.5);
 }
 #qaproof-app .qaproof-token-tab.active .qaproof-tab-badge {
-  background: rgba(0, 173, 181, 0.25);
-  color: #00ADB5;
+  background: var(--qp-accent-mid);
+  color: var(--qp-accent);
 }
 
 /* Token panels */
@@ -1259,13 +1259,13 @@
 #qaproof-app .qaproof-token-empty {
   padding: 30px 0;
   text-align: center;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   font-size: 13px;
 }
 #qaproof-app .qaproof-token-more {
   padding: 8px 0;
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   text-align: center;
 }
 
@@ -1282,7 +1282,7 @@
   gap: 4px;
   padding: 10px 6px;
   background: #F8F9FA;
-  border: 1px solid #E8EAED;
+  border: 1px solid var(--qp-border-mid);
   border-radius: 8px;
   transition: transform 0.15s;
 }
@@ -1318,7 +1318,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 0;
-  border-bottom: 1px solid #E8EAED;
+  border-bottom: 1px solid var(--qp-border-mid);
 }
 #qaproof-app .qaproof-font-name {
   min-width: 140px;
@@ -1329,13 +1329,13 @@
 #qaproof-app .qaproof-font-bar-wrap {
   flex: 1;
   height: 8px;
-  background: #E8EAED;
+  background: var(--qp-border-mid);
   border-radius: 4px;
   overflow: hidden;
 }
 #qaproof-app .qaproof-font-bar {
   height: 100%;
-  background: linear-gradient(90deg, #00ADB5, #00c9d2);
+  background: linear-gradient(90deg, var(--qp-accent), var(--qp-accent-hover));
   border-radius: 4px;
   transition: width 0.5s ease;
 }
@@ -1358,7 +1358,7 @@
   gap: 4px;
   padding: 4px 12px;
   background: #F8F9FA;
-  border: 1px solid #E8EAED;
+  border: 1px solid var(--qp-border-mid);
   border-radius: 20px;
   font-size: 13px;
   color: var(--qp-text-primary);
@@ -1388,7 +1388,7 @@
   gap: 6px;
 }
 #qaproof-app .qaproof-spacing-box {
-  background: linear-gradient(135deg, #00ADB5, #00c9d2);
+  background: linear-gradient(135deg, var(--qp-accent), var(--qp-accent-hover));
   border-radius: 4px;
   min-width: 8px;
   min-height: 8px;
@@ -1413,13 +1413,13 @@
   gap: 4px;
   padding: 12px 8px;
   background: #F8F9FA;
-  border: 1px solid #E8EAED;
+  border: 1px solid var(--qp-border-mid);
   border-radius: 8px;
 }
 #qaproof-app .qaproof-radius-preview {
   width: 40px;
   height: 40px;
-  border: 2px solid #00ADB5;
+  border: 2px solid var(--qp-accent);
   background: transparent;
 }
 #qaproof-app .qaproof-radius-val {
@@ -1444,9 +1444,9 @@
   align-items: center;
   gap: 14px;
   padding: 16px 18px;
-  background: #fff;
+  background: var(--qp-white);
   border-radius: 12px;
-  border: 1px solid #E8EAED;
+  border: 1px solid var(--qp-border-mid);
   transition: border-color 0.2s, transform 0.15s;
   overflow: hidden;
   min-width: 0;
@@ -1479,7 +1479,7 @@
   font-size: 20px;
   width: 20px;
   height: 20px;
-  color: #00ADB5;
+  color: var(--qp-accent);
 }
 #qaproof-app .qaproof-comp-name {
   font-family: 'Kodchasan', sans-serif;
@@ -1518,7 +1518,7 @@
   background: rgba(240, 180, 41, 0.1);
 }
 #qaproof-app .qaproof-comp-health.health-bad {
-  color: #EF4444;
+  color: var(--qp-score-low);
   background: rgba(239, 68, 68, 0.1);
 }
 
@@ -1583,7 +1583,7 @@
 }
 #qaproof-app .qaproof-cssvar-name {
   font-size: 12px;
-  color: #00ADB5;
+  color: var(--qp-accent);
   min-width: 200px;
   word-break: break-all;
 }
@@ -1666,11 +1666,11 @@
   align-self: center;
 }
 #qaproof-app .qaproof-preview-panel {
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: 14px;
   overflow: hidden;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
 }
 #qaproof-app .qaproof-preview-header {
   display: flex;
@@ -1680,14 +1680,14 @@
   font-family: 'Kodchasan', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 #qaproof-app .qaproof-preview-header .dashicons {
   font-size: 16px;
   width: 16px;
   height: 16px;
-  color: #00ADB5;
+  color: var(--qp-accent);
 }
 
 #qaproof-app .qaproof-save-design-btn {
@@ -1697,7 +1697,7 @@
   border-radius: 6px;
   padding: 4px 10px;
   cursor: pointer;
-  color: #00ADB5;
+  color: var(--qp-accent);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -1708,8 +1708,8 @@
 }
 
 #qaproof-app .qaproof-save-design-btn:hover {
-  background: rgba(0, 173, 181, 0.12);
-  border-color: #00ADB5;
+  background: var(--qp-accent-dim);
+  border-color: var(--qp-accent);
 }
 
 #qaproof-app .qaproof-save-design-btn:disabled {
@@ -1726,9 +1726,9 @@
 
 /* Working state — subtle pulse + inline spinner */
 #qaproof-app .qaproof-save-design-btn.is-working {
-  background: rgba(0, 173, 181, 0.12);
+  background: var(--qp-accent-dim);
   border-color: rgba(0, 173, 181, 0.6);
-  color: #00ADB5;
+  color: var(--qp-accent);
   opacity: 1;
   cursor: progress;
   padding-left: 28px;
@@ -1743,8 +1743,8 @@
   width: 11px;
   height: 11px;
   margin-top: -6px;
-  border: 2px solid rgba(0, 173, 181, 0.25);
-  border-top-color: #00ADB5;
+  border: 2px solid var(--qp-accent-mid);
+  border-top-color: var(--qp-accent);
   border-radius: 50%;
   animation: qaproof-spin 0.7s linear infinite;
 }
@@ -1756,8 +1756,8 @@
 /* Done state — success flash */
 #qaproof-app .qaproof-save-design-btn.is-done {
   background: rgba(0, 173, 181, 0.2);
-  border-color: #00ADB5;
-  color: #00ADB5;
+  border-color: var(--qp-accent);
+  color: var(--qp-accent);
   opacity: 1;
 }
 
@@ -1765,7 +1765,7 @@
 #qaproof-app .qaproof-save-design-btn.is-error {
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.7);
-  color: #ef4444;
+  color: var(--qp-score-low);
   opacity: 1;
 }
 
@@ -1824,15 +1824,15 @@
 }
 #qaproof-app .qaproof-status-saving,
 #qaproof-app .qaproof-status-detecting {
-  color: #00ADB5;
+  color: var(--qp-accent);
   background: rgba(0, 173, 181, 0.1);
   border-color: rgba(0, 173, 181, 0.4);
 }
 #qaproof-app .qaproof-status-saving .qaproof-design-status-dot,
 #qaproof-app .qaproof-status-detecting .qaproof-design-status-dot {
   background: transparent;
-  border: 2px solid rgba(0, 173, 181, 0.25);
-  border-top-color: #00ADB5;
+  border: 2px solid var(--qp-accent-mid);
+  border-top-color: var(--qp-accent);
   animation: qaproof-spin 0.7s linear infinite;
   box-sizing: border-box;
   width: 10px;
@@ -1879,8 +1879,8 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
 }
 
 #qaproof-app .qaproof-refresh-figma-btn:hover {
-  color: #00ADB5;
-  border-color: #00ADB5;
+  color: var(--qp-accent);
+  border-color: var(--qp-accent);
   background: rgba(0, 173, 181, 0.08);
 }
 
@@ -1938,7 +1938,7 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
   width: 36px;
   height: 36px;
   border: 3px solid rgba(0, 173, 181, 0.2);
-  border-top-color: #00ADB5;
+  border-top-color: var(--qp-accent);
   border-radius: 50%;
   animation: qaproof-preview-spin 0.8s linear infinite;
   margin: 0 auto 12px;
@@ -1973,8 +1973,8 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
 #qaproof-app .qaproof-preview-retry {
   margin-top: 14px;
   padding: 6px 20px;
-  background: rgba(0, 173, 181, 0.15);
-  color: #00ADB5;
+  background: var(--qp-accent-light);
+  color: var(--qp-accent);
   border: 1px solid rgba(0, 173, 181, 0.3);
   border-radius: 100px;
   font-size: 12px;
@@ -1984,8 +1984,8 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
   transition: all 0.2s ease;
 }
 #qaproof-app .qaproof-preview-retry:hover {
-  background: rgba(0, 173, 181, 0.25);
-  border-color: #00ADB5;
+  background: var(--qp-accent-mid);
+  border-color: var(--qp-accent);
 }
 
 /* Success state */
@@ -2165,7 +2165,7 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
   left: 0;
   transform: translateY(-100%);
   background: rgb(var(--oc));
-  color: #fff;
+  color: var(--qp-white);
   font-size: 9px;
   font-weight: 600;
   padding: 2px 7px;
@@ -2235,14 +2235,14 @@ body.qaproof-dark #qaproof-app .qaproof-status-error {
 #qaproof-app .qaproof-detect-btn:hover,
 #qaproof-app .qaproof-fullpage-btn:hover,
 #qaproof-app .qaproof-inspector-expand:hover {
-  background: rgba(0, 173, 181, 0.15);
+  background: var(--qp-accent-light);
   border-color: rgba(0, 173, 181, 0.3);
-  color: #00ADB5;
+  color: var(--qp-accent);
 }
 #qaproof-app .qaproof-fullpage-btn.active {
   background: rgba(0, 173, 181, 0.2);
-  border-color: #00ADB5;
-  color: #00ADB5;
+  border-color: var(--qp-accent);
+  color: var(--qp-accent);
 }
 
 /* ── Expanded Inspector Mode ── */
@@ -2282,7 +2282,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
-  background: #222831;
+  background: var(--qp-text-primary);
   overflow: hidden;
 }
 #qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-preview-body {
@@ -2323,8 +2323,8 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
 }
 #qaproof-app .qaproof-preview-panel.inspector-expanded .qaproof-inspector-expand {
   background: rgba(0, 173, 181, 0.2);
-  border-color: #00ADB5;
-  color: #00ADB5;
+  border-color: var(--qp-accent);
+  color: var(--qp-accent);
 }
 
 /* Depth filter buttons */
@@ -2353,15 +2353,15 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
 #qaproof-app .qaproof-depth-btn.active {
   background: rgba(0, 173, 181, 0.2);
   border-color: rgba(0, 173, 181, 0.3);
-  color: #00ADB5;
+  color: var(--qp-accent);
 }
 
 /* Element count badge */
 #qaproof-app .qaproof-element-count {
   font-size: 10px;
   font-weight: 700;
-  background: #00ADB5;
-  color: #fff;
+  background: var(--qp-accent);
+  color: var(--qp-white);
   padding: 1px 6px;
   border-radius: 100px;
   margin-left: 4px;
@@ -2405,11 +2405,11 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   gap: 6px;
   margin-top: 8px;
   padding: 7px 12px;
-  background: rgba(0, 173, 181, 0.12);
+  background: var(--qp-accent-dim);
   border: 1px solid rgba(0, 173, 181, 0.3);
   border-radius: 8px;
   font-size: 12px;
-  color: #00ADB5;
+  color: var(--qp-accent);
   font-weight: 600;
   font-family: 'Kodchasan', sans-serif;
 }
@@ -2417,7 +2417,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   font-size: 16px;
   width: 16px;
   height: 16px;
-  color: #00ADB5;
+  color: var(--qp-accent);
 }
 #qaproof-app .qaproof-clear-selection {
   margin-left: auto;
@@ -2529,7 +2529,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
    Feedback Section — dark card for visual separation
    ============================ */
 #qaproof-app .qaproof-feedback-card {
-  background: #222831;
+  background: var(--qp-text-primary);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 16px;
   padding: 36px 32px;
@@ -2559,7 +2559,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
 #qaproof-app .qaproof-feedback-prompt {
   font-size: 17px;
   font-weight: 600;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
   margin-bottom: 2px;
 }
 
@@ -2602,13 +2602,13 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   width: 100%;
   max-width: 500px;
   padding: 12px 16px;
-  border: 1px solid #393E46 !important;
+  border: 1px solid var(--qp-text-secondary) !important;
   border-radius: 10px;
   font-size: 13px;
   font-family: inherit;
   resize: vertical;
   background: #2a2f38 !important;
-  color: #EEEEEE !important;
+  color: var(--qp-border-light) !important;
   transition: border-color 0.2s;
   margin-top: 2px;
 }
@@ -2617,7 +2617,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
 #qaproof-app textarea.qaproof-feedback-comment:focus {
   outline: none;
   border-color: var(--qp-accent) !important;
-  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+  box-shadow: 0 0 0 3px var(--qp-accent-light);
 }
 
 #qaproof-app .qaproof-feedback-comment::placeholder,
@@ -2637,7 +2637,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   border: none;
   cursor: pointer;
   background: var(--qp-accent);
-  color: #fff;
+  color: var(--qp-white);
   transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 
@@ -2673,7 +2673,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
 #qaproof-app .qaproof-feedback-success-title {
   font-size: 17px;
   font-weight: 700;
-  color: #EEEEEE;
+  color: var(--qp-border-light);
 }
 
 #qaproof-app .qaproof-feedback-success-text {
@@ -2726,7 +2726,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   scrollbar-color: var(--qp-accent-dim) transparent;
   background: var(--qp-white);
   border-radius: var(--qp-radius-sm);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px var(--qp-overlay-sm);
   border: 1px solid #e5e7eb;
   padding: 14px;
   min-width: 290px;
@@ -2918,7 +2918,7 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   width: 18px;
   height: 18px;
   border: 2.5px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+  border-top-color: var(--qp-white);
   border-radius: 50%;
   animation: qaproof-spinner 0.7s linear infinite;
 }
