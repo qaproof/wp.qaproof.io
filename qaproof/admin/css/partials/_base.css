@@ -8,7 +8,7 @@
   margin-right: 0;
   margin-top: -10px;
   padding: 32px 40px 40px;
-  background: #FFFFFF;
+  background: var(--qp-white);
   min-height: calc(100vh - 32px);
   line-height: 120%;
   position: relative;
@@ -147,7 +147,7 @@
   background: rgba(0,0,0,0.04) !important;
 }
 .qaproof-page-tab.active {
-  background: #fff !important;
+  background: var(--qp-white) !important;
   color: var(--qp-text-primary) !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
   font-weight: 600 !important;
@@ -221,19 +221,19 @@
   color: rgba(238,238,238,0.55) !important;
 }
 #qaproof-app.qaproof-dark .qaproof-page-tab:hover {
-  color: #EEEEEE !important;
+  color: var(--qp-border-light) !important;
   background: rgba(255,255,255,0.06) !important;
 }
 #qaproof-app.qaproof-dark .qaproof-page-tab.active {
   background: var(--qp-bg-card) !important;
-  color: #EEEEEE !important;
+  color: var(--qp-border-light) !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
 }
 /* Dark theme — back button */
 #qaproof-app.qaproof-dark .qaproof-back-btn {
   background: var(--qp-bg-card) !important;
   border-color: var(--qp-border) !important;
-  color: #EEEEEE !important;
+  color: var(--qp-border-light) !important;
 }
 #qaproof-app.qaproof-dark .qaproof-back-btn:hover {
   background: var(--qp-bg-card-hover) !important;
@@ -242,11 +242,11 @@
 }
 
 /* ============================
-   Card — matches Rectangle 196 / card style (#00ADB5 on #222831)
+   Card — matches Rectangle 196 / card style (var(--qp-accent) on var(--qp-text-primary))
    ============================ */
 #qaproof-app .qaproof-card {
-  background: #fff;
-  border: 1px solid #E8EAED;
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
   border-radius: var(--qp-radius-card);
   padding: 28px;
   margin-bottom: 24px;

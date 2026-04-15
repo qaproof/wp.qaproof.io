@@ -5,11 +5,11 @@
   display: flex;
   gap: 3px;
   margin-bottom: 18px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
   padding: 3px;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
   position: relative;
 }
 
@@ -20,7 +20,7 @@
   left: 0;
   background: var(--qp-accent);
   border-radius: var(--qp-radius-pill);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 0;
@@ -59,7 +59,7 @@
 }
 
 #qaproof-app .qaproof-test-type-btn:hover:not(.active) {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
 }
 
 /* ============================
@@ -69,7 +69,7 @@
   display: inline-flex;
   align-items: stretch;
   gap: 2px;
-  background: #222831;
+  background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
   padding: 3px;
   border: none;
@@ -84,7 +84,7 @@
   left: 0;
   background: var(--qp-accent);
   border-radius: var(--qp-radius-pill);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 0;
@@ -116,7 +116,7 @@
 }
 
 #qaproof-app .qaproof-source-btn:hover:not(.active) {
-  color: #EEEEEE;
+  color: var(--qp-border-light);
 }
 
 #qaproof-app .qaproof-recommended-badge {
@@ -170,7 +170,7 @@
 #qaproof-app textarea,
 #qaproof-app .regular-text,
 #qaproof-app .small-text {
-  background: #fff !important;
+  background: var(--qp-white) !important;
   border: 1px solid #D1D5DB !important;
   border-radius: var(--qp-radius-sm) !important;
   color: var(--qp-text-primary) !important;
@@ -211,7 +211,7 @@
 }
 
 #qaproof-app input::placeholder {
-  color: #9CA3AF !important;
+  color: var(--qp-text-placeholder) !important;
 }
 
 /* ============================
@@ -251,7 +251,7 @@
   cursor: pointer;
   padding: 4px !important;
   margin: 0 !important;
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,14 +282,14 @@
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
 }
 .qaproof-api-key-wrapper input.qaproof-key-invalid {
-  border-color: #ef4444 !important;
+  border-color: var(--qp-score-low) !important;
 }
 .qaproof-api-key-wrapper input.qaproof-key-invalid:focus {
-  border-color: #ef4444 !important;
+  border-color: var(--qp-score-low) !important;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
 }
 .qaproof-api-key-error {
-  color: #ef4444 !important;
+  color: var(--qp-score-low) !important;
   font-size: 13px !important;
   margin-top: 4px !important;
   font-weight: 500;
@@ -300,7 +300,7 @@
 
 /* Dark theme */
 #qaproof-app.qaproof-dark .qaproof-eye-toggle {
-  color: #9CA3AF;
+  color: var(--qp-text-placeholder);
 }
 #qaproof-app.qaproof-dark .qaproof-eye-toggle:hover {
   color: var(--qp-accent) !important;
@@ -324,7 +324,7 @@
   width: 80px !important;
   min-width: 80px !important;
   border-radius: 10px !important;
-  background: #fff !important;
+  background: var(--qp-white) !important;
   border: 1px solid #D1D5DB !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
@@ -338,7 +338,7 @@
 
 #qaproof-app input[type="number"]:focus {
   border-color: var(--qp-accent) !important;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(0, 173, 181, 0.15) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 3px var(--qp-accent-light) !important;
   outline: none !important;
 }
 
@@ -466,7 +466,7 @@
   background: none !important;
   cursor: pointer;
   padding: 4px !important;
-  color: var(--qp-gray, #9CA3AF) !important;
+  color: var(--qp-gray, var(--qp-text-placeholder)) !important;
   font-size: 0 !important;
   box-shadow: none !important;
   min-height: 0 !important;
@@ -475,7 +475,7 @@
   transition: color 0.2s ease;
 }
 #qaproof-app .qaproof-token-toggle:hover {
-  color: var(--qp-accent, #00ADB5) !important;
+  color: var(--qp-accent, var(--qp-accent)) !important;
 }
 #qaproof-app .qaproof-token-toggle:focus {
   outline: none !important;
