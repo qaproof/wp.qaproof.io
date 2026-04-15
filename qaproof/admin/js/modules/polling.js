@@ -44,7 +44,8 @@
                 if (markersLayer && markersLayer.children.length === 0 && resultData.differences) {
                   console.log('[QAProof] Rendering markers after screenshot load for:', device);
                   Q.renderMarkersIntoLayer(markersLayer, resultData.differences, function (diff) {
-                    return !diff.device || diff.device === device;
+                    var diffDevice = diff.device === 'tablet_portrait' ? 'tablet' : diff.device;
+                    return !diffDevice || diffDevice === device;
                   });
                 }
               });

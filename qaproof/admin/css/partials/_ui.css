@@ -1167,7 +1167,6 @@
   margin-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 0;
-  overflow-x: auto;
   background: var(--qp-text-primary);
   border-radius: 14px 14px 0 0;
   padding: 4px 4px 0;
