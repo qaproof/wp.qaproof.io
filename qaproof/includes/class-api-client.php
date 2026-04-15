@@ -280,9 +280,14 @@ class QAProof_API_Client {
                 ? $decoded['error']['message']
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
-            return new WP_Error( 'qaproof_api_error', $error_msg, array(
-                'status' => $status_code,
-            ) );
+            $err_data = array( 'status' => $status_code );
+            if ( isset( $decoded['error']['code'] ) ) {
+                $err_data['error_code'] = $decoded['error']['code'];
+            }
+            if ( isset( $decoded['error']['retryAt'] ) ) {
+                $err_data['retry_at'] = (int) $decoded['error']['retryAt'];
+            }
+            return new WP_Error( 'qaproof_api_error', $error_msg, $err_data );
         }
 
         return $decoded['data'];
@@ -348,10 +353,16 @@ class QAProof_API_Client {
                 ? $decoded['error']['code']
                 : 'API_ERROR';
 
-            return new WP_Error( 'qaproof_figma_error', $error_msg, array(
+            $err_data = array(
                 'status'     => $status_code,
                 'error_code' => $error_code,
-            ) );
+            );
+            // Propagate real Figma Retry-After timestamp (ms) when present.
+            if ( isset( $decoded['error']['retryAt'] ) ) {
+                $err_data['retry_at'] = (int) $decoded['error']['retryAt'];
+            }
+
+            return new WP_Error( 'qaproof_figma_error', $error_msg, $err_data );
         }
 
         return $decoded['data'];
@@ -424,9 +435,14 @@ class QAProof_API_Client {
                 ? $decoded['error']['message']
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
-            return new WP_Error( 'qaproof_api_error', $error_msg, array(
-                'status' => $status_code,
-            ) );
+            $err_data = array( 'status' => $status_code );
+            if ( isset( $decoded['error']['code'] ) ) {
+                $err_data['error_code'] = $decoded['error']['code'];
+            }
+            if ( isset( $decoded['error']['retryAt'] ) ) {
+                $err_data['retry_at'] = (int) $decoded['error']['retryAt'];
+            }
+            return new WP_Error( 'qaproof_api_error', $error_msg, $err_data );
         }
 
         return $decoded['data'];

@@ -872,6 +872,11 @@
     if (detectError) detectError.classList.add('hidden');
     var countBadge = document.getElementById('qaproof-element-count');
     if (countBadge) { countBadge.textContent = ''; countBadge.classList.add('hidden'); }
+    if (detectBtn) {
+      detectBtn.classList.remove('is-showing');
+      detectBtn.removeAttribute('disabled');
+    }
+    updateDetectBtnLabel();
   }
 
   function selectElement(element) {
@@ -1057,6 +1062,13 @@
     if (countBadge) {
       countBadge.textContent = validElements.length;
       countBadge.classList.remove('hidden');
+    }
+
+    if (detectBtn) {
+      detectBtn.classList.add('is-showing');
+      var labelEl = detectBtn.querySelector('.qaproof-detect-btn-label');
+      if (labelEl) labelEl.textContent = 'Elements detected:';
+      detectBtn.setAttribute('disabled', 'disabled');
     }
 
     var depthFilters = document.getElementById('qaproof-depth-filters');
@@ -1391,6 +1403,12 @@
       if (previewPanel.classList.contains('inspector-expanded')) {
         expandBtn.click();
       }
+    });
+
+    document.addEventListener('mousedown', function (e) {
+      if (!previewPanel.classList.contains('inspector-expanded')) return;
+      if (previewPanel.contains(e.target)) return;
+      expandBtn.click();
     });
   }
 
