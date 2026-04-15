@@ -102,7 +102,7 @@
 }
 
 #qaproof-app .qaproof-cat-score-ring .qaproof-ring-fill {
-  fill: none;
+  fill: var(--qp-text-primary);
   stroke-width: 4.5;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.6s ease;

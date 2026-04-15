@@ -242,6 +242,7 @@
 #qaproof-app .qaproof-severity-filter,
 #qaproof-app .qaproof-device-filter {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 

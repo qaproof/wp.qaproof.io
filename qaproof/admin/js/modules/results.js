@@ -975,6 +975,21 @@
     // Device tabs
     setupDeviceTabs();
 
+    // Auto-switch to the device tab with the most differences
+    // (responsive tests often have no desktop issues, so default desktop tab shows nothing)
+    (function () {
+      var normDevice = function (dev) { return dev === 'tablet_portrait' ? 'tablet' : dev; };
+      var counts = {};
+      S.allDifferences.forEach(function (d) {
+        if (d.device) { var dev = normDevice(d.device); counts[dev] = (counts[dev] || 0) + 1; }
+      });
+      var best = 'desktop', bestN = 0;
+      Object.keys(counts).forEach(function (dev) {
+        if (counts[dev] > bestN) { bestN = counts[dev]; best = dev; }
+      });
+      if (best !== 'desktop' && bestN > 0) switchDeviceTab(best);
+    })();
+
     // Markers after images load
     if (data.screenshots) {
       var imgPromises = [];
@@ -983,7 +998,7 @@
         if (img && img.src) imgPromises.push(Q.waitForImage(img));
       });
       Promise.all(imgPromises).then(function () {
-        renderMarkersForDevice('desktop', S.allDifferences);
+        renderMarkersForDevice(S.activeDevice || 'desktop', S.allDifferences);
       });
     }
 
@@ -1690,6 +1705,9 @@
     for (var i = 0; i < differences.length; i++) {
       var diff = differences[i];
       if (!diff.location) continue;
+      // Use _origIndex (set by renderDifferencesInto) so marker clicks select
+      // the correct list item even when differences are filtered by device.
+      var origIdx = diff._origIndex !== undefined ? diff._origIndex : i;
       var t = diff.location.top;
       var l = diff.location.left;
       var merged = false;
@@ -1700,7 +1718,7 @@
         var closeEnough = Math.abs(t - gt) < threshold && Math.abs(l - gl) < threshold;
         var sameElement = boundsOverlap(diff.location, groups[g].diffs[0].diff.location);
         if (closeEnough || sameElement) {
-          groups[g].diffs.push({ idx: i, diff: diff });
+          groups[g].diffs.push({ idx: origIdx, diff: diff });
           // DO NOT average positions. Keep the first member's position
           // (DOM-extracted diffs come first in allDifferences and have
           // pixel-perfect coordinates from getBoundingClientRect).
@@ -1711,7 +1729,7 @@
         }
       }
       if (!merged) {
-        groups.push({ diffs: [{ idx: i, diff: diff }], top: t, left: l });
+        groups.push({ diffs: [{ idx: origIdx, diff: diff }], top: t, left: l });
       }
     }
     return groups;
@@ -2666,7 +2684,9 @@
   function renderMarkersForDevice(device, differences) {
     var markersLayer = document.getElementById('qaproof-markers-' + device);
     renderMarkersIntoLayer(markersLayer, differences, function (diff) {
-      return !diff.device || diff.device === device;
+      // Normalize API device names that don't match tab IDs (e.g. tablet_portrait → tablet)
+      var diffDevice = diff.device === 'tablet_portrait' ? 'tablet' : diff.device;
+      return !diffDevice || diffDevice === device;
     });
   }
 
