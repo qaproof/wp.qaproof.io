@@ -14,12 +14,16 @@
   --qp-bg-input: #FFFFFF;
   --qp-border: #E0E0E0;
   --qp-border-light: #EEEEEE;
+  --qp-border-mid: #E8EAED;
   --qp-accent: #00ADB5;
   --qp-accent-hover: #00c9d2;
   --qp-accent-dim: rgba(0, 173, 181, 0.12);
+  --qp-accent-light: rgba(0, 173, 181, 0.15);
+  --qp-accent-mid: rgba(0, 173, 181, 0.25);
   --qp-text-primary: #222831;
   --qp-text-secondary: #393E46;
   --qp-text-muted: #7a8290;
+  --qp-text-placeholder: #9CA3AF;
   --qp-white: #FFFFFF;
   --qp-black: #000000;
   --qp-score-high: #FFFFFF;
@@ -38,6 +42,8 @@
 
   --qp-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   --qp-shadow-sm: 0px 4px 12px rgba(0, 0, 0, 0.06);
+  --qp-overlay-sm: rgba(0, 0, 0, 0.12);
+  --qp-overlay-md: rgba(0, 0, 0, 0.15);
   --qp-transition: 0.2s ease;
 
   /* Kodchasan from Google Fonts, fallback to system */
