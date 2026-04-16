@@ -1399,22 +1399,32 @@
       if (S.loadingText) S.loadingText.textContent = 'Resuming test — waiting for results...';
       if (S.loadingSubtext) S.loadingSubtext.textContent = 'Test is still running on the server';
 
-      // Build progress steps (same as normal flow, but start from step 2)
+      // Build progress steps — restore position based on elapsed time since job started
       var checkSvgR = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       var resumeTestType = activeJob.testType || 'fidelity';
       var resumeSteps = resumeTestType === 'design-audit' ? [
-        { time: 0, text: 'Capturing page screenshot' },
-        { time: 0, text: 'Extracting design tokens from DOM' },
-        { time: 0, text: 'Analyzing color palette & typography' },
-        { time: 8000, text: 'AI auditing design consistency' },
-        { time: 30000, text: 'Building design debt report' },
+        { time: 0,     text: 'Capturing page screenshot' },
+        { time: 8000,  text: 'Extracting design tokens from DOM' },
+        { time: 20000, text: 'Analyzing color palette & typography' },
+        { time: 40000, text: 'AI auditing design consistency' },
+        { time: 70000, text: 'Building design debt report' },
       ] : [
-        { time: 0, text: 'Capturing page screenshot' },
-        { time: 0, text: 'Processing images' },
-        { time: 0, text: 'Running AI analysis' },
-        { time: 12000, text: 'Generating report' },
-        { time: 40000, text: 'Finalizing results' },
+        { time: 0,     text: 'Capturing page screenshot' },
+        { time: 8000,  text: 'Processing images' },
+        { time: 20000, text: 'Running AI analysis' },
+        { time: 50000, text: 'Generating report' },
+        { time: 90000, text: 'Finalizing results' },
       ];
+
+      // How much time has already passed since the job started
+      var resumeElapsed = activeJob.startedAt ? (Date.now() - activeJob.startedAt) : 0;
+
+      // Find which step we should currently be on
+      var resumeCurrentStep = 0;
+      for (var si = 0; si < resumeSteps.length; si++) {
+        if (resumeElapsed >= resumeSteps[si].time) resumeCurrentStep = si;
+      }
+
       var stepsEl = document.getElementById('qaproof-loading-steps');
       if (stepsEl) {
         stepsEl.style.display = '';
@@ -1422,16 +1432,15 @@
         for (var si = 0; si < resumeSteps.length; si++) {
           if (si > 0) {
             var conn = document.createElement('div');
-            conn.className = 'qaproof-step-connector' + (si <= 2 ? ' completed' : '');
+            conn.className = 'qaproof-step-connector' + (si <= resumeCurrentStep ? ' completed' : '');
             conn.id = 'qaproof-connector-' + si;
             stepsEl.appendChild(conn);
           }
           var stepEl = document.createElement('div');
-          // First 2 steps already completed, 3rd is active
-          if (si < 2) {
+          if (si < resumeCurrentStep) {
             stepEl.className = 'qaproof-loading-step completed';
             stepEl.innerHTML = '<span class="qaproof-step-indicator">' + checkSvgR + '</span>';
-          } else if (si === 2) {
+          } else if (si === resumeCurrentStep) {
             stepEl.className = 'qaproof-loading-step active';
             stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
           } else {
@@ -1441,12 +1450,14 @@
           stepEl.id = 'qaproof-lstep-' + si;
           stepsEl.appendChild(stepEl);
         }
-        // Update loading text to match current step
-        S.loadingText.textContent = resumeSteps[2].text + '...';
+        if (S.loadingText) S.loadingText.textContent = resumeSteps[resumeCurrentStep].text + '...';
+        if (S.loadingSubtext) S.loadingSubtext.textContent = resumeCurrentStep < resumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
       }
-      // Animate remaining steps
+
+      // Schedule only the remaining steps, with delay adjusted for elapsed time
       var resumeTimers = resumeSteps.map(function (step, idx) {
-        if (step.time === 0) return null;
+        if (idx <= resumeCurrentStep) return null; // already passed
+        var delay = Math.max(0, step.time - resumeElapsed);
         return setTimeout(function () {
           for (var j = 0; j < idx; j++) {
             var prev = document.getElementById('qaproof-lstep-' + j);
@@ -1458,7 +1469,7 @@
           if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
           if (S.loadingText) S.loadingText.textContent = step.text + '...';
           if (S.loadingSubtext) S.loadingSubtext.textContent = idx < resumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
-        }, step.time);
+        }, delay);
       });
 
       Q.startJobPolling(activeJob.jobId, {
@@ -1508,15 +1519,25 @@
       if (a11yLoadText) a11yLoadText.textContent = 'Resuming accessibility test — waiting for results...';
       if (a11yLoadSub) a11yLoadSub.textContent = 'Test is still running on the server';
 
-      // Build progress steps for accessibility resume (same pattern as tests page)
+      // Build progress steps — restore position based on elapsed time since job started
       var checkSvgA = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       var a11yResumeSteps = [
-        { time: 0, text: 'Capturing page screenshot' },
-        { time: 0, text: 'Processing images' },
-        { time: 0, text: 'Running accessibility analysis' },
-        { time: 12000, text: 'Evaluating WCAG compliance' },
-        { time: 40000, text: 'Generating audit report' },
+        { time: 0,     text: 'Capturing page screenshot' },
+        { time: 8000,  text: 'Processing images' },
+        { time: 20000, text: 'Running accessibility analysis' },
+        { time: 50000, text: 'Evaluating WCAG compliance' },
+        { time: 90000, text: 'Generating audit report' },
       ];
+
+      // How much time has already passed since the job started
+      var a11yElapsed = activeJob.startedAt ? (Date.now() - activeJob.startedAt) : 0;
+
+      // Find which step we should currently be on
+      var a11yCurrentStep = 0;
+      for (var si = 0; si < a11yResumeSteps.length; si++) {
+        if (a11yElapsed >= a11yResumeSteps[si].time) a11yCurrentStep = si;
+      }
+
       var a11yStepsEl = document.getElementById('qaproof-a11y-loading-steps');
       if (a11yStepsEl) {
         a11yStepsEl.style.display = '';
@@ -1524,15 +1545,15 @@
         for (var si = 0; si < a11yResumeSteps.length; si++) {
           if (si > 0) {
             var conn = document.createElement('div');
-            conn.className = 'qaproof-step-connector' + (si <= 2 ? ' completed' : '');
+            conn.className = 'qaproof-step-connector' + (si <= a11yCurrentStep ? ' completed' : '');
             conn.id = 'qaproof-a11y-connector-' + si;
             a11yStepsEl.appendChild(conn);
           }
           var stepEl = document.createElement('div');
-          if (si < 2) {
+          if (si < a11yCurrentStep) {
             stepEl.className = 'qaproof-loading-step completed';
             stepEl.innerHTML = '<span class="qaproof-step-indicator">' + checkSvgA + '</span>';
-          } else if (si === 2) {
+          } else if (si === a11yCurrentStep) {
             stepEl.className = 'qaproof-loading-step active';
             stepEl.innerHTML = '<span class="qaproof-step-indicator">' + (si + 1) + '</span>';
           } else {
@@ -1542,11 +1563,14 @@
           stepEl.id = 'qaproof-a11y-lstep-' + si;
           a11yStepsEl.appendChild(stepEl);
         }
-        if (a11yLoadText) a11yLoadText.textContent = a11yResumeSteps[2].text + '...';
+        if (a11yLoadText) a11yLoadText.textContent = a11yResumeSteps[a11yCurrentStep].text + '...';
+        if (a11yLoadSub) a11yLoadSub.textContent = a11yCurrentStep < a11yResumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
       }
-      // Animate remaining steps on timers
+
+      // Schedule only the remaining steps, with delay adjusted for elapsed time
       var a11yResumeTimers = a11yResumeSteps.map(function (step, idx) {
-        if (step.time === 0) return null;
+        if (idx <= a11yCurrentStep) return null; // already passed
+        var delay = Math.max(0, step.time - a11yElapsed);
         return setTimeout(function () {
           for (var j = 0; j < idx; j++) {
             var prev = document.getElementById('qaproof-a11y-lstep-' + j);
@@ -1558,7 +1582,7 @@
           if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
           if (a11yLoadText) a11yLoadText.textContent = step.text + '...';
           if (a11yLoadSub) a11yLoadSub.textContent = idx < a11yResumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
-        }, step.time);
+        }, delay);
       });
 
       Q.startJobPolling(activeJob.jobId, {

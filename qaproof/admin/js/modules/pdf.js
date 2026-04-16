@@ -141,7 +141,7 @@
       if (subtitle) {
         doc.setFontSize(8);
         setC(C.gray);
-        doc.text(subtitle, M + 8 + doc.getTextWidth(title) + 4, y + 6);
+        doc.text(subtitle, W - M, y + 6, { align: 'right' });
       }
       y += 14;
     }
@@ -440,9 +440,9 @@
         bodyStyles: { textColor: C.body },
         alternateRowStyles: { fillColor: C.bg },
         columnStyles: {
-          0: { cellWidth: 10, halign: 'center', valign: 'middle', fontStyle: 'bold' },
-          1: { cellWidth: 20, halign: 'center', valign: 'middle', fontStyle: 'bold' },
-          2: { cellWidth: 30, valign: 'middle' },
+          0: { cellWidth: 'wrap', halign: 'center', valign: 'middle', fontStyle: 'bold' },
+          1: { cellWidth: 'wrap', halign: 'center', valign: 'middle', fontStyle: 'bold' },
+          2: { cellWidth: 'wrap', valign: 'middle' },
           3: { cellWidth: 'auto' }
         },
         didDrawCell: function (cellData) {
