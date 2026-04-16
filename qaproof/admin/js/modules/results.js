@@ -706,7 +706,7 @@
       html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
       html += '      <div class="qaproof-chrome-title">Visual Comparison</div>';
       html += '      <div class="qaproof-chrome-actions">';
-      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> Markers</button>';
+      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
       html += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sync Scroll</button>';
       html += '      </div>';
       html += '    </div>';
@@ -734,7 +734,10 @@
       html += '</div>';
     }
 
-    // Differences
+    // Differences + Recommendations — two-column grid
+    html += '<div class="qaproof-diff-rec-grid">';
+
+    html += '<div class="qaproof-diff-rec-col">';
     html += '<h2>Differences <span class="qaproof-diff-count" id="qaproof-diff-count">0</span></h2>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
@@ -747,12 +750,24 @@
     html += '  </div>';
     html += '  <div id="qaproof-differences"></div>';
     html += '</div>';
+    html += '</div>';
 
-    // Recommendations
-    html += '<h2>Recommendations</h2>';
+    html += '<div class="qaproof-diff-rec-col">';
+    html += '<h2>Recommendations <span class="qaproof-diff-count" id="qaproof-rec-count">0</span></h2>';
     html += '<div class="qaproof-card">';
+    html += '  <div class="qaproof-filter-row">';
+    html += '    <div class="qaproof-severity-filter" id="qaproof-rec-filter">';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-rectype="all">All</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="code">Code Fixes</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="quick">Quick Wins</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="structural">Structural</button>';
+    html += '    </div>';
+    html += '  </div>';
     html += '  <div class="qaproof-recommendations" id="qaproof-recommendations"></div>';
     html += '</div>';
+    html += '</div>';
+
+    html += '</div>'; // .qaproof-diff-rec-grid
 
     // Feedback
     html += buildFeedbackSectionHtml('qaproof');
@@ -774,7 +789,7 @@
     });
 
     renderDifferencesInto('qaproof-differences', 'qaproof-diff-count', S.allDifferences, false);
-    renderRecommendationsInto('qaproof-recommendations', data.recommendations);
+    renderRecommendationsInto('qaproof-recommendations', data.recommendations, 'qaproof-rec-count');
 
     // Markers after images load
     if (data.screenshots) {
@@ -890,7 +905,10 @@
       html += '</div>';
     }
 
-    // Differences
+    // Differences + Recommendations — two-column grid
+    html += '<div class="qaproof-diff-rec-grid">';
+
+    html += '<div class="qaproof-diff-rec-col">';
     html += '<h2>Differences <span class="qaproof-diff-count" id="qaproof-resp-diff-count">0</span></h2>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
@@ -911,12 +929,24 @@
     html += '  </div>';
     html += '  <div id="qaproof-resp-differences"></div>';
     html += '</div>';
+    html += '</div>';
 
-    // Recommendations
-    html += '<h2>Recommendations</h2>';
+    html += '<div class="qaproof-diff-rec-col">';
+    html += '<h2>Recommendations <span class="qaproof-diff-count" id="qaproof-resp-rec-count">0</span></h2>';
     html += '<div class="qaproof-card">';
+    html += '  <div class="qaproof-filter-row">';
+    html += '    <div class="qaproof-severity-filter" id="qaproof-resp-rec-filter">';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-rectype="all">All</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="code">Code Fixes</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="quick">Quick Wins</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="structural">Structural</button>';
+    html += '    </div>';
+    html += '  </div>';
     html += '  <div class="qaproof-recommendations" id="qaproof-resp-recommendations"></div>';
     html += '</div>';
+    html += '</div>';
+
+    html += '</div>'; // .qaproof-diff-rec-grid
 
     // Feedback
     html += buildFeedbackSectionHtml('qaproof-resp');
@@ -940,10 +970,25 @@
     });
 
     renderDifferencesInto('qaproof-resp-differences', 'qaproof-resp-diff-count', S.allDifferences, true);
-    renderRecommendationsInto('qaproof-resp-recommendations', data.recommendations);
+    renderRecommendationsInto('qaproof-resp-recommendations', data.recommendations, 'qaproof-resp-rec-count');
 
     // Device tabs
     setupDeviceTabs();
+
+    // Auto-switch to the device tab with the most differences
+    // (responsive tests often have no desktop issues, so default desktop tab shows nothing)
+    (function () {
+      var normDevice = function (dev) { return dev === 'tablet_portrait' ? 'tablet' : dev; };
+      var counts = {};
+      S.allDifferences.forEach(function (d) {
+        if (d.device) { var dev = normDevice(d.device); counts[dev] = (counts[dev] || 0) + 1; }
+      });
+      var best = 'desktop', bestN = 0;
+      Object.keys(counts).forEach(function (dev) {
+        if (counts[dev] > bestN) { bestN = counts[dev]; best = dev; }
+      });
+      if (best !== 'desktop' && bestN > 0) switchDeviceTab(best);
+    })();
 
     // Markers after images load
     if (data.screenshots) {
@@ -953,7 +998,7 @@
         if (img && img.src) imgPromises.push(Q.waitForImage(img));
       });
       Promise.all(imgPromises).then(function () {
-        renderMarkersForDevice('desktop', S.allDifferences);
+        renderMarkersForDevice(S.activeDevice || 'desktop', S.allDifferences);
       });
     }
 
@@ -1021,7 +1066,7 @@
       html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
       html += '      <div class="qaproof-chrome-title">Page Screenshot</div>';
       html += '      <div class="qaproof-chrome-actions">';
-      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> Markers</button>';
+      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
       html += '      </div>';
       html += '    </div>';
       html += '    <div class="qaproof-screenshot-viewport">';
@@ -1039,7 +1084,10 @@
       html += '</div>';
     }
 
-    // Differences (issues)
+    // Issues + Recommendations — two-column grid
+    html += '<div class="qaproof-diff-rec-grid">';
+
+    html += '<div class="qaproof-diff-rec-col">';
     html += '<h2>Issues <span class="qaproof-diff-count" id="qaproof-a11y-diff-count">0</span></h2>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
@@ -1052,12 +1100,24 @@
     html += '  </div>';
     html += '  <div id="qaproof-a11y-differences"></div>';
     html += '</div>';
+    html += '</div>';
 
-    // Recommendations
-    html += '<h2>Recommendations</h2>';
+    html += '<div class="qaproof-diff-rec-col">';
+    html += '<h2>Recommendations <span class="qaproof-diff-count" id="qaproof-a11y-rec-count">0</span></h2>';
     html += '<div class="qaproof-card">';
+    html += '  <div class="qaproof-filter-row">';
+    html += '    <div class="qaproof-severity-filter" id="qaproof-a11y-rec-filter">';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-rectype="all">All</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="code">Code Fixes</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="quick">Quick Wins</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="structural">Structural</button>';
+    html += '    </div>';
+    html += '  </div>';
     html += '  <div class="qaproof-recommendations" id="qaproof-a11y-recommendations"></div>';
     html += '</div>';
+    html += '</div>';
+
+    html += '</div>'; // .qaproof-diff-rec-grid
 
     // Feedback
     html += buildFeedbackSectionHtml('qaproof-a11y');
@@ -1082,7 +1142,7 @@
     });
 
     renderDifferencesInto('qaproof-a11y-differences', 'qaproof-a11y-diff-count', S.allDifferences, false);
-    renderRecommendationsInto('qaproof-a11y-recommendations', data.recommendations);
+    renderRecommendationsInto('qaproof-a11y-recommendations', data.recommendations, 'qaproof-a11y-rec-count');
 
     // Markers after image loads
     if (data.screenshots && data.screenshots.desktop) {
@@ -1483,7 +1543,7 @@
       html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
       html += '      <div class="qaproof-chrome-title">Page Screenshot</div>';
       html += '      <div class="qaproof-chrome-actions">';
-      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> Markers</button>';
+      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
       html += '      </div>';
       html += '    </div>';
       html += '    <div class="qaproof-screenshot-viewport">';
@@ -1501,7 +1561,10 @@
       html += '</div>';
     }
 
-    // Differences
+    // Design Debt Issues + Recommendations — two-column grid
+    html += '<div class="qaproof-diff-rec-grid">';
+
+    html += '<div class="qaproof-diff-rec-col">';
     html += '<h2>Design Debt Issues <span class="qaproof-diff-count" id="qaproof-da-diff-count">0</span></h2>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
@@ -1514,12 +1577,24 @@
     html += '  </div>';
     html += '  <div id="qaproof-da-differences"></div>';
     html += '</div>';
+    html += '</div>';
 
-    // Recommendations
-    html += '<h2>Recommendations</h2>';
+    html += '<div class="qaproof-diff-rec-col">';
+    html += '<h2>Recommendations <span class="qaproof-diff-count" id="qaproof-da-rec-count">0</span></h2>';
     html += '<div class="qaproof-card">';
+    html += '  <div class="qaproof-filter-row">';
+    html += '    <div class="qaproof-severity-filter" id="qaproof-da-rec-filter">';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-rectype="all">All</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="code">Code Fixes</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="quick">Quick Wins</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-rectype="structural">Structural</button>';
+    html += '    </div>';
+    html += '  </div>';
     html += '  <div class="qaproof-recommendations" id="qaproof-da-recommendations"></div>';
     html += '</div>';
+    html += '</div>';
+
+    html += '</div>'; // .qaproof-diff-rec-grid
 
     // Feedback
     html += buildFeedbackSectionHtml('qaproof-da');
@@ -1541,7 +1616,7 @@
     });
 
     renderDifferencesInto('qaproof-da-differences', 'qaproof-da-diff-count', S.allDifferences, false);
-    renderRecommendationsInto('qaproof-da-recommendations', data.recommendations);
+    renderRecommendationsInto('qaproof-da-recommendations', data.recommendations, 'qaproof-da-rec-count');
 
     // Markers after image loads
     if (data.screenshots && data.screenshots.desktop) {
@@ -1630,6 +1705,9 @@
     for (var i = 0; i < differences.length; i++) {
       var diff = differences[i];
       if (!diff.location) continue;
+      // Use _origIndex (set by renderDifferencesInto) so marker clicks select
+      // the correct list item even when differences are filtered by device.
+      var origIdx = diff._origIndex !== undefined ? diff._origIndex : i;
       var t = diff.location.top;
       var l = diff.location.left;
       var merged = false;
@@ -1640,7 +1718,7 @@
         var closeEnough = Math.abs(t - gt) < threshold && Math.abs(l - gl) < threshold;
         var sameElement = boundsOverlap(diff.location, groups[g].diffs[0].diff.location);
         if (closeEnough || sameElement) {
-          groups[g].diffs.push({ idx: i, diff: diff });
+          groups[g].diffs.push({ idx: origIdx, diff: diff });
           // DO NOT average positions. Keep the first member's position
           // (DOM-extracted diffs come first in allDifferences and have
           // pixel-perfect coordinates from getBoundingClientRect).
@@ -1651,7 +1729,7 @@
         }
       }
       if (!merged) {
-        groups.push({ diffs: [{ idx: i, diff: diff }], top: t, left: l });
+        groups.push({ diffs: [{ idx: origIdx, diff: diff }], top: t, left: l });
       }
     }
     return groups;
@@ -2054,6 +2132,79 @@
       }
     });
 
+    // Expand button
+    var expandBtn = document.createElement('button');
+    expandBtn.type = 'button';
+    expandBtn.className = 'qaproof-cat-panel-expand';
+    expandBtn.title = 'Expand';
+    expandBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    expandBtn.style.display = 'none';
+    panels.appendChild(expandBtn);
+
+    function applyClamp(panel, navH) {
+      var p = panel ? panel.querySelector('p') : null;
+      if (!p) return;
+      var header = panel.querySelector('.qaproof-cat-panel-header');
+      var panelStyle = getComputedStyle(panel);
+      var paddingTop = parseFloat(panelStyle.paddingTop) || 25;
+      var paddingBottom = parseFloat(panelStyle.paddingBottom) || 25;
+      var headerH = header ? header.offsetHeight : 0;
+      var headerMarginBottom = header ? (parseFloat(getComputedStyle(header).marginBottom) || 10) : 0;
+      var lineH = parseFloat(getComputedStyle(p).lineHeight);
+      var availH = navH - paddingTop - paddingBottom - headerH - headerMarginBottom;
+      var maxLines = Math.max(1, Math.floor(availH / lineH));
+      p.style.display = '-webkit-box';
+      p.style.webkitBoxOrient = 'vertical';
+      p.style.webkitLineClamp = String(maxLines);
+      p.style.overflow = 'hidden';
+    }
+
+    function removeClamp(panel) {
+      var p = panel ? panel.querySelector('p') : null;
+      if (!p) return;
+      p.style.webkitLineClamp = '';
+      p.style.display = '';
+      p.style.overflow = '';
+    }
+
+    var navNaturalH = 0;
+
+    function checkOverflow() {
+      requestAnimationFrame(function () {
+        navNaturalH = nav.offsetHeight;
+
+        var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
+        removeClamp(activePanel);
+        panels.style.maxHeight = '';
+
+        var naturalPanelsH = panels.scrollHeight;
+        var isOverflowing = naturalPanelsH > navNaturalH + 2;
+
+        if (!panels.classList.contains('expanded')) {
+          panels.style.maxHeight = navNaturalH + 'px';
+          if (isOverflowing) {
+            applyClamp(activePanel, navNaturalH);
+          }
+        }
+        expandBtn.style.display = isOverflowing ? 'flex' : 'none';
+      });
+    }
+
+    expandBtn.addEventListener('click', function () {
+      var expanded = panels.classList.toggle('expanded');
+      expandBtn.classList.toggle('rotated', expanded);
+      var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
+      if (expanded) {
+        removeClamp(activePanel);
+        panels.style.maxHeight = panels.scrollHeight + 'px';
+      } else {
+        panels.style.maxHeight = navNaturalH + 'px';
+        applyClamp(activePanel, navNaturalH);
+      }
+    });
+
+    requestAnimationFrame(checkOverflow);
+
     // Tab click handler
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-cat-tab');
@@ -2072,83 +2223,9 @@
 
       // Reset expand state on tab switch
       panels.classList.remove('expanded');
-      var expandBtn = panels.querySelector('.qaproof-cat-panel-expand');
-      if (expandBtn) expandBtn.classList.remove('rotated');
+      expandBtn.classList.remove('rotated');
       checkOverflow();
     });
-
-    // Expand button logic
-    var expandBtn = document.createElement('button');
-    expandBtn.type = 'button';
-    expandBtn.className = 'qaproof-cat-panel-expand';
-    expandBtn.title = 'Expand';
-    expandBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-    expandBtn.style.display = 'none';
-    panels.appendChild(expandBtn);
-
-    function applyClamp(activePanel, navH) {
-      var p = activePanel ? activePanel.querySelector('p') : null;
-      if (!p) return;
-      var header = activePanel.querySelector('.qaproof-cat-panel-header');
-      var panelStyle = getComputedStyle(activePanel);
-      var paddingTop = parseFloat(panelStyle.paddingTop) || 25;
-      var paddingBottom = parseFloat(panelStyle.paddingBottom) || 25;
-      var headerH = header ? header.offsetHeight : 0;
-      var headerMarginBottom = header ? (parseFloat(getComputedStyle(header).marginBottom) || 10) : 0;
-      var lineHeight = parseFloat(getComputedStyle(p).lineHeight);
-      var availH = navH - paddingTop - paddingBottom - headerH - headerMarginBottom;
-      var maxLines = Math.max(1, Math.floor(availH / lineHeight));
-      p.style.display = '-webkit-box';
-      p.style.webkitBoxOrient = 'vertical';
-      p.style.webkitLineClamp = String(maxLines);
-      p.style.overflow = 'hidden';
-    }
-
-    function removeClamp(activePanel) {
-      var p = activePanel ? activePanel.querySelector('p') : null;
-      if (!p) return;
-      p.style.webkitLineClamp = '';
-      p.style.display = '';
-      p.style.overflow = '';
-    }
-
-    function checkOverflow() {
-      requestAnimationFrame(function () {
-        var navH = nav.offsetHeight;
-        var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
-
-        // Remove clamp so scrollHeight reflects natural content height
-        removeClamp(activePanel);
-
-        if (!panels.classList.contains('expanded')) {
-          panels.style.maxHeight = navH + 'px';
-        }
-
-        var isOverflowing = panels.scrollHeight > navH + 2;
-        expandBtn.style.display = isOverflowing ? 'flex' : 'none';
-
-        // Re-apply clamp to show whole lines + ellipsis
-        if (!panels.classList.contains('expanded') && isOverflowing) {
-          applyClamp(activePanel, navH);
-        }
-      });
-    }
-
-    expandBtn.addEventListener('click', function () {
-      var expanded = panels.classList.toggle('expanded');
-      expandBtn.classList.toggle('rotated', expanded);
-      var activePanel = panels.querySelector('.qaproof-cat-tab-panel.active');
-      if (expanded) {
-        removeClamp(activePanel);
-        panels.style.maxHeight = panels.scrollHeight + 'px';
-      } else {
-        panels.style.maxHeight = nav.offsetHeight + 'px';
-        checkOverflow();
-      }
-    });
-
-    // Check after render
-    requestAnimationFrame(checkOverflow);
 
   }
 
@@ -2324,10 +2401,16 @@
   // ============================
   // Shared Rendering: Recommendations
   // ============================
-  function renderRecommendationsInto(containerId, recommendations) {
+  function renderRecommendationsInto(containerId, recommendations, countId) {
     var list = document.getElementById(containerId);
     if (!list) return;
     list.innerHTML = '';
+
+    var count = recommendations ? recommendations.length : 0;
+    if (countId) {
+      var countEl = document.getElementById(countId);
+      if (countEl) countEl.textContent = count;
+    }
 
     if (!recommendations || recommendations.length === 0) {
       list.innerHTML = '<div class="qaproof-rec-empty">No recommendations at this time.</div>';
@@ -2361,51 +2444,121 @@
       }
     }
 
-    // Priority summary
-    var summaryEl = document.createElement('div');
-    summaryEl.className = 'qaproof-rec-summary';
-    summaryEl.innerHTML =
-      '<span class="qaproof-rec-summary-total">' + recommendations.length + ' recommendations</span>' +
-      (codeRecs.length > 0 ? '<span class="qaproof-rec-chip qaproof-rec-chip-code">' + codeRecs.length + ' Code Fixes</span>' : '') +
-      (quickRecs.length > 0 ? '<span class="qaproof-rec-chip qaproof-rec-chip-quick">' + quickRecs.length + ' Quick Wins</span>' : '') +
-      (structuralRecs.length > 0 ? '<span class="qaproof-rec-chip qaproof-rec-chip-structural">' + structuralRecs.length + ' Structural</span>' : '');
-    list.appendChild(summaryEl);
+    // Summary bar
+    var recTotal = recommendations.length;
+    var recSummaryBar = document.createElement('div');
+    recSummaryBar.className = 'qaproof-diff-summary-bar';
+    var recBarHtml = '';
+    if (codeRecs.length > 0) recBarHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-high"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M5.5 4L2 8l3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 4L14 8l-3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> ' + codeRecs.length + ' Code Fixes</span>';
+    if (quickRecs.length > 0) recBarHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-medium"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/></svg> ' + quickRecs.length + ' Quick Wins</span>';
+    if (structuralRecs.length > 0) recBarHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-low"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg> ' + structuralRecs.length + ' Structural</span>';
+    var codePct  = Math.round((codeRecs.length / recTotal) * 100);
+    var quickPct = Math.round((quickRecs.length / recTotal) * 100);
+    var structPct = 100 - codePct - quickPct;
+    recBarHtml += '<div class="qaproof-diff-severity-bar">';
+    if (codeRecs.length > 0)     recBarHtml += '<div class="qaproof-sbar-seg qaproof-sbar-high" style="width:' + codePct + '%"></div>';
+    if (quickRecs.length > 0)    recBarHtml += '<div class="qaproof-sbar-seg qaproof-sbar-med" style="width:' + quickPct + '%"></div>';
+    if (structuralRecs.length > 0) recBarHtml += '<div class="qaproof-sbar-seg qaproof-sbar-low" style="width:' + structPct + '%"></div>';
+    recBarHtml += '</div>';
+    recSummaryBar.innerHTML = recBarHtml;
+    list.appendChild(recSummaryBar);
 
-    function renderRecGroup(label, icon, items, groupClass) {
+    var rectypeIcon = {
+      code:       '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M5.5 4L2 8l3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 4L14 8l-3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      quick:      '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/></svg>',
+      structural: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>',
+    };
+    // code→high colors, quick→medium, structural→low
+    var rectypeColor = { code: 'high', quick: 'medium', structural: 'low' };
+
+    var recGroupIndex = 0;
+    function renderRecGroup(label, items, rectype) {
       if (items.length === 0) return;
+      var color = rectypeColor[rectype];
+
       var groupEl = document.createElement('div');
-      groupEl.className = 'qaproof-rec-group ' + groupClass;
+      groupEl.className = 'qaproof-diff-group' + (recGroupIndex > 0 ? ' collapsed' : '');
+      groupEl.dataset.rectype = rectype;
+      recGroupIndex++;
 
       var headerEl = document.createElement('div');
-      headerEl.className = 'qaproof-rec-group-header';
-      headerEl.innerHTML = '<span class="qaproof-rec-group-icon">' + icon + '</span><span class="qaproof-rec-group-label">' + label + '</span><span class="qaproof-rec-group-badge">' + items.length + '</span>';
+      headerEl.className = 'qaproof-diff-group-header';
+      headerEl.innerHTML =
+        '<div class="qaproof-diff-group-left">' +
+        '  <span class="qaproof-diff-group-accent qaproof-diff-group-accent-' + color + '"></span>' +
+        '  <span class="qaproof-diff-group-title">' + Q.escapeHtml(label) + '</span>' +
+        '  <span class="qaproof-diff-group-count">' + items.length + '</span>' +
+        '</div>' +
+        '<div class="qaproof-diff-group-right">' +
+        '  <span class="qaproof-diff-mini-chip qaproof-diff-mini-' + (color === 'high' ? 'high' : color === 'medium' ? 'med' : 'low') + '">' + items.length + '</span>' +
+        '  <span class="qaproof-diff-group-chevron">&#9662;</span>' +
+        '</div>';
+
+      headerEl.addEventListener('click', (function(grp) {
+        return function() { grp.classList.toggle('collapsed'); };
+      })(groupEl));
+
       groupEl.appendChild(headerEl);
 
-      var gridEl = document.createElement('div');
-      gridEl.className = 'qaproof-rec-grid';
+      var bodyEl = document.createElement('div');
+      bodyEl.className = 'qaproof-diff-group-body';
 
       for (var j = 0; j < items.length; j++) {
         var rec = items[j];
         var item = document.createElement('div');
-        item.className = 'qaproof-rec-item';
-        item.style.animationDelay = (j * 0.04) + 's';
+        item.className = 'qaproof-difference';
         item.innerHTML =
-          '<div class="qaproof-rec-indicator">' +
-          '  <span class="qaproof-rec-num">' + rec.num + '</span>' +
+          '<div class="qaproof-diff-indicator qaproof-diff-indicator-' + color + '">' +
+          '  <span class="qaproof-diff-num">' + rec.num + '</span>' +
           '</div>' +
-          '<div class="qaproof-rec-body">' +
-          '  <div class="qaproof-rec-text">' + formatRecText(rec.text) + '</div>' +
+          '<div class="qaproof-diff-body">' +
+          '  <div class="qaproof-diff-header">' +
+          '    <span class="qaproof-severity-tag qaproof-severity-tag-' + color + '">' + rectypeIcon[rectype] + ' ' + Q.escapeHtml(label) + '</span>' +
+          '  </div>' +
+          '  <div class="qaproof-diff-description">' + formatRecText(rec.text) + '</div>' +
           '</div>';
-        gridEl.appendChild(item);
+        bodyEl.appendChild(item);
       }
 
-      groupEl.appendChild(gridEl);
+      groupEl.appendChild(bodyEl);
       list.appendChild(groupEl);
     }
 
-    renderRecGroup('Code Fixes', '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5.5 4L2 8l3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 4L14 8l-3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', codeRecs, 'qaproof-rec-group-code');
-    renderRecGroup('Quick Wins', '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/></svg>', quickRecs, 'qaproof-rec-group-quick');
-    renderRecGroup('Structural Changes', '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>', structuralRecs, 'qaproof-rec-group-structural');
+    renderRecGroup('Code Fixes', codeRecs, 'code');
+    renderRecGroup('Quick Wins', quickRecs, 'quick');
+    renderRecGroup('Structural Changes', structuralRecs, 'structural');
+
+    // Wire up filter buttons
+    var filterId = containerId.replace('qaproof-', 'qaproof-').replace('-recommendations', '-rec-filter');
+    // Build filter ID from containerId: e.g. "qaproof-recommendations" → "qaproof-rec-filter"
+    var filterMap = {
+      'qaproof-recommendations':      'qaproof-rec-filter',
+      'qaproof-resp-recommendations':  'qaproof-resp-rec-filter',
+      'qaproof-a11y-recommendations':  'qaproof-a11y-rec-filter',
+      'qaproof-da-recommendations':    'qaproof-da-rec-filter',
+    };
+    var filterContainer = document.getElementById(filterMap[containerId] || '');
+    if (filterContainer) {
+      // Hide buttons for empty categories
+      var counts = { code: codeRecs.length, quick: quickRecs.length, structural: structuralRecs.length };
+      filterContainer.querySelectorAll('.qaproof-filter-btn[data-rectype]').forEach(function (btn) {
+        var rt = btn.dataset.rectype;
+        if (rt !== 'all' && counts[rt] === 0) {
+          btn.style.display = 'none';
+        }
+      });
+
+      filterContainer.addEventListener('click', function (e) {
+        var btn = e.target.closest('.qaproof-filter-btn');
+        if (!btn) return;
+        filterContainer.querySelectorAll('.qaproof-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var rectype = btn.dataset.rectype;
+        list.querySelectorAll('.qaproof-diff-group').forEach(function (grp) {
+          grp.style.display = (rectype === 'all' || grp.dataset.rectype === rectype) ? '' : 'none';
+        });
+      });
+    }
   }
 
   // ============================
@@ -2531,7 +2684,9 @@
   function renderMarkersForDevice(device, differences) {
     var markersLayer = document.getElementById('qaproof-markers-' + device);
     renderMarkersIntoLayer(markersLayer, differences, function (diff) {
-      return !diff.device || diff.device === device;
+      // Normalize API device names that don't match tab IDs (e.g. tablet_portrait → tablet)
+      var diffDevice = diff.device === 'tablet_portrait' ? 'tablet' : diff.device;
+      return !diffDevice || diffDevice === device;
     });
   }
 
