@@ -94,6 +94,11 @@ class QAProof_Admin_Assets {
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
+            // Usage is now per-fileKey. `byFile` carries each file's own
+            // counters and rateLimit (retryAt). Aggregate total/byType are
+            // derived by the getter for quick glance views.
+            'figmaApiUsage'     => QAProof_Settings::get_figma_api_usage(),
+            'figmaApiCap'       => 6,
             // apiEndpoint and apiKey removed — browser no longer calls API directly
             // All requests go through WP proxy (job queue pattern)
         ]);
@@ -110,12 +115,14 @@ class QAProof_Admin_Assets {
         }
         $result = [];
         foreach ( $designs as $d ) {
+            $figma_url = isset( $d['figmaUrl'] ) ? $d['figmaUrl'] : '';
             $result[] = [
                 'id'              => isset( $d['id'] )         ? $d['id']         : '',
                 'name'            => isset( $d['name'] )       ? $d['name']       : '',
                 'pageUrl'         => isset( $d['pageUrl'] )    ? $d['pageUrl']    : '',
                 'figmaToken'      => isset( $d['figmaToken'] ) ? $d['figmaToken'] : '',
-                'figmaUrl'        => isset( $d['figmaUrl'] )   ? $d['figmaUrl']   : '',
+                'figmaUrl'        => $figma_url,
+                'fileKey'         => QAProof_Settings::extract_figma_file_key( $figma_url ),
                 'hasImage'        => ! empty( $d['imageBase64'] ),
                 'hasElements'     => ! empty( $d['elementsJson'] ),
                 'elementsSource'  => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
