@@ -137,6 +137,7 @@
   box-shadow: 0 2px 8px var(--qp-overlay-sm);
   position: relative;
   overflow: hidden;
+  height: 100%;
   transition: max-height 0.35s ease;
 }
 
