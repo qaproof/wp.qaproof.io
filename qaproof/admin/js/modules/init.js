@@ -350,7 +350,7 @@
       var badge = row.querySelector('.qaproof-design-status');
       if (!badge) return;
       var labelEl = badge.querySelector('.qaproof-design-status-label');
-      badge.classList.remove('qaproof-status-empty', 'qaproof-status-partial', 'qaproof-status-ready', 'qaproof-status-saving', 'qaproof-status-detecting', 'qaproof-status-error');
+      badge.classList.remove('qaproof-status-empty', 'qaproof-status-partial', 'qaproof-status-ready', 'qaproof-status-saving', 'qaproof-status-detecting', 'qaproof-status-error', 'qaproof-status-ratelimited');
       badge.classList.add('qaproof-status-' + state);
       badge.setAttribute('data-status', state);
       var label = '';
@@ -361,9 +361,10 @@
           label = 'Ready · ' + (count || 0) + ' elements';
           if (source) label += ' (' + source + ')';
           break;
-        case 'partial':   label = 'Image cached · elements missing'; break;
-        case 'error':     label = 'Detection failed'; break;
-        default:          label = 'Not cached — open Tests page and click Save';
+        case 'partial':     label = 'Image cached · elements missing'; break;
+        case 'error':       label = 'Detection failed'; break;
+        case 'ratelimited': label = 'Figma rate limit — try again later'; break;
+        default:            label = 'Not cached — open Tests page and click Save';
       }
       if (labelEl) labelEl.textContent = label;
       badge.setAttribute('title', label);
@@ -400,6 +401,52 @@
       updateDesignStatus(designId, state, count, source);
     }
 
+    // Figma rate limits are scoped per file/workspace. We keep per-fileKey
+    // state inside window.qaproof.figmaApiUsage.byFile[fileKey].rateLimit.
+    function getFileEntry(fileKey) {
+      var u = (window.qaproof && window.qaproof.figmaApiUsage) || {};
+      var byFile = u.byFile || {};
+      return byFile[fileKey] || null;
+    }
+
+    function isFileRateLimited(fileKey) {
+      if (!fileKey) return 0;
+      var entry = getFileEntry(fileKey);
+      var retryAt = entry && entry.rateLimit ? parseInt(entry.rateLimit.retryAt || 0, 10) : 0;
+      return (retryAt > 0 && retryAt > Date.now()) ? retryAt : 0;
+    }
+
+    // When a response comes back 429 with `retryAt` + `fileKey`, update
+    // the per-file map so subsequent calls for THIS file short-circuit.
+    function applyRateLimitFromResponse(json) {
+      if (!json || !json.error) return 0;
+      var code = json.error.code || '';
+      var retryAt = parseInt(json.error.retryAt || 0, 10);
+      var fileKey = json.error.fileKey || '';
+      if (code !== 'FIGMA_RATE_LIMITED' || !fileKey || !(retryAt > 0 && retryAt > Date.now())) return 0;
+      window.qaproof = window.qaproof || {};
+      var u = window.qaproof.figmaApiUsage = window.qaproof.figmaApiUsage || { byFile: {} };
+      u.byFile = u.byFile || {};
+      u.byFile[fileKey] = u.byFile[fileKey] || { total: 0, byType: {} };
+      u.byFile[fileKey].rateLimit = {
+        retryAt: retryAt,
+        observedAt: Date.now(),
+        rawRetryAfter: String(json.error.rawRetryAfter || '')
+      };
+      // Trigger widget refresh.
+      try {
+        var w = document.getElementById('qaproof-figma-usage');
+        if (w) w.dispatchEvent(new CustomEvent('qaproof:ratelimit', { detail: { retryAt: retryAt, fileKey: fileKey } }));
+      } catch (e) { /* noop */ }
+      return retryAt;
+    }
+
+    function extractFigmaFileKey(url) {
+      if (!url) return '';
+      var m = /figma\.com\/(?:design|file|proto|board)\/([A-Za-z0-9]+)/i.exec(url);
+      return m ? m[1] : '';
+    }
+
     function autoCacheDesign(row) {
       var designId = row.getAttribute('data-design-id');
       var figmaUrlInp   = row.querySelector('[data-field="figmaUrl"]');
@@ -408,6 +455,16 @@
       var figmaUrl   = figmaUrlInp.value.trim();
       var figmaToken = figmaTokenInp.value.trim();
       if (!figmaUrl || !figmaToken) return Promise.resolve();
+
+      var fileKey = extractFigmaFileKey(figmaUrl);
+
+      // Pre-flight: if THIS file is rate-limited, do NOT hit the proxy.
+      // Other designs (different fileKey) are unaffected.
+      if (isFileRateLimited(fileKey)) {
+        console.info('[QAProof] Auto-cache blocked: file', fileKey, 'is rate-limited');
+        broadcastStatus(designId, 'ratelimited');
+        return Promise.resolve();
+      }
 
       broadcastStatus(designId, 'saving');
 
@@ -418,6 +475,11 @@
       })
       .then(function (res) { return res.json(); })
       .then(function (json) {
+        // 429 from the backend means Figma (or our cached retryAt) is blocking.
+        if (applyRateLimitFromResponse(json)) {
+          broadcastStatus(designId, 'ratelimited');
+          return null;
+        }
         if (!json || !json.success || !json.data || !json.data.imageBase64) {
           var code = json && json.error && json.error.code ? json.error.code : '';
           console.warn('[QAProof] Auto-cache: figma-preview failed for design ' + designId, code);
@@ -483,19 +545,49 @@
       });
     }
 
+    // Per-design cooldown so a failed auto-cache doesn't retry on every page
+    // reload (which would burn Figma quota on already-exhausted accounts).
+    var AUTO_CACHE_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+    function lastAttemptKey(designId) { return 'qaproof:design:auto:' + designId; }
+    function recentlyAttempted(designId) {
+      try {
+        var raw = localStorage.getItem(lastAttemptKey(designId));
+        if (!raw) return false;
+        var ts = parseInt(raw, 10);
+        if (!ts) return false;
+        return (Date.now() - ts) < AUTO_CACHE_COOLDOWN_MS;
+      } catch (err) { return false; }
+    }
+    function markAttempt(designId) {
+      try { localStorage.setItem(lastAttemptKey(designId), String(Date.now())); } catch (err) {}
+    }
+
     function runAutoCacheQueue() {
+      // Note: rate limits are per-fileKey now, so we don't do a global stop
+      // here — the per-design pre-flight inside autoCacheDesign() skips each
+      // rate-limited file individually while others continue.
       var rows = designsList.querySelectorAll('.qaproof-design-row[data-design-id]');
       var queue = [];
       rows.forEach(function (row) {
         var badge = row.querySelector('.qaproof-design-status');
         if (!badge) return;
         var state = badge.getAttribute('data-status');
-        // Only cache rows that need work: empty (no image) or partial (image, no elements).
-        if (state !== 'empty' && state !== 'partial') return;
+        // Only auto-cache fresh designs that have NO image yet.
+        // 'partial' (image cached, elements missing) is NOT auto-retried because
+        // it still triggers a Figma `/v1/files/.../nodes` call on every reload,
+        // silently burning quota. User must manually click "Detect Elements"
+        // on the Tests page to consciously spend a token.
+        if (state !== 'empty') return;
+        var designId = row.getAttribute('data-design-id');
+        if (designId && recentlyAttempted(designId)) {
+          console.info('[QAProof] Auto-cache skipped for ' + designId + ' (recent attempt within cooldown)');
+          return;
+        }
         var figmaUrlInp   = row.querySelector('[data-field="figmaUrl"]');
         var figmaTokenInp = row.querySelector('[data-field="figmaToken"]');
         if (!figmaUrlInp || !figmaTokenInp) return;
         if (!figmaUrlInp.value.trim() || !figmaTokenInp.value.trim()) return;
+        if (designId) markAttempt(designId);
         queue.push(row);
       });
       if (!queue.length) return;
@@ -509,6 +601,149 @@
     if (window.qaproof && window.qaproof.restBase) {
       setTimeout(runAutoCacheQueue, 500);
     }
+
+    // ------------------------------------------------------------------
+    // Figma API usage widget — live refresh + reset button
+    // ------------------------------------------------------------------
+    (function wireFigmaUsageWidget() {
+      var widget = document.getElementById('qaproof-figma-usage');
+      if (!widget || !window.qaproof || !window.qaproof.restBase) return;
+
+      function formatRetryDate(ms) {
+        try {
+          var d = new Date(ms);
+          var now = new Date();
+          var diffMs = ms - now.getTime();
+          var diffDays = Math.floor(diffMs / 86400000);
+          var diffHours = Math.floor((diffMs % 86400000) / 3600000);
+          var diffMins = Math.floor((diffMs % 3600000) / 60000);
+          var absolute = d.toLocaleString(undefined, {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
+          var relative;
+          if (diffDays >= 1)      relative = 'in ' + diffDays + 'd ' + diffHours + 'h';
+          else if (diffHours >= 1) relative = 'in ' + diffHours + 'h ' + diffMins + 'm';
+          else                     relative = 'in ' + Math.max(1, diffMins) + 'm';
+          return { absolute: absolute, relative: relative };
+        } catch (e) {
+          return { absolute: '', relative: '' };
+        }
+      }
+
+      function renderUsage(data) {
+        if (!data) return;
+        // Usage is now per-fileKey. Build a roll-up for the global widget:
+        // - total = sum of calls across all files this month
+        // - cap   = per-file Starter cap (~6/month) — remember it's per file!
+        // - limitedFiles = number of files currently under an active 429 window
+        var cap    = parseInt(widget.getAttribute('data-cap'), 10) || 6;
+        var byFile = data.byFile || {};
+        var fileKeys = Object.keys(byFile);
+        var total = parseInt(data.total || 0, 10);
+        var imgN  = 0, nodesN = 0;
+        var limitedFiles = [];
+        fileKeys.forEach(function (k) {
+          var e = byFile[k] || {};
+          var bt = e.byType || {};
+          imgN   += parseInt(bt.image || 0, 10);
+          nodesN += parseInt(bt.nodes || 0, 10);
+          var rl = e.rateLimit || {};
+          var retryAt = parseInt(rl.retryAt || 0, 10);
+          if (retryAt > 0 && retryAt > Date.now()) {
+            limitedFiles.push({ fileKey: k, retryAt: retryAt });
+          }
+        });
+        var anyLimited = limitedFiles.length > 0;
+
+        var totalEl = widget.querySelector('.qaproof-figma-usage-total');
+        var brkEl   = widget.querySelector('.qaproof-figma-usage-breakdown');
+        var barEl   = widget.querySelector('.qaproof-figma-usage-bar');
+        if (totalEl) {
+          totalEl.textContent = total;
+          totalEl.style.color = anyLimited ? '#b91c1c' : '#0f766e';
+        }
+        if (brkEl) {
+          var files = fileKeys.length;
+          brkEl.textContent = imgN + ' image, ' + nodesN + ' nodes · across ' + files + ' file' + (files === 1 ? '' : 's');
+        }
+        if (barEl) {
+          // Bar now shows worst-case file usage (max calls any single file made
+          // this month) relative to the per-file cap — more meaningful than summing.
+          var worst = 0;
+          fileKeys.forEach(function (k) {
+            var t = parseInt((byFile[k] || {}).total || 0, 10);
+            if (t > worst) worst = t;
+          });
+          var pct = cap > 0 ? Math.min(100, Math.round(worst / cap * 100)) : 0;
+          barEl.style.width = (anyLimited ? 100 : pct) + '%';
+          barEl.style.background = anyLimited ? '#dc2626' : '#10b981';
+        }
+        widget.setAttribute('data-total', total);
+
+        // Roll-up banner: one line per rate-limited file. Each design row
+        // shows its own inline indicator separately (see broadcastStatus).
+        var banner = widget.querySelector('.qaproof-figma-ratelimit-banner');
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.className = 'qaproof-figma-ratelimit-banner';
+          banner.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;line-height:1.5;display:none;';
+          widget.appendChild(banner);
+        }
+        if (anyLimited) {
+          var lines = limitedFiles.map(function (f) {
+            var fmt = formatRetryDate(f.retryAt);
+            return '<li><code>' + f.fileKey + '</code> \u2014 retry <strong>' + fmt.relative + '</strong> (' + fmt.absolute + ')</li>';
+          }).join('');
+          banner.innerHTML = '<strong>' + limitedFiles.length + ' Figma file' + (limitedFiles.length === 1 ? '' : 's') + ' rate-limited.</strong> ' +
+            'Other designs are unaffected.<ul style="margin:6px 0 0 18px;padding:0;">' + lines + '</ul>';
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
+      function refresh() {
+        fetch(window.qaproof.restBase + '/figma-api-usage', {
+          headers: { 'X-WP-Nonce': window.qaproof.nonce }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j && j.success) renderUsage(j.data); })
+        .catch(function () { /* ignore */ });
+      }
+
+      // Initial render from localized data (byFile map carries per-file
+      // rateLimit already, no need to splice in a legacy global blob).
+      try {
+        renderUsage((window.qaproof && window.qaproof.figmaApiUsage) || {});
+      } catch (e) { /* noop */ }
+
+      // React to in-flight 429s without waiting for the next poll tick.
+      widget.addEventListener('qaproof:ratelimit', function () {
+        try { renderUsage((window.qaproof && window.qaproof.figmaApiUsage) || {}); } catch (e) {}
+      });
+
+      // Refresh after the auto-cache queue settles (every 2s for 20s).
+      var ticks = 0;
+      var interval = setInterval(function () {
+        refresh();
+        if (++ticks >= 10) clearInterval(interval);
+      }, 2000);
+
+      // Reset button
+      var resetBtn = widget.querySelector('.qaproof-figma-usage-reset');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+          if (!confirm('Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma\'s actual quota on their side.)')) return;
+          fetch(window.qaproof.restBase + '/figma-api-usage/reset', {
+            method: 'POST',
+            headers: { 'X-WP-Nonce': window.qaproof.nonce }
+          })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { if (j && j.success) renderUsage(j.data); });
+        });
+      }
+    })();
   }
 
   // ============================

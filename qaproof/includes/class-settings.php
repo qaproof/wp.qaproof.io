@@ -178,9 +178,10 @@ class QAProof_Settings {
             __( 'Design Fidelity', 'qaproof' ),
             function () {
                 echo '<p>' . esc_html__( 'Settings for design fidelity comparisons (Figma vs live page).', 'qaproof' ) . '</p>';
+
                 echo '<div class="qaproof-figma-plan-notice" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 12px 0 20px; border-radius: 4px;">';
                 echo '<strong>' . esc_html__( 'Figma API Limits', 'qaproof' ) . '</strong><br>';
-                echo esc_html__( 'Each saved design requires only 1 Figma API call — once fetched, the image and detected elements are cached in WordPress and reused for all future tests (zero API calls). However, Figma enforces strict rate limits by plan: Starter (~6 requests/month), Professional (~unlimited). If you hit the limit, you can always export your design as an image and use "Upload Image" on the Tests page instead.', 'qaproof' );
+                echo esc_html__( 'Each saved design makes up to 2 Figma API calls on first setup: 1 to fetch the design image (cached in WordPress) and 1 to fetch the node tree for pixel-perfect element detection. After that, both are reused for all future tests (zero API calls). Figma throttles requests per team/workspace rather than per account or per single file, so designs from the same workspace share one quota. Exact limits are not published by Figma — free and Starter plans are very restrictive (typically only a handful of requests before throttling), while Professional and higher plans have much larger allowances. If your token hits a rate limit on one workspace, designs from other workspaces keep working normally. If you want to avoid Figma API calls entirely, use the Upload Image option on the Tests page instead.', 'qaproof' );
                 echo '</div>';
             },
             'qaproof-settings-tests-fidelity'
@@ -452,6 +453,183 @@ class QAProof_Settings {
         $raw = get_option( 'qaproof_saved_designs', '[]' );
         $designs = json_decode( $raw, true );
         return is_array( $designs ) ? $designs : [];
+    }
+
+    /**
+     * Figma API usage tracking — counts every Figma-hitting request proxied
+     * through this plugin (figma-preview, detect-elements with figmaUrl).
+     * Reset implicitly at the start of each calendar month.
+     *
+     * Stored shape:
+     *   {
+     *     month:       'YYYY-MM',
+     *     total:       12,
+     *     byType:      { 'image': 7, 'nodes': 5 },
+     *     lastCallAt:  1776171684,
+     *     recent:      [ { t: 'image', ts: 177..., ok: true }, ... up to 20 ]
+     *   }
+     */
+    const FIGMA_USAGE_OPTION = 'qaproof_figma_api_usage';
+
+    /**
+     * Extract the Figma fileKey from a Figma URL.
+     * Supports /design/{key}/, /file/{key}/, /proto/{key}/, /board/{key}/.
+     * Returns '' when no key can be parsed.
+     */
+    public static function extract_figma_file_key( $figma_url ) {
+        if ( ! is_string( $figma_url ) || $figma_url === '' ) return '';
+        if ( preg_match( '#figma\.com/(?:design|file|proto|board)/([A-Za-z0-9]+)#i', $figma_url, $m ) ) {
+            return $m[1];
+        }
+        return '';
+    }
+
+    public static function get_figma_api_usage() {
+        $raw = get_option( self::FIGMA_USAGE_OPTION, '' );
+        $data = $raw ? json_decode( $raw, true ) : null;
+        $current_month = gmdate( 'Y-m' );
+        if ( ! is_array( $data ) || ! isset( $data['month'] ) || $data['month'] !== $current_month ) {
+            $data = [
+                'month'      => $current_month,
+                'byFile'     => [],
+                'lastCallAt' => 0,
+            ];
+        }
+        if ( ! isset( $data['byFile'] ) || ! is_array( $data['byFile'] ) ) {
+            $data['byFile'] = [];
+        }
+        // Derive aggregate totals for callers that want a single-glance view.
+        $total = 0;
+        $byType = [];
+        foreach ( $data['byFile'] as $file_entry ) {
+            if ( ! is_array( $file_entry ) ) continue;
+            $total += (int) ( $file_entry['total'] ?? 0 );
+            $ft = $file_entry['byType'] ?? [];
+            if ( is_array( $ft ) ) {
+                foreach ( $ft as $k => $v ) {
+                    $byType[ $k ] = ( $byType[ $k ] ?? 0 ) + (int) $v;
+                }
+            }
+        }
+        $data['total']  = $total;
+        $data['byType'] = $byType;
+        return $data;
+    }
+
+    /**
+     * Increment the Figma API call counter for a specific file.
+     * Figma rate limits apply per workspace/file, so we bucket counts per fileKey.
+     *
+     * @param string $file_key  Figma file identifier (from figma URL). Empty = ignore.
+     * @param string $type      'image' (figma-preview / image export) or 'nodes' (detect-elements tree fetch).
+     * @param bool   $ok        Whether the call succeeded (still counts either way).
+     */
+    public static function track_figma_api_call( $file_key, $type = 'image', $ok = true ) {
+        $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
+        if ( $file_key === '' ) return self::get_figma_api_usage();
+
+        $data = self::get_figma_api_usage();
+        $files = isset( $data['byFile'] ) && is_array( $data['byFile'] ) ? $data['byFile'] : [];
+        $entry = isset( $files[ $file_key ] ) && is_array( $files[ $file_key ] ) ? $files[ $file_key ] : [
+            'total'      => 0,
+            'byType'     => [],
+            'recent'     => [],
+            'lastCallAt' => 0,
+            'rateLimit'  => [ 'retryAt' => 0, 'observedAt' => 0, 'rawRetryAfter' => '' ],
+        ];
+        $entry['total']  = (int) ( $entry['total'] ?? 0 ) + 1;
+        $bt              = $entry['byType'] ?? [];
+        $bt[ $type ]     = (int) ( $bt[ $type ] ?? 0 ) + 1;
+        $entry['byType'] = $bt;
+        $entry['lastCallAt'] = time();
+        $recent = isset( $entry['recent'] ) && is_array( $entry['recent'] ) ? $entry['recent'] : [];
+        array_unshift( $recent, [ 't' => $type, 'ts' => time(), 'ok' => (bool) $ok ] );
+        $entry['recent'] = array_slice( $recent, 0, 20 );
+        $files[ $file_key ] = $entry;
+        $data['byFile']     = $files;
+        $data['lastCallAt'] = time();
+        unset( $data['total'], $data['byType'] ); // derived — don't persist
+        update_option( self::FIGMA_USAGE_OPTION, wp_json_encode( $data ) );
+        return self::get_figma_api_usage();
+    }
+
+    public static function reset_figma_api_usage() {
+        delete_option( self::FIGMA_USAGE_OPTION );
+        delete_option( self::FIGMA_RATE_LIMIT_OPTION ); // legacy global rate-limit blob
+    }
+
+    const FIGMA_RATE_LIMIT_OPTION = 'qaproof_figma_rate_limit'; // legacy, cleaned on reset
+
+    /**
+     * Get rate-limit state for a specific Figma file.
+     * Figma's 429 Retry-After applies per workspace/file, so we key it per fileKey.
+     */
+    public static function get_figma_rate_limit( $file_key = '' ) {
+        $empty = [ 'retryAt' => 0, 'observedAt' => 0, 'rawRetryAfter' => '' ];
+        $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
+        if ( $file_key === '' ) return $empty;
+
+        $data = self::get_figma_api_usage();
+        $entry = $data['byFile'][ $file_key ] ?? null;
+        if ( ! is_array( $entry ) || empty( $entry['rateLimit'] ) ) return $empty;
+        $rl = $entry['rateLimit'];
+        return [
+            'retryAt'       => (int) ( $rl['retryAt'] ?? 0 ),
+            'observedAt'    => (int) ( $rl['observedAt'] ?? 0 ),
+            'rawRetryAfter' => (string) ( $rl['rawRetryAfter'] ?? '' ),
+        ];
+    }
+
+    public static function record_figma_rate_limit( $file_key, $retry_at_ms, $raw_retry_after = '' ) {
+        $file_key    = is_string( $file_key ) ? trim( $file_key ) : '';
+        $retry_at_ms = (int) $retry_at_ms;
+        if ( $file_key === '' || $retry_at_ms <= 0 || $retry_at_ms <= time() * 1000 ) {
+            return;
+        }
+        $data  = self::get_figma_api_usage();
+        $files = isset( $data['byFile'] ) && is_array( $data['byFile'] ) ? $data['byFile'] : [];
+        $entry = isset( $files[ $file_key ] ) && is_array( $files[ $file_key ] ) ? $files[ $file_key ] : [
+            'total' => 0, 'byType' => [], 'recent' => [], 'lastCallAt' => 0,
+        ];
+        $entry['rateLimit'] = [
+            'retryAt'       => $retry_at_ms,
+            'observedAt'    => time() * 1000,
+            'rawRetryAfter' => (string) $raw_retry_after,
+        ];
+        $files[ $file_key ] = $entry;
+        $data['byFile']     = $files;
+        unset( $data['total'], $data['byType'] );
+        update_option( self::FIGMA_USAGE_OPTION, wp_json_encode( $data ) );
+    }
+
+    public static function clear_figma_rate_limit( $file_key = '' ) {
+        $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
+        if ( $file_key === '' ) return;
+        $data  = self::get_figma_api_usage();
+        if ( ! isset( $data['byFile'][ $file_key ] ) ) return;
+        if ( isset( $data['byFile'][ $file_key ]['rateLimit'] ) ) {
+            $data['byFile'][ $file_key ]['rateLimit'] = [ 'retryAt' => 0, 'observedAt' => 0, 'rawRetryAfter' => '' ];
+        }
+        unset( $data['total'], $data['byType'] );
+        update_option( self::FIGMA_USAGE_OPTION, wp_json_encode( $data ) );
+    }
+
+    /**
+     * Per-file rate-limit gate. Returns retryAt (ms) when this specific Figma
+     * file is currently under a known 429 Retry-After window, else 0.
+     */
+    public static function figma_rate_limit_active_until( $file_key = '' ) {
+        $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
+        if ( $file_key === '' ) return 0;
+        $rl = self::get_figma_rate_limit( $file_key );
+        $retry_at = (int) $rl['retryAt'];
+        if ( $retry_at > 0 && $retry_at > time() * 1000 ) {
+            return $retry_at;
+        }
+        if ( $retry_at > 0 && $retry_at <= time() * 1000 ) {
+            self::clear_figma_rate_limit( $file_key );
+        }
+        return 0;
     }
 
     /**
