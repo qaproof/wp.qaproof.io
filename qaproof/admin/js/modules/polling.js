@@ -131,7 +131,7 @@
     .catch(function (err) {
       console.warn('[QAProof] Screenshots fetch error:', err.message);
       var placeholder = document.getElementById('qaproof-screenshots-loading');
-      if (placeholder) placeholder.textContent = 'Screenshots could not be loaded.';
+      if (placeholder) placeholder.textContent = (qaproof.i18n.screenshotsLoadError || 'Screenshots could not be loaded.');
       if (onComplete) onComplete(resultData);
     });
   }

@@ -9,19 +9,19 @@
   function safeJson(response) {
     if (!response.ok) {
       return response.text().then(function (text) {
-        var msg = 'Server returned HTTP ' + response.status;
+        var msg = (qaproof.i18n.errHttp || 'Server returned HTTP ') + response.status;
         if (response.status === 404) {
-          msg = 'REST API endpoint not found (404). Check that the plugin is activated and permalinks are flushed (Settings → Permalinks → Save).';
+          msg = qaproof.i18n.err404 || 'REST API endpoint not found (404).';
         } else if (response.status === 403) {
-          msg = 'Access denied (403). Your login session may have expired — try refreshing the page.';
+          msg = qaproof.i18n.err403 || 'Access denied (403).';
         } else if (response.status === 500) {
-          msg = 'Internal server error (500). Check the server error log for details.';
+          msg = qaproof.i18n.err500 || 'Internal server error (500).';
         }
         throw new Error(msg);
       });
     }
     return response.json().catch(function () {
-      throw new Error('Invalid JSON response from server. The API endpoint may be misconfigured.');
+      throw new Error(qaproof.i18n.errInvalidJson || 'Invalid JSON response from server.');
     });
   }
 

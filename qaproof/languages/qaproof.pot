@@ -1,0 +1,1856 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR QAProof
+# This file is distributed under the same license as the QAProof package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: QAProof 1.2.26\n"
+"Report-Msgid-Bugs-To: https://qaproof.io\n"
+"POT-Creation-Date: 2026-04-17 11:54+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: admin/class-admin-assets.php:106
+msgid "Server returned HTTP "
+msgstr ""
+
+#: admin/class-admin-assets.php:107
+msgid ""
+"REST API endpoint not found (404). Check that the plugin is activated and "
+"permalinks are flushed (Settings → Permalinks → Save)."
+msgstr ""
+
+#: admin/class-admin-assets.php:108
+msgid ""
+"Access denied (403). Your login session may have expired — try refreshing "
+"the page."
+msgstr ""
+
+#: admin/class-admin-assets.php:109
+msgid "Internal server error (500). Check the server error log for details."
+msgstr ""
+
+#: admin/class-admin-assets.php:110
+msgid ""
+"Invalid JSON response from server. The API endpoint may be misconfigured."
+msgstr ""
+
+#: admin/class-admin-assets.php:112 admin/partials/page-tests.php:127
+msgid "Analyze Design Fidelity"
+msgstr ""
+
+#: admin/class-admin-assets.php:113
+msgid "Test Responsive"
+msgstr ""
+
+#: admin/class-admin-assets.php:114 admin/partials/page-accessibility.php:92
+msgid "Run Accessibility Audit"
+msgstr ""
+
+#: admin/class-admin-assets.php:115
+msgid "Run Design Audit"
+msgstr ""
+
+#: admin/class-admin-assets.php:116
+msgid "Run Test"
+msgstr ""
+
+#: admin/class-admin-assets.php:117
+msgid "Analyze Element Fidelity"
+msgstr ""
+
+#: admin/class-admin-assets.php:119
+msgid "Select a saved design or upload an image to preview."
+msgstr ""
+
+#: admin/class-admin-assets.php:120
+msgid "Could not load preview."
+msgstr ""
+
+#: admin/class-admin-assets.php:121
+msgid "Retry"
+msgstr ""
+
+#: admin/class-admin-assets.php:122
+msgid "Saved image · No Figma API call"
+msgstr ""
+
+#: admin/class-admin-assets.php:123
+msgid "Refreshed & saved · No API call needed next time"
+msgstr ""
+
+#: admin/class-admin-assets.php:124
+msgid "Could not refresh preview."
+msgstr ""
+
+#: admin/class-admin-assets.php:125
+msgid "File: "
+msgstr ""
+
+#: admin/class-admin-assets.php:126
+msgid "Node: "
+msgstr ""
+
+#: admin/class-admin-assets.php:128
+msgid "Invalid or expired Figma token."
+msgstr ""
+
+#: admin/class-admin-assets.php:129
+msgid "File not found. Check the URL."
+msgstr ""
+
+#: admin/class-admin-assets.php:130
+msgid ""
+"Figma rate limit exceeded. This is often caused by Starter plan restrictions "
+"(very low API limits). Ensure your Figma file is in a Professional or higher "
+"workspace, or use \"Upload Image\" instead. Wait 1-2 minutes, then try again."
+msgstr ""
+
+#: admin/class-admin-assets.php:131
+msgid "Design too complex to preview."
+msgstr ""
+
+#: admin/class-admin-assets.php:132
+msgid "Figma could not export this design."
+msgstr ""
+
+#: admin/class-admin-assets.php:133
+msgid "This node cannot be rendered. Try a different frame."
+msgstr ""
+
+#: admin/class-admin-assets.php:134
+msgid "No frames found. Add a node-id to the URL."
+msgstr ""
+
+#: admin/class-admin-assets.php:136 admin/partials/page-tests.php:140
+msgid "Save"
+msgstr ""
+
+#: admin/class-admin-assets.php:137
+msgid "Saving image..."
+msgstr ""
+
+#: admin/class-admin-assets.php:138
+msgid "Detecting elements..."
+msgstr ""
+
+#: admin/class-admin-assets.php:139
+msgid "Saved + elements ✓"
+msgstr ""
+
+#: admin/class-admin-assets.php:140
+msgid "Saved ✓"
+msgstr ""
+
+#: admin/class-admin-assets.php:141
+msgid "Saved (detection failed)"
+msgstr ""
+
+#: admin/class-admin-assets.php:142
+msgid "Error"
+msgstr ""
+
+#: admin/class-admin-assets.php:143 admin/class-admin-assets.php:147
+msgid "Saved image · No API call needed"
+msgstr ""
+
+#: admin/class-admin-assets.php:144
+msgid "Saved image + elements · No API call needed"
+msgstr ""
+
+#: admin/class-admin-assets.php:145
+msgid "Saved image · Detecting elements..."
+msgstr ""
+
+#: admin/class-admin-assets.php:146
+msgid "Saved image · Element detection failed"
+msgstr ""
+
+#: admin/class-admin-assets.php:149 admin/partials/page-tests.php:177
+msgid "Detect Elements"
+msgstr ""
+
+#: admin/class-admin-assets.php:150
+msgid "Show detected elements"
+msgstr ""
+
+#: admin/class-admin-assets.php:151
+msgid "Load cached elements detected in Settings — no API call needed"
+msgstr ""
+
+#: admin/class-admin-assets.php:152
+msgid "Elements detected:"
+msgstr ""
+
+#: admin/class-admin-assets.php:153
+msgid "No elements detected. Try a different design image."
+msgstr ""
+
+#: admin/class-admin-assets.php:154
+msgid "Detection failed. Check your connection and try again."
+msgstr ""
+
+#: admin/class-admin-assets.php:155
+msgid ""
+"Figma API rate-limited — showing approximate detection. Try again later for "
+"pixel-perfect results."
+msgstr ""
+
+#: admin/class-admin-assets.php:157 admin/class-admin-assets.php:262
+msgid "All"
+msgstr ""
+
+#: admin/class-admin-assets.php:158
+msgid "Sections"
+msgstr ""
+
+#: admin/class-admin-assets.php:159
+msgid "Components"
+msgstr ""
+
+#: admin/class-admin-assets.php:160
+msgid "Sub-components"
+msgstr ""
+
+#: admin/class-admin-assets.php:162
+msgid "Testing: "
+msgstr ""
+
+#: admin/class-admin-assets.php:164
+msgid " Collapse"
+msgstr ""
+
+#: admin/class-admin-assets.php:165
+msgid " Expand"
+msgstr ""
+
+#: admin/class-admin-assets.php:167
+msgid "Send to "
+msgstr ""
+
+#: admin/class-admin-assets.php:168 admin/partials/page-monitors.php:99
+msgid "Cancel"
+msgstr ""
+
+#: admin/class-admin-assets.php:169
+msgid " Confirm"
+msgstr ""
+
+#: admin/class-admin-assets.php:170
+msgid " Sending..."
+msgstr ""
+
+#: admin/class-admin-assets.php:171
+msgid " Sent!"
+msgstr ""
+
+#: admin/class-admin-assets.php:173
+msgid "Capturing 3 viewport sizes and analyzing responsive behavior..."
+msgstr ""
+
+#: admin/class-admin-assets.php:174
+msgid "This may take 1-2 minutes (3 screenshots + AI analysis)"
+msgstr ""
+
+#: admin/class-admin-assets.php:175
+msgid "Capturing page and running accessibility audit..."
+msgstr ""
+
+#: admin/class-admin-assets.php:176
+msgid "Scanning page and extracting design tokens..."
+msgstr ""
+
+#: admin/class-admin-assets.php:177
+msgid "Analyzing design system consistency (1-2 minutes)"
+msgstr ""
+
+#: admin/class-admin-assets.php:178
+msgid "Analyzing element: "
+msgstr ""
+
+#: admin/class-admin-assets.php:179
+msgid ""
+"Cropping design region, finding match on live page, comparing (30-60 seconds)"
+msgstr ""
+
+#: admin/class-admin-assets.php:180
+msgid "Capturing screenshots and analyzing design..."
+msgstr ""
+
+#: admin/class-admin-assets.php:181
+msgid "This may take 15-30 seconds"
+msgstr ""
+
+#: admin/class-admin-assets.php:183
+msgid "A test is already running. Please wait for it to finish."
+msgstr ""
+
+#: admin/class-admin-assets.php:184
+#, php-format
+msgid ""
+"API key not configured. <a href=\"%s\">Go to Settings</a> to add your key."
+msgstr ""
+
+#: admin/class-admin-assets.php:185
+msgid "Please upload a design image or select a saved design."
+msgstr ""
+
+#: admin/class-admin-assets.php:186
+msgid ""
+"Could not reach the server. Check your connection. Reload the page to retry."
+msgstr ""
+
+#: admin/class-admin-assets.php:187
+msgid "Invalid image data. Please re-upload the design file."
+msgstr ""
+
+#: admin/class-admin-assets.php:188
+msgid "Please upload an image file (PNG, JPEG, WebP)."
+msgstr ""
+
+#: admin/class-admin-assets.php:189
+msgid " MB). Maximum size: 5MB."
+msgstr ""
+
+#: admin/class-admin-assets.php:190
+msgid "File too large ("
+msgstr ""
+
+#: admin/class-admin-assets.php:192 admin/class-admin-assets.php:312
+msgid "Capturing page screenshot"
+msgstr ""
+
+#: admin/class-admin-assets.php:193
+msgid "Extracting design tokens from DOM"
+msgstr ""
+
+#: admin/class-admin-assets.php:194
+msgid "Analyzing color palette & typography"
+msgstr ""
+
+#: admin/class-admin-assets.php:195
+msgid "AI auditing design consistency"
+msgstr ""
+
+#: admin/class-admin-assets.php:196
+msgid "Building design debt report"
+msgstr ""
+
+#: admin/class-admin-assets.php:197 admin/class-admin-assets.php:313
+msgid "Processing images"
+msgstr ""
+
+#: admin/class-admin-assets.php:198
+msgid "Running AI analysis"
+msgstr ""
+
+#: admin/class-admin-assets.php:199
+msgid "Generating report"
+msgstr ""
+
+#: admin/class-admin-assets.php:200
+msgid "Finalizing results"
+msgstr ""
+
+#: admin/class-admin-assets.php:201
+msgid "This may take 1-3 minutes"
+msgstr ""
+
+#: admin/class-admin-assets.php:202
+msgid "Almost done"
+msgstr ""
+
+#: admin/class-admin-assets.php:205
+msgid "January"
+msgstr ""
+
+#: admin/class-admin-assets.php:205
+msgid "February"
+msgstr ""
+
+#: admin/class-admin-assets.php:205
+msgid "March"
+msgstr ""
+
+#: admin/class-admin-assets.php:206
+msgid "April"
+msgstr ""
+
+#: admin/class-admin-assets.php:206
+msgid "May"
+msgstr ""
+
+#: admin/class-admin-assets.php:206
+msgid "June"
+msgstr ""
+
+#: admin/class-admin-assets.php:207
+msgid "July"
+msgstr ""
+
+#: admin/class-admin-assets.php:207
+msgid "August"
+msgstr ""
+
+#: admin/class-admin-assets.php:207
+msgid "September"
+msgstr ""
+
+#: admin/class-admin-assets.php:208
+msgid "October"
+msgstr ""
+
+#: admin/class-admin-assets.php:208
+msgid "November"
+msgstr ""
+
+#: admin/class-admin-assets.php:208
+msgid "December"
+msgstr ""
+
+#: admin/class-admin-assets.php:211
+msgid "Su"
+msgstr ""
+
+#: admin/class-admin-assets.php:211
+msgid "Mo"
+msgstr ""
+
+#: admin/class-admin-assets.php:211
+msgid "Tu"
+msgstr ""
+
+#: admin/class-admin-assets.php:212
+msgid "We"
+msgstr ""
+
+#: admin/class-admin-assets.php:212
+msgid "Th"
+msgstr ""
+
+#: admin/class-admin-assets.php:212
+msgid "Fr"
+msgstr ""
+
+#: admin/class-admin-assets.php:212
+msgid "Sa"
+msgstr ""
+
+#: admin/class-admin-assets.php:214 admin/partials/page-monitors.php:64
+msgid "Now"
+msgstr ""
+
+#: admin/class-admin-assets.php:216
+msgid "No monitors yet. Click \"Add Monitor\" to get started."
+msgstr ""
+
+#: admin/class-admin-assets.php:217
+msgid "URL"
+msgstr ""
+
+#: admin/class-admin-assets.php:218 admin/partials/page-monitors.php:46
+msgid "Schedule"
+msgstr ""
+
+#: admin/class-admin-assets.php:219
+msgid "Last Score"
+msgstr ""
+
+#: admin/class-admin-assets.php:220
+msgid "Last Run"
+msgstr ""
+
+#: admin/class-admin-assets.php:221 admin/class-admin-assets.php:354
+msgid "Status"
+msgstr ""
+
+#: admin/class-admin-assets.php:222
+msgid "Actions"
+msgstr ""
+
+#: admin/class-admin-assets.php:223
+msgid "Never"
+msgstr ""
+
+#: admin/class-admin-assets.php:224
+msgid "Active"
+msgstr ""
+
+#: admin/class-admin-assets.php:225
+msgid "Paused"
+msgstr ""
+
+#: admin/class-admin-assets.php:226
+msgid "Run Now"
+msgstr ""
+
+#: admin/class-admin-assets.php:227
+msgid "Run"
+msgstr ""
+
+#: admin/class-admin-assets.php:228
+msgid "Pause"
+msgstr ""
+
+#: admin/class-admin-assets.php:229
+msgid "Enable"
+msgstr ""
+
+#: admin/class-admin-assets.php:230
+msgid "Edit Monitor"
+msgstr ""
+
+#: admin/class-admin-assets.php:231 admin/partials/page-monitors.php:30
+#: admin/partials/page-monitors.php:108
+msgid "Add Monitor"
+msgstr ""
+
+#: admin/class-admin-assets.php:232
+msgid "Failed to save monitor."
+msgstr ""
+
+#: admin/class-admin-assets.php:233
+msgid "Delete this monitor and all its results?"
+msgstr ""
+
+#: admin/class-admin-assets.php:234
+msgid "Test timed out. Check back later."
+msgstr ""
+
+#: admin/class-admin-assets.php:235
+msgid "Failed to run monitor."
+msgstr ""
+
+#: admin/class-admin-assets.php:236
+msgid "Loading monitor..."
+msgstr ""
+
+#: admin/class-admin-assets.php:237 admin/class-admin-rest-monitors.php:16
+#: admin/class-admin-rest-monitors.php:63
+#: admin/class-admin-rest-monitors.php:106
+#: admin/class-admin-rest-monitors.php:126
+#: admin/class-admin-rest-monitors.php:177
+msgid "Monitor not found."
+msgstr ""
+
+#: admin/class-admin-assets.php:238
+msgid "Loading regression test..."
+msgstr ""
+
+#: admin/class-admin-assets.php:239
+msgid "Test started. Waiting for results..."
+msgstr ""
+
+#: admin/class-admin-assets.php:240
+msgid "Running..."
+msgstr ""
+
+#: admin/class-admin-assets.php:241
+msgid "Approving..."
+msgstr ""
+
+#: admin/class-admin-assets.php:242
+msgid "Approve Changes"
+msgstr ""
+
+#: admin/class-admin-assets.php:243
+msgid ""
+"Approve these changes? This will update the baseline to the current page "
+"state."
+msgstr ""
+
+#: admin/class-admin-assets.php:244
+msgid "Failed to approve."
+msgstr ""
+
+#: admin/class-admin-assets.php:245
+msgid "Loading result..."
+msgstr ""
+
+#: admin/class-admin-assets.php:246 admin/class-admin-rest-monitors.php:169
+msgid "Result not found."
+msgstr ""
+
+#: admin/class-admin-assets.php:247
+msgid "Run Failed"
+msgstr ""
+
+#: admin/class-admin-assets.php:248
+msgid "Unknown error"
+msgstr ""
+
+#: admin/class-admin-assets.php:249
+msgid "No results yet. Click \"Run Now\" to run the first check."
+msgstr ""
+
+#: admin/class-admin-assets.php:250
+msgid "Results History"
+msgstr ""
+
+#: admin/class-admin-assets.php:251
+msgid "Back to Monitors"
+msgstr ""
+
+#: admin/class-admin-assets.php:252
+msgid "Regression Score"
+msgstr ""
+
+#: admin/class-admin-assets.php:253
+msgid "Download PDF Report"
+msgstr ""
+
+#: admin/class-admin-assets.php:254
+msgid "Send to Email"
+msgstr ""
+
+#: admin/class-admin-assets.php:255
+msgid "Categories"
+msgstr ""
+
+#: admin/class-admin-assets.php:256
+msgid "Visual Comparison"
+msgstr ""
+
+#: admin/class-admin-assets.php:257
+msgid "Markers"
+msgstr ""
+
+#: admin/class-admin-assets.php:258
+msgid "Sync Scroll"
+msgstr ""
+
+#: admin/class-admin-assets.php:259
+msgid "Baseline"
+msgstr ""
+
+#: admin/class-admin-assets.php:260
+msgid "Current"
+msgstr ""
+
+#: admin/class-admin-assets.php:261
+msgid "Differences"
+msgstr ""
+
+#: admin/class-admin-assets.php:263
+msgid "High"
+msgstr ""
+
+#: admin/class-admin-assets.php:264 admin/class-admin-assets.php:362
+msgid "Medium"
+msgstr ""
+
+#: admin/class-admin-assets.php:265 admin/class-admin-assets.php:363
+msgid "Low"
+msgstr ""
+
+#: admin/class-admin-assets.php:266 admin/class-admin-assets.php:367
+msgid "Recommendations"
+msgstr ""
+
+#: admin/class-admin-assets.php:268
+msgid "Layout & Structure"
+msgstr ""
+
+#: admin/class-admin-assets.php:269
+msgid "Styling & Colors"
+msgstr ""
+
+#: admin/class-admin-assets.php:270
+msgid "Typography & Content"
+msgstr ""
+
+#: admin/class-admin-assets.php:271
+msgid "Images & Media"
+msgstr ""
+
+#: admin/class-admin-assets.php:272
+msgid "Components & UI"
+msgstr ""
+
+#: admin/class-admin-assets.php:274
+msgid "Fidelity"
+msgstr ""
+
+#: admin/class-admin-assets.php:275 admin/partials/page-dashboard.php:143
+#: admin/partials/page-settings.php:51
+msgid "Responsive"
+msgstr ""
+
+#: admin/class-admin-assets.php:276 admin/class-admin.php:57
+#: admin/class-admin.php:58 admin/partials/page-dashboard.php:148
+#: admin/partials/page-settings.php:55
+msgid "Accessibility"
+msgstr ""
+
+#: admin/class-admin-assets.php:277 admin/partials/page-dashboard.php:158
+msgid "Regression"
+msgstr ""
+
+#: admin/class-admin-assets.php:278 admin/partials/page-dashboard.php:153
+#: admin/partials/page-dashboard.php:188 admin/partials/page-tests.php:60
+msgid "Design Audit"
+msgstr ""
+
+#: admin/class-admin-assets.php:279
+msgid "Loading test result..."
+msgstr ""
+
+#: admin/class-admin-assets.php:280
+msgid "Could not load test result."
+msgstr ""
+
+#: admin/class-admin-assets.php:281
+msgid "Failed to load test result."
+msgstr ""
+
+#: admin/class-admin-assets.php:282
+msgid "Delete this test result?"
+msgstr ""
+
+#: admin/class-admin-assets.php:283
+msgid "View report"
+msgstr ""
+
+#: admin/class-admin-assets.php:284
+msgid "Download PDF report"
+msgstr ""
+
+#: admin/class-admin-assets.php:285
+msgid "Delete"
+msgstr ""
+
+#: admin/class-admin-assets.php:286
+msgid "View"
+msgstr ""
+
+#: admin/class-admin-assets.php:287
+msgid "Failed to download report."
+msgstr ""
+
+#: admin/class-admin-assets.php:289
+msgid "Testing..."
+msgstr ""
+
+#: admin/class-admin-assets.php:290
+msgid "Connected! API status: "
+msgstr ""
+
+#: admin/class-admin-assets.php:291
+msgid "Failed: "
+msgstr ""
+
+#: admin/class-admin-assets.php:292
+msgid "Network error — could not reach API."
+msgstr ""
+
+#: admin/class-admin-assets.php:293
+msgid "Running diagnostics..."
+msgstr ""
+
+#: admin/class-admin-assets.php:294
+msgid "Please wait (up to 60 seconds)..."
+msgstr ""
+
+#: admin/class-admin-assets.php:295
+msgid "Run Diagnostics"
+msgstr ""
+
+#: admin/class-admin-assets.php:296
+msgid "Error: "
+msgstr ""
+
+#: admin/class-admin-assets.php:297
+msgid "Request failed: "
+msgstr ""
+
+#: admin/class-admin-assets.php:298
+msgid "API key must start with \"qap_\""
+msgstr ""
+
+#: admin/class-admin-assets.php:299
+msgid " characters — expected 68 (qap_ + 64 hex chars)"
+msgstr ""
+
+#: admin/class-admin-assets.php:300
+msgid ""
+"Key contains invalid characters — only 0-9 and a-f are allowed after \"qap_\""
+msgstr ""
+
+#: admin/class-admin-assets.php:301 includes/class-settings.php:761
+msgid "Not cached — open Tests page and click Save"
+msgstr ""
+
+#: admin/class-admin-assets.php:302 admin/partials/page-tests.php:101
+#: includes/class-settings.php:782
+msgid "Remove"
+msgstr ""
+
+#: admin/class-admin-assets.php:303
+msgid "Ready · "
+msgstr ""
+
+#: admin/class-admin-assets.php:304
+msgid " elements"
+msgstr ""
+
+#: admin/class-admin-assets.php:305 includes/class-settings.php:758
+msgid "Image cached · elements missing"
+msgstr ""
+
+#: admin/class-admin-assets.php:306
+msgid "Detection failed"
+msgstr ""
+
+#: admin/class-admin-assets.php:307
+msgid "Figma rate limit — try again later"
+msgstr ""
+
+#: admin/class-admin-assets.php:308
+msgid ""
+"Reset the Figma API call counter for this month?\n"
+"\n"
+"(This only resets the local tracker in this plugin — it does NOT reset "
+"Figma's actual quota on their side.)"
+msgstr ""
+
+#: admin/class-admin-assets.php:309
+msgid "Resuming test — waiting for results..."
+msgstr ""
+
+#: admin/class-admin-assets.php:310
+msgid "Test is still running on the server"
+msgstr ""
+
+#: admin/class-admin-assets.php:311
+msgid "Resuming accessibility test — waiting for results..."
+msgstr ""
+
+#: admin/class-admin-assets.php:314
+msgid "Running accessibility analysis"
+msgstr ""
+
+#: admin/class-admin-assets.php:315
+msgid "Evaluating WCAG compliance"
+msgstr ""
+
+#: admin/class-admin-assets.php:316
+msgid "Generating audit report"
+msgstr ""
+
+#: admin/class-admin-assets.php:317
+msgid "Test submission failed after multiple retries. Please try again."
+msgstr ""
+
+#: admin/class-admin-assets.php:318
+msgid "Settings saved successfully"
+msgstr ""
+
+#: admin/class-admin-assets.php:319
+msgid "This field is required."
+msgstr ""
+
+#: admin/class-admin-assets.php:320
+msgid "Please enter a valid email address."
+msgstr ""
+
+#: admin/class-admin-assets.php:321
+msgid "Please enter a valid URL starting with http:// or https://"
+msgstr ""
+
+#: admin/class-admin-assets.php:322
+msgid "Please enter a valid number."
+msgstr ""
+
+#: admin/class-admin-assets.php:323
+msgid "Value must be at least "
+msgstr ""
+
+#: admin/class-admin-assets.php:324
+msgid "Value must be no more than "
+msgstr ""
+
+#: admin/class-admin-assets.php:326
+msgid "Screenshots could not be loaded."
+msgstr ""
+
+#: admin/class-admin-assets.php:328
+msgid "PDF library failed to load. Please refresh the page and try again."
+msgstr ""
+
+#: admin/class-admin-assets.php:329
+msgid "Design Fidelity Analysis"
+msgstr ""
+
+#: admin/class-admin-assets.php:330
+msgid "Responsive Testing Report"
+msgstr ""
+
+#: admin/class-admin-assets.php:331
+msgid "Accessibility Audit Report"
+msgstr ""
+
+#: admin/class-admin-assets.php:332
+msgid "Visual Regression Report"
+msgstr ""
+
+#: admin/class-admin-assets.php:333
+msgid "Design System Audit Report"
+msgstr ""
+
+#: admin/class-admin-assets.php:334
+msgid "QA Analysis Report"
+msgstr ""
+
+#: admin/class-admin-assets.php:335
+msgid "Pixel-level comparison of design mockup against live implementation"
+msgstr ""
+
+#: admin/class-admin-assets.php:336
+msgid "Cross-viewport layout and usability analysis across breakpoints"
+msgstr ""
+
+#: admin/class-admin-assets.php:337
+msgid "WCAG 2.1 Level AA compliance evaluation and remediation guidance"
+msgstr ""
+
+#: admin/class-admin-assets.php:338
+msgid "Visual change detection against previously established baseline"
+msgstr ""
+
+#: admin/class-admin-assets.php:339
+msgid ""
+"Automated design system discovery, consistency audit, and design debt "
+"analysis"
+msgstr ""
+
+#: admin/class-admin-assets.php:340
+msgid "PASS"
+msgstr ""
+
+#: admin/class-admin-assets.php:341
+msgid "NEEDS WORK"
+msgstr ""
+
+#: admin/class-admin-assets.php:342
+msgid "FAIL"
+msgstr ""
+
+#: admin/class-admin-assets.php:343
+msgid "TARGET URL"
+msgstr ""
+
+#: admin/class-admin-assets.php:344
+msgid "N/A"
+msgstr ""
+
+#: admin/class-admin-assets.php:345
+msgid "OVERALL SCORE"
+msgstr ""
+
+#: admin/class-admin-assets.php:346
+msgid "Grade: "
+msgstr ""
+
+#: admin/class-admin-assets.php:347
+msgid "categories"
+msgstr ""
+
+#: admin/class-admin-assets.php:348
+msgid "issues"
+msgstr ""
+
+#: admin/class-admin-assets.php:349
+msgid "Executive Summary"
+msgstr ""
+
+#: admin/class-admin-assets.php:350
+msgid "Score Overview"
+msgstr ""
+
+#: admin/class-admin-assets.php:351
+msgid "Category Breakdown"
+msgstr ""
+
+#: admin/class-admin-assets.php:352
+msgid "Category"
+msgstr ""
+
+#: admin/class-admin-assets.php:353
+msgid "Score"
+msgstr ""
+
+#: admin/class-admin-assets.php:355
+msgid "Notes"
+msgstr ""
+
+#: admin/class-admin-assets.php:356
+msgid "Pass"
+msgstr ""
+
+#: admin/class-admin-assets.php:357
+msgid "Warning"
+msgstr ""
+
+#: admin/class-admin-assets.php:358
+msgid "Fail"
+msgstr ""
+
+#: admin/class-admin-assets.php:359
+msgid "Issues Found"
+msgstr ""
+
+#: admin/class-admin-assets.php:360 admin/partials/page-dashboard.php:132
+msgid "total"
+msgstr ""
+
+#: admin/class-admin-assets.php:361
+msgid "Critical / High"
+msgstr ""
+
+#: admin/class-admin-assets.php:364
+msgid "#"
+msgstr ""
+
+#: admin/class-admin-assets.php:365
+msgid "Severity"
+msgstr ""
+
+#: admin/class-admin-assets.php:366
+msgid "Description"
+msgstr ""
+
+#: admin/class-admin-assets.php:368
+msgid "items"
+msgstr ""
+
+#: admin/class-admin-assets.php:369
+msgid "Methodology & Standards"
+msgstr ""
+
+#: admin/class-admin-assets.php:370
+msgid "Testing Methodology"
+msgstr ""
+
+#: admin/class-admin-assets.php:371
+msgid "Automated screenshot capture of the target URL"
+msgstr ""
+
+#: admin/class-admin-assets.php:372
+msgid "AI-powered visual analysis using Claude Vision"
+msgstr ""
+
+#: admin/class-admin-assets.php:373
+msgid "Pattern matching against WCAG 2.1 Level AA criteria"
+msgstr ""
+
+#: admin/class-admin-assets.php:374
+msgid "Severity classification based on user impact"
+msgstr ""
+
+#: admin/class-admin-assets.php:375
+msgid "Standards Reference"
+msgstr ""
+
+#: admin/class-admin-assets.php:376
+msgid "QAProof  |  Automated Web Quality Assurance  |  qaproof.io"
+msgstr ""
+
+#: admin/class-admin-assets.php:377
+msgid "Report ID: "
+msgstr ""
+
+#: admin/class-admin-assets.php:378
+msgid "Generated: "
+msgstr ""
+
+#: admin/class-admin-assets.php:379
+msgid "of "
+msgstr ""
+
+#: admin/class-admin-assets.php:380
+msgid "QAPROOF VERIFIED"
+msgstr ""
+
+#: admin/class-admin-assets.php:381
+msgid "Score: "
+msgstr ""
+
+#: admin/class-admin-assets.php:382
+msgid ""
+"This report was generated by QAProof automated testing. Results are based on "
+"AI-powered visual analysis and may not capture all issues. Manual testing by "
+"accessibility experts is recommended for comprehensive compliance "
+"verification. This report does not constitute legal advice regarding ADA, "
+"Section 508, or EN 301 549 compliance."
+msgstr ""
+
+#: admin/class-admin-assets.php:383
+msgid ""
+"This report was generated by QAProof automated testing. Results are based on "
+"AI-powered visual analysis and may not capture all issues. Manual testing by "
+"accessibility experts is recommended for comprehensive compliance "
+"verification. This report does not constitute legal advice regarding "
+"regulatory compliance."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:16
+msgid "Figma URL and Token are required."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:30 admin/class-admin-rest-designs.php:284
+msgid "Figma rate limit active for this file. Try again after the reset time."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:114
+#: admin/class-admin-rest-designs.php:185
+msgid "Design ID is required."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:121
+msgid "Image data is required."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:129
+msgid "Invalid image data format."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:138
+#: admin/class-admin-rest-designs.php:201
+msgid "Saved design not found."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:162
+msgid "No saved image for this design."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:169
+#: admin/class-admin-rest-designs.php:234
+msgid "Design not found."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:192
+msgid "Elements data is required."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:227
+msgid "No saved elements for this design."
+msgstr ""
+
+#: admin/class-admin-rest-designs.php:266
+msgid "A design source is required (Figma URL or uploaded image)."
+msgstr ""
+
+#: admin/class-admin-rest-history.php:32 admin/class-admin-rest-history.php:43
+msgid "Test not found."
+msgstr ""
+
+#: admin/class-admin-rest-monitors.php:28 admin/class-admin-rest-tests.php:12
+msgid "Page URL is required."
+msgstr ""
+
+#: admin/class-admin-rest-monitors.php:47
+msgid "Failed to create monitor."
+msgstr ""
+
+#: admin/class-admin-rest-monitors.php:140
+msgid "Monitor test started in background. Results will appear shortly."
+msgstr ""
+
+#: admin/class-admin-rest-tests.php:20
+msgid "Invalid test type."
+msgstr ""
+
+#: admin/class-admin-rest-tests.php:99 admin/class-admin-rest-tests.php:132
+msgid "Job ID is required."
+msgstr ""
+
+#: admin/class-admin-rest-tests.php:160
+msgid "Missing required fields."
+msgstr ""
+
+#: admin/class-admin.php:28 admin/class-admin.php:29
+#: admin/partials/page-dashboard.php:31
+msgid "QAProof"
+msgstr ""
+
+#: admin/class-admin.php:39 admin/class-admin.php:40
+msgid "Dashboard"
+msgstr ""
+
+#: admin/class-admin.php:48 admin/class-admin.php:49
+#: admin/partials/page-settings.php:25 admin/partials/page-tests.php:14
+msgid "Tests"
+msgstr ""
+
+#: admin/class-admin.php:66 admin/class-admin.php:67
+#: admin/partials/page-dashboard.php:102 admin/partials/page-settings.php:29
+msgid "Monitors"
+msgstr ""
+
+#: admin/class-admin.php:75 admin/class-admin.php:76
+#: admin/partials/page-accessibility.php:81
+#: admin/partials/page-dashboard.php:230 admin/partials/page-settings.php:15
+msgid "Settings"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:17
+#: admin/partials/page-dashboard.php:199 includes/class-settings.php:255
+#: includes/class-settings.php:401
+msgid "Accessibility Audit"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:18
+msgid "WCAG 2.1 compliance analysis for your web pages"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:24
+msgid "Audit"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:28 admin/partials/page-tests.php:25
+msgid "History"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:39 admin/partials/page-monitors.php:20
+#: admin/partials/page-tests.php:36
+#, php-format
+msgid "API key not configured. %sGo to Settings%s to add your key."
+msgstr ""
+
+#: admin/partials/page-accessibility.php:55 admin/partials/page-monitors.php:36
+#: admin/partials/page-tests.php:113
+msgid "Page URL"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:62
+msgid "The page URL to audit for accessibility issues."
+msgstr ""
+
+#: admin/partials/page-accessibility.php:67
+msgid "WCAG Level"
+msgstr ""
+
+#: admin/partials/page-accessibility.php:80
+#, php-format
+msgid ""
+"WCAG 2.1 conformance level to test against. Default level can be changed in "
+"%s."
+msgstr ""
+
+#: admin/partials/page-accessibility.php:104
+msgid "Auditing accessibility..."
+msgstr ""
+
+#: admin/partials/page-accessibility.php:105 admin/partials/page-tests.php:218
+msgid "This may take 1-3 minutes."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:32
+msgid "AI-powered web quality assurance platform"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:35
+msgid "Run a Test"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:49
+msgid "Average Score"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:58
+msgid "Setup Required"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:60
+#, php-format
+msgid "Add your API key in %sSettings%s to start testing."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:70
+msgid "Get Started with Monitoring"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:72
+#, php-format
+msgid "Create your first %smonitor%s to track visual changes automatically."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:86
+msgid "Total Tests"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:95
+msgid "Avg Score"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:109
+msgid "Tokens Used"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:119
+msgid "Token Usage"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:123
+msgid "Plan"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:131
+msgid "used"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:138 admin/partials/page-dashboard.php:176
+#: admin/partials/page-settings.php:47 admin/partials/page-tests.php:52
+#: includes/class-settings.php:178 includes/class-settings.php:399
+msgid "Design Fidelity"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:163
+msgid "Resets on May 1, 2026"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:165
+msgid "Upgrade Plan"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:170
+msgid "Testing Tools"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:177
+msgid "Compare Figma mockups against live pages using AI vision analysis."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:182
+msgid "Responsive Testing"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:183
+msgid "Analyze layout adaptation across desktop, tablet, and mobile viewports."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:189
+msgid ""
+"Extract design tokens and score system consistency with Design Debt Score."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:200
+msgid ""
+"WCAG 2.1 compliance check — color contrast, ARIA, keyboard navigation, "
+"semantic HTML."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:212
+msgid "Visual Regression"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:213
+msgid ""
+"Scheduled monitoring with baseline comparison and automated email alerts."
+msgstr ""
+
+#: admin/partials/page-dashboard.php:225
+msgid "Quick Links"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:231
+msgid "API configuration, thresholds, and notification preferences"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:238
+msgid "Monitors & History"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:239
+msgid "Browse past results, monitor status, and score trends"
+msgstr ""
+
+#: admin/partials/page-dashboard.php:250 admin/partials/page-monitors.php:133
+#: admin/partials/page-settings.php:102 admin/partials/page-tests.php:265
+msgid "QAProof v1.0"
+msgstr ""
+
+#: admin/partials/page-monitors.php:13
+msgid "Visual Regression Monitors"
+msgstr ""
+
+#: admin/partials/page-monitors.php:14
+msgid "Monitor pages for unintended visual changes."
+msgstr ""
+
+#: admin/partials/page-monitors.php:50
+msgid "Daily"
+msgstr ""
+
+#: admin/partials/page-monitors.php:51
+msgid "Weekly"
+msgstr ""
+
+#: admin/partials/page-monitors.php:52
+msgid "Monthly"
+msgstr ""
+
+#: admin/partials/page-monitors.php:58
+msgid "Start Date"
+msgstr ""
+
+#: admin/partials/page-monitors.php:69
+msgid "When to start checking. Defaults to now."
+msgstr ""
+
+#: admin/partials/page-monitors.php:74
+msgid "Threshold Score"
+msgstr ""
+
+#: admin/partials/page-monitors.php:79
+msgid "Notify when score drops below this value."
+msgstr ""
+
+#: admin/partials/page-monitors.php:83
+msgid "Notifications"
+msgstr ""
+
+#: admin/partials/page-monitors.php:87
+msgid "Email"
+msgstr ""
+
+#: admin/partials/page-monitors.php:92
+msgid "Admin badge"
+msgstr ""
+
+#: admin/partials/page-monitors.php:98
+msgid "Save Monitor"
+msgstr ""
+
+#: admin/partials/page-monitors.php:118
+msgid "Loading monitors..."
+msgstr ""
+
+#: admin/partials/page-settings.php:21 admin/partials/page-settings.php:43
+msgid "General"
+msgstr ""
+
+#: admin/partials/page-settings.php:33
+msgid "Data Cleanup"
+msgstr ""
+
+#: admin/partials/page-tests.php:15
+msgid "Analyze design fidelity, responsive behavior, and design consistency"
+msgstr ""
+
+#: admin/partials/page-tests.php:21
+msgid "Test"
+msgstr ""
+
+#: admin/partials/page-tests.php:56 includes/class-settings.php:229
+#: includes/class-settings.php:400
+msgid "Responsive Test"
+msgstr ""
+
+#: admin/partials/page-tests.php:72
+msgid "Design Source"
+msgstr ""
+
+#: admin/partials/page-tests.php:77
+msgid "Saved Design"
+msgstr ""
+
+#: admin/partials/page-tests.php:80
+msgid "Upload Image"
+msgstr ""
+
+#: admin/partials/page-tests.php:86
+msgid "-- Select Design --"
+msgstr ""
+
+#: admin/partials/page-tests.php:89
+msgid "Manage designs in Settings"
+msgstr ""
+
+#: admin/partials/page-tests.php:120
+msgid "The live page URL to test."
+msgstr ""
+
+#: admin/partials/page-tests.php:137
+msgid "Design Preview"
+msgstr ""
+
+#: admin/partials/page-tests.php:138
+msgid "Save image to selected design (no more API calls)"
+msgstr ""
+
+#: admin/partials/page-tests.php:142
+msgid "Refresh from Figma (bypass cache)"
+msgstr ""
+
+#: admin/partials/page-tests.php:145
+msgid "Close Inspector"
+msgstr ""
+
+#: admin/partials/page-tests.php:151
+msgid "Enter your Figma Token and URL to preview the design before testing."
+msgstr ""
+
+#: admin/partials/page-tests.php:156
+msgid "Loading preview..."
+msgstr ""
+
+#: admin/partials/page-tests.php:182
+msgid "Full Page"
+msgstr ""
+
+#: admin/partials/page-tests.php:186
+msgid "Expand"
+msgstr ""
+
+#: admin/partials/page-tests.php:192
+msgid "AI detecting elements..."
+msgstr ""
+
+#: admin/partials/page-tests.php:217
+msgid "Analyzing..."
+msgstr ""
+
+#: admin/partials/page-tests.php:247 admin/partials/partial-test-history.php:42
+msgid "Loading..."
+msgstr ""
+
+#: admin/partials/page-tests.php:251 admin/partials/partial-test-history.php:46
+msgid "No test history yet. Run a test to see results here."
+msgstr ""
+
+#: admin/partials/page-tests.php:255 admin/partials/partial-test-history.php:50
+msgid "Load More"
+msgstr ""
+
+#: admin/partials/partial-test-history.php:22 includes/class-settings.php:332
+msgid "Test History"
+msgstr ""
+
+#: admin/partials/partial-theme-toggle.php:2
+msgid "Toggle dark/light theme"
+msgstr ""
+
+#: includes/class-api-client.php:24 includes/class-api-client.php:90
+#: includes/class-api-client.php:146 includes/class-api-client.php:242
+#: includes/class-api-client.php:313 includes/class-api-client.php:386
+msgid "API key not configured. Go to Settings to add your API key."
+msgstr ""
+
+#: includes/class-api-client.php:43 includes/class-api-client.php:105
+#: includes/class-api-client.php:265 includes/class-api-client.php:334
+#: includes/class-api-client.php:420
+#, php-format
+msgid "Could not reach the API: %s"
+msgstr ""
+
+#: includes/class-api-client.php:55 includes/class-api-client.php:114
+#: includes/class-api-client.php:274 includes/class-api-client.php:343
+#: includes/class-api-client.php:429
+#, php-format
+msgid "API returned invalid response (HTTP %d)"
+msgstr ""
+
+#: includes/class-api-client.php:62 includes/class-api-client.php:125
+#: includes/class-api-client.php:180 includes/class-api-client.php:281
+#: includes/class-api-client.php:350 includes/class-api-client.php:436
+#: includes/class-api-client.php:471
+#, php-format
+msgid "API returned HTTP %d"
+msgstr ""
+
+#: includes/class-api-client.php:119
+msgid "Job not found or expired."
+msgstr ""
+
+#: includes/class-api-client.php:164
+#, php-format
+msgid "Could not fetch screenshots: %s"
+msgstr ""
+
+#: includes/class-api-client.php:173
+#, php-format
+msgid "Screenshots response invalid (HTTP %d)"
+msgstr ""
+
+#: includes/class-api-client.php:480
+msgid "API returned invalid response."
+msgstr ""
+
+#: includes/class-notifications.php:52
+#, php-format
+msgid "[QAProof] Visual regression detected (score: %1$s) — %2$s"
+msgstr ""
+
+#: includes/class-notifications.php:61
+#, php-format
+msgid ""
+"QAProof has detected visual changes on a monitored page.\n"
+"\n"
+"Page: %1$s\n"
+"Score: %2$s / 100 (threshold: %3$s)\n"
+"Summary: %4$s\n"
+"\n"
+"View full results: %5$s\n"
+"\n"
+"If the changes are intentional, click \"Approve Changes\" in the plugin to "
+"update the baseline."
+msgstr ""
+
+#: includes/class-settings.php:30
+msgid "API Configuration"
+msgstr ""
+
+#: includes/class-settings.php:37 includes/class-settings.php:308
+msgid "API Key"
+msgstr ""
+
+#: includes/class-settings.php:70
+msgid "Monitoring Defaults"
+msgstr ""
+
+#: includes/class-settings.php:77
+msgid "Notification Email"
+msgstr ""
+
+#: includes/class-settings.php:85
+msgid "Email Notifications"
+msgstr ""
+
+#: includes/class-settings.php:93
+msgid "Admin Badge Notifications"
+msgstr ""
+
+#: includes/class-settings.php:101
+msgid "Default Threshold Score"
+msgstr ""
+
+#: includes/class-settings.php:130
+msgid "General Test Settings"
+msgstr ""
+
+#: includes/class-settings.php:132
+msgid "Default behavior for all test types."
+msgstr ""
+
+#: includes/class-settings.php:139
+msgid "Default Test Type"
+msgstr ""
+
+#: includes/class-settings.php:147
+msgid "Auto-Save Results"
+msgstr ""
+
+#: includes/class-settings.php:155
+msgid "Max History Entries"
+msgstr ""
+
+#: includes/class-settings.php:180
+msgid "Settings for design fidelity comparisons (Figma vs live page)."
+msgstr ""
+
+#: includes/class-settings.php:183
+msgid "Figma API Limits"
+msgstr ""
+
+#: includes/class-settings.php:184
+msgid ""
+"Each saved design makes up to 2 Figma API calls on first setup: 1 to fetch "
+"the design image (cached in WordPress) and 1 to fetch the node tree for "
+"pixel-perfect element detection. After that, both are reused for all future "
+"tests (zero API calls). Figma throttles requests per team/workspace rather "
+"than per account or per single file, so designs from the same workspace "
+"share one quota. Exact limits are not published by Figma — free and Starter "
+"plans are very restrictive (typically only a handful of requests before "
+"throttling), while Professional and higher plans have much larger "
+"allowances. If your token hits a rate limit on one workspace, designs from "
+"other workspaces keep working normally. If you want to avoid Figma API calls "
+"entirely, use the Upload Image option on the Tests page instead."
+msgstr ""
+
+#: includes/class-settings.php:192 includes/class-settings.php:324
+msgid "Saved Designs"
+msgstr ""
+
+#: includes/class-settings.php:200
+msgid "Ignore Text Differences"
+msgstr ""
+
+#: includes/class-settings.php:231
+msgid "Settings for responsive testing across viewports."
+msgstr ""
+
+#: includes/class-settings.php:238
+msgid "Viewport Widths (px)"
+msgstr ""
+
+#: includes/class-settings.php:257
+msgid "Settings for WCAG accessibility testing."
+msgstr ""
+
+#: includes/class-settings.php:264
+msgid "WCAG Conformance Level"
+msgstr ""
+
+#: includes/class-settings.php:301
+msgid "Data Cleanup on Uninstall"
+msgstr ""
+
+#: includes/class-settings.php:316
+msgid "Plugin Settings"
+msgstr ""
+
+#: includes/class-settings.php:340
+msgid "Monitors & Results"
+msgstr ""
+
+#: includes/class-settings.php:348
+msgid "Enter your API credentials to connect to the QAProof service."
+msgstr ""
+
+#: includes/class-settings.php:355
+msgid "Show/Hide API Key"
+msgstr ""
+
+#: includes/class-settings.php:365
+msgid "Configure default settings for visual regression monitors."
+msgstr ""
+
+#: includes/class-settings.php:371
+msgid "Email address for regression alerts. Defaults to admin email."
+msgstr ""
+
+#: includes/class-settings.php:377
+msgid "Send email notifications when regressions are detected."
+msgstr ""
+
+#: includes/class-settings.php:383
+msgid "Show badge on QAProof menu when regressions are detected."
+msgstr ""
+
+#: includes/class-settings.php:389
+msgid "Score below this threshold triggers notifications. 0-100, default 95."
+msgstr ""
+
+#: includes/class-settings.php:403
+msgid "Pre-selected test type on the Tests page."
+msgstr ""
+
+#: includes/class-settings.php:410
+msgid "Automatically save test results to history."
+msgstr ""
+
+#: includes/class-settings.php:416
+msgid ""
+"Maximum number of test results to keep. Oldest results are pruned "
+"automatically."
+msgstr ""
+
+#: includes/class-settings.php:734
+msgid "No saved designs yet. Click \"Add Design\" to create one."
+msgstr ""
+
+#: includes/class-settings.php:754
+#, php-format
+msgid "Ready · %d elements"
+msgstr ""
+
+#: includes/class-settings.php:766
+msgid "Design Name"
+msgstr ""
+
+#: includes/class-settings.php:767
+msgid "Figma URL"
+msgstr ""
+
+#: includes/class-settings.php:769
+msgid "Figma Token (figd_...)"
+msgstr ""
+
+#: includes/class-settings.php:770
+msgid "Show / Hide token"
+msgstr ""
+
+#: includes/class-settings.php:790
+msgid "Add Design"
+msgstr ""
+
+#: includes/class-settings.php:798
+#, php-format
+msgid "Save your designs here, then select them by name on the %s page."
+msgstr ""
+
+#: includes/class-settings.php:799
+msgid "Design Fidelity Test"
+msgstr ""
+
+#: includes/class-settings.php:809
+msgid "Ignore text content differences (focus on visual layout only)."
+msgstr ""
+
+#: includes/class-settings.php:810
+msgid ""
+"When enabled, AI analysis focuses on layout, colors, and spacing rather than "
+"text accuracy."
+msgstr ""
+
+#: includes/class-settings.php:823
+msgid "Desktop:"
+msgstr ""
+
+#: includes/class-settings.php:827
+msgid "Tablet:"
+msgstr ""
+
+#: includes/class-settings.php:831
+msgid "Mobile:"
+msgstr ""
+
+#: includes/class-settings.php:835
+msgid "Viewport widths (in pixels) used for responsive screenshots."
+msgstr ""
+
+#: includes/class-settings.php:850
+msgid ""
+"Default WCAG 2.1 conformance level used on the Accessibility Test page. AA "
+"is the standard for most websites."
+msgstr ""
+
+#: includes/class-settings.php:858
+msgid ""
+"Choose which data to delete when the plugin is removed. Unchecked items will "
+"be preserved in the database so they are available if you reinstall later."
+msgstr ""
+
+#: includes/class-settings.php:865
+msgid "Delete API key on uninstall"
+msgstr ""
+
+#: includes/class-settings.php:872
+msgid "Delete notification, threshold, viewport, and test settings"
+msgstr ""
+
+#: includes/class-settings.php:879
+msgid "Delete saved designs (including cached images)"
+msgstr ""
+
+#: includes/class-settings.php:886
+msgid "Delete all test history records"
+msgstr ""
+
+#: includes/class-settings.php:893
+msgid "Delete all monitors and their regression results"
+msgstr ""
+
+#: includes/class-settings.php:912
+msgid ""
+"Invalid API key format: must be a prefix followed by underscore and 64 "
+"hexadecimal characters."
+msgstr ""
