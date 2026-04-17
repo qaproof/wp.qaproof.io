@@ -33,9 +33,8 @@
     var selectedHour = selectedDate.getHours();
     var selectedMinute = selectedDate.getMinutes();
 
-    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
-    var dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    var monthNames = (qaproof.i18n && qaproof.i18n.monthNames) ? qaproof.i18n.monthNames : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var dayNames = (qaproof.i18n && qaproof.i18n.dayNames) ? qaproof.i18n.dayNames : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
     function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -54,7 +53,7 @@
 
     function updateLabel() {
       if (isNowMode) {
-        label.textContent = 'Now';
+        label.textContent = qaproof.i18n.datePickerNow || 'Now';
       } else {
         label.textContent = formatLabel(selectedDate, selectedHour, selectedMinute);
       }
@@ -329,27 +328,27 @@
     if (!monitorsListEl) return;
 
     if (!monitors || monitors.length === 0) {
-      monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">No monitors yet. Click "Add Monitor" to get started.</p>';
+      monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + (qaproof.i18n.noMonitors || 'No monitors yet. Click "Add Monitor" to get started.') + '</p>';
       return;
     }
 
     var html = '<table class="qaproof-monitors-table widefat striped">';
     html += '<thead><tr>';
-    html += '<th>' + Q.escapeHtml('URL') + '</th>';
-    html += '<th>' + Q.escapeHtml('Schedule') + '</th>';
-    html += '<th>' + Q.escapeHtml('Last Score') + '</th>';
-    html += '<th>' + Q.escapeHtml('Last Run') + '</th>';
-    html += '<th>' + Q.escapeHtml('Status') + '</th>';
-    html += '<th>' + Q.escapeHtml('Actions') + '</th>';
+    html += '<th>' + Q.escapeHtml(qaproof.i18n.colUrl || 'URL') + '</th>';
+    html += '<th>' + Q.escapeHtml(qaproof.i18n.colSchedule || 'Schedule') + '</th>';
+    html += '<th>' + Q.escapeHtml(qaproof.i18n.colLastScore || 'Last Score') + '</th>';
+    html += '<th>' + Q.escapeHtml(qaproof.i18n.colLastRun || 'Last Run') + '</th>';
+    html += '<th>' + Q.escapeHtml(qaproof.i18n.colStatus || 'Status') + '</th>';
+    html += '<th>' + Q.escapeHtml(qaproof.i18n.colActions || 'Actions') + '</th>';
     html += '</tr></thead><tbody>';
 
     for (var i = 0; i < monitors.length; i++) {
       var m = monitors[i];
       var scoreClass = m.last_score != null ? Q.getScoreClass(parseInt(m.last_score, 10)) : '';
       var scoreText = m.last_score != null ? m.last_score : '—';
-      var lastRun = m.last_run_at ? formatDate(m.last_run_at) : 'Never';
+      var lastRun = m.last_run_at ? formatDate(m.last_run_at) : (qaproof.i18n.monitorNever || 'Never');
       var statusClass = parseInt(m.is_enabled, 10) ? 'qaproof-status-active' : 'qaproof-status-paused';
-      var statusText = parseInt(m.is_enabled, 10) ? 'Active' : 'Paused';
+      var statusText = parseInt(m.is_enabled, 10) ? (qaproof.i18n.monitorActive || 'Active') : (qaproof.i18n.monitorPaused || 'Paused');
       var baselineText = parseInt(m.has_baseline, 10) ? '' : ' (no baseline)';
 
       html += '<tr data-id="' + m.id + '" class="qaproof-monitor-row-clickable">';
@@ -366,8 +365,8 @@
       html += '<td>' + Q.escapeHtml(lastRun) + '</td>';
       html += '<td><span class="' + statusClass + '">' + Q.escapeHtml(statusText + baselineText) + '</span></td>';
       html += '<td class="qaproof-monitor-actions">';
-      html += '  <button type="button" class="button qaproof-run-monitor" data-id="' + m.id + '" title="Run Now">Run</button>';
-      html += '  <button type="button" class="button qaproof-toggle-monitor" data-id="' + m.id + '" data-enabled="' + m.is_enabled + '">' + (parseInt(m.is_enabled, 10) ? 'Pause' : 'Enable') + '</button>';
+      html += '  <button type="button" class="button qaproof-run-monitor" data-id="' + m.id + '" title="Run Now">' + (qaproof.i18n.monitorBtnRun2 || 'Run') + '</button>';
+      html += '  <button type="button" class="button qaproof-toggle-monitor" data-id="' + m.id + '" data-enabled="' + m.is_enabled + '">' + (parseInt(m.is_enabled, 10) ? (qaproof.i18n.monitorBtnPause || 'Pause') : (qaproof.i18n.monitorBtnEnable || 'Enable')) + '</button>';
       html += '  <button type="button" class="button qaproof-edit-monitor" data-id="' + m.id + '">Edit</button>';
       html += '  <button type="button" class="button button-link-delete qaproof-delete-monitor" data-id="' + m.id + '">Delete</button>';
       html += '</td>';
@@ -430,7 +429,7 @@
     var notifyAdminCb = document.getElementById('qaproof-monitor-notify-admin');
 
     if (monitor) {
-      if (titleEl) titleEl.textContent = 'Edit Monitor';
+      if (titleEl) titleEl.textContent = qaproof.i18n.monitorFormTitleEdit || 'Edit Monitor';
       if (editIdEl) editIdEl.value = monitor.id;
       if (urlInput) urlInput.value = monitor.page_url;
       if (scheduleSelect) scheduleSelect.value = monitor.schedule;
@@ -443,7 +442,7 @@
       if (notifyEmailCb) notifyEmailCb.checked = parseInt(monitor.notify_email, 10) === 1;
       if (notifyAdminCb) notifyAdminCb.checked = parseInt(monitor.notify_admin, 10) === 1;
     } else {
-      if (titleEl) titleEl.textContent = 'Add Monitor';
+      if (titleEl) titleEl.textContent = qaproof.i18n.monitorFormTitleAdd || 'Add Monitor';
       if (editIdEl) editIdEl.value = '';
       if (urlInput) urlInput.value = '';
       if (scheduleSelect) scheduleSelect.value = 'daily';
@@ -482,7 +481,7 @@
         hideMonitorForm();
         loadMonitors();
       } else {
-        alert((resp.error && resp.error.message) || 'Failed to save monitor.');
+        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorSaveFailed || 'Failed to save monitor.'));
       }
     });
   }
@@ -496,7 +495,7 @@
   }
 
   function deleteMonitor(id) {
-    if (!confirm('Delete this monitor and all its results?')) return;
+    if (!confirm(qaproof.i18n.monitorDeleteConfirm || 'Delete this monitor and all its results?')) return;
     apiCall('DELETE', '/monitors/' + id).then(function (resp) {
       if (resp.success) loadMonitors();
     });
@@ -522,9 +521,9 @@
       stopMonitorPoll();
       // Update UI to show timeout
       var loadingText = document.getElementById('qaproof-monitors-loading-text');
-      if (loadingText) loadingText.textContent = 'Test timed out. Check back later.';
+      if (loadingText) loadingText.textContent = qaproof.i18n.monitorTimeout || 'Test timed out. Check back later.';
       var runBtn = document.getElementById('qaproof-detail-run');
-      if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Now'; }
+      if (runBtn) { runBtn.disabled = false; runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now'); }
       // Hide loading after a moment
       setTimeout(function () {
         if (monitorsLoading) monitorsLoading.classList.add('hidden');
@@ -577,7 +576,7 @@
         // Always open detail view to show the new result
         showMonitorDetail(id);
       } else {
-        alert((resp.error && resp.error.message) || 'Failed to run monitor.');
+        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
       }
     }).catch(function () {
       if (row) row.classList.remove('qaproof-monitor-running');
@@ -600,7 +599,7 @@
     if (monitorsListEl) monitorsListEl.classList.add('hidden');
     if (addMonitorBtn) addMonitorBtn.classList.add('hidden');
     monitorDetail.classList.remove('hidden');
-    monitorDetail.innerHTML = '<div id="qaproof-monitors-loading" style="margin-top:16px;"><div class="qaproof-loading-inner"><div class="qaproof-loading-left"><div class="qaproof-loading-spinner"></div><div class="qaproof-loading-info"><strong id="qaproof-monitors-loading-text">Loading monitor...</strong></div></div></div></div>';
+    monitorDetail.innerHTML = '<div id="qaproof-monitors-loading" style="margin-top:16px;"><div class="qaproof-loading-inner"><div class="qaproof-loading-left"><div class="qaproof-loading-spinner"></div><div class="qaproof-loading-info"><strong id="qaproof-monitors-loading-text">' + (qaproof.i18n.monitorLoading || 'Loading monitor...') + '</strong></div></div></div></div>';
 
     Promise.all([
       apiCall('GET', '/monitors/' + id),
@@ -610,7 +609,7 @@
       var resultsResp = results[1];
 
       if (!monitorResp.success) {
-        monitorDetail.innerHTML = '<p>Monitor not found.</p>';
+        monitorDetail.innerHTML = '<p>' + (qaproof.i18n.monitorNotFound || 'Monitor not found.') + '</p>';
         return;
       }
 
@@ -624,7 +623,7 @@
 
     var html = '';
     html += '<div class="qaproof-detail-header">';
-    html += '  <button type="button" id="qaproof-back-to-list" class="button">&larr; Back to Monitors</button>';
+    html += '  <button type="button" id="qaproof-back-to-list" class="button">&larr; ' + (qaproof.i18n.monitorBackToList || 'Back to Monitors') + '</button>';
     html += '  <h2>' + Q.escapeHtml(monitor.page_url) + '</h2>';
     html += '  <div class="qaproof-detail-meta">';
     var detailSchedule = Q.capitalize(monitor.schedule);
@@ -642,9 +641,9 @@
     html += '</div>';
 
     // Results timeline
-    html += '<h3>Results History</h3>';
+    html += '<h3>' + (qaproof.i18n.monitorResultsHistory || 'Results History') + '</h3>';
     if (!monitorResults || monitorResults.length === 0) {
-      html += '<p class="qaproof-monitors-empty">No results yet. Click "Run Now" to run the first check.</p>';
+      html += '<p class="qaproof-monitors-empty">' + (qaproof.i18n.monitorNoResults || 'No results yet. Click "Run Now" to run the first check.') + '</p>';
     } else {
       html += '<div class="qaproof-results-timeline">';
       for (var i = 0; i < monitorResults.length; i++) {
@@ -661,7 +660,7 @@
         html += '  <span class="qaproof-result-summary">' + Q.escapeHtml(truncate(r.summary || (r.error_message || ''), 80)) + '</span>';
 
         if (r.status === 'completed' && parseInt(r.has_changes, 10)) {
-          html += '  <button type="button" class="button button-small qaproof-approve-result" data-id="' + r.id + '">Approve Changes</button>';
+          html += '  <button type="button" class="button button-small qaproof-approve-result" data-id="' + r.id + '">' + (qaproof.i18n.monitorApproveChanges || 'Approve Changes') + '</button>';
         }
         html += '  <button type="button" class="button button-small qaproof-view-result" data-id="' + r.id + '">View</button>';
         html += '</div>';
@@ -690,7 +689,7 @@
       runBtn.addEventListener('click', function () {
         stopMonitorPoll();
         runBtn.disabled = true;
-        runBtn.textContent = 'Running...';
+        runBtn.textContent = qaproof.i18n.monitorRunning || 'Running...';
 
         // Show loading bar below button
         if (monitorsLoading) {
@@ -703,18 +702,18 @@
           if (resp.success) {
             // Update loading text
             var loadingText = document.getElementById('qaproof-monitors-loading-text');
-            if (loadingText) loadingText.textContent = 'Test started. Waiting for results...';
+            if (loadingText) loadingText.textContent = qaproof.i18n.monitorTestStarted || 'Test started. Waiting for results...';
             // Start polling for new results
             pollForMonitorResult(monitor.id, totalResultCount || 0);
           } else {
             runBtn.disabled = false;
-            runBtn.textContent = 'Run Now';
+            runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now');
             if (monitorsLoading) monitorsLoading.classList.add('hidden');
-            alert((resp.error && resp.error.message) || 'Failed to run monitor.');
+            alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
           }
         }).catch(function () {
           runBtn.disabled = false;
-          runBtn.textContent = 'Run Now';
+          runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now');
           if (monitorsLoading) monitorsLoading.classList.add('hidden');
         });
       });
@@ -734,20 +733,20 @@
   }
 
   function approveResult(resultId, monitorId, btn) {
-    if (!confirm('Approve these changes? This will update the baseline to the current page state.')) return;
+    if (!confirm(qaproof.i18n.monitorApproveConfirm || 'Approve these changes? This will update the baseline to the current page state.')) return;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Approving...';
+      btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
     }
 
     apiCall('POST', '/results/' + resultId + '/approve').then(function (resp) {
       if (resp.success) {
         showMonitorDetail(monitorId);
       } else {
-        alert((resp.error && resp.error.message) || 'Failed to approve.');
+        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorApproveFailed || 'Failed to approve.'));
         if (btn) {
           btn.disabled = false;
-          btn.textContent = 'Approve Changes';
+          btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
         }
       }
     });
@@ -756,7 +755,7 @@
   function viewResult(resultId) {
     var detailArea = document.getElementById('qaproof-result-detail');
     if (!detailArea) return;
-    detailArea.innerHTML = '<span class="spinner is-active" style="float:none;"></span> Loading result...';
+    detailArea.innerHTML = '<span class="spinner is-active" style="float:none;"></span> ' + (qaproof.i18n.monitorLoadingResult || 'Loading result...');
 
     var row = monitorDetail.querySelector('.qaproof-result-row[data-result-id="' + resultId + '"]');
     if (!row) return;
@@ -778,7 +777,7 @@
       }
 
       if (!result) {
-        detailArea.innerHTML = '<p>Result not found.</p>';
+        detailArea.innerHTML = '<p>' + (qaproof.i18n.monitorResultNotFound || 'Result not found.') + '</p>';
         return;
       }
 
@@ -788,7 +787,7 @@
 
   function renderResultDetail(result, container) {
     if (result.status === 'failed') {
-      container.innerHTML = '<div class="qaproof-card"><h3>Run Failed</h3><p>' + Q.escapeHtml(result.error_message || 'Unknown error') + '</p></div>';
+      container.innerHTML = '<div class="qaproof-card"><h3>' + (qaproof.i18n.monitorRunFailed2 || 'Run Failed') + '</h3><p>' + Q.escapeHtml(result.error_message || (qaproof.i18n.monitorUnknownError || 'Unknown error')) + '</p></div>';
       return;
     }
 
@@ -809,21 +808,21 @@
     html += '<div class="qaproof-report-hero">';
     html += '  <div class="qaproof-report-hero-top">';
     html += '    <div class="qaproof-report-hero-score">';
-    html += Q.buildScoreRingHtml(score, 'Regression Score', scoreClass);
-    html += '      <div class="qaproof-score-label">Regression Score</div>';
+    html += Q.buildScoreRingHtml(score, (qaproof.i18n.monitorRegressionScore || 'Regression Score'), scoreClass);
+    html += '      <div class="qaproof-score-label">' + (qaproof.i18n.monitorRegressionScore || 'Regression Score') + '</div>';
     html += '    </div>';
     html += '    <div class="qaproof-report-hero-info">';
     html += '      <div class="qaproof-summary">' + Q.escapeHtml(result.summary || '') + '</div>';
     html += '      <div class="qaproof-report-hero-actions">';
-    html += '        <button type="button" id="qaproof-pdf-btn" class="qaproof-btn qaproof-pdf-btn"><span class="dashicons dashicons-pdf"></span> Download PDF Report</button>';
-    html += '        <button type="button" id="qaproof-email-btn" class="qaproof-btn qaproof-email-btn"><span class="dashicons dashicons-email-alt"></span> Send to Email</button>';
+    html += '        <button type="button" id="qaproof-pdf-btn" class="qaproof-btn qaproof-pdf-btn"><span class="dashicons dashicons-pdf"></span> ' + (qaproof.i18n.monitorDownloadPdf || 'Download PDF Report') + '</button>';
+    html += '        <button type="button" id="qaproof-email-btn" class="qaproof-btn qaproof-email-btn"><span class="dashicons dashicons-email-alt"></span> ' + (qaproof.i18n.monitorSendEmail || 'Send to Email') + '</button>';
     html += '      </div>';
     html += '    </div>';
     html += '  </div>';
     html += '</div>';
 
     // Categories
-    html += '<h3>Categories</h3>';
+    html += '<h3>' + (qaproof.i18n.monitorCategories || 'Categories') + '</h3>';
     html += '<div class="qaproof-categories" id="qaproof-reg-categories"></div>';
 
     // Comparison Viewport
@@ -832,15 +831,15 @@
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
       html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
-      html += '      <div class="qaproof-chrome-title">Visual Comparison</div>';
+      html += '      <div class="qaproof-chrome-title">' + (qaproof.i18n.monitorVisualComp || 'Visual Comparison') + '</div>';
       html += '      <div class="qaproof-chrome-actions">';
-      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> Markers</button>';
-      html += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sync Scroll</button>';
+      html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> ' + (qaproof.i18n.monitorMarkers || 'Markers') + '</button>';
+      html += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> ' + (qaproof.i18n.monitorSyncScroll || 'Sync Scroll') + '</button>';
       html += '      </div>';
       html += '    </div>';
       html += '    <div class="qaproof-comparison-viewport">';
       html += '      <div class="qaproof-screenshot-col">';
-      html += '        <div class="qaproof-screenshot-label">Baseline</div>';
+      html += '        <div class="qaproof-screenshot-label">' + (qaproof.i18n.monitorBaseline || 'Baseline') + '</div>';
       html += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-figma">';
       html += '          <div class="qaproof-screenshot-inner">';
       html += '            <img id="qaproof-screenshot-figma" src="' + Q.escapeAttr(screenshots.baseline) + '" alt="Baseline" />';
@@ -849,7 +848,7 @@
       html += '        </div>';
       html += '      </div>';
       html += '      <div class="qaproof-screenshot-col">';
-      html += '        <div class="qaproof-screenshot-label">Current</div>';
+      html += '        <div class="qaproof-screenshot-label">' + (qaproof.i18n.monitorCurrent || 'Current') + '</div>';
       html += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-live">';
       html += '          <div class="qaproof-screenshot-inner">';
       html += '            <img id="qaproof-screenshot-live" src="' + Q.escapeAttr(screenshots.current) + '" alt="Current" />';
@@ -863,21 +862,21 @@
     }
 
     // Differences
-    html += '<h3>Differences <span class="qaproof-diff-count" id="qaproof-diff-count">' + differences.length + '</span></h3>';
+    html += '<h3>' + (qaproof.i18n.monitorDifferences || 'Differences') + ' <span class="qaproof-diff-count" id="qaproof-diff-count">' + differences.length + '</span></h3>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-severity-filter">';
-    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">All</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">High</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">Medium</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">Low</button>';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">' + (qaproof.i18n.monitorAll || 'All') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">' + (qaproof.i18n.monitorHigh || 'High') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">' + (qaproof.i18n.monitorMedium || 'Medium') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">' + (qaproof.i18n.monitorLow || 'Low') + '</button>';
     html += '    </div>';
     html += '  </div>';
     html += '  <div id="qaproof-differences"></div>';
     html += '</div>';
 
     // Recommendations
-    html += '<h3>Recommendations</h3>';
+    html += '<h3>' + (qaproof.i18n.monitorRecommendations || 'Recommendations') + '</h3>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-recommendations" id="qaproof-recommendations"></div>';
     html += '</div>';
@@ -886,11 +885,11 @@
 
     // Render dynamic sections
     Q.renderCategoriesInto('qaproof-reg-categories', categories, {
-      layout: 'Layout & Structure',
-      styling: 'Styling & Colors',
-      typography: 'Typography & Content',
-      images: 'Images & Media',
-      components: 'Components & UI',
+      layout: (qaproof.i18n.catLayout || (qaproof.i18n.catLayout || 'Layout & Structure')),
+      styling: (qaproof.i18n.catStyling || (qaproof.i18n.catStyling || 'Styling & Colors')),
+      typography: (qaproof.i18n.catTypography || (qaproof.i18n.catTypography || 'Typography & Content')),
+      images: (qaproof.i18n.catImages || (qaproof.i18n.catImages || 'Images & Media')),
+      components: (qaproof.i18n.catComponents || (qaproof.i18n.catComponents || 'Components & UI')),
     });
 
     Q.renderDifferencesInto('qaproof-differences', 'qaproof-diff-count', differences, false);

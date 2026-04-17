@@ -172,9 +172,9 @@
     if (differences.length > 0) {
       html += '  <div class="qaproof-stat-detail">';
       var parts = [];
-      if (highCount > 0) parts.push('<span class="qaproof-stat-high">' + highCount + ' High</span>');
+      if (highCount > 0) parts.push('<span class="qaproof-stat-high">' + highCount + ' ' + (qaproof.i18n.monitorHigh || 'High') + '</span>');
       if (medCount > 0) parts.push('<span class="qaproof-stat-med">' + medCount + ' Med</span>');
-      if (lowCount > 0) parts.push('<span class="qaproof-stat-low">' + lowCount + ' Low</span>');
+      if (lowCount > 0) parts.push('<span class="qaproof-stat-low">' + lowCount + ' ' + (qaproof.i18n.monitorLow || 'Low') + '</span>');
       html += parts.join(' · ');
       html += '  </div>';
     }
@@ -353,9 +353,9 @@
     if (differences.length > 0) {
       html += '<div class="qaproof-stat-detail">';
       var parts = [];
-      if (highCount > 0) parts.push('<span class="qaproof-stat-high">' + highCount + ' High</span>');
+      if (highCount > 0) parts.push('<span class="qaproof-stat-high">' + highCount + ' ' + (qaproof.i18n.monitorHigh || 'High') + '</span>');
       if (medCount > 0) parts.push('<span class="qaproof-stat-med">' + medCount + ' Med</span>');
-      if (lowCount > 0) parts.push('<span class="qaproof-stat-low">' + lowCount + ' Low</span>');
+      if (lowCount > 0) parts.push('<span class="qaproof-stat-low">' + lowCount + ' ' + (qaproof.i18n.monitorLow || 'Low') + '</span>');
       html += parts.join(' · ') + '</div>';
     }
     html += '</div>';
@@ -531,9 +531,9 @@
       var donutColors = [];
       var donutHoverColors = [];
       // Intentional order: High first (most severe)
-      if (highCount > 0) { donutLabels.push('High'); donutData.push(highCount); donutColors.push('#EF4444'); donutHoverColors.push('#DC2626'); }
-      if (medCount > 0) { donutLabels.push('Medium'); donutData.push(medCount); donutColors.push('#F59E0B'); donutHoverColors.push('#D97706'); }
-      if (lowCount > 0) { donutLabels.push('Low'); donutData.push(lowCount); donutColors.push('#00ADB5'); donutHoverColors.push('#009CA3'); }
+      if (highCount > 0) { donutLabels.push(qaproof.i18n.monitorHigh || 'High'); donutData.push(highCount); donutColors.push('#EF4444'); donutHoverColors.push('#DC2626'); }
+      if (medCount > 0) { donutLabels.push(qaproof.i18n.monitorMedium || 'Medium'); donutData.push(medCount); donutColors.push('#F59E0B'); donutHoverColors.push('#D97706'); }
+      if (lowCount > 0) { donutLabels.push(qaproof.i18n.monitorLow || 'Low'); donutData.push(lowCount); donutColors.push('#00ADB5'); donutHoverColors.push('#009CA3'); }
 
       var totalIssues = differences.length;
 
@@ -742,10 +742,10 @@
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-severity-filter">';
-    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">All</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">High</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">Medium</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">Low</button>';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">' + (qaproof.i18n.monitorAll || 'All') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">' + (qaproof.i18n.monitorHigh || 'High') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">' + (qaproof.i18n.monitorMedium || 'Medium') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">' + (qaproof.i18n.monitorLow || 'Low') + '</button>';
     html += '    </div>';
     html += '  </div>';
     html += '  <div id="qaproof-differences"></div>';
@@ -913,10 +913,10 @@
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-resp-severity-filter">';
-    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">All</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">High</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">Medium</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">Low</button>';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">' + (qaproof.i18n.monitorAll || 'All') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">' + (qaproof.i18n.monitorHigh || 'High') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">' + (qaproof.i18n.monitorMedium || 'Medium') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">' + (qaproof.i18n.monitorLow || 'Low') + '</button>';
     html += '    </div>';
     html += '    <div class="qaproof-device-filter" id="qaproof-device-filter">';
     html += '      <button type="button" class="qaproof-filter-btn active" data-device="all">All</button>';
@@ -1092,10 +1092,10 @@
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-a11y-severity-filter">';
-    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">All</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">High</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">Medium</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">Low</button>';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">' + (qaproof.i18n.monitorAll || 'All') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">' + (qaproof.i18n.monitorHigh || 'High') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">' + (qaproof.i18n.monitorMedium || 'Medium') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">' + (qaproof.i18n.monitorLow || 'Low') + '</button>';
     html += '    </div>';
     html += '  </div>';
     html += '  <div id="qaproof-a11y-differences"></div>';
@@ -1569,10 +1569,10 @@
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-da-severity-filter">';
-    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">All</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">High</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">Medium</button>';
-    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">Low</button>';
+    html += '      <button type="button" class="qaproof-filter-btn active" data-severity="all">' + (qaproof.i18n.monitorAll || 'All') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="high">' + (qaproof.i18n.monitorHigh || 'High') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="medium">' + (qaproof.i18n.monitorMedium || 'Medium') + '</button>';
+    html += '      <button type="button" class="qaproof-filter-btn" data-severity="low">' + (qaproof.i18n.monitorLow || 'Low') + '</button>';
     html += '    </div>';
     html += '  </div>';
     html += '  <div id="qaproof-da-differences"></div>';
@@ -2288,9 +2288,9 @@
     var summaryBar = document.createElement('div');
     summaryBar.className = 'qaproof-diff-summary-bar';
     var barHtml = '';
-    if (highCount > 0) barHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-high">' + severityIcon('high') + ' ' + highCount + ' High</span>';
-    if (medCount > 0) barHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-medium">' + severityIcon('medium') + ' ' + medCount + ' Medium</span>';
-    if (lowCount > 0) barHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-low">' + severityIcon('low') + ' ' + lowCount + ' Low</span>';
+    if (highCount > 0) barHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-high">' + severityIcon('high') + ' ' + highCount + ' ' + (qaproof.i18n.monitorHigh || 'High') + '</span>';
+    if (medCount > 0) barHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-medium">' + severityIcon('medium') + ' ' + medCount + ' ' + (qaproof.i18n.monitorMedium || 'Medium') + '</span>';
+    if (lowCount > 0) barHtml += '<span class="qaproof-diff-sev-chip qaproof-diff-sev-chip-low">' + severityIcon('low') + ' ' + lowCount + ' ' + (qaproof.i18n.monitorLow || 'Low') + '</span>';
     // Progress bar
     var total = differences.length;
     var highPct = Math.round((highCount / total) * 100);
@@ -2604,7 +2604,7 @@
     //   { severity, category, description } — single issue
     //   { severity: 'multi', items: [{ severity, description }...] } — pie/grouped
     var html = '';
-    var sevLabels = { high: 'High Severity', medium: 'Medium', low: 'Low Severity', multi: 'Multiple Issues' };
+    var sevLabels = { high: (qaproof.i18n.pdfSeverityCritical || 'High Severity'), medium: (qaproof.i18n.monitorMedium || 'Medium'), low: (qaproof.i18n.monitorLow || 'Low Severity'), multi: (qaproof.i18n.multipleIssues || 'Multiple Issues') };
 
     var closeBtn = '<button type="button" class="tooltip-close" aria-label="Close">\u00d7</button>';
 

@@ -9,7 +9,7 @@
   // ============================
   if (S.connectionBtn) {
     S.connectionBtn.addEventListener('click', function () {
-      S.connectionStatus.textContent = 'Testing...';
+      S.connectionStatus.textContent = (qaproof.i18n.apiTesting || 'Testing...');
       S.connectionStatus.className = '';
 
       var data = new FormData();
@@ -24,15 +24,15 @@
         .then(Q.safeJson)
         .then(function (resp) {
           if (resp.success) {
-            S.connectionStatus.textContent = 'Connected! API status: ' + (resp.data.status || 'ok');
+            S.connectionStatus.textContent = (qaproof.i18n.apiConnected || 'Connected! API status: ') + (resp.data.status || 'ok');
             S.connectionStatus.className = 'success';
           } else {
-            S.connectionStatus.textContent = 'Failed: ' + (resp.data && resp.data.message ? resp.data.message : 'Unknown error');
+            S.connectionStatus.textContent = (qaproof.i18n.apiFailed || 'Failed: ') + (resp.data && resp.data.message ? resp.data.message : 'Unknown error');
             S.connectionStatus.className = 'error';
           }
         })
         .catch(function () {
-          S.connectionStatus.textContent = 'Network error — could not reach API.';
+          S.connectionStatus.textContent = (qaproof.i18n.apiNetworkError || 'Network error — could not reach API.');
           S.connectionStatus.className = 'error';
         });
     });
@@ -46,8 +46,8 @@
   if (diagnoseBtn) {
     diagnoseBtn.addEventListener('click', function () {
       diagnoseBtn.disabled = true;
-      diagnoseBtn.textContent = 'Running diagnostics...';
-      diagnoseOutput.textContent = 'Please wait (up to 60 seconds)...';
+      diagnoseBtn.textContent = (qaproof.i18n.diagRunning || 'Running diagnostics...');
+      diagnoseOutput.textContent = (qaproof.i18n.diagWait || 'Please wait (up to 60 seconds)...');
       diagnoseOutput.style.display = 'block';
 
       var data = new FormData();
@@ -62,7 +62,7 @@
         .then(Q.safeJson)
         .then(function (resp) {
           diagnoseBtn.disabled = false;
-          diagnoseBtn.textContent = 'Run Diagnostics';
+          diagnoseBtn.textContent = (qaproof.i18n.diagRunBtn || 'Run Diagnostics');
           if (resp.success) {
             var d = resp.data;
             var lines = [];
@@ -124,13 +124,13 @@
 
             diagnoseOutput.textContent = lines.join('\n');
           } else {
-            diagnoseOutput.textContent = 'Error: ' + ((resp.data && resp.data.message) || 'Unknown');
+            diagnoseOutput.textContent = (qaproof.i18n.diagError || 'Error: ') + ((resp.data && resp.data.message) || 'Unknown');
           }
         })
         .catch(function (err) {
           diagnoseBtn.disabled = false;
-          diagnoseBtn.textContent = 'Run Diagnostics';
-          diagnoseOutput.textContent = 'Request failed: ' + err.message;
+          diagnoseBtn.textContent = (qaproof.i18n.diagRunBtn || 'Run Diagnostics');
+          diagnoseOutput.textContent = (qaproof.i18n.diagRequestFailed || 'Request failed: ') + err.message;
         });
     });
   }
@@ -195,13 +195,13 @@
         keyInput.classList.remove('qaproof-key-valid');
         if (errorEl) {
           if (val.indexOf('qap_') !== 0) {
-            errorEl.textContent = 'API key must start with "qap_"';
+            errorEl.textContent = (qaproof.i18n.apiKeyStartError || 'API key must start with "qap_"');
           } else {
             var hex = val.substring(4);
             if (hex.length !== 64) {
-              errorEl.textContent = 'Key is ' + (4 + hex.length) + ' characters — expected 68 (qap_ + 64 hex chars)';
+              errorEl.textContent = 'Key is ' + (4 + hex.length) + (qaproof.i18n.apiKeyLengthError || ' characters — expected 68 (qap_ + 64 hex chars)');
             } else {
-              errorEl.textContent = 'Key contains invalid characters — only 0-9 and a-f are allowed after "qap_"';
+              errorEl.textContent = (qaproof.i18n.apiKeyCharError || 'Key contains invalid characters — only 0-9 and a-f are allowed after "qap_"');
             }
           }
           errorEl.style.display = 'block';
@@ -263,11 +263,11 @@
         '</div>' +
         '<input type="hidden" value="' + designId + '" data-field="id" />' +
       '</div>' +
-      '<div class="qaproof-design-status qaproof-status-empty" data-status="empty" title="Not cached — open Tests page and click Save">' +
+      '<div class="qaproof-design-status qaproof-status-empty" data-status="empty" title="' + (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save') + '">' +
         '<span class="qaproof-design-status-dot"></span>' +
-        '<span class="qaproof-design-status-label">Not cached — open Tests page and click Save</span>' +
+        '<span class="qaproof-design-status-label">' + (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save') + '</span>' +
       '</div>' +
-      '<button type="button" class="button qaproof-design-remove" title="Remove">' +
+      '<button type="button" class="button qaproof-design-remove" title="' + (qaproof.i18n.designRemove || 'Remove') + '">' +
         '<span class="dashicons dashicons-trash"></span>' +
       '</button>';
     row.querySelectorAll('input').forEach(function (inp) {
@@ -355,16 +355,16 @@
       badge.setAttribute('data-status', state);
       var label = '';
       switch (state) {
-        case 'saving':    label = 'Saving image…'; break;
-        case 'detecting': label = 'Detecting elements…'; break;
+        case 'saving':    label = (qaproof.i18n.saveBtnSaving || 'Saving image…'); break;
+        case 'detecting': label = (qaproof.i18n.saveBtnDetecting || 'Detecting elements…'); break;
         case 'ready':
-          label = 'Ready · ' + (count || 0) + ' elements';
+          label = 'Ready · ' + (count || 0) + (qaproof.i18n.designElements || ' elements');
           if (source) label += ' (' + source + ')';
           break;
-        case 'partial':     label = 'Image cached · elements missing'; break;
-        case 'error':       label = 'Detection failed'; break;
-        case 'ratelimited': label = 'Figma rate limit — try again later'; break;
-        default:            label = 'Not cached — open Tests page and click Save';
+        case 'partial':     label = (qaproof.i18n.designPartial || 'Image cached · elements missing'); break;
+        case 'error':       label = (qaproof.i18n.designDetectionFailed || 'Detection failed'); break;
+        case 'ratelimited': label = (qaproof.i18n.designRateLimit || 'Figma rate limit — try again later'); break;
+        default:            label = (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save');
       }
       if (labelEl) labelEl.textContent = label;
       badge.setAttribute('title', label);
@@ -734,7 +734,7 @@
       var resetBtn = widget.querySelector('.qaproof-figma-usage-reset');
       if (resetBtn) {
         resetBtn.addEventListener('click', function () {
-          if (!confirm('Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma\'s actual quota on their side.)')) return;
+          if (!confirm(qaproof.i18n.resetFigmaConfirm || 'Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma\'s actual quota on their side.)')) return;
           fetch(window.qaproof.restBase + '/figma-api-usage/reset', {
             method: 'POST',
             headers: { 'X-WP-Nonce': window.qaproof.nonce }
@@ -867,11 +867,11 @@
       // Loading steps
       var checkSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       var a11yLoadingSteps = [
-        { time: 0, text: 'Capturing page screenshot' },
-        { time: 8000, text: 'Processing images' },
-        { time: 20000, text: 'Running accessibility analysis' },
-        { time: 50000, text: 'Evaluating WCAG compliance' },
-        { time: 90000, text: 'Generating audit report' },
+        { time: 0, text: (qaproof.i18n.stepA11yCapture || 'Capturing page screenshot') },
+        { time: 8000, text: (qaproof.i18n.stepA11yProcess || 'Processing images') },
+        { time: 20000, text: (qaproof.i18n.stepA11yAnalysis || 'Running accessibility analysis') },
+        { time: 50000, text: (qaproof.i18n.stepA11yWcag || 'Evaluating WCAG compliance') },
+        { time: 90000, text: (qaproof.i18n.stepA11yReport || 'Generating audit report') },
       ];
 
       var a11yStepsContainer = document.getElementById('qaproof-a11y-loading-steps');
@@ -1116,7 +1116,7 @@
       sessionStorage.removeItem('qaproof_settings_saved');
       var wpNotice = document.querySelector('.notice-success, .updated');
       if (wpNotice) wpNotice.style.display = 'none';
-      showQaproofToast('Settings saved successfully');
+      showQaproofToast((qaproof.i18n.settingsSaved || 'Settings saved successfully'));
     }
 
     var settingsForm = document.querySelector('#qaproof-app form[action="options.php"]');
@@ -1178,22 +1178,22 @@
       var max = input.getAttribute('max');
 
       if (input.hasAttribute('required') && !val) {
-        return 'This field is required.';
+        return (qaproof.i18n.fieldRequired || 'This field is required.');
       }
       if (type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
-        return 'Please enter a valid email address.';
+        return (qaproof.i18n.invalidEmail || 'Please enter a valid email address.');
       }
       if (type === 'url' && val && !/^https?:\/\/.+/i.test(val)) {
-        return 'Please enter a valid URL starting with http:// or https://';
+        return (qaproof.i18n.invalidUrl || 'Please enter a valid URL starting with http:// or https://');
       }
       if (type === 'number' && val) {
         var num = parseFloat(val);
-        if (isNaN(num)) return 'Please enter a valid number.';
+        if (isNaN(num)) return (qaproof.i18n.invalidNumber || 'Please enter a valid number.');
         if (min !== null && num < parseFloat(min)) {
-          return 'Value must be at least ' + min + '.';
+          return (qaproof.i18n.minValue || 'Value must be at least ') + min + '.';
         }
         if (max !== null && num > parseFloat(max)) {
-          return 'Value must be no more than ' + max + '.';
+          return (qaproof.i18n.maxValue || 'Value must be no more than ') + max + '.';
         }
       }
       return '';
@@ -1360,11 +1360,11 @@
         console.warn('[QAProof] Max retries reached (' + retryCount + ') — giving up on', activeJob.testType);
         Q.clearActiveJob(currentPage);
         if (currentPage === 'tests') {
-          Q.showError('Test submission failed after multiple retries. Please try again.');
+          Q.showError((qaproof.i18n.testSubmissionFailed || 'Test submission failed after multiple retries. Please try again.'));
         } else if (currentPage === 'accessibility') {
           var a11yErrDivR = document.getElementById('qaproof-a11y-error');
           var a11yErrMsgR = document.getElementById('qaproof-a11y-error-message');
-          if (a11yErrMsgR) a11yErrMsgR.textContent = 'Test submission failed after multiple retries. Please try again.';
+          if (a11yErrMsgR) a11yErrMsgR.textContent = (qaproof.i18n.testSubmissionFailed || 'Test submission failed after multiple retries. Please try again.');
           if (a11yErrDivR) a11yErrDivR.classList.remove('hidden');
         }
         return;
@@ -1396,8 +1396,8 @@
       S.testsPageBusy = true;
       S.loading.classList.remove('hidden');
       if (S.submitBtn) S.submitBtn.disabled = true;
-      if (S.loadingText) S.loadingText.textContent = 'Resuming test — waiting for results...';
-      if (S.loadingSubtext) S.loadingSubtext.textContent = 'Test is still running on the server';
+      if (S.loadingText) S.loadingText.textContent = (qaproof.i18n.resumingTest || 'Resuming test — waiting for results...');
+      if (S.loadingSubtext) S.loadingSubtext.textContent = (qaproof.i18n.resumingTestSub || 'Test is still running on the server');
 
       // Build progress steps — restore position based on elapsed time since job started
       var checkSvgR = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -1516,17 +1516,17 @@
 
       if (a11yLoad) a11yLoad.classList.remove('hidden');
       if (a11yBtn) a11yBtn.disabled = true;
-      if (a11yLoadText) a11yLoadText.textContent = 'Resuming accessibility test — waiting for results...';
-      if (a11yLoadSub) a11yLoadSub.textContent = 'Test is still running on the server';
+      if (a11yLoadText) a11yLoadText.textContent = (qaproof.i18n.resumingA11y || 'Resuming accessibility test — waiting for results...');
+      if (a11yLoadSub) a11yLoadSub.textContent = (qaproof.i18n.resumingTestSub || 'Test is still running on the server');
 
       // Build progress steps — restore position based on elapsed time since job started
       var checkSvgA = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       var a11yResumeSteps = [
-        { time: 0,     text: 'Capturing page screenshot' },
-        { time: 8000,  text: 'Processing images' },
-        { time: 20000, text: 'Running accessibility analysis' },
-        { time: 50000, text: 'Evaluating WCAG compliance' },
-        { time: 90000, text: 'Generating audit report' },
+        { time: 0,     text: (qaproof.i18n.stepA11yCapture || 'Capturing page screenshot') },
+        { time: 8000,  text: (qaproof.i18n.stepA11yProcess || 'Processing images') },
+        { time: 20000, text: (qaproof.i18n.stepA11yAnalysis || 'Running accessibility analysis') },
+        { time: 50000, text: (qaproof.i18n.stepA11yWcag || 'Evaluating WCAG compliance') },
+        { time: 90000, text: (qaproof.i18n.stepA11yReport || 'Generating audit report') },
       ];
 
       // How much time has already passed since the job started

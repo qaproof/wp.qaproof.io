@@ -140,7 +140,7 @@
       var score = item.score != null ? parseInt(item.score, 10) : null;
       var scoreClass = score != null ? Q.getScoreClass(score) : '';
       var typeBadgeClass = 'qaproof-badge-' + (item.test_type || 'fidelity');
-      var typeLabels = { fidelity: 'Fidelity', responsive: 'Responsive', accessibility: 'Accessibility', regression: 'Regression', 'design-audit': 'Design Audit' };
+      var typeLabels = { fidelity: (qaproof.i18n.histTestTypeFidelity || 'Fidelity'), responsive: (qaproof.i18n.histTestTypeResponsive || 'Responsive'), accessibility: (qaproof.i18n.histTestTypeA11y || 'Accessibility'), regression: (qaproof.i18n.histTestTypeRegression || 'Regression'), 'design-audit': (qaproof.i18n.histTestTypeDesignAudit || 'Design Audit') };
       var dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
       var urlDisplay = item.page_url || '';
       if (urlDisplay.length > 50) urlDisplay = urlDisplay.substring(0, 50) + '...';
@@ -151,14 +151,14 @@
         '<div class="qaproof-history-url" title="' + Q.escapeAttr(item.page_url || '') + '">' + Q.escapeHtml(urlDisplay) + '</div>' +
         '<div class="qaproof-history-score ' + scoreClass + '">' + (score != null ? score : '\u2014') + '</div>' +
         '<div class="qaproof-history-actions">' +
-        '  <button type="button" class="button button-small qaproof-history-view" data-id="' + item.id + '" title="View report">' +
+        '  <button type="button" class="button button-small qaproof-history-view" data-id="' + item.id + '" title="' + (qaproof.i18n.histViewReport || 'View report') + '">' +
         '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-        '    View' +
+        '    ' + (qaproof.i18n.histView || 'View') +
         '  </button>' +
-        '  <button type="button" class="button button-small qaproof-history-download" data-id="' + item.id + '" title="Download PDF report">' +
+        '  <button type="button" class="button button-small qaproof-history-download" data-id="' + item.id + '" title="' + (qaproof.i18n.histDownloadPdf || 'Download PDF report') + '">' +
         '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
         '  </button>' +
-        '  <button type="button" class="button button-small qaproof-history-delete" data-id="' + item.id + '" title="Delete">' +
+        '  <button type="button" class="button button-small qaproof-history-delete" data-id="' + item.id + '" title="' + (qaproof.i18n.histDelete || 'Delete') + '">' +
         '    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
         '  </button>' +
         '</div>';
@@ -172,7 +172,7 @@
       });
 
       row.querySelector('.qaproof-history-delete').addEventListener('click', function () {
-        if (!confirm('Delete this test result?')) return;
+        if (!confirm(qaproof.i18n.histDeleteConfirm || 'Delete this test result?')) return;
         deleteItem(item.id, row);
       });
 
@@ -227,7 +227,7 @@
         rLoading.classList.remove('hidden');
         rLoading.style.display = '';
       }
-      if (rText) rText.textContent = 'Loading test result...';
+      if (rText) rText.textContent = qaproof.i18n.histLoadingResult || 'Loading test result...';
       if (rContainer) rContainer.classList.add('hidden');
 
       fetch(qaproof.restBase.replace(/\/+$/, '') + '/test-history/' + id, {
@@ -238,7 +238,7 @@
         .then(function (resp) {
           if (rLoading) rLoading.classList.add('hidden');
           if (!resp.success || !resp.data) {
-            if (cfg.showError) cfg.showError('Could not load test result.');
+            if (cfg.showError) cfg.showError(qaproof.i18n.histCouldNotLoad || 'Could not load test result.');
             return;
           }
 
@@ -267,7 +267,7 @@
         })
         .catch(function () {
           if (rLoading) rLoading.classList.add('hidden');
-          if (cfg.showError) cfg.showError('Failed to load test result.');
+          if (cfg.showError) cfg.showError(qaproof.i18n.histFailedLoad || 'Failed to load test result.');
         });
     }
 
@@ -307,7 +307,7 @@
           }
         })
         .catch(function () {
-          alert('Failed to download report.');
+          alert(qaproof.i18n.histFailedDownload || 'Failed to download report.');
         });
     }
 
