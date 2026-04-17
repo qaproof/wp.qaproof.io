@@ -58,12 +58,12 @@
 
       if (S.submitBtn) {
         var btnLabels = {
-          fidelity: 'Analyze Design Fidelity',
-          responsive: 'Test Responsive',
-          accessibility: 'Run Accessibility Audit',
-          'design-audit': 'Run Design Audit',
+          fidelity: (qaproof.i18n.btnAnalyzeFidelity || 'Analyze Design Fidelity'),
+          responsive: (qaproof.i18n.btnTestResponsive || 'Test Responsive'),
+          accessibility: (qaproof.i18n.btnRunAccessibility || 'Run Accessibility Audit'),
+          'design-audit': (qaproof.i18n.btnRunDesignAudit || 'Run Design Audit'),
         };
-        S.submitBtn.textContent = btnLabels[S.testType] || 'Run Test';
+        S.submitBtn.textContent = btnLabels[S.testType] || (qaproof.i18n.btnRunTest || 'Run Test');
       }
     });
   }
@@ -78,8 +78,8 @@
       defaultBtn.classList.add('active');
       if (S.figmaFields) S.figmaFields.classList.toggle('hidden', S.testType !== 'fidelity');
       if (S.submitBtn) {
-        var initLabels = { fidelity: 'Analyze Design Fidelity', responsive: 'Test Responsive', accessibility: 'Run Accessibility Audit' };
-        S.submitBtn.textContent = initLabels[S.testType] || 'Run Test';
+        var initLabels = { fidelity: (qaproof.i18n.btnAnalyzeFidelity || 'Analyze Design Fidelity'), responsive: (qaproof.i18n.btnTestResponsive || 'Test Responsive'), accessibility: (qaproof.i18n.btnRunAccessibility || 'Run Accessibility Audit') };
+        S.submitBtn.textContent = initLabels[S.testType] || (qaproof.i18n.btnRunTest || 'Run Test');
       }
       // Move slider to default tab
       requestAnimationFrame(function () {
@@ -163,7 +163,7 @@
               sizeKB: Math.round(json.imageBase64.length * 0.75 / 1024),
             });
             if (previewMeta) {
-              previewMeta.textContent = 'Saved image \u00B7 No Figma API call';
+              previewMeta.textContent = qaproof.i18n.previewSavedNoApi || 'Saved image \u00B7 No Figma API call';
             }
           } else {
             // Image missing — fall back to Figma preview
@@ -242,7 +242,7 @@
         S.savedDesignImageBase64 = null;
         if (S.uploadedFileBase64) {
           showUploadedImagePreview(S.uploadedFileBase64, '', 0);
-          if (previewMeta) previewMeta.textContent = 'Uploaded image';
+          if (previewMeta) previewMeta.textContent = qaproof.i18n.previewSavedNoApi || 'Uploaded image';
         } else {
           setPreviewState('empty');
         }
@@ -273,7 +273,7 @@
     if (previewEmpty) {
       var emptyText = previewEmpty.querySelector('p');
       if (emptyText) {
-        emptyText.textContent = 'Select a saved design or upload an image to preview.';
+        emptyText.textContent = qaproof.i18n.previewSelectDesign || 'Select a saved design or upload an image to preview.';
       }
     }
   }
@@ -286,14 +286,14 @@
     previewError.classList.toggle('hidden', state !== 'error');
     previewSuccess.classList.toggle('hidden', state !== 'success');
     if (state === 'error' && previewErrorMsg) {
-      previewErrorMsg.textContent = errorText || 'Could not load preview.';
+      previewErrorMsg.textContent = errorText || (qaproof.i18n.previewCouldNotLoad || 'Could not load preview.');
       var existingRetry = previewError.querySelector('.qaproof-preview-retry');
       if (existingRetry) existingRetry.remove();
       if (showRetry) {
         var retryBtn = document.createElement('button');
         retryBtn.type = 'button';
         retryBtn.className = 'qaproof-preview-retry';
-        retryBtn.textContent = 'Retry';
+        retryBtn.textContent = qaproof.i18n.previewRetry || 'Retry';
         retryBtn.addEventListener('click', function () {
           triggerFigmaPreview(true);
         });
@@ -304,13 +304,13 @@
 
   function mapFigmaErrorMessage(code, fallback) {
     var map = {
-      'FIGMA_AUTH_FAILED':          'Invalid or expired Figma token.',
-      'FIGMA_FILE_NOT_FOUND':       'File not found. Check the URL.',
-      'FIGMA_RATE_LIMITED':         'Figma rate limit exceeded. This is often caused by Starter plan restrictions (very low API limits). Ensure your Figma file is in a Professional or higher workspace, or use "Upload Image" instead. Wait 1-2 minutes, then try again.',
-      'FIGMA_RENDER_TIMEOUT':       'Design too complex to preview.',
-      'FIGMA_EXPORT_FAILED':        'Figma could not export this design.',
-      'FIGMA_NODE_NOT_RENDERABLE':  'This node cannot be rendered. Try a different frame.',
-      'FIGMA_NO_FRAMES_FOUND':      'No frames found. Add a node-id to the URL.',
+      'FIGMA_AUTH_FAILED':          (qaproof.i18n.figmaAuthFailed || 'Invalid or expired Figma token.'),
+      'FIGMA_FILE_NOT_FOUND':       (qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.'),
+      'FIGMA_RATE_LIMITED':         (qaproof.i18n.figmaRateLimited || 'Figma rate limit exceeded.'),// This is often caused by Starter plan restrictions (very low API limits). Ensure your Figma file is in a Professional or higher workspace, or use "Upload Image" instead. Wait 1-2 minutes, then try again.',
+      'FIGMA_RENDER_TIMEOUT':       (qaproof.i18n.figmaRenderTimeout || 'Design too complex to preview.'),
+      'FIGMA_EXPORT_FAILED':        (qaproof.i18n.figmaExportFailed || 'Figma could not export this design.'),
+      'FIGMA_NODE_NOT_RENDERABLE':  (qaproof.i18n.figmaNodeNotRenderable || 'This node cannot be rendered. Try a different frame.'),
+      'FIGMA_NO_FRAMES_FOUND':      (qaproof.i18n.figmaNoFramesFound || 'No frames found. Add a node-id to the URL.'),
     };
     return map[code] || fallback || 'Could not load preview.';
   }
@@ -380,7 +380,7 @@
       }
     })
     .catch(function () {
-      setPreviewState('error', 'Could not load preview.', true);
+      setPreviewState('error', qaproof.i18n.previewCouldNotLoad || 'Could not load preview.', true);
     });
   }
 
@@ -389,8 +389,8 @@
     if (previewImage) previewImage.src = data.imageBase64 || '';
     if (previewMeta) {
       var parts = [];
-      if (data.fileKey) parts.push('File: ' + data.fileKey);
-      if (data.nodeId)  parts.push('Node: ' + data.nodeId);
+      if (data.fileKey) parts.push((qaproof.i18n.previewFileLabel || 'File: ') + data.fileKey);
+      if (data.nodeId)  parts.push((qaproof.i18n.previewNodeLabel || 'Node: ') + data.nodeId);
       if (data.sizeKB)  parts.push(data.sizeKB + ' KB');
       previewMeta.textContent = parts.join(' · ');
     }
@@ -502,7 +502,7 @@
                     break;
                   }
                 }
-                if (previewMeta) previewMeta.textContent = 'Refreshed & saved \u00B7 No API call needed next time';
+                if (previewMeta) previewMeta.textContent = qaproof.i18n.previewRefreshedSaved || 'Refreshed & saved \u00B7 No API call needed next time';
               }
             })
             .catch(function () { /* silent — refresh itself succeeded */ });
@@ -518,7 +518,7 @@
       })
       .catch(function () {
         refreshFigmaBtn.classList.remove('spinning');
-        setPreviewState('error', 'Could not refresh preview.', true);
+        setPreviewState('error', qaproof.i18n.previewCouldNotRefresh || 'Could not refresh preview.', true);
       });
     });
   }
@@ -565,12 +565,12 @@
 
     function flashSaveBtnDone(text) {
       setSaveBtnState('done', text);
-      setTimeout(function () { setSaveBtnState('idle', 'Save'); }, 2500);
+      setTimeout(function () { setSaveBtnState('idle', qaproof.i18n.saveBtnSave || 'Save'); }, 2500);
     }
 
     function flashSaveBtnError(text) {
       setSaveBtnState('error', text);
-      setTimeout(function () { setSaveBtnState('idle', 'Save'); }, 2500);
+      setTimeout(function () { setSaveBtnState('idle', qaproof.i18n.saveBtnSave || 'Save'); }, 2500);
     }
 
     // Broadcast saved-design status to other tabs (Settings page listens via
@@ -598,7 +598,7 @@
       var imageData = previewImage ? previewImage.src : null;
       if (!imageData || !imageData.startsWith('data:image')) return;
 
-      setSaveBtnState('working', 'Saving image...');
+      setSaveBtnState('working', qaproof.i18n.saveBtnSaving || 'Saving image...');
       broadcastDesignStatus(designId, 'saving');
 
       // Helper: save elements to WP for this design
@@ -652,10 +652,10 @@
           return Promise.resolve({ ok: false });
         }
 
-        setSaveBtnState('working', 'Detecting elements...');
+        setSaveBtnState('working', qaproof.i18n.saveBtnDetecting || 'Detecting elements...');
         broadcastDesignStatus(bgDesignId, 'detecting');
         if (previewMeta) {
-          previewMeta.textContent = 'Saved image \u00B7 Detecting elements...';
+          previewMeta.textContent = qaproof.i18n.savedImageDetecting || 'Saved image \u00B7 Detecting elements...';
         }
 
         return fetch(qaproof.restBase + '/detect-elements', {
@@ -681,7 +681,7 @@
             return saveElementsToDesign(bgDesignId, json.data.elements, bgSource)
               .then(function () {
                 if (previewMeta) {
-                  previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
+                  previewMeta.textContent = qaproof.i18n.savedImageElements || 'Saved image + elements \u00B7 No API call needed';
                 }
                 broadcastDesignStatus(bgDesignId, 'ready', elCount, bgSource);
                 return { ok: true, count: elCount };
@@ -689,7 +689,7 @@
           }
           console.log('[QAProof] Background detection returned no elements');
           if (previewMeta) {
-            previewMeta.textContent = 'Saved image \u00B7 No API call needed';
+            previewMeta.textContent = qaproof.i18n.savedImageNoApi || 'Saved image \u00B7 No API call needed';
           }
           broadcastDesignStatus(bgDesignId, 'partial');
           return { ok: true, count: 0 };
@@ -697,7 +697,7 @@
         .catch(function (err) {
           console.warn('[QAProof] Background element detection failed:', err && err.message);
           if (previewMeta) {
-            previewMeta.textContent = 'Saved image \u00B7 Element detection failed';
+            previewMeta.textContent = qaproof.i18n.savedImageDetFailed || 'Saved image \u00B7 Element detection failed';
           }
           broadcastDesignStatus(bgDesignId, 'error');
           return { ok: false };
@@ -727,7 +727,7 @@
       .then(function (results) {
         var json = results[0];
         if (!json.success) {
-          flashSaveBtnError('Error');
+          flashSaveBtnError(qaproof.i18n.saveBtnError || 'Error');
           broadcastDesignStatus(designId, 'error');
           return;
         }
@@ -745,9 +745,9 @@
         // Case A: elements already existed and were saved alongside the image.
         if (hasExistingElements && results[1] && results[1].success) {
           if (previewMeta) {
-            previewMeta.textContent = 'Saved image + elements \u00B7 No API call needed';
+            previewMeta.textContent = qaproof.i18n.savedImageElements || 'Saved image + elements \u00B7 No API call needed';
           }
-          flashSaveBtnDone('Saved + elements \u2713');
+          flashSaveBtnDone(qaproof.i18n.saveBtnSavedElements || 'Saved + elements \u2713');
           broadcastDesignStatus(designId, 'ready', detectedElements.length, detectedElementsSource || 'ai-vision');
           return;
         }
@@ -757,13 +757,13 @@
         if (!hasExistingElements) {
           bgDetectAndSave(designId).then(function (bgResult) {
             if (bgResult && bgResult.ok && bgResult.count > 0) {
-              flashSaveBtnDone('Saved + ' + bgResult.count + ' elements \u2713');
+              flashSaveBtnDone((qaproof.i18n.saveBtnSaved || 'Saved \u2713').replace('\u2713', '') + ' + ' + bgResult.count + ' elements \u2713');
             } else if (bgResult && bgResult.ok) {
               // Image saved, detection found nothing — still a successful save.
-              flashSaveBtnDone('Saved \u2713');
+              flashSaveBtnDone(qaproof.i18n.saveBtnSaved || 'Saved \u2713');
             } else {
               // Image was saved but detection failed — communicate partial success.
-              flashSaveBtnError('Saved (detection failed)');
+              flashSaveBtnError(qaproof.i18n.saveBtnDetectionFailed || 'Saved (detection failed)');
             }
           });
           return;
@@ -771,13 +771,13 @@
 
         // Case C: existing elements, but element-save failed — partial success.
         if (previewMeta) {
-          previewMeta.textContent = 'Saved image \u00B7 No API call needed';
+          previewMeta.textContent = qaproof.i18n.savedImageNoApi || 'Saved image \u00B7 No API call needed';
         }
-        flashSaveBtnDone('Saved \u2713');
+        flashSaveBtnDone(qaproof.i18n.saveBtnSaved || 'Saved \u2713');
         broadcastDesignStatus(designId, 'partial');
       })
       .catch(function () {
-        flashSaveBtnError('Error');
+        flashSaveBtnError(qaproof.i18n.saveBtnError || 'Error');
         broadcastDesignStatus(designId, 'error');
       });
     });
@@ -808,10 +808,10 @@
       }
     }
     if (selected && selected.hasElements) {
-      labelEl.textContent = 'Show detected elements';
-      detectBtn.setAttribute('title', 'Load cached elements detected in Settings — no API call needed');
+      labelEl.textContent = qaproof.i18n.detectBtnShowLabel || 'Show detected elements';
+      detectBtn.setAttribute('title', qaproof.i18n.detectBtnShowTitle || 'Load cached elements detected in Settings — no API call needed');
     } else {
-      labelEl.textContent = 'Detect Elements';
+      labelEl.textContent = qaproof.i18n.detectBtnLabel || 'Detect Elements';
       detectBtn.removeAttribute('title');
     }
   }
@@ -892,10 +892,10 @@
     }
     if (selectedElementDiv) {
       selectedElementDiv.classList.remove('hidden');
-      selectedElementLabel.textContent = 'Testing: ' + element.label;
+      selectedElementLabel.textContent = (qaproof.i18n.testingElement || 'Testing: ') + element.label;
     }
     if (fullPageBtn) fullPageBtn.classList.remove('active');
-    if (S.submitBtn) S.submitBtn.textContent = 'Analyze Element Fidelity';
+    if (S.submitBtn) S.submitBtn.textContent = qaproof.i18n.btnAnalyzeElement || 'Analyze Element Fidelity';
   }
 
   function clearSelection() {
@@ -911,7 +911,7 @@
     }
     if (selectedElementDiv) selectedElementDiv.classList.add('hidden');
     if (fullPageBtn) fullPageBtn.classList.add('active');
-    if (S.submitBtn) S.submitBtn.textContent = 'Analyze Design Fidelity';
+    if (S.submitBtn) S.submitBtn.textContent = qaproof.i18n.btnAnalyzeFidelity || 'Analyze Design Fidelity';
   }
 
   function applyDepthFilter(depth) {
@@ -1067,7 +1067,7 @@
     if (detectBtn) {
       detectBtn.classList.add('is-showing');
       var labelEl = detectBtn.querySelector('.qaproof-detect-btn-label');
-      if (labelEl) labelEl.textContent = 'Elements detected:';
+      if (labelEl) labelEl.textContent = qaproof.i18n.detectBtnDetected || 'Elements detected:';
       detectBtn.setAttribute('disabled', 'disabled');
     }
 
@@ -1079,11 +1079,11 @@
       allBtn.type = 'button';
       allBtn.className = 'qaproof-depth-btn active';
       allBtn.dataset.depth = 'all';
-      allBtn.textContent = 'All';
+      allBtn.textContent = qaproof.i18n.depthAll || 'All';
       allBtn.addEventListener('click', function () { applyDepthFilter('all'); });
       depthFilters.appendChild(allBtn);
 
-      var depthLabels = ['Sections', 'Components', 'Sub-components'];
+      var depthLabels = [qaproof.i18n.depthSections || 'Sections', qaproof.i18n.depthComponents || 'Components', qaproof.i18n.depthSubComponents || 'Sub-components'];
       for (var d = 0; d <= maxDepth; d++) {
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -1287,7 +1287,7 @@
         if (requestBody.figmaUrl && detectionSource === 'ai-vision') {
           console.warn('[QAProof] Figma API detection failed, fell back to AI vision. Possibly rate-limited.');
           if (detectError) {
-            detectError.textContent = 'Figma API rate-limited \u2014 showing approximate detection. Try again later for pixel-perfect results.';
+            detectError.textContent = qaproof.i18n.detectFigmaRateLimit || 'Figma API rate-limited \u2014 showing approximate detection.';
             detectError.classList.remove('hidden');
           }
         }
@@ -1327,7 +1327,7 @@
           .catch(function () { /* silent */ });
         }
       } else {
-        var msg = (json.error && json.error.message) ? json.error.message : 'No elements detected. Try a different design image.';
+        var msg = (json.error && json.error.message) ? json.error.message : (qaproof.i18n.detectNoElements || 'No elements detected. Try a different design image.');
         if (detectError) {
           detectError.textContent = msg;
           detectError.classList.remove('hidden');
@@ -1338,7 +1338,7 @@
       if (detectingDiv) detectingDiv.classList.add('hidden');
       if (elementControlsDiv) elementControlsDiv.style.display = '';
       if (detectError) {
-        detectError.textContent = 'Detection failed. Check your connection and try again.';
+        detectError.textContent = qaproof.i18n.detectFailed || 'Detection failed. Check your connection and try again.';
         detectError.classList.remove('hidden');
       }
     });
@@ -1389,7 +1389,7 @@
         (expandBtn.childNodes.length > 1 && expandBtn.childNodes[1]);
       var textNode = expandBtn.lastChild;
       if (textNode && textNode.nodeType === 3) {
-        textNode.textContent = isExpanded ? ' Collapse' : ' Expand';
+        textNode.textContent = isExpanded ? (qaproof.i18n.btnCollapse || ' Collapse') : (qaproof.i18n.btnExpand || ' Expand');
       }
     });
 
@@ -1434,7 +1434,7 @@
   function handleFile(file) {
     var MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     if (!file.type.startsWith('image/')) {
-      Q.showError('Please upload an image file (PNG, JPEG, WebP).');
+      Q.showError(qaproof.i18n.errUploadType || 'Please upload an image file (PNG, JPEG, WebP).');
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
@@ -1471,7 +1471,7 @@
     e.preventDefault();
 
     if (S.testsPageBusy) {
-      Q.showError('A test is already running. Please wait for it to finish.');
+      Q.showError(qaproof.i18n.errTestRunning || 'A test is already running. Please wait for it to finish.');
       return;
     }
 
@@ -1491,21 +1491,21 @@
 
     // Loading text
     if (S.testType === 'responsive') {
-      S.loadingText.textContent = 'Capturing 3 viewport sizes and analyzing responsive behavior...';
-      S.loadingSubtext.textContent = 'This may take 1-2 minutes (3 screenshots + AI analysis)';
+      S.loadingText.textContent = qaproof.i18n.loadingResponsive || 'Capturing 3 viewport sizes and analyzing responsive behavior...';
+      S.loadingSubtext.textContent = qaproof.i18n.loadingResponsiveSub || 'This may take 1-2 minutes (3 screenshots + AI analysis)';
     } else if (S.testType === 'accessibility') {
-      S.loadingText.textContent = 'Capturing page and running accessibility audit...';
+      S.loadingText.textContent = qaproof.i18n.loadingAccessibility || 'Capturing page and running accessibility audit...';
       var wcagLvl = (document.getElementById('qaproof-a11y-wcag-level') || {}).value || (typeof qaproof !== 'undefined' && qaproof.wcagLevel) || 'AA';
       S.loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level ' + wcagLvl + ' compliance (30-60 seconds)';
     } else if (S.testType === 'design-audit') {
-      S.loadingText.textContent = 'Scanning page and extracting design tokens...';
-      S.loadingSubtext.textContent = 'Analyzing design system consistency (1-2 minutes)';
+      S.loadingText.textContent = qaproof.i18n.loadingDesignAudit || 'Scanning page and extracting design tokens...';
+      S.loadingSubtext.textContent = qaproof.i18n.loadingDesignAuditSub || 'Analyzing design system consistency (1-2 minutes)';
     } else if (S.selectedElement) {
-      S.loadingText.textContent = 'Analyzing element: ' + S.selectedElement.label + '...';
-      S.loadingSubtext.textContent = 'Cropping design region, finding match on live page, comparing (30-60 seconds)';
+      S.loadingText.textContent = (qaproof.i18n.loadingElement || 'Analyzing element: ') + S.selectedElement.label + '...';
+      S.loadingSubtext.textContent = qaproof.i18n.loadingElementSub || 'Cropping design region, finding match on live page, comparing (30-60 seconds)';
     } else {
-      S.loadingText.textContent = 'Capturing screenshots and analyzing design...';
-      S.loadingSubtext.textContent = 'This may take 15-30 seconds';
+      S.loadingText.textContent = qaproof.i18n.loadingDefault || 'Capturing screenshots and analyzing design...';
+      S.loadingSubtext.textContent = qaproof.i18n.loadingDefaultSub || 'This may take 15-30 seconds';
     }
 
     var pageUrl = document.getElementById('qaproof-page-url').value.trim();
@@ -1522,7 +1522,7 @@
           }
         }
         if (!hasFigmaUrl) {
-          Q.showError('Please upload a design image or select a saved design.');
+          Q.showError(qaproof.i18n.errNoDesign || 'Please upload a design image or select a saved design.');
           S.loading.classList.add('hidden');
           S.submitBtn.disabled = false;
           S.testsPageBusy = false;
@@ -1562,7 +1562,7 @@
       } else if (S.uploadedFileBase64) {
         var parts2 = S.uploadedFileBase64.split(',');
         if (parts2.length < 2 || !parts2[1]) {
-          Q.showError('Invalid image data. Please re-upload the design file.');
+          Q.showError(qaproof.i18n.errInvalidImage || 'Invalid image data. Please re-upload the design file.');
           S.loading.classList.add('hidden');
           S.submitBtn.disabled = false;
           return;
@@ -1580,17 +1580,17 @@
     // Step-based loading status
     var checkSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     var loadingSteps = S.testType === 'design-audit' ? [
-      { time: 0, text: 'Capturing page screenshot' },
-      { time: 8000, text: 'Extracting design tokens from DOM' },
-      { time: 18000, text: 'Analyzing color palette & typography' },
-      { time: 35000, text: 'AI auditing design consistency' },
-      { time: 70000, text: 'Building design debt report' },
+      { time: 0, text: qaproof.i18n.stepCaptureScreenshot || 'Capturing page screenshot' },
+      { time: 8000, text: qaproof.i18n.stepExtractTokens || 'Extracting design tokens from DOM' },
+      { time: 18000, text: qaproof.i18n.stepAnalyzeDesign || 'Analyzing color palette & typography' },
+      { time: 35000, text: qaproof.i18n.stepAuditConsistency || 'AI auditing design consistency' },
+      { time: 70000, text: qaproof.i18n.stepBuildDebtReport || 'Building design debt report' },
     ] : [
-      { time: 0, text: 'Capturing page screenshot' },
-      { time: 8000, text: 'Processing images' },
-      { time: 20000, text: 'Running AI analysis' },
-      { time: 50000, text: 'Generating report' },
-      { time: 90000, text: 'Finalizing results' },
+      { time: 0, text: qaproof.i18n.stepCaptureScreenshot || 'Capturing page screenshot' },
+      { time: 8000, text: qaproof.i18n.stepProcessImages || 'Processing images' },
+      { time: 20000, text: qaproof.i18n.stepRunAnalysis || 'Running AI analysis' },
+      { time: 50000, text: qaproof.i18n.stepGenerateReport || 'Generating report' },
+      { time: 90000, text: qaproof.i18n.stepFinalizeResults || 'Finalizing results' },
     ];
 
     var stepsContainer = document.getElementById('qaproof-loading-steps');
@@ -1631,7 +1631,7 @@
           curr.classList.remove('completed');
         }
         S.loadingText.textContent = step.text + '...';
-        S.loadingSubtext.textContent = idx < loadingSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        S.loadingSubtext.textContent = idx < loadingSteps.length - 1 ? (qaproof.i18n.loadingDuration || 'This may take 1-3 minutes') : (qaproof.i18n.loadingAlmostDone || 'Almost done');
       }, step.time);
     });
 
@@ -1704,7 +1704,7 @@
       .catch(function (err) {
         loadingTimers.forEach(clearTimeout);
         if (err.message === 'Failed to fetch') {
-          Q.showError('Could not reach the server. Check your connection. Reload the page to retry.');
+          Q.showError(qaproof.i18n.errNoConnection || 'Could not reach the server. Check your connection. Reload the page to retry.');
         } else if (err.message && err.message.indexOf('Rate limit') !== -1) {
           Q.clearActiveJob('tests');
           Q.showError(Q.escapeHtml(err.message));
@@ -1732,10 +1732,10 @@
     emailBtn.classList.add('qaproof-email-expanded');
 
     emailBtn.innerHTML = '' +
-      '<span class="qaproof-email-confirm-text">Send to <strong>' + Q.escapeHtml(userEmail) + '</strong>?</span>' +
+      '<span class="qaproof-email-confirm-text">' + (qaproof.i18n.emailSendTo || 'Send to ') + '<strong>' + Q.escapeHtml(userEmail) + '</strong>?</span>' +
       '<span class="qaproof-email-confirm-actions">' +
-      '  <button type="button" class="qaproof-email-confirm-cancel">Cancel</button>' +
-      '  <button type="button" class="qaproof-email-confirm-send"><span class="dashicons dashicons-yes"></span> Confirm</button>' +
+      '  <button type="button" class="qaproof-email-confirm-cancel">' + (qaproof.i18n.emailCancel || 'Cancel') + '</button>' +
+      '  <button type="button" class="qaproof-email-confirm-send"><span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailConfirm || ' Confirm') + '</button>' +
       '</span>';
 
     emailBtn.querySelector('.qaproof-email-confirm-cancel').addEventListener('click', function(ev) {
@@ -1747,10 +1747,10 @@
       ev.stopPropagation();
       var sendBtn = this;
       sendBtn.disabled = true;
-      sendBtn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span> Sending...';
+      sendBtn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span>' + (qaproof.i18n.emailSending || ' Sending...');
 
       setTimeout(function() {
-        sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span> Sent!';
+        sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailSent || ' Sent!');
         sendBtn.classList.add('qaproof-email-sent');
         setTimeout(function() {
           collapseEmailBtn(emailBtn);
