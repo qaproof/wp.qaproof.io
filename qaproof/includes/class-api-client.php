@@ -449,6 +449,63 @@ class QAProof_API_Client {
     }
 
     /**
+     * Fetch account info for the currently configured API key.
+     * Calls GET /api/me (Bearer token auth) — returns user + plan + limits.
+     *
+     * @return array|WP_Error Account data or error.
+     */
+    public static function get_account_info() {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/me';
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'qaproof_no_api_key',
+                __( 'API key not configured.', 'qaproof' )
+            );
+        }
+
+        $response = wp_remote_get( $endpoint, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $api_key,
+            ],
+            'timeout'   => 10,
+            'sslverify' => true,
+        ]);
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'qaproof_api_network_error',
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null ) {
+            return new WP_Error( 'qaproof_api_invalid_json',
+                sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
+            );
+        }
+
+        if ( $status_code === 401 ) {
+            return new WP_Error( 'qaproof_auth_error',
+                __( 'Invalid API key. Please check your key in Settings.', 'qaproof' )
+            );
+        }
+
+        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+            $error_msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_api_error', $error_msg );
+        }
+
+        return $decoded['data'];
+    }
+
+    /**
      * Check API health.
      *
      * @return array|WP_Error Health check response or error.

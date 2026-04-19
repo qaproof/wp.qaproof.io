@@ -39,6 +39,139 @@
   }
 
   // ============================
+  // Account Info Panel (Settings Page)
+  // ============================
+  (function () {
+    var accountInfo    = document.getElementById('qaproof-account-info');
+    var accountLoading = document.getElementById('qaproof-account-info-loading');
+    var accountBody    = document.getElementById('qaproof-account-info-body');
+    var accountError   = document.getElementById('qaproof-account-info-error');
+    var emailEl        = document.getElementById('qaproof-account-email');
+    var planBadgeEl    = document.getElementById('qaproof-account-plan-badge');
+    var genTextEl      = document.getElementById('qaproof-account-gen-text');
+    var genBarEl       = document.getElementById('qaproof-account-gen-bar');
+    var genRemEl       = document.getElementById('qaproof-account-gen-remaining');
+    var monitorsEl     = document.getElementById('qaproof-account-monitors');
+    var historyEl      = document.getElementById('qaproof-account-history');
+
+    if (!accountInfo) return; // only runs on Settings page
+
+    function planLabel(plan) {
+      var labels = { free: 'Free', starter: 'Starter', pro: 'Pro', business: 'Business', enterprise: 'Enterprise' };
+      return labels[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free');
+    }
+
+    function planColor(plan) {
+      var p = (plan || '').toLowerCase();
+      if (p === 'pro' || p === 'business' || p === 'enterprise') return '#00ADB5';
+      if (p === 'starter') return '#f59e0b';
+      return '#9CA3AF'; // free
+    }
+
+    function renderAccount(data) {
+      if (!data) return;
+      var user = data.user || {};
+      var ws   = data.workspace || {};
+      var gen  = ws.aiGenerations || {};
+      var used = gen.used || 0;
+      var limit = gen.limit || 0;
+      var remaining = gen.remaining !== undefined ? gen.remaining : Math.max(0, limit - used);
+      var pct  = limit > 0 ? Math.min(100, Math.round(used / limit * 100)) : 0;
+
+      if (emailEl) emailEl.textContent = user.email || '';
+      if (planBadgeEl) {
+        var plan = ws.plan || 'free';
+        planBadgeEl.textContent = planLabel(plan);
+        planBadgeEl.style.background = planColor(plan);
+      }
+      if (genTextEl) genTextEl.textContent = used + ' / ' + limit;
+      if (genBarEl) {
+        genBarEl.style.width = pct + '%';
+        genBarEl.style.background = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#00ADB5';
+      }
+      if (genRemEl) {
+        genRemEl.textContent = remaining + ' remaining this billing period';
+      }
+      if (monitorsEl) monitorsEl.textContent = (ws.monitors && ws.monitors.limit ? ws.monitors.limit : 1) + ' monitors';
+      if (historyEl)  historyEl.textContent  = (ws.historyRetentionDays || 7) + ' days history';
+
+      if (accountLoading) accountLoading.style.display = 'none';
+      if (accountError)   accountError.style.display   = 'none';
+      if (accountBody)    accountBody.style.display     = '';
+    }
+
+    function showAccountError(msg) {
+      if (accountLoading) accountLoading.style.display = 'none';
+      if (accountBody)    accountBody.style.display    = 'none';
+      if (accountError) {
+        accountError.textContent = msg;
+        accountError.style.display = '';
+      }
+    }
+
+    function fetchAccountInfo() {
+      var keyInput = document.getElementById('qaproof_api_key');
+      var key = keyInput ? keyInput.value.trim() : '';
+      if (!key) return; // no key — keep panel hidden
+
+      accountInfo.style.display  = '';
+      if (accountLoading) accountLoading.style.display = '';
+      if (accountBody)    accountBody.style.display    = 'none';
+      if (accountError)   accountError.style.display   = 'none';
+
+      var data = new FormData();
+      data.append('action', 'qaproof_fetch_account_info');
+      data.append('nonce', qaproof.ajaxNonce);
+
+      fetch(qaproof.ajaxUrl, {
+        method: 'POST',
+        body: data,
+        credentials: 'same-origin',
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+          if (resp.success) {
+            renderAccount(resp.data);
+          } else {
+            showAccountError((resp.data && resp.data.message) || 'Failed to load account info.');
+          }
+        })
+        .catch(function () {
+          showAccountError('Network error — could not load account info.');
+        });
+    }
+
+    // Auto-load if there's already a key saved
+    if (qaproof.hasApiKey) {
+      fetchAccountInfo();
+    }
+
+    // Refresh after "Test Connection" succeeds
+    if (S.connectionBtn) {
+      S.connectionBtn.addEventListener('click', function () {
+        // Small delay to let the health check fire first, then reload account info
+        setTimeout(fetchAccountInfo, 500);
+      });
+    }
+
+    // Also refresh after settings form is submitted (page reloads — pick up on next load)
+    // and when the API key input changes (validate + refresh after 1.5s debounce)
+    var accountDebounce = null;
+    var keyInput = document.getElementById('qaproof_api_key');
+    if (keyInput) {
+      keyInput.addEventListener('input', function () {
+        clearTimeout(accountDebounce);
+        accountInfo.style.display = 'none'; // hide while typing
+        var val = keyInput.value.trim();
+        if (!val) return;
+        accountDebounce = setTimeout(function () {
+          fetchAccountInfo();
+        }, 1500);
+      });
+    }
+  })();
+
+  // ============================
   // Network Diagnostics (Settings page)
   // ============================
   var diagnoseBtn = document.getElementById('qaproof-diagnose-btn');
@@ -149,7 +282,8 @@
     var eyeOff    = wrapper.querySelector('.qaproof-eye-off');
     var eyeOn     = wrapper.querySelector('.qaproof-eye-on');
     var errorEl   = wrapper.parentNode.querySelector('.qaproof-api-key-error');
-    var keyRegex  = /^qap_[0-9a-f]{64}$/i;
+    // Accepts both old format (qap_<64hex>) and new format (qap_live_sk_<48hex>, qap_test_sk_<48hex>)
+    var keyRegex  = /^qap_(?:[0-9a-f]{64}|(?:live|test)_sk_[0-9a-f]{48})$/i;
 
     var fadeEl = wrapper.querySelector('.qaproof-key-fade');
     function syncFade() {

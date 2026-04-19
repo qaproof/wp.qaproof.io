@@ -345,13 +345,18 @@ class QAProof_Settings {
     }
 
     public static function render_section_description() {
-        echo '<p>' . esc_html__( 'Enter your API credentials to connect to the QAProof service.', 'qaproof' ) . '</p>';
+        echo '<p>';
+        echo esc_html__( 'Enter your API key to connect this plugin to your QAProof account.', 'qaproof' );
+        echo ' <a href="https://qaproof.io/app/api-keys" target="_blank" rel="noopener noreferrer">';
+        echo esc_html__( 'Get your API key at qaproof.io →', 'qaproof' );
+        echo '</a>';
+        echo '</p>';
     }
 
     public static function render_api_key_field() {
         $value = get_option( 'qaproof_api_key', '' );
         echo '<div class="qaproof-api-key-wrapper">';
-        echo '  <input type="password" id="qaproof_api_key" name="qaproof_api_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off" placeholder="qap_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />';
+        echo '  <input type="password" id="qaproof_api_key" name="qaproof_api_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off" placeholder="qap_live_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />';
         echo '  <button type="button" class="qaproof-eye-toggle" title="' . esc_attr__( 'Show/Hide API Key', 'qaproof' ) . '">';
         echo '    <svg class="qaproof-eye-icon qaproof-eye-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
         echo '    <svg class="qaproof-eye-icon qaproof-eye-on" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -359,6 +364,52 @@ class QAProof_Settings {
         echo '  <span class="qaproof-key-fade"></span>';
         echo '</div>';
         echo '<p class="qaproof-api-key-error" style="display:none;"></p>';
+
+        // Account info panel — populated via JS after key is validated
+        echo '<div id="qaproof-account-info" class="qaproof-account-info" style="display:none;">';
+        echo '  <div class="qaproof-account-info__loading" id="qaproof-account-info-loading">';
+        echo '    <span class="qaproof-account-info__spinner"></span>';
+        echo '    <span>' . esc_html__( 'Fetching account info...', 'qaproof' ) . '</span>';
+        echo '  </div>';
+        echo '  <div class="qaproof-account-info__body" id="qaproof-account-info-body" style="display:none;">';
+        echo '    <div class="qaproof-account-info__row qaproof-account-info__header">';
+        echo '      <div class="qaproof-account-info__user">';
+        echo '        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+        echo '        <span id="qaproof-account-email"></span>';
+        echo '      </div>';
+        echo '      <span id="qaproof-account-plan-badge" class="qaproof-plan-badge"></span>';
+        echo '    </div>';
+
+        // AI Generations row
+        echo '    <div class="qaproof-account-info__stat">';
+        echo '      <div class="qaproof-account-info__stat-header">';
+        echo '        <span class="qaproof-account-info__stat-label">' . esc_html__( 'AI Generations', 'qaproof' ) . '</span>';
+        echo '        <span class="qaproof-account-info__stat-value" id="qaproof-account-gen-text"></span>';
+        echo '      </div>';
+        echo '      <div class="qaproof-account-info__progress-track">';
+        echo '        <div class="qaproof-account-info__progress-bar" id="qaproof-account-gen-bar"></div>';
+        echo '      </div>';
+        echo '      <div class="qaproof-account-info__stat-sub" id="qaproof-account-gen-remaining"></div>';
+        echo '    </div>';
+
+        // Monitors + History row
+        echo '    <div class="qaproof-account-info__row qaproof-account-info__meta">';
+        echo '      <div class="qaproof-account-info__meta-item">';
+        echo '        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+        echo '        <span id="qaproof-account-monitors"></span>';
+        echo '      </div>';
+        echo '      <div class="qaproof-account-info__meta-item">';
+        echo '        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+        echo '        <span id="qaproof-account-history"></span>';
+        echo '      </div>';
+        echo '      <a href="https://qaproof.io/app/api-keys" target="_blank" rel="noopener noreferrer" class="qaproof-account-info__manage-link">';
+        echo '        ' . esc_html__( 'Manage plan →', 'qaproof' );
+        echo '      </a>';
+        echo '    </div>';
+
+        echo '  </div>';
+        echo '  <div class="qaproof-account-info__error" id="qaproof-account-info-error" style="display:none;"></div>';
+        echo '</div>';
     }
 
     public static function render_monitoring_section_description() {
@@ -904,12 +955,16 @@ class QAProof_Settings {
             return $value;
         }
 
-        // Must match format: prefix_ followed by 64 hex characters (e.g. qap_..., uiux_...).
-        if ( ! preg_match( '/^[a-z0-9]+_[0-9a-f]{64}$/i', $value ) ) {
+        // Accept both key formats:
+        //  Legacy : qap_<64 hex chars>
+        //  Current: qap_live_sk_<48 hex chars>  |  qap_test_sk_<48 hex chars>
+        $legacy  = '/^qap_[0-9a-f]{64}$/i';
+        $current = '/^qap_(?:live|test)_sk_[0-9a-f]{48}$/i';
+        if ( ! preg_match( $legacy, $value ) && ! preg_match( $current, $value ) ) {
             add_settings_error(
                 'qaproof_api_key',
                 'invalid_format',
-                __( 'Invalid API key format: must be a prefix followed by underscore and 64 hexadecimal characters.', 'qaproof' ),
+                __( 'Invalid API key format. Expected a key starting with "qap_live_sk_" or "qap_test_sk_". Get your key at qaproof.io/app/api-keys.', 'qaproof' ),
                 'error'
             );
             return get_option( 'qaproof_api_key', '' );

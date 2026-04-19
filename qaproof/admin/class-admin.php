@@ -15,9 +15,10 @@ class QAProof_Admin {
         add_action( 'admin_menu', [ __CLASS__, 'register_menu' ] );
         add_action( 'admin_enqueue_scripts', [ 'QAProof_Admin_Assets', 'enqueue_assets' ] );
         add_action( 'rest_api_init', [ __CLASS__, 'register_rest_routes' ] );
-        add_action( 'wp_ajax_qaproof_health_check', [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
-        add_action( 'wp_ajax_qaproof_save_history', [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
-        add_action( 'wp_ajax_qaproof_diagnose', [ 'QAProof_Admin_AJAX', 'ajax_diagnose' ] );
+        add_action( 'wp_ajax_qaproof_health_check',       [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
+        add_action( 'wp_ajax_qaproof_save_history',       [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
+        add_action( 'wp_ajax_qaproof_diagnose',           [ 'QAProof_Admin_AJAX', 'ajax_diagnose' ] );
+        add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
     }
 
     // ============================
