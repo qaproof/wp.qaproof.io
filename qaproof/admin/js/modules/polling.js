@@ -150,9 +150,10 @@
     var onScreenshotsDone = opts.onScreenshotsDone || null;
     var page = opts.page || 'tests';
     var cancelled = false;
+    var done = false; // guard against duplicate responses when polls overlap
 
     var pollInterval = setInterval(function () {
-      if (cancelled) return;
+      if (cancelled || done) return;
 
       fetch(Q.buildPollUrl(jobId), {
         method: 'GET',
@@ -161,7 +162,7 @@
       })
         .then(Q.safeJson)
         .then(function (pollData) {
-          if (cancelled) return;
+          if (cancelled || done) return;
           if (!pollData.success) {
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
@@ -173,6 +174,8 @@
           onPoll(job.status, job.elapsed);
 
           if (job.status === 'done' && job.result) {
+            if (done) return; // already handled by a concurrent in-flight response
+            done = true;
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
 

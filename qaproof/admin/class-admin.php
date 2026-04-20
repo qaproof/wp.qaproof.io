@@ -19,6 +19,33 @@ class QAProof_Admin {
         add_action( 'wp_ajax_qaproof_save_history',       [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
         add_action( 'wp_ajax_qaproof_diagnose',           [ 'QAProof_Admin_AJAX', 'ajax_diagnose' ] );
         add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
+        // Hook at priority -999 so we run first and can remove all subsequent notice callbacks
+        add_action( 'admin_notices',         [ __CLASS__, 'suppress_third_party_notices' ], -999 );
+        add_action( 'all_admin_notices',     [ __CLASS__, 'suppress_third_party_notices' ], -999 );
+        add_action( 'network_admin_notices', [ __CLASS__, 'suppress_third_party_notices' ], -999 );
+    }
+
+    /**
+     * Remove all third-party admin notices on QAProof pages.
+     * Runs at priority -999 so it fires before any other notice callbacks.
+     */
+    public static function suppress_third_party_notices() {
+        $screen = get_current_screen();
+        if ( ! $screen ) return;
+
+        $qaproof_pages = [
+            'toplevel_page_qaproof',
+            'qaproof_page_qaproof-tests',
+            'qaproof_page_qaproof-accessibility',
+            'qaproof_page_qaproof-monitors',
+            'qaproof_page_qaproof-settings',
+        ];
+
+        if ( in_array( $screen->id, $qaproof_pages, true ) ) {
+            remove_all_actions( 'admin_notices' );
+            remove_all_actions( 'all_admin_notices' );
+            remove_all_actions( 'network_admin_notices' );
+        }
     }
 
     // ============================
@@ -279,8 +306,8 @@ class QAProof_Admin {
     public static function render_dashboard_page() {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
 
-        $monitors       = QAProof_Monitor::get_all();
-        $total_monitors = count( $monitors );
+        $monitors        = QAProof_Monitor::get_all();
+        $total_monitors  = count( $monitors );
         $active_monitors = 0;
 
         foreach ( $monitors as $m ) {
@@ -292,6 +319,27 @@ class QAProof_Admin {
         $total_tests       = $history_stats['total'];
         $avg_score         = $history_stats['avg_score'];
         $has_api_key       = ! empty( QAProof_Settings::get_api_key() );
+
+        // Fetch live account data from API (AI generations + plan)
+        $ai_used      = 0;
+        $ai_limit     = 20;
+        $account_plan = 'free';
+        $reset_label  = '';
+
+        if ( $has_api_key ) {
+            $account_info = QAProof_API_Client::get_account_info();
+            if ( ! is_wp_error( $account_info ) && isset( $account_info['workspace'] ) ) {
+                $ws           = $account_info['workspace'];
+                $ai_used      = (int) ( $ws['aiGenerations']['used']  ?? 0 );
+                $ai_limit     = (int) ( $ws['aiGenerations']['limit'] ?? 20 );
+                $account_plan = ucfirst( $ws['plan'] ?? 'free' );
+            }
+        }
+
+        $ai_pct      = $ai_limit > 0 ? round( $ai_used / $ai_limit * 100 ) : 0;
+        // Reset label: first day of next month
+        $reset_ts    = mktime( 0, 0, 0, (int) date('n') + 1, 1 );
+        $reset_label = 'Resets on ' . date( 'M j, Y', $reset_ts );
 
         $ring_radius    = 44;
         $circumference  = 2 * 3.14159 * $ring_radius;

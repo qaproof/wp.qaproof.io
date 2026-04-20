@@ -11,7 +11,10 @@ class QAProof_Test_History {
     public static function save( $data ) {
         global $wpdb;
 
+        $job_id = ! empty( $data['job_id'] ) ? sanitize_text_field( $data['job_id'] ) : null;
+
         $row = [
+            'job_id'               => $job_id,
             'test_type'            => sanitize_text_field( $data['test_type'] ?? '' ),
             'page_url'             => sanitize_url( $data['page_url'] ?? '' ),
             'score'                => isset( $data['score'] ) ? (int) $data['score'] : null,
@@ -23,14 +26,22 @@ class QAProof_Test_History {
             'extracted_data_json'  => self::build_extracted_data( $data ),
         ];
 
-        $formats = [ '%s', '%s' ];
+        $formats = [ '%s', '%s', '%s' ];
         $formats[] = $row['score'] !== null ? '%d' : '%s';
         $formats = array_merge( $formats, [ '%s', '%s', '%s', '%s', '%s', '%s' ] );
 
         $result = $wpdb->insert( self::table_name(), $row, $formats );
 
-        if ( $result === false && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( '[QAProof] test_history insert failed: ' . $wpdb->last_error );
+        if ( $result === false ) {
+            // Error code 1062 = duplicate key — expected when same job_id is saved twice.
+            if ( ! empty( $job_id ) && strpos( $wpdb->last_error, '1062' ) !== false ) {
+                error_log( '[QAProof] test_history: duplicate job_id blocked by DB constraint — jobId=' . $job_id );
+                return 0;
+            }
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( '[QAProof] test_history insert failed: ' . $wpdb->last_error );
+            }
+            return 0;
         }
 
         return $wpdb->insert_id;
