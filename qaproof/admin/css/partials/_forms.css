@@ -490,6 +490,7 @@
    Number Input — clean custom spinner
    ============================ */
 #qaproof-app input[type="number"] {
+  position: relative;
   -moz-appearance: textfield !important;
   appearance: textfield !important;
   text-align: center !important;
@@ -513,13 +514,13 @@
 }
 
 #qaproof-app input[type="number"]:focus {
-  border-color: var(--qp-accent) !important;
+  border-color: var(--qp-text-placeholder) !important;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 3px var(--qp-accent-light) !important;
   outline: none !important;
 }
 
 #qaproof-app input[type="number"]:hover {
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: var(--qp-text-placeholder) !important;
 }
 
 /* ============================
@@ -529,20 +530,20 @@
 #qaproof-app .button-primary,
 #qaproof-app .button-hero.button-primary,
 #qaproof-app #qaproof-submit-btn {
-  background: var(--qp-accent) !important;
-  border: 1px solid transparent !important;
-  border-radius: var(--qp-radius-pill) !important;
-  color: var(--qp-white) !important;
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  font-family: var(--qp-font) !important;
-  padding: 12px 24px !important;
-  text-shadow: none !important;
-  box-shadow: none !important;
-  transition: all 0.25s ease !important;
-  cursor: pointer !important;
-  height: auto !important;
-  line-height: 120% !important;
+  background: var(--qp-accent);
+  border: 1px solid transparent;
+  border-radius: var(--qp-radius-pill);
+  color: var(--qp-white);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--qp-font);
+  padding: 12px 24px;
+  text-shadow: none;
+  box-shadow: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  height: auto;
+  line-height: 120%;
 }
 
 #qaproof-app #qaproof-submit-btn:disabled,
