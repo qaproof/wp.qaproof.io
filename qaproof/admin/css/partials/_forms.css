@@ -311,6 +311,182 @@
 }
 
 /* ============================
+   Account Info Panel (Settings page)
+   ============================ */
+.qaproof-account-info {
+  margin-top: 16px;
+  max-width: 480px;
+  border: 1px solid var(--qp-border);
+  border-radius: var(--qp-radius-sm);
+  background: var(--qp-bg-card);
+  overflow: hidden;
+}
+
+.qaproof-account-info__loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  color: var(--qp-text-muted);
+  font-size: 13px;
+}
+
+.qaproof-account-info__spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--qp-border);
+  border-top-color: var(--qp-accent);
+  border-radius: 50%;
+  animation: qp-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes qp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.qaproof-account-info__body {
+  padding: 16px 18px;
+}
+
+.qaproof-account-info__row {
+  display: flex;
+  align-items: center;
+}
+
+.qaproof-account-info__header {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.qaproof-account-info__user {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--qp-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.qaproof-account-info__user svg {
+  color: var(--qp-text-muted);
+  flex-shrink: 0;
+}
+
+.qaproof-plan-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* AI Generations stat */
+.qaproof-account-info__stat {
+  margin-bottom: 12px;
+}
+
+.qaproof-account-info__stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.qaproof-account-info__stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--qp-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.qaproof-account-info__stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--qp-text-primary);
+}
+
+.qaproof-account-info__progress-track {
+  height: 6px;
+  background: var(--qp-bg-surface);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.qaproof-account-info__progress-bar {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--qp-accent);
+  transition: width 0.4s ease, background 0.3s ease;
+}
+
+.qaproof-account-info__stat-sub {
+  font-size: 11px;
+  color: var(--qp-text-muted);
+}
+
+/* Meta row (monitors, history, manage link) */
+.qaproof-account-info__meta {
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid var(--qp-border-light);
+  margin-top: 4px;
+}
+
+.qaproof-account-info__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--qp-text-secondary);
+}
+
+.qaproof-account-info__meta-item svg {
+  color: var(--qp-text-muted);
+  flex-shrink: 0;
+}
+
+.qaproof-account-info__manage-link {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--qp-accent) !important;
+  text-decoration: none !important;
+}
+
+.qaproof-account-info__manage-link:hover {
+  text-decoration: underline !important;
+}
+
+.qaproof-account-info__error {
+  padding: 12px 18px;
+  color: #b91c1c;
+  font-size: 13px;
+  background: #fef2f2;
+  border-top: 1px solid #fecaca;
+}
+
+/* Dark mode */
+#qaproof-app.qaproof-dark .qaproof-account-info {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+
+#qaproof-app.qaproof-dark .qaproof-account-info__error {
+  background: rgba(185, 28, 28, 0.15);
+  color: #fca5a5;
+  border-top-color: rgba(185, 28, 28, 0.4);
+}
+
+/* ============================
    Number Input — clean custom spinner
    ============================ */
 #qaproof-app input[type="number"] {
