@@ -913,10 +913,36 @@
     var tabs = tabsContainer.querySelectorAll('.qaproof-page-tab');
     var historyLoaded = false;
 
+    // Create sliding indicator
+    var tabSlider = document.createElement('div');
+    tabSlider.className = 'qaproof-page-tab-slider';
+    tabsContainer.appendChild(tabSlider);
+
+    function moveTabSlider(btn) {
+      var navRect = tabsContainer.getBoundingClientRect();
+      var btnRect = btn.getBoundingClientRect();
+      tabSlider.style.width = btnRect.width + 'px';
+      tabSlider.style.height = btnRect.height + 'px';
+      tabSlider.style.transform = 'translateX(' + (btnRect.left - navRect.left - tabsContainer.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - tabsContainer.clientTop) + 'px)';
+    }
+
+    // Initial position without transition
+    requestAnimationFrame(function () {
+      var activeBtn = tabsContainer.querySelector('.qaproof-page-tab.active');
+      if (activeBtn) {
+        tabSlider.style.transition = 'none';
+        moveTabSlider(activeBtn);
+        requestAnimationFrame(function () {
+          tabSlider.style.transition = '';
+        });
+      }
+    });
+
     function switchTo(targetTab) {
       tabs.forEach(function (t) {
         if (t.getAttribute('data-tab') === targetTab) {
           t.classList.add('active');
+          moveTabSlider(t);
         } else {
           t.classList.remove('active');
         }
