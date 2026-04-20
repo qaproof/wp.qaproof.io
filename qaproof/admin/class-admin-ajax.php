@@ -20,6 +20,26 @@ class QAProof_Admin_AJAX {
     }
 
     /**
+     * AJAX handler: fetch account info from /api/me (uses saved API key).
+     * Returns user email, plan, AI generation usage, and limits.
+     */
+    public static function ajax_fetch_account_info() {
+        check_ajax_referer( 'qaproof_ajax', 'nonce' );
+
+        if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
+        }
+
+        $result = QAProof_API_Client::get_account_info();
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+        }
+
+        wp_send_json_success( $result );
+    }
+
+    /**
      * AJAX handler: detailed network diagnostics.
      * Tests connectivity from PHP to the API server.
      */
