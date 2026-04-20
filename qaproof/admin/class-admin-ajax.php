@@ -216,6 +216,17 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => 'Missing required fields.' ] );
         }
 
+        // Deduplicate: if the same jobId was already saved within 120 seconds, skip.
+        // Prevents duplicate records caused by overlapping poll responses in the browser.
+        if ( ! empty( $job_id ) ) {
+            $dedup_key = 'qaproof_saved_job_' . substr( md5( $job_id ), 0, 16 );
+            if ( get_transient( $dedup_key ) ) {
+                error_log( '[QAProof] ajax_save_history: duplicate jobId detected, skipping — jobId=' . $job_id );
+                wp_send_json_success( [ 'saved' => true, 'id' => 0, 'deduplicated' => true ] );
+            }
+            set_transient( $dedup_key, 1, 120 );
+        }
+
         if ( is_string( $result ) ) {
             $result = json_decode( stripslashes( $result ), true );
         }
@@ -227,7 +238,7 @@ class QAProof_Admin_AJAX {
 
         // Save history record without screenshots first (fast, no size limit concerns).
         $save_data = array_merge(
-            [ 'test_type' => $test_type, 'page_url' => $page_url ],
+            [ 'test_type' => $test_type, 'page_url' => $page_url, 'job_id' => $job_id ?: null ],
             $result
         );
         unset( $save_data['screenshots'] ); // ensure no screenshots in initial insert
