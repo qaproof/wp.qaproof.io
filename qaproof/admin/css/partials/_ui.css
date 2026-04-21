@@ -289,6 +289,10 @@
   opacity: 1 !important;
   height: auto;
   cursor: pointer;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* ============================
@@ -309,8 +313,8 @@
   gap: 8px;
   background: var(--qp-white);
   border: 1px solid #D1D5DB;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: var(--qp-radius-sm);
+  padding: 10px 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--qp-text-primary);
@@ -328,7 +332,11 @@
   border-color: var(--qp-accent);
   box-shadow: 0 0 0 2px var(--qp-accent-light);
 }
-
+#qaproof-app .qaproof-select-trigger .qaproof-select-arrow {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+}
 #qaproof-app .qaproof-select-arrow .dashicons {
   font-size: 14px;
   width: 14px;
@@ -348,7 +356,7 @@
   right: 0;
   background: var(--qp-white);
   border: 1px solid #E5E7EB;
-  border-radius: 10px;
+  border-radius: var(--qp-radius-sm);
   box-shadow: 0 8px 24px var(--qp-overlay-sm);
   z-index: 100;
   overflow: hidden;
@@ -422,49 +430,31 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255);
+  color: var(--qp-white);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-top: 32px;
-  padding: 8px 16px;
+  padding: 2px 16px;
   border-radius: var(--qp-radius-pill);
-  background: var(--qp-accent);
+  background: var(--qp-text-primary);
   user-select: none;
 }
 
-#qaproof-app .qaproof-brand-badge .qaproof-brand-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--qp-white);
+#qaproof-app .qaproof-brand-badge .qaproof-brand-logo {
+  width: 30px;
+  height: auto;
   display: inline-block;
+  color: #fff;
 }
 
 /* ============================
    WP Submit Button Override
    ============================ */
 #qaproof-app p.submit {
-  margin: 0;
+  margin: 30px 0 0;
   padding: 0;
-}
-
-#qaproof-app #submit,
-#qaproof-app .submit .button-primary {
-  background: var(--qp-accent) !important;
-  border: 1px solid transparent !important;
-  border-radius: var(--qp-radius-pill) !important;
-  color: var(--qp-white) !important;
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  font-family: var(--qp-font) !important;
-  padding: 12px 24px !important;
-  text-shadow: none !important;
-  box-shadow: none !important;
-  height: auto !important;
-  line-height: 120% !important;
-  transition: all 0.25s ease !important;
-  width: auto !important;
-  display: inline-block !important;
+  display: flex;
+  gap: 15px;
 }
 
 #qaproof-app #submit:hover,
@@ -484,9 +474,9 @@
   gap: 6px;
   margin-top: 16px;
   padding: 12px 24px;
-  background: var(--qp-accent);
-  color: var(--qp-white);
-  border: 1px solid transparent;
+  background: var(--qp-text-primary);
+  color: var(--qp-accent);
+  border: 1px solid var(--qp-accent);
   border-radius: var(--qp-radius-pill);
   font-family: var(--qp-font);
   font-size: 14px;
@@ -496,8 +486,8 @@
 }
 
 #qaproof-app .qaproof-pdf-btn:hover {
-  color: var(--qp-text-primary);
-  border: 1px solid var(--qp-text-primary);
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
   transform: translateY(-1px);
 }
 
@@ -519,9 +509,9 @@
   margin-top: 16px;
   padding: 12px 24px;
   box-sizing: border-box;
-  background: var(--qp-accent);
-  color: var(--qp-white);
-  border: 1px solid transparent;
+  background: var(--qp-text-primary);
+  color: var(--qp-accent);
+  border: 1px solid var(--qp-accent);
   border-radius: var(--qp-radius-pill);
   font-family: var(--qp-font);
   font-size: 14px;
@@ -531,8 +521,8 @@
 }
 
 #qaproof-app .qaproof-email-btn:hover:not(.qaproof-email-expanded) {
-  color: var(--qp-text-primary);
-  border: 1px solid var(--qp-text-primary);
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
   transform: translateY(-1px);
 }
 
@@ -660,14 +650,14 @@
 }
 
 #qaproof-app.qaproof-dark .qaproof-btn-secondary {
-  background: var(--qp-text-secondary);
-  color: var(--qp-border-light);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--qp-bg-surface);
+  color: var(--qp-text-primary);
+  border-color: var(--qp-border);
 }
 
 #qaproof-app.qaproof-dark .qaproof-btn-secondary:hover {
-  background: #4a5568;
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--qp-bg-elevated);
+  border-color: rgba(0, 173, 181, 0.3);
 }
 
 .qaproof-email-send-btn {
@@ -1163,40 +1153,52 @@
 /* Token tabs */
 #qaproof-app .qaproof-token-tabs {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0;
   background: var(--qp-text-primary);
-  border-radius: 14px 14px 0 0;
-  padding: 4px 4px 0;
+  border-radius: var(--qp-radius-pill);
+  padding: 12px;
+  border: none;
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
+  position: relative;
 }
+
+/* Sliding pill indicator */
+#qaproof-app .qaproof-token-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid var(--qp-border-light);
+  border-radius: var(--qp-radius-pill);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
 #qaproof-app .qaproof-token-tab {
   padding: 10px 16px;
   background: transparent;
   border: none;
-  color: rgba(238, 238, 238, 0.5);
+  border-radius: var(--qp-radius-pill);
+  color: var(--qp-accent-hover);
   font-family: 'Kodchasan', sans-serif;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  transition: color 0.3s ease;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 6px 6px 0 0;
+  position: relative;
+  z-index: 1;
+  line-height: 120%;
 }
-#qaproof-app .qaproof-token-tab:hover {
+#qaproof-app .qaproof-token-tab:hover:not(.active) {
   color: var(--qp-border-light);
-  background: rgba(255, 255, 255, 0.06);
 }
 #qaproof-app .qaproof-token-tab.active {
-  color: var(--qp-accent);
-  border-bottom-color: var(--qp-accent);
-  background: rgba(0, 173, 181, 0.1);
+  color: var(--qp-text-primary);
 }
 #qaproof-app .qaproof-tab-badge {
   display: inline-flex;
@@ -1209,11 +1211,11 @@
   background: rgba(255, 255, 255, 0.1);
   font-size: 10px;
   font-weight: 700;
-  color: rgba(238, 238, 238, 0.5);
+  color: var(--qp-accent-hover);
 }
 #qaproof-app .qaproof-token-tab.active .qaproof-tab-badge {
-  background: var(--qp-accent-mid);
-  color: var(--qp-accent);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--qp-text-primary);
 }
 
 /* Token panels */
@@ -1654,6 +1656,12 @@
 #qaproof-app .qaproof-form-left .form-table td p.description {
   font-size: 12px;
   margin-top: 4px;
+  text-decoration: none!important;
+  color: var(--qp-text-dark);
+}
+#qaproof-app .qaproof-form-left .form-table td p.description a {
+  text-decoration: none!important;
+  color: var(--qp-text-dark);
 }
 #qaproof-app .qaproof-form-left p.submit {
   margin-top: 4px;
@@ -1842,26 +1850,6 @@
   color: #b91c1c;
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.35);
-}
-body.qaproof-dark #qaproof-app .qaproof-status-empty {
-  color: rgba(238, 238, 238, 0.55);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-body.qaproof-dark #qaproof-app .qaproof-status-partial {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.35);
-}
-body.qaproof-dark #qaproof-app .qaproof-status-ready {
-  color: #34d399;
-  background: rgba(16, 185, 129, 0.14);
-  border-color: rgba(16, 185, 129, 0.45);
-}
-body.qaproof-dark #qaproof-app .qaproof-status-error {
-  color: #f87171;
-  background: rgba(239, 68, 68, 0.14);
-  border-color: rgba(239, 68, 68, 0.45);
 }
 
 #qaproof-app .qaproof-refresh-figma-btn {

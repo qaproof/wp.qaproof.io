@@ -1,6 +1,3 @@
-/* QAProof — WP Admin Styles */
-/* Modular structure — each partial handles a specific concern */
-
 @import url('partials/_variables.css');
 @import url('partials/_base.css');
 @import url('partials/_forms.css');
