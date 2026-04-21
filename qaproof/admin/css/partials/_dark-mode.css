@@ -79,14 +79,12 @@ body.qaproof-dark-page #wpbody-content {
 
 /* Dark: back button */
 #qaproof-app.qaproof-dark .qaproof-back-btn {
-  background: var(--qp-bg-surface) !important;
-  border-color: var(--qp-border) !important;
-  color: var(--qp-text-primary) !important;
+  background: var(--qp-bg-page-dark) !important;
+  color: var(--qp-accent) !important;
 }
 #qaproof-app.qaproof-dark .qaproof-back-btn:hover {
-  background: var(--qp-bg-elevated) !important;
-  border-color: var(--qp-accent) !important;
-  color: var(--qp-accent) !important;
+  color: var(--qp-white) !important;
+  border-color: var(--qp-white) !important;
 }
 
 /* Dark: headings, subtitles */
@@ -122,15 +120,14 @@ body.qaproof-dark-page #wpbody-content {
   box-shadow: var(--qp-card-shadow);
 }
 #qaproof-app.qaproof-dark .qaproof-preview-header {
-  background: var(--qp-bg-accent);
-  color: var(--qp-text-dark);
+  color: var(--qp-white);
   background-image: linear-gradient(90deg, #00ADB5 0%, rgba(0, 173, 181, 0.08) 100%);
   background-size: 100% 2px;
   background-repeat: no-repeat;
   background-position: bottom left;
 }
 #qaproof-app.qaproof-dark .qaproof-preview-header .dashicons {
-  color: var(--qp-text-dark);
+  color: var(--qp-white);
 }
 #qaproof-app.qaproof-dark .qaproof-preview-empty p {
   color: #6b7280;
@@ -225,8 +222,7 @@ body.qaproof-dark-page #wpbody-content {
   padding-top: 0;
 }
 #qaproof-app.qaproof-dark .qaproof-chart-title {
-  color: #1a1e24;
-  background: var(--qp-bg-accent);
+  color: var(--qp-white);
   margin: 0 -20px 16px;
   padding: 16px 20px 12px;
   border-radius: 16px 16px 0 0;
@@ -310,8 +306,20 @@ body.qaproof-dark-page #wpbody-content {
 
 #qaproof-app.qaproof-dark .button-primary,
 #qaproof-app.qaproof-dark .button-hero.button-primary,
-#qaproof-app.qaproof-dark #qaproof-submit-btn {
-  color: var(--qp-text-dark);
+#qaproof-app.qaproof-dark #qaproof-submit-btn,
+#qaproof-app.qaproof-dark input[type="file"]::file-selector-button,
+#qaproof-app.qaproof-dark .qaproof-pdf-btn,
+#qaproof-app.qaproof-dark .qaproof-email-btn:not(.qaproof-email-expanded) {
+  color: var(--qp-accent);
+  background: var(--qp-bg-page-dark);
+}
+#qaproof-app.qaproof-dark .button-primary:hover,
+#qaproof-app.qaproof-dark .button-hero.button-primary:hover,
+#qaproof-app.qaproof-dark #qaproof-submit-btn:hover,
+#qaproof-app.qaproof-dark input[type="file"]::file-selector-button:hover,
+#qaproof-app.qaproof-dark .qaproof-pdf-btn:hover,
+#qaproof-app.qaproof-dark .qaproof-email-btn:hover:not(.qaproof-email-expanded) {
+  color: var(--qp-white)!important;
 }
 
 /* Dark: hr */
@@ -471,31 +479,31 @@ body.qaproof-dark-page #wpbody-content {
 
 /* Dark: dashboard hero */
 #qaproof-app.qaproof-dark .qaproof-dash-hero {
-  background: var(--qp-bg-accent);
-  border: 1px solid #e0e3e8;
+  background: var(--qp-bg-dark);
+  border: 1px solid var(--qp-bg-accent);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-hero h1 {
-  color: #1a1e24;
+  color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-hero-tagline {
-  color: #4b5563;
+  color: var(--qp-bg-accent);
 }
 /* Dark hero: score ring + value + label — dark text on white bg */
 #qaproof-app.qaproof-dark .qaproof-dash-hero .ring-bg {
   stroke: rgba(0, 0, 0, 0.08) !important;
 }
 #qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-score-val {
-  color: #1a1e24 !important;
+  color: var(--qp-text-primary); !important;
 }
 #qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-score-label {
-  color: #374151 !important;
+  color: var(--qp-bg-accent); !important;
 }
 #qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-hero-cta {
-  background: var(--qp-bg-card);
+  background: var(--qp-bg-page-dark);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-hero .qaproof-dash-hero-cta:hover {
-  color: var(--qp-bg-accent) !important;
+  color: var(--qp-white) ;
 }
 
 /* Dashboard mini stat cards inside hero — dark cards on white hero */
@@ -552,31 +560,31 @@ body.qaproof-dark-page #wpbody-content {
 
 /* Dark: Quick Links */
 #qaproof-app.qaproof-dark .qaproof-dash-link {
-  background: var(--qp-bg-accent);
-  border: 1px solid #e0e3e8;
+  background: var(--qp-bg-dark);
+  border: 1px solid var(--qp-card-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link:hover {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link-title {
-  color: var(--qp-text-dark);
+  color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link-desc {
-  color: var(--qp-text-dark);
+  color: var(--qp-bg-accent);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link:hover .qaproof-dash-link-title,
 #qaproof-app.qaproof-dark .qaproof-dash-link:hover .qaproof-dash-link-desc {
   color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link-arrow {
-  color: var(--qp-text-dark);
+  color: var(--qp-bg-accent);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link:hover .qaproof-dash-link-arrow {
   color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link-icon {
-  background: var(--qp-bg-card-dark);
+  background: var(--qp-bg-card);
 }
 #qaproof-app.qaproof-dark .qaproof-dash-link:hover .dashicons {
   color: var(--qp-text-primary);
@@ -688,8 +696,11 @@ body.qaproof-dark-page #wpbody-content {
 #qaproof-app.qaproof-dark .qaproof-cat-tab-panel p {
   color: var(--qp-text-secondary);
 }
-#qaproof-app.qaproof-dark .qaproof-cat-tab.active .qaproof-cat-tab-label {
-  color: var(--qp-text-dark);
+#qaproof-app.qaproof-dark .qaproof-cat-tab-slider {
+  border-color: var(--qp-bg-accent);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-tab:hover:not(.active) {
+  color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-cat-tab.active .qaproof-ring-bg {
   stroke: rgba(0, 0, 0, 0.15);
@@ -727,10 +738,12 @@ body.qaproof-dark-page #wpbody-content {
    Brand Badge — Dark Theme
    ============================ */
 #qaproof-app.qaproof-dark .qaproof-brand-badge {
-  color: var(--qp-text-dark);
+  color: var(--qp-text-primary);
+  background: var(--qp-bg-dark);
+  border: 1px solid var(--qp-card-border);
 }
 #qaproof-app.qaproof-dark .qaproof-brand-badge .qaproof-brand-logo {
-  color: var(--qp-text-dark);
+  color: var(--qp-text-primary);
 }
 
 /* ============================
@@ -741,26 +754,27 @@ body.qaproof-dark-page #wpbody-content {
   background: #1a1e24;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
-#qaproof-app.qaproof-dark .qaproof-test-type-btn.active,
-#qaproof-app.qaproof-dark .qaproof-source-btn.active {
-  color: var(--qp-text-dark);
-}
 #qaproof-app.qaproof-dark .qaproof-test-type-btn:hover:not(.active),
 #qaproof-app.qaproof-dark .qaproof-source-btn:hover:not(.active) {
-  color: var(--qp-text-secondary);
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-test-type-slider,
+#qaproof-app.qaproof-dark .qaproof-source-toggle-slider {
+  border-color: var(--qp-bg-accent);
 }
 
 /* ============================
    Page Tabs — Dark Theme
    ============================ */
-#qaproof-app.qaproof-dark .qaproof-page-tabs .active {
-  color: var(--qp-text-dark)!important;
+#qaproof-app.qaproof-dark .qaproof-page-tabs {
+  background: var(--qp-bg-dark);
+  box-shadow: var(--qp-card-shadow);
 }
-#qaproof-app.qaproof-dark .qaproof-page-tabs .active svg {
-  color: var(--qp-text-dark)!important;
+#qaproof-app.qaproof-dark .qaproof-page-tab {
+  color: var(--qp-text-secondary) !important;
 }
 #qaproof-app.qaproof-dark .qaproof-page-tab-slider {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border-color: var(--qp-bg-accent);
 }
 #qaproof-app.qaproof-dark .qaproof-page-tab:hover:not(.active) {
   color: var(--qp-text-primary) !important;
@@ -1006,11 +1020,11 @@ body.qaproof-dark-page #wpbody-content {
   background: var(--qp-bg-dark);
   box-shadow: var(--qp-card-shadow);
 }
-#qaproof-app.qaproof-dark .qaproof-device-tab.active {
-  color: var(--qp-text-dark);
+#qaproof-app.qaproof-dark .qaproof-device-tab-slider {
+  border-color: var(--qp-bg-accent);
 }
 #qaproof-app.qaproof-dark .qaproof-device-tab:hover:not(.active) {
-  color: var(--qp-text-secondary);
+  color: var(--qp-text-primary);
 }
 
 /* ============================
@@ -1020,17 +1034,14 @@ body.qaproof-dark-page #wpbody-content {
   background: var(--qp-bg-dark);
   box-shadow: var(--qp-card-shadow);
 }
+#qaproof-app.qaproof-dark .qaproof-token-tab-slider {
+  border-color: var(--qp-bg-accent);
+}
 #qaproof-app.qaproof-dark .qaproof-token-tab {
   color: var(--qp-text-secondary);
 }
 #qaproof-app.qaproof-dark .qaproof-token-tab:hover:not(.active) {
   color: var(--qp-text-primary);
-}
-#qaproof-app.qaproof-dark .qaproof-token-tab.active {
-  color: var(--qp-text-dark);
-}
-#qaproof-app.qaproof-dark .qaproof-token-tab.active .qaproof-tab-badge {
-  color: var(--qp-text-dark);
 }
 #qaproof-app.qaproof-dark .qaproof-tab-badge {
   background: var(--qp-border);
