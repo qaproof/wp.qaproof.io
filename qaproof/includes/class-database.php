@@ -61,6 +61,7 @@ class QAProof_Database {
 
         CREATE TABLE {$test_history_table} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            job_id varchar(64) DEFAULT NULL,
             test_type varchar(20) NOT NULL,
             page_url varchar(2048) NOT NULL,
             score int(3) DEFAULT NULL,
@@ -72,6 +73,7 @@ class QAProof_Database {
             extracted_data_json longtext DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
+            UNIQUE KEY job_id (job_id),
             KEY test_type (test_type),
             KEY created_at (created_at)
         ) {$charset_collate};";
@@ -79,7 +81,20 @@ class QAProof_Database {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.3.0' );
+        update_option( 'qaproof_db_version', '1.4.0' );
+    }
+
+    /**
+     * Run incremental DB migrations.
+     * Safe to call on every plugin load — checks version before acting.
+     */
+    public static function maybe_upgrade() {
+        $current = get_option( 'qaproof_db_version', '0' );
+        if ( version_compare( $current, '1.4.0', '>=' ) ) {
+            return;
+        }
+        // Re-run create_tables() — dbDelta() handles ADD COLUMN / ADD KEY safely.
+        self::create_tables();
     }
 
     /**

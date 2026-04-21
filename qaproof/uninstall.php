@@ -15,14 +15,14 @@ global $wpdb;
 // ============================
 // 1. API Key
 // ============================
-if ( get_option( 'qaproof_uninstall_delete_api_key', true ) ) {
+if ( get_option( 'qaproof_uninstall_delete_api_key', false ) ) {
 	delete_option( 'qaproof_api_key' );
 }
 
 // ============================
 // 2. Plugin Settings (notifications, thresholds, viewports, test config)
 // ============================
-if ( get_option( 'qaproof_uninstall_delete_settings', true ) ) {
+if ( get_option( 'qaproof_uninstall_delete_settings', false ) ) {
 	delete_option( 'qaproof_notify_email' );
 	delete_option( 'qaproof_notify_email_enabled' );
 	delete_option( 'qaproof_notify_admin_enabled' );
@@ -41,21 +41,21 @@ if ( get_option( 'qaproof_uninstall_delete_settings', true ) ) {
 // ============================
 // 3. Saved Designs (including cached images and element data)
 // ============================
-if ( get_option( 'qaproof_uninstall_delete_saved_designs', true ) ) {
+if ( get_option( 'qaproof_uninstall_delete_saved_designs', false ) ) {
 	delete_option( 'qaproof_saved_designs' );
 }
 
 // ============================
 // 4. Test History (database table)
 // ============================
-if ( get_option( 'qaproof_uninstall_delete_test_history', true ) ) {
+if ( get_option( 'qaproof_uninstall_delete_test_history', false ) ) {
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_test_history" );
 }
 
 // ============================
 // 5. Monitors & Results (database tables)
 // ============================
-if ( get_option( 'qaproof_uninstall_delete_monitors', true ) ) {
+if ( get_option( 'qaproof_uninstall_delete_monitors', false ) ) {
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_results" );
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_monitors" );
 }

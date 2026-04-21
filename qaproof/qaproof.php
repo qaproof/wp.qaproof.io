@@ -48,10 +48,7 @@ add_action( 'plugins_loaded', function() {
     QAProof_Notifications::init();
 
     // Auto-upgrade DB schema if plugin was updated without deactivation
-    $installed_db_version = get_option( 'qaproof_db_version', '0' );
-    if ( version_compare( $installed_db_version, '1.3.0', '<' ) ) {
-        QAProof_Database::create_tables();
-    }
+    QAProof_Database::maybe_upgrade();
 });
 
 // Activation: create tables and schedule events

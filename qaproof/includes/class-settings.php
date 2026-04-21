@@ -273,27 +273,27 @@ class QAProof_Settings {
         register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_api_key', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
+            'default'           => false,
         ]);
         register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_settings', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
+            'default'           => false,
         ]);
         register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_saved_designs', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
+            'default'           => false,
         ]);
         register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_test_history', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
+            'default'           => false,
         ]);
         register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_monitors', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
+            'default'           => false,
         ]);
 
         add_settings_section(
@@ -348,7 +348,7 @@ class QAProof_Settings {
         echo '<p>';
         echo esc_html__( 'Enter your API key to connect this plugin to your QAProof account.', 'qaproof' );
         echo ' <a href="https://qaproof.io/app/api-keys" target="_blank" rel="noopener noreferrer">';
-        echo esc_html__( 'Get your API key at qaproof.io →', 'qaproof' );
+        echo esc_html__( 'Get your API key at qaproof.io/app/api-keys →', 'qaproof' );
         echo '</a>';
         echo '</p>';
     }
@@ -402,7 +402,7 @@ class QAProof_Settings {
         echo '        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
         echo '        <span id="qaproof-account-history"></span>';
         echo '      </div>';
-        echo '      <a href="https://qaproof.io/app/api-keys" target="_blank" rel="noopener noreferrer" class="qaproof-account-info__manage-link">';
+        echo '      <a href="https://qaproof.io/app/settings/billing" target="_blank" rel="noopener noreferrer" class="qaproof-account-info__manage-link">';
         echo '        ' . esc_html__( 'Manage plan →', 'qaproof' );
         echo '      </a>';
         echo '    </div>';
@@ -910,35 +910,35 @@ class QAProof_Settings {
     }
 
     public static function render_uninstall_api_key_field() {
-        $value = get_option( 'qaproof_uninstall_delete_api_key', true );
+        $value = get_option( 'qaproof_uninstall_delete_api_key', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_api_key" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_api_key" value="1" ' . checked( $value, true, false ) . ' /> ';
         echo esc_html__( 'Delete API key on uninstall', 'qaproof' ) . '</label>';
     }
 
     public static function render_uninstall_settings_field() {
-        $value = get_option( 'qaproof_uninstall_delete_settings', true );
+        $value = get_option( 'qaproof_uninstall_delete_settings', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_settings" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_settings" value="1" ' . checked( $value, true, false ) . ' /> ';
         echo esc_html__( 'Delete notification, threshold, viewport, and test settings', 'qaproof' ) . '</label>';
     }
 
     public static function render_uninstall_saved_designs_field() {
-        $value = get_option( 'qaproof_uninstall_delete_saved_designs', true );
+        $value = get_option( 'qaproof_uninstall_delete_saved_designs', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_saved_designs" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_saved_designs" value="1" ' . checked( $value, true, false ) . ' /> ';
         echo esc_html__( 'Delete saved designs (including cached images)', 'qaproof' ) . '</label>';
     }
 
     public static function render_uninstall_test_history_field() {
-        $value = get_option( 'qaproof_uninstall_delete_test_history', true );
+        $value = get_option( 'qaproof_uninstall_delete_test_history', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_test_history" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_test_history" value="1" ' . checked( $value, true, false ) . ' /> ';
         echo esc_html__( 'Delete all test history records', 'qaproof' ) . '</label>';
     }
 
     public static function render_uninstall_monitors_field() {
-        $value = get_option( 'qaproof_uninstall_delete_monitors', true );
+        $value = get_option( 'qaproof_uninstall_delete_monitors', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_monitors" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_monitors" value="1" ' . checked( $value, true, false ) . ' /> ';
         echo esc_html__( 'Delete all monitors and their regression results', 'qaproof' ) . '</label>';

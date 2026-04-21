@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verify Email – QA Proof</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kodchasan:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --teal:        #00ADB5;
+      --teal-dark:   #008c93;
+      --teal-light:  rgba(0, 173, 181, 0.12);
+      --dark:        #203039;
+      --gray:        #6b7280;
+      --text:        #1a202c;
+      --font-heading: 'Kodchasan', sans-serif;
+      --font-body:    'Montserrat', sans-serif;
+      --radius-xl:   30px;
+      --radius-pill: 100px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: #fff;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      text-align: center;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      box-shadow: 0 8px 32px rgba(0,173,181,0.30);
+    }
+
+    h1 {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--dark);
+      margin: 0 0 12px;
+      line-height: 1.2;
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--gray);
+      line-height: 1.6;
+      margin: 0 0 32px;
+      font-family: var(--font-body);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 28px;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all 0.4s ease;
+      text-decoration: none;
+      border: 1.5px solid #767676;
+      background: #EEEEEE;
+      color: var(--text);
+      letter-spacing: 0;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="34" height="34" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h1>Email Verified!</h1>
+    <p>Your account is now active. You're good to go.</p>
+    <a href="#" class="btn">Go to dashboard →</a>
+  </div>
+</body>
+</html>
