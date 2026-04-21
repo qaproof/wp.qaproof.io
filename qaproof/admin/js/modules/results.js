@@ -1642,17 +1642,42 @@
     setupFilterFor('qaproof-da-severity-filter', 'severity');
 
     // Token tabs interaction
+    var tokenTabsContainer = document.querySelector('.qaproof-token-tabs');
     var tokenTabs = document.querySelectorAll('.qaproof-token-tab');
-    tokenTabs.forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        var panel = tab.dataset.panel;
-        tokenTabs.forEach(function (t) { t.classList.remove('active'); });
-        tab.classList.add('active');
-        document.querySelectorAll('.qaproof-token-panel').forEach(function (p) {
-          p.classList.toggle('active', p.dataset.panel === panel);
+    if (tokenTabsContainer) {
+      var ttSlider = document.createElement('div');
+      ttSlider.className = 'qaproof-token-tab-slider';
+      tokenTabsContainer.appendChild(ttSlider);
+
+      function moveTokenSlider(btn) {
+        var navRect = tokenTabsContainer.getBoundingClientRect();
+        var btnRect = btn.getBoundingClientRect();
+        ttSlider.style.width = btnRect.width + 'px';
+        ttSlider.style.height = btnRect.height + 'px';
+        ttSlider.style.transform = 'translateX(' + (btnRect.left - navRect.left - tokenTabsContainer.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - tokenTabsContainer.clientTop) + 'px)';
+      }
+
+      requestAnimationFrame(function () {
+        var activeTab = tokenTabsContainer.querySelector('.qaproof-token-tab.active');
+        if (activeTab) {
+          ttSlider.style.transition = 'none';
+          moveTokenSlider(activeTab);
+          requestAnimationFrame(function () { ttSlider.style.transition = ''; });
+        }
+      });
+
+      tokenTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var panel = tab.dataset.panel;
+          tokenTabs.forEach(function (t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+          moveTokenSlider(tab);
+          document.querySelectorAll('.qaproof-token-panel').forEach(function (p) {
+            p.classList.toggle('active', p.dataset.panel === panel);
+          });
         });
       });
-    });
+    }
 
     // PDF download button
     var pdfBtn = document.getElementById('qaproof-pdf-btn');
@@ -2822,9 +2847,41 @@
   // Device Tabs (Responsive)
   // ============================
   function setupDeviceTabs() {
-    S.resultsContainer.querySelectorAll('.qaproof-device-tab').forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        switchDeviceTab(tab.dataset.device);
+    S.resultsContainer.querySelectorAll('.qaproof-device-tabs').forEach(function (container) {
+      // Create sliding indicator
+      var slider = document.createElement('div');
+      slider.className = 'qaproof-device-tab-slider';
+      container.appendChild(slider);
+
+      function moveSlider(btn) {
+        var navRect = container.getBoundingClientRect();
+        var btnRect = btn.getBoundingClientRect();
+        slider.style.width = btnRect.width + 'px';
+        slider.style.height = btnRect.height + 'px';
+        slider.style.transform = 'translateX(' + (btnRect.left - navRect.left - container.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - container.clientTop) + 'px)';
+      }
+
+      // Initial position without transition
+      requestAnimationFrame(function () {
+        var activeTab = container.querySelector('.qaproof-device-tab.active');
+        if (activeTab) {
+          slider.style.transition = 'none';
+          moveSlider(activeTab);
+          requestAnimationFrame(function () {
+            slider.style.transition = '';
+          });
+        }
+      });
+
+      container.querySelectorAll('.qaproof-device-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var device = tab.dataset.device;
+          container.querySelectorAll('.qaproof-device-tab').forEach(function (t) {
+            t.classList.toggle('active', t.dataset.device === device);
+          });
+          moveSlider(tab);
+          switchDeviceTab(device);
+        });
       });
     });
   }
@@ -2832,9 +2889,6 @@
   function switchDeviceTab(device) {
     S.activeDevice = device;
 
-    S.resultsContainer.querySelectorAll('.qaproof-device-tab').forEach(function (t) {
-      t.classList.toggle('active', t.dataset.device === device);
-    });
     S.resultsContainer.querySelectorAll('.qaproof-device-panel').forEach(function (p) {
       p.classList.toggle('active', p.id === 'qaproof-panel-' + device);
     });
