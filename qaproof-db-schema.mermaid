@@ -1,0 +1,203 @@
+erDiagram
+
+  users {
+    UUID id PK
+    VARCHAR email
+    VARCHAR password_hash
+    VARCHAR first_name
+    VARCHAR last_name
+    TEXT avatar_url
+    VARCHAR auth_provider
+    VARCHAR google_id
+    VARCHAR github_id
+    VARCHAR job_title
+    VARCHAR timezone
+    VARCHAR language
+    BOOLEAN email_verified
+    VARCHAR email_verification_token
+    TIMESTAMPTZ email_verification_expires
+    VARCHAR password_reset_token
+    TIMESTAMPTZ password_reset_expires
+    BOOLEAN is_active
+    TIMESTAMPTZ last_login_at
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+
+  refresh_tokens {
+    UUID id PK
+    UUID user_id FK
+    VARCHAR token_hash
+    TIMESTAMPTZ expires_at
+    TIMESTAMPTZ created_at
+  }
+
+  api_keys {
+    UUID id PK
+    UUID user_id FK
+    VARCHAR name
+    VARCHAR key_hash
+    VARCHAR key_prefix
+    VARCHAR environment
+    JSONB permissions
+    TIMESTAMPTZ last_used_at
+    TIMESTAMPTZ created_at
+  }
+
+  notification_preferences {
+    UUID user_id PK
+    BOOLEAN test_results
+    BOOLEAN issue_alerts
+    BOOLEAN weekly_digest
+    BOOLEAN product_updates
+  }
+
+  organizations {
+    UUID id PK
+    VARCHAR name
+    VARCHAR slug
+    TEXT avatar_url
+    UUID owner_id FK
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+
+  organization_members {
+    UUID id PK
+    UUID organization_id FK
+    UUID user_id FK
+    VARCHAR role
+    UUID invited_by FK
+    TIMESTAMPTZ joined_at
+  }
+
+  invitations {
+    UUID id PK
+    UUID organization_id FK
+    VARCHAR email
+    VARCHAR role
+    VARCHAR token
+    UUID invited_by FK
+    TIMESTAMPTZ expires_at
+    TIMESTAMPTZ accepted_at
+    TIMESTAMPTZ created_at
+  }
+
+  projects {
+    UUID id PK
+    UUID user_id FK
+    UUID organization_id FK
+    VARCHAR name
+    TEXT url
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+
+  test_history {
+    UUID id PK
+    UUID user_id FK
+    UUID organization_id FK
+    UUID project_id FK
+    VARCHAR job_id
+    VARCHAR test_type
+    TEXT page_url
+    SMALLINT score
+    TEXT summary
+    JSONB result
+    JSONB screenshots
+    TIMESTAMPTZ created_at
+  }
+
+  monitors {
+    UUID id PK
+    UUID user_id FK
+    UUID organization_id FK
+    UUID project_id FK
+    VARCHAR name
+    TEXT page_url
+    VARCHAR schedule
+    BOOLEAN is_enabled
+    SMALLINT threshold_score
+    VARCHAR notify_email
+    VARCHAR baseline_key
+    TIMESTAMPTZ last_run_at
+    SMALLINT last_score
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+
+  monitor_results {
+    UUID id PK
+    UUID monitor_id FK
+    SMALLINT score
+    BOOLEAN has_changes
+    VARCHAR status
+    TEXT summary
+    JSONB result
+    TEXT error_message
+    TIMESTAMPTZ run_at
+  }
+
+  usage_events {
+    UUID id PK
+    UUID user_id FK
+    UUID organization_id FK
+    UUID api_key_id FK
+    VARCHAR event_type
+    VARCHAR test_type
+    TEXT page_url
+    SMALLINT score
+    INTEGER duration_ms
+    JSONB metadata
+    TIMESTAMPTZ created_at
+  }
+
+  monthly_usage {
+    UUID id PK
+    UUID user_id FK
+    UUID organization_id FK
+    SMALLINT year
+    SMALLINT month
+    INTEGER test_runs
+    INTEGER monitor_runs
+    INTEGER api_calls
+  }
+
+  jobs {
+    VARCHAR id PK
+    VARCHAR status
+    VARCHAR test_type
+    TEXT page_url
+    VARCHAR request_id
+    JSONB result
+    TEXT error
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+
+  users ||--o{ refresh_tokens : "sessions"
+  users ||--o{ api_keys : "owns"
+  users ||--o| notification_preferences : "has"
+  users ||--o{ organizations : "owner"
+  users ||--o{ organization_members : "member"
+  users ||--o{ invitations : "invited_by"
+  users ||--o{ projects : "owns"
+  users ||--o{ test_history : "runs"
+  users ||--o{ monitors : "owns"
+  users ||--o{ usage_events : "generates"
+  users ||--o{ monthly_usage : "has"
+
+  organizations ||--o{ organization_members : "contains"
+  organizations ||--o{ invitations : "has"
+  organizations ||--o{ projects : "owns"
+  organizations ||--o{ test_history : "has"
+  organizations ||--o{ monitors : "has"
+  organizations ||--o{ usage_events : "generates"
+  organizations ||--o{ monthly_usage : "has"
+
+  projects ||--o{ test_history : "contains"
+  projects ||--o{ monitors : "contains"
+
+  monitors ||--o{ monitor_results : "has"
+
+  api_keys ||--o{ usage_events : "generates"
