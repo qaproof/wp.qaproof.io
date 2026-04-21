@@ -174,21 +174,27 @@
           onPoll(job.status, job.elapsed);
 
           if (job.status === 'done' && job.result) {
-            if (done) return; // already handled by a concurrent in-flight response
+            if (done) {
+              console.warn('[QAProof] Poll "done" received but already handled — skipping (jobId=' + jobId + ')');
+              return;
+            }
             done = true;
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
+            console.log('[QAProof] Job done, rendering results (jobId=' + jobId + ')');
 
             // Render results immediately (without screenshots for fast display)
             onDone(job.result);
 
             // Fetch screenshots separately if they were stripped from poll response
             if (job.result.screenshotsAvailable && !job.result.screenshots) {
+              console.log('[QAProof] Fetching screenshots then saving history (jobId=' + jobId + ')');
               fetchAndInjectScreenshots(jobId, job.result, function (resultWithScreenshots) {
+                console.log('[QAProof] Screenshots done, calling onScreenshotsDone (jobId=' + jobId + ')');
                 if (onScreenshotsDone) onScreenshotsDone(resultWithScreenshots);
               });
             } else {
-              // Screenshots already included or not applicable — fire callback immediately
+              console.log('[QAProof] No separate screenshots fetch needed, calling onScreenshotsDone (jobId=' + jobId + ')');
               if (onScreenshotsDone) onScreenshotsDone(job.result);
             }
           } else if (job.status === 'failed') {
@@ -221,6 +227,8 @@
    * @param {object} resultData  Result object (score, categories, differences, etc.)
    */
   function saveTestHistory(testType, pageUrl, jobId, resultData) {
+    console.log('[QAProof] saveTestHistory called — testType=' + testType + ' jobId=' + (jobId || '(none)') + ' url=' + pageUrl);
+
     // Strip screenshots from the payload — PHP fetches them server-to-server.
     var payload = Object.assign({}, resultData);
     delete payload.screenshots;
@@ -237,7 +245,16 @@
       method: 'POST',
       body: saveData,
       credentials: 'same-origin',
-    }).then(Q.safeJson);
+    })
+    .then(Q.safeJson)
+    .then(function (resp) {
+      console.log('[QAProof] saveTestHistory response — success=' + resp.success + ' id=' + (resp.data && resp.data.id) + ' deduplicated=' + (resp.data && resp.data.deduplicated) + ' jobId=' + (jobId || '(none)'));
+      return resp;
+    })
+    .catch(function (err) {
+      console.error('[QAProof] saveTestHistory FAILED — ' + err.message + ' jobId=' + (jobId || '(none)'));
+      throw err;
+    });
   }
 
   Q.fetchAndInjectScreenshots = fetchAndInjectScreenshots;
