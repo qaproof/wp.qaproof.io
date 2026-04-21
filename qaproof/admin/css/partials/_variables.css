@@ -3,6 +3,13 @@
 /* Scoped under #qaproof-app to prevent leaking into WP admin */
 
 /* ============================
+   Root-level tokens (accessible outside #qaproof-app scope)
+   ============================ */
+:root {
+  --qp-bg-page-dark: #0d1117;
+}
+
+/* ============================
    CSS Custom Properties
    ============================ */
 #qaproof-app {
