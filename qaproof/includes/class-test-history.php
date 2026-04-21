@@ -11,10 +11,10 @@ class QAProof_Test_History {
     public static function save( $data ) {
         global $wpdb;
 
-        $job_id = ! empty( $data['job_id'] ) ? sanitize_text_field( $data['job_id'] ) : null;
+        $job_id         = ! empty( $data['job_id'] ) ? sanitize_text_field( $data['job_id'] ) : null;
+        $has_job_id_col = self::column_exists( 'job_id' );
 
         $row = [
-            'job_id'               => $job_id,
             'test_type'            => sanitize_text_field( $data['test_type'] ?? '' ),
             'page_url'             => sanitize_url( $data['page_url'] ?? '' ),
             'score'                => isset( $data['score'] ) ? (int) $data['score'] : null,
@@ -26,7 +26,12 @@ class QAProof_Test_History {
             'extracted_data_json'  => self::build_extracted_data( $data ),
         ];
 
-        $formats = [ '%s', '%s', '%s' ];
+        // Only include job_id if the column exists (safe during DB migration).
+        if ( $has_job_id_col && $job_id ) {
+            $row = array_merge( [ 'job_id' => $job_id ], $row );
+        }
+
+        $formats = $has_job_id_col && $job_id ? [ '%s', '%s', '%s' ] : [ '%s', '%s' ];
         $formats[] = $row['score'] !== null ? '%d' : '%s';
         $formats = array_merge( $formats, [ '%s', '%s', '%s', '%s', '%s', '%s' ] );
 
@@ -38,13 +43,28 @@ class QAProof_Test_History {
                 error_log( '[QAProof] test_history: duplicate job_id blocked by DB constraint — jobId=' . $job_id );
                 return 0;
             }
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( '[QAProof] test_history insert failed: ' . $wpdb->last_error );
-            }
+            error_log( '[QAProof] test_history insert failed: ' . $wpdb->last_error );
             return 0;
         }
 
         return $wpdb->insert_id;
+    }
+
+    /**
+     * Check if a column exists in the test_history table.
+     * Result is cached in a static variable to avoid repeated SHOW COLUMNS queries.
+     */
+    private static function column_exists( $column ) {
+        static $cache = [];
+        if ( isset( $cache[ $column ] ) ) {
+            return $cache[ $column ];
+        }
+        global $wpdb;
+        $table  = self::table_name();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $result = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) );
+        $cache[ $column ] = ! empty( $result );
+        return $cache[ $column ];
     }
 
     public static function get_all( $args = [] ) {
