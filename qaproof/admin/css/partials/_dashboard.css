@@ -71,8 +71,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--qp-accent);
-  color: var(--qp-white) !important;
+  background: var(--qp-bg-page-dark);
+  color: var(--qp-accent);
   font-size: 13px;
   font-weight: 700;
   padding: 11px 24px;
@@ -82,8 +82,8 @@
 }
 
 #qaproof-app .qaproof-dash-hero-cta:hover {
-  color: var(--qp-text-primary) !important;
-  box-shadow: 0 6px 24px rgba(0, 173, 181, 0.35);
+  color: var(--qp-white);
+  border: 1px solid var(--qp-white);
   transform: translateY(-1px);
 }
 

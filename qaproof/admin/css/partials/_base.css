@@ -114,51 +114,66 @@
   top: auto !important;
   right: auto !important;
   flex-shrink: 0;
+  border-color: var(--qp-text-dark);
 }
 .qaproof-page-tabs {
   display: flex;
   gap: 4px;
-  background: #f1f3f5;
-  border-radius: 14px;
-  padding: 5px;
+  background: var(--qp-text-primary);
+  border-radius: var(--qp-radius-pill);
+  padding: 12px;
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Sliding indicator for page tabs */
+.qaproof-page-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid var(--qp-border-light);
+  border-radius: var(--qp-radius-pill);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 .qaproof-page-tab {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 10px 22px !important;
-  border: none !important;
-  border-radius: 10px !important;
-  background: transparent !important;
-  color: var(--qp-text-secondary) !important;
-  font-family: var(--qp-font) !important;
-  font-size: 15px !important;
-  font-weight: 500 !important;
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--qp-radius-pill);
+  background: transparent;
+  color: var(--qp-accent);
+  font-family: var(--qp-font);
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s;
   white-space: nowrap;
-  line-height: 1.2 !important;
-  min-height: 0 !important;
-  box-shadow: none !important;
+  line-height: 1.2;
+  min-height: 0;
+  box-shadow: none;
+  position: relative;
+  z-index: 1;
 }
-.qaproof-page-tab:hover {
-  color: var(--qp-text-primary) !important;
-  background: rgba(0,0,0,0.04) !important;
+.qaproof-page-tab:hover:not(.active) {
+  color: var(--qp-white) !important;
 }
 .qaproof-page-tab.active {
-  background: var(--qp-white) !important;
-  color: var(--qp-text-primary) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  /*color: var(--qp-text-primary) !important;*/
   font-weight: 600 !important;
 }
 .qaproof-page-tab svg {
   flex-shrink: 0;
   opacity: 0.6;
 }
+.qaproof-page-tab:hover svg {
+  color: var(--qp-white);
+}
 .qaproof-page-tab.active svg {
   opacity: 1;
-  color: var(--qp-accent);
 }
 
 /* Tab Panels */
@@ -192,10 +207,10 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px !important;
-  border: 1px solid transparent !important;
+  border: 1px solid var(--qp-accent) !important;
   border-radius: var(--qp-radius-pill) !important;
-  background: var(--qp-accent) !important;
-  color: var(--qp-white) !important;
+  background: var(--qp-text-primary) !important;
+  color: var(--qp-accent) !important;
   font-family: var(--qp-font) !important;
   font-size: 14px !important;
   font-weight: 700 !important;
@@ -205,41 +220,15 @@
   line-height: 120% !important;
 }
 .qaproof-back-btn:hover {
-  color: var(--qp-text-primary) !important;
-  border: 1px solid var(--qp-text-primary) !important;
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
   transform: translateY(-1px);
 }
 .qaproof-back-btn svg {
   flex-shrink: 0;
 }
 
-/* Dark theme — page tabs */
-#qaproof-app.qaproof-dark .qaproof-page-tabs {
-  background: rgba(255,255,255,0.06);
-}
-#qaproof-app.qaproof-dark .qaproof-page-tab {
-  color: rgba(238,238,238,0.55) !important;
-}
-#qaproof-app.qaproof-dark .qaproof-page-tab:hover {
-  color: var(--qp-border-light) !important;
-  background: rgba(255,255,255,0.06) !important;
-}
-#qaproof-app.qaproof-dark .qaproof-page-tab.active {
-  background: var(--qp-bg-card) !important;
-  color: var(--qp-border-light) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
-}
-/* Dark theme — back button */
-#qaproof-app.qaproof-dark .qaproof-back-btn {
-  background: var(--qp-bg-card) !important;
-  border-color: var(--qp-border) !important;
-  color: var(--qp-border-light) !important;
-}
-#qaproof-app.qaproof-dark .qaproof-back-btn:hover {
-  background: var(--qp-bg-card-hover) !important;
-  border-color: var(--qp-accent) !important;
-  color: var(--qp-accent) !important;
-}
+
 
 /* ============================
    Card — matches Rectangle 196 / card style (var(--qp-accent) on var(--qp-text-primary))
