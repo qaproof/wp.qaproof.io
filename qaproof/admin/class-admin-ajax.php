@@ -216,6 +216,17 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => 'Missing required fields.' ] );
         }
 
+        // Deduplicate: if the same jobId was already saved within 120 seconds, skip.
+        // Prevents duplicate records caused by overlapping poll responses in the browser.
+        if ( ! empty( $job_id ) ) {
+            $dedup_key = 'qaproof_saved_job_' . substr( md5( $job_id ), 0, 16 );
+            if ( get_transient( $dedup_key ) ) {
+                error_log( '[QAProof] ajax_save_history: duplicate jobId detected, skipping — jobId=' . $job_id );
+                wp_send_json_success( [ 'saved' => true, 'id' => 0, 'deduplicated' => true ] );
+            }
+            set_transient( $dedup_key, 1, 120 );
+        }
+
         if ( is_string( $result ) ) {
             $result = json_decode( stripslashes( $result ), true );
         }
@@ -227,20 +238,27 @@ class QAProof_Admin_AJAX {
 
         // Save history record without screenshots first (fast, no size limit concerns).
         $save_data = array_merge(
-            [ 'test_type' => $test_type, 'page_url' => $page_url ],
+            [ 'test_type' => $test_type, 'page_url' => $page_url, 'job_id' => $job_id ?: null ],
             $result
         );
         unset( $save_data['screenshots'] ); // ensure no screenshots in initial insert
 
         $saved_id = QAProof_Test_History::save( $save_data );
 
-        if ( ! $saved_id ) {
+        if ( $saved_id === 0 ) {
+            // 0 means either: (a) duplicate blocked by UNIQUE job_id constraint, or (b) real DB error.
             global $wpdb;
-            error_log( '[QAProof] ajax_save_history: DB insert failed — ' . $wpdb->last_error );
-            wp_send_json_error( [ 'message' => 'DB insert failed.' ] );
+            $last_err = $wpdb->last_error;
+            if ( ! empty( $job_id ) && strpos( $last_err, '1062' ) !== false ) {
+                // Duplicate key — record already exists, this is fine.
+                error_log( '[QAProof] ajax_save_history: duplicate blocked by UNIQUE constraint (ok) — jobId=' . $job_id );
+                wp_send_json_success( [ 'saved' => true, 'id' => 0, 'deduplicated' => true ] );
+            }
+            error_log( '[QAProof] ajax_save_history: DB insert returned 0 — last_error=' . ( $last_err ?: '(none)' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type . ' pageUrl=' . $page_url );
+            wp_send_json_error( [ 'message' => 'DB insert failed.', 'detail' => $last_err ] );
         }
 
-        error_log( '[QAProof] ajax_save_history: record saved id=' . $saved_id );
+        error_log( '[QAProof] ajax_save_history: record saved id=' . $saved_id . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
 
         // Fetch full-quality screenshots from the API server-to-server.
         // This bypasses all browser POST size limits and preserves full quality.
