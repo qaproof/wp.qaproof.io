@@ -14,6 +14,7 @@
   toggleBtn.addEventListener('click', function () {
     app.classList.toggle('qaproof-dark');
     var isDark = app.classList.contains('qaproof-dark');
+    document.body.classList.toggle('qaproof-dark-page', isDark);
     localStorage.setItem('qaproof_theme', isDark ? 'dark' : 'light');
 
     // Update Chart.js instances if any exist (re-color for theme)

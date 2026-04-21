@@ -45,9 +45,9 @@
 #qaproof-app .qaproof-chrome-title {
   flex: 1;
   font-family: 'Kodchasan', sans-serif;
-  font-size: 12px;
+  font-size: 24px;
   font-weight: 600;
-  color: rgba(238, 238, 238, 0.5);
+  color: var(--qp-accent);
   text-align: center;
   letter-spacing: 0.03em;
 }

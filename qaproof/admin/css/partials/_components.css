@@ -3,14 +3,28 @@
    ============================ */
 #qaproof-app .qaproof-device-tabs {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   margin-bottom: 14px;
   background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
-  padding: 4px;
+  padding: 3px;
   width: fit-content;
   border: none;
   box-shadow: 0 2px 12px var(--qp-overlay-sm);
+  position: relative;
+}
+
+/* Sliding pill indicator */
+#qaproof-app .qaproof-device-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--qp-accent);
+  border-radius: var(--qp-radius-pill);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 
 #qaproof-app .qaproof-device-tab {
@@ -21,20 +35,19 @@
   font-weight: 600;
   cursor: pointer;
   background: transparent;
-  color: rgba(238, 238, 238, 0.5);
-  transition: all var(--qp-transition);
+  color: var(--qp-accent-hover);
+  transition: color 0.3s ease;
   line-height: 120%;
+  position: relative;
+  z-index: 1;
 }
 
 #qaproof-app .qaproof-device-tab:hover:not(.active) {
   color: var(--qp-border-light);
-  background: rgba(255, 255, 255, 0.08);
 }
 
 #qaproof-app .qaproof-device-tab.active {
-  background: var(--qp-accent);
-  color: var(--qp-white);
-  box-shadow: 0 2px 8px var(--qp-accent-mid);
+  color: var(--qp-text-primary);
 }
 
 /* ============================

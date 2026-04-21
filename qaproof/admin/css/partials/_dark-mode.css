@@ -58,8 +58,15 @@
   --qp-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --qp-divider: rgba(255, 255, 255, 0.09);
 
-  background: #0d1117;
+  background: var(--qp-bg-page-dark);
   color: var(--qp-text-primary);
+}
+
+/* WordPress page wrappers — remove white strips in dark mode */
+body.qaproof-dark-page #wpcontent,
+body.qaproof-dark-page #wpbody,
+body.qaproof-dark-page #wpbody-content {
+  background: var(--qp-bg-page-dark);
 }
 
 /* Dark: same two gradient blobs as light theme, toned for dark bg */
@@ -68,6 +75,18 @@
 }
 #qaproof-app.qaproof-dark::after {
   background: radial-gradient(37.88% 37.88% at 53.49% 55.2%, rgba(0, 173, 181, 0.2) 19.23%, rgba(13, 17, 23, 0) 100%);
+}
+
+/* Dark: back button */
+#qaproof-app.qaproof-dark .qaproof-back-btn {
+  background: var(--qp-bg-surface) !important;
+  border-color: var(--qp-border) !important;
+  color: var(--qp-text-primary) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-back-btn:hover {
+  background: var(--qp-bg-elevated) !important;
+  border-color: var(--qp-accent) !important;
+  color: var(--qp-accent) !important;
 }
 
 /* Dark: headings, subtitles */
@@ -178,6 +197,12 @@
   border-color: rgba(0, 173, 181, 0.3) !important;
 }
 
+/* Dark: report hero + score header */
+#qaproof-app.qaproof-dark .qaproof-report-hero,
+#qaproof-app.qaproof-dark .qaproof-score-header {
+  background: var(--qp-bg-dark);
+}
+
 /* Dark: stat cards (results overview) */
 #qaproof-app.qaproof-dark .qaproof-stat-card {
   background: var(--qp-bg-dark);
@@ -187,11 +212,9 @@
 #qaproof-app.qaproof-dark .qaproof-stat-value {
   color: var(--qp-text-primary);
 }
-#qaproof-app.qaproof-dark .qaproof-stat-label {
-  color: #6b7280;
-}
+#qaproof-app.qaproof-dark .qaproof-stat-label,
 #qaproof-app.qaproof-dark .qaproof-stat-detail {
-  color: #4b5563;
+  color: var(--qp-bg-accent);
 }
 
 /* Dark: chart cards — white title bar */
@@ -203,7 +226,7 @@
 }
 #qaproof-app.qaproof-dark .qaproof-chart-title {
   color: #1a1e24;
-  background: #f0f2f5;
+  background: var(--qp-bg-accent);
   margin: 0 -20px 16px;
   padding: 16px 20px 12px;
   border-radius: 16px 16px 0 0;
@@ -294,6 +317,22 @@
 /* Dark: hr */
 #qaproof-app.qaproof-dark hr {
   border-color: var(--qp-divider);
+}
+
+/* Dark: WordPress notices (.notice) */
+#qaproof-app.qaproof-dark .notice {
+  background: var(--qp-bg-card);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .notice-error {
+  border-left-color: #f87171;
+}
+#qaproof-app.qaproof-dark .notice-warning {
+  border-left-color: #fbbf24;
+}
+#qaproof-app.qaproof-dark .notice-success {
+  border-left-color: #34d399;
 }
 
 /* Dark: notices */
@@ -632,6 +671,43 @@
   background: rgba(0, 173, 181, 0.15);
 }
 
+/* Dark: category tabs nav + panels */
+#qaproof-app.qaproof-dark .qaproof-cat-tabs-nav {
+  background: var(--qp-bg-dark);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-tabs-panels {
+  background: var(--qp-bg-dark);
+  border-color: var(--qp-card-border);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-panel-header h3 {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-evaluates,
+#qaproof-app.qaproof-dark .qaproof-cat-tab-panel p {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-tab.active .qaproof-cat-tab-label {
+  color: var(--qp-text-dark);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-tab.active .qaproof-ring-bg {
+  stroke: rgba(0, 0, 0, 0.15);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-tab .qaproof-cat-score-ring .qaproof-ring-fill {
+  fill: var(--qp-bg-dark);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-tab.active .qaproof-cat-score-ring .qaproof-ring-fill {
+  fill: var(--qp-bg-dark);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-panel-expand {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-cat-panel-expand:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 /* Dark: category cards — white header, dark body */
 #qaproof-app.qaproof-dark .qaproof-category-card {
   background: var(--qp-bg-dark);
@@ -643,7 +719,7 @@
   background: #f0f2f5;
 }
 #qaproof-app.qaproof-dark .qaproof-cat-score-num {
-  color: var(--qp-text-dark);
+  color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-category {}
 
@@ -748,6 +824,30 @@
   background: var(--qp-bg-elevated);
   border-color: rgba(0, 173, 181, 0.4);
   color: var(--qp-text-primary);
+}
+
+/* ============================
+   Diff Group — Dark Theme
+   ============================ */
+#qaproof-app.qaproof-dark .qaproof-diff-group {
+  background: var(--qp-bg-surface);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-diff-group:hover {
+  box-shadow: var(--qp-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-diff-group-header:hover {
+  background: var(--qp-divider);
+}
+#qaproof-app.qaproof-dark .qaproof-diff-group-title {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-diff-group-count {
+  background: var(--qp-border);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-diff-group-chevron {
+  color: var(--qp-text-muted);
 }
 
 /* ============================
@@ -867,3 +967,115 @@
   background: rgba(239, 68, 68, 0.14);
   border-color: rgba(239, 68, 68, 0.45);
 }
+
+/* ============================
+   Feedback Section — Dark Theme
+   ============================ */
+#qaproof-app.qaproof-dark .qaproof-feedback-card {
+  background: var(--qp-bg-surface);
+  border-color: var(--qp-card-border);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-feedback-prompt {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-star-btn {
+  color: var(--qp-text-muted);
+}
+#qaproof-app.qaproof-dark .qaproof-feedback-labels {
+  color: var(--qp-text-muted);
+}
+#qaproof-app.qaproof-dark .qaproof-feedback-comment,
+#qaproof-app.qaproof-dark textarea.qaproof-feedback-comment {
+  background: var(--qp-bg-elevated) !important;
+  border-color: var(--qp-border) !important;
+  color: var(--qp-text-primary) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-feedback-comment::placeholder,
+#qaproof-app.qaproof-dark textarea.qaproof-feedback-comment::placeholder {
+  color: var(--qp-text-muted);
+}
+#qaproof-app.qaproof-dark .qaproof-feedback-success-title {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-feedback-success-text {
+  color: var(--qp-text-secondary);
+}
+
+#qaproof-app.qaproof-dark .qaproof-chrome-actions .qaproof-device-tabs {
+  background: var(--qp-bg-dark);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-device-tab.active {
+  color: var(--qp-text-dark);
+}
+#qaproof-app.qaproof-dark .qaproof-device-tab:hover:not(.active) {
+  color: var(--qp-text-secondary);
+}
+
+/* ============================
+   Token Tabs & Card — Dark Theme
+   ============================ */
+#qaproof-app.qaproof-dark .qaproof-token-tabs {
+  background: var(--qp-bg-dark);
+  box-shadow: var(--qp-card-shadow);
+}
+#qaproof-app.qaproof-dark .qaproof-token-tab {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-token-tab:hover:not(.active) {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-token-tab.active {
+  color: var(--qp-text-dark);
+}
+#qaproof-app.qaproof-dark .qaproof-token-tab.active .qaproof-tab-badge {
+  color: var(--qp-text-dark);
+}
+#qaproof-app.qaproof-dark .qaproof-tab-badge {
+  background: var(--qp-border);
+  color: var(--qp-text-secondary);
+}
+
+/* Color swatches */
+#qaproof-app.qaproof-dark .qaproof-color-swatch {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+
+/* Token pills */
+#qaproof-app.qaproof-dark .qaproof-token-pill {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+
+/* Border radius items */
+#qaproof-app.qaproof-dark .qaproof-radius-item {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+
+/* Component cards */
+#qaproof-app.qaproof-dark .qaproof-component-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+
+/* Font items separator */
+#qaproof-app.qaproof-dark .qaproof-font-item {
+  border-bottom-color: var(--qp-border);
+}
+#qaproof-app.qaproof-dark .qaproof-font-bar-wrap {
+  background: var(--qp-border);
+}
+
+/* Debt bar track */
+#qaproof-app.qaproof-dark .qaproof-debt-bar-track {
+  background: var(--qp-border);
+}
+
+/* Type scale hover */
+#qaproof-app.qaproof-dark .qaproof-type-scale-item:hover {
+  background: var(--qp-divider);
+}
+

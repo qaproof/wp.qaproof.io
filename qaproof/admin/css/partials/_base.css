@@ -238,17 +238,6 @@
   color: rgba(238,238,238,0.55) !important;
 }
 
-/* Dark theme — back button */
-#qaproof-app.qaproof-dark .qaproof-back-btn {
-  background: var(--qp-bg-card) !important;
-  border-color: var(--qp-border) !important;
-  color: var(--qp-border-light) !important;
-}
-#qaproof-app.qaproof-dark .qaproof-back-btn:hover {
-  background: var(--qp-bg-card-hover) !important;
-  border-color: var(--qp-accent) !important;
-  color: var(--qp-accent) !important;
-}
 
 /* ============================
    Card — matches Rectangle 196 / card style (var(--qp-accent) on var(--qp-text-primary))
