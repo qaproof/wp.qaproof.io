@@ -19,6 +19,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *   $accessibility_slug (string)
  *   $monitors_slug    (string)
  *   $settings_slug    (string)
+ *   $ai_used          (int)    — AI generations consumed this period
+ *   $ai_limit         (int)    — AI generations limit for the plan
+ *   $ai_pct           (int)    — percentage used (0–100)
+ *   $account_plan     (string) — capitalized plan name ("Free", "Pro", etc.)
+ *   $reset_label      (string) — e.g. "Resets on May 1, 2026"
  */
 ?>
 <div class="wrap" id="qaproof-app">
@@ -105,62 +110,35 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <div class="qaproof-dash-stat">
                 <div class="qaproof-dash-stat-icon icon-tokens"><span class="dashicons dashicons-database"></span></div>
                 <div>
-                    <div class="qaproof-dash-stat-val"><?php echo esc_html( '0' ); ?></div>
-                    <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Tokens Used', 'qaproof' ); ?></div>
+                    <div class="qaproof-dash-stat-val"><?php echo esc_html( $ai_used . '/' . $ai_limit ); ?></div>
+                    <div class="qaproof-dash-stat-name"><?php esc_html_e( 'AI Generations', 'qaproof' ); ?></div>
                 </div>
             </div>
         </div>
 
-        <!-- Token Usage -->
+        <!-- AI Generations Usage -->
         <div class="qaproof-dash-usage">
             <div class="qaproof-dash-usage-header">
                 <div class="qaproof-dash-usage-title">
                     <span class="dashicons dashicons-chart-pie"></span>
-                    <?php esc_html_e( 'Token Usage', 'qaproof' ); ?>
+                    <?php esc_html_e( 'AI Generations', 'qaproof' ); ?>
                 </div>
                 <div class="qaproof-dash-usage-plan">
-                    <span class="qaproof-dash-plan-badge">Pro</span>
+                    <span class="qaproof-dash-plan-badge"><?php echo esc_html( $account_plan ); ?></span>
                     <?php esc_html_e( 'Plan', 'qaproof' ); ?>
                 </div>
             </div>
             <div class="qaproof-dash-usage-bar-wrap">
                 <div class="qaproof-dash-usage-bar">
-                    <div class="qaproof-dash-usage-bar-fill" style="width: 0%;"></div>
+                    <div class="qaproof-dash-usage-bar-fill" style="width: <?php echo esc_attr( $ai_pct ); ?>%;"></div>
                 </div>
                 <div class="qaproof-dash-usage-nums">
-                    <span><strong>0</strong> <?php esc_html_e( 'used', 'qaproof' ); ?></span>
-                    <span><strong>10,000</strong> <?php esc_html_e( 'total', 'qaproof' ); ?></span>
-                </div>
-            </div>
-            <div class="qaproof-dash-usage-breakdown">
-                <div class="qaproof-dash-usage-item" data-color="teal">
-                    <span class="qaproof-dash-usage-dot"></span>
-                    <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">0</span>
-                </div>
-                <div class="qaproof-dash-usage-item" data-color="blue">
-                    <span class="qaproof-dash-usage-dot"></span>
-                    <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Responsive', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">0</span>
-                </div>
-                <div class="qaproof-dash-usage-item" data-color="purple">
-                    <span class="qaproof-dash-usage-dot"></span>
-                    <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Accessibility', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">0</span>
-                </div>
-                <div class="qaproof-dash-usage-item" data-color="green">
-                    <span class="qaproof-dash-usage-dot"></span>
-                    <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">0</span>
-                </div>
-                <div class="qaproof-dash-usage-item" data-color="amber">
-                    <span class="qaproof-dash-usage-dot"></span>
-                    <span class="qaproof-dash-usage-label"><?php esc_html_e( 'Regression', 'qaproof' ); ?></span>
-                    <span class="qaproof-dash-usage-count">0</span>
+                    <span><strong><?php echo esc_html( $ai_used ); ?></strong> <?php esc_html_e( 'used', 'qaproof' ); ?></span>
+                    <span><strong><?php echo esc_html( number_format( $ai_limit ) ); ?></strong> <?php esc_html_e( 'total', 'qaproof' ); ?></span>
                 </div>
             </div>
             <div class="qaproof-dash-usage-footer">
-                <?php esc_html_e( 'Resets on May 1, 2026', 'qaproof' ); ?>
+                <?php echo esc_html( $reset_label ); ?>
                 <span class="qaproof-dash-usage-sep">&middot;</span>
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ); ?>"><?php esc_html_e( 'Upgrade Plan', 'qaproof' ); ?></a>
             </div>
