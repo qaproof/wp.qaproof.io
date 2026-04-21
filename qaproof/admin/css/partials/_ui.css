@@ -430,13 +430,13 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255);
+  color: var(--qp-white);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-top: 32px;
   padding: 2px 16px;
   border-radius: var(--qp-radius-pill);
-  background: var(--qp-accent);
+  background: var(--qp-text-primary);
   user-select: none;
 }
 
@@ -474,9 +474,9 @@
   gap: 6px;
   margin-top: 16px;
   padding: 12px 24px;
-  background: var(--qp-accent);
-  color: var(--qp-white);
-  border: 1px solid transparent;
+  background: var(--qp-text-primary);
+  color: var(--qp-accent);
+  border: 1px solid var(--qp-accent);
   border-radius: var(--qp-radius-pill);
   font-family: var(--qp-font);
   font-size: 14px;
@@ -486,8 +486,8 @@
 }
 
 #qaproof-app .qaproof-pdf-btn:hover {
-  color: var(--qp-text-primary);
-  border: 1px solid var(--qp-text-primary);
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
   transform: translateY(-1px);
 }
 
@@ -509,9 +509,9 @@
   margin-top: 16px;
   padding: 12px 24px;
   box-sizing: border-box;
-  background: var(--qp-accent);
-  color: var(--qp-white);
-  border: 1px solid transparent;
+  background: var(--qp-text-primary);
+  color: var(--qp-accent);
+  border: 1px solid var(--qp-accent);
   border-radius: var(--qp-radius-pill);
   font-family: var(--qp-font);
   font-size: 14px;
@@ -521,8 +521,8 @@
 }
 
 #qaproof-app .qaproof-email-btn:hover:not(.qaproof-email-expanded) {
-  color: var(--qp-text-primary);
-  border: 1px solid var(--qp-text-primary);
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
   transform: translateY(-1px);
 }
 
@@ -1157,7 +1157,7 @@
   margin-bottom: 20px;
   background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
-  padding: 3px;
+  padding: 12px;
   border: none;
   box-shadow: 0 2px 12px var(--qp-overlay-sm);
   position: relative;
@@ -1168,9 +1168,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: var(--qp-accent);
+  border: 1px solid var(--qp-border-light);
   border-radius: var(--qp-radius-pill);
-  box-shadow: 0 2px 8px var(--qp-overlay-md);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 0;

@@ -7,7 +7,7 @@
   margin-bottom: 18px;
   background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
-  padding: 3px;
+  padding: 12px;
   border: none;
   box-shadow: 0 2px 12px var(--qp-overlay-sm);
   position: relative;
@@ -18,9 +18,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: var(--qp-accent);
+  border: 1px solid var(--qp-border-light);
   border-radius: var(--qp-radius-pill);
-  box-shadow: 0 2px 8px var(--qp-overlay-md);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 0;
@@ -55,7 +54,7 @@
 }
 
 #qaproof-app .qaproof-test-type-btn.active {
-  color: var(--qp-text-primary);
+  /*color: var(--qp-text-primary);*/
 }
 
 #qaproof-app .qaproof-test-type-btn:hover:not(.active) {
@@ -71,9 +70,9 @@
   gap: 2px;
   background: var(--qp-text-primary);
   border-radius: var(--qp-radius-pill);
-  padding: 3px;
+  padding: 12px;
   border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
   position: relative;
 }
 
@@ -82,9 +81,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: var(--qp-accent);
+  border: 1px solid var(--qp-border-light);
   border-radius: var(--qp-radius-pill);
-  box-shadow: 0 2px 8px var(--qp-overlay-md);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   z-index: 0;
@@ -112,7 +110,7 @@
 }
 
 #qaproof-app .qaproof-source-btn.active {
-  color: var(--qp-text-primary);
+  /*color: var(--qp-text-primary);*/
 }
 
 #qaproof-app .qaproof-source-btn:hover:not(.active) {
@@ -530,10 +528,10 @@
 #qaproof-app .button-primary,
 #qaproof-app .button-hero.button-primary,
 #qaproof-app #qaproof-submit-btn {
-  background: var(--qp-accent);
-  border: 1px solid transparent;
+  background: var(--qp-text-primary);
+  border: 1px solid var(--qp-accent);
   border-radius: var(--qp-radius-pill);
-  color: var(--qp-white);
+  color: var(--qp-accent);
   font-weight: 700;
   font-size: 14px;
   font-family: var(--qp-font);
@@ -558,8 +556,8 @@
 #qaproof-app .button-primary:hover,
 #qaproof-app .button-hero.button-primary:hover,
 #qaproof-app #qaproof-submit-btn:hover {
-  color: var(--qp-text-primary) !important;
-  border: 1px solid var(--qp-text-primary) !important;
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
   box-shadow: none !important;
   transform: translateY(-1px);
 }
