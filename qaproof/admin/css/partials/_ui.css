@@ -650,14 +650,14 @@
 }
 
 #qaproof-app.qaproof-dark .qaproof-btn-secondary {
-  background: var(--qp-text-secondary);
-  color: var(--qp-border-light);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--qp-bg-surface);
+  color: var(--qp-text-primary);
+  border-color: var(--qp-border);
 }
 
 #qaproof-app.qaproof-dark .qaproof-btn-secondary:hover {
-  background: #4a5568;
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--qp-bg-elevated);
+  border-color: rgba(0, 173, 181, 0.3);
 }
 
 .qaproof-email-send-btn {
@@ -1153,40 +1153,53 @@
 /* Token tabs */
 #qaproof-app .qaproof-token-tabs {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0;
   background: var(--qp-text-primary);
-  border-radius: 14px 14px 0 0;
-  padding: 4px 4px 0;
+  border-radius: var(--qp-radius-pill);
+  padding: 3px;
+  border: none;
+  box-shadow: 0 2px 12px var(--qp-overlay-sm);
+  position: relative;
 }
+
+/* Sliding pill indicator */
+#qaproof-app .qaproof-token-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--qp-accent);
+  border-radius: var(--qp-radius-pill);
+  box-shadow: 0 2px 8px var(--qp-overlay-md);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
 #qaproof-app .qaproof-token-tab {
   padding: 10px 16px;
   background: transparent;
   border: none;
-  color: rgba(238, 238, 238, 0.5);
+  border-radius: var(--qp-radius-pill);
+  color: var(--qp-accent-hover);
   font-family: 'Kodchasan', sans-serif;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  transition: color 0.3s ease;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 6px 6px 0 0;
+  position: relative;
+  z-index: 1;
+  line-height: 120%;
 }
-#qaproof-app .qaproof-token-tab:hover {
+#qaproof-app .qaproof-token-tab:hover:not(.active) {
   color: var(--qp-border-light);
-  background: rgba(255, 255, 255, 0.06);
 }
 #qaproof-app .qaproof-token-tab.active {
-  color: var(--qp-accent);
-  border-bottom-color: var(--qp-accent);
-  background: rgba(0, 173, 181, 0.1);
+  color: var(--qp-text-primary);
 }
 #qaproof-app .qaproof-tab-badge {
   display: inline-flex;
@@ -1199,11 +1212,11 @@
   background: rgba(255, 255, 255, 0.1);
   font-size: 10px;
   font-weight: 700;
-  color: rgba(238, 238, 238, 0.5);
+  color: var(--qp-accent-hover);
 }
 #qaproof-app .qaproof-token-tab.active .qaproof-tab-badge {
-  background: var(--qp-accent-mid);
-  color: var(--qp-accent);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--qp-text-primary);
 }
 
 /* Token panels */
