@@ -39,6 +39,11 @@
     };
 
     var currentTestType = data.testType || S.testType;
+
+    // Determine WCAG level: form element > API result > WP setting > fallback
+    var wcagLevelEl = document.getElementById('qaproof-a11y-wcag-level');
+    var currentWcagLevel = (wcagLevelEl && wcagLevelEl.value) || data.wcagLevel || (qaproof && qaproof.wcagLevel) || 'AA';
+
     var labels = {
       fidelity: (qaproof.i18n.pdfLabelFidelity || 'Design Fidelity Analysis'),
       responsive: (qaproof.i18n.pdfLabelResponsive || 'Responsive Testing Report'),
@@ -49,7 +54,7 @@
     var descs = {
       fidelity: (qaproof.i18n.pdfDescFidelity || 'Pixel-level comparison of design mockup against live implementation'),
       responsive: (qaproof.i18n.pdfDescResponsive || 'Cross-viewport layout and usability analysis across breakpoints'),
-      accessibility: (qaproof.i18n.pdfDescAccessibility || 'WCAG 2.1 Level AA compliance evaluation and remediation guidance'),
+      accessibility: 'WCAG 2.1 Level ' + currentWcagLevel + ' compliance evaluation and remediation guidance',
       regression: (qaproof.i18n.pdfDescRegression || 'Visual change detection against previously established baseline'),
       'design-audit': (qaproof.i18n.pdfDescDesignAudit || 'Automated design system discovery, consistency audit, and design debt analysis')
     };
@@ -514,7 +519,7 @@
       var methodLines = [
         (qaproof.i18n.pdfMethodStep1 || 'Automated screenshot capture of the target URL'),
         (qaproof.i18n.pdfMethodStep2 || 'AI-powered visual analysis using Claude Vision'),
-        (qaproof.i18n.pdfMethodStep3 || 'Pattern matching against WCAG 2.1 Level AA criteria'),
+        (qaproof.i18n.pdfMethodStep3 || ('Pattern matching against WCAG 2.1 Level ' + currentWcagLevel + ' criteria')),
         (qaproof.i18n.pdfMethodStep4 || 'Severity classification based on user impact')
       ];
       for (var mi = 0; mi < methodLines.length; mi++) {
@@ -530,7 +535,7 @@
       setC(C.dark);
       doc.text(qaproof.i18n.pdfStandards || 'Standards Reference', refX, y + 7);
       var refs = [
-        'WCAG 2.1 Level AA  —  w3.org/TR/WCAG21/',
+        'WCAG 2.1 Level ' + currentWcagLevel + '  —  w3.org/TR/WCAG21/',
         'Understanding WCAG  —  w3.org/WAI/WCAG21/Understanding/',
         'Quick Reference  —  w3.org/WAI/WCAG21/quickref/',
         'WAI-ARIA 1.1  —  w3.org/TR/wai-aria-1.1/'
