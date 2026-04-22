@@ -334,7 +334,7 @@ class QAProof_Admin_Assets {
                 'pdfLabelDefault'        => __( 'QA Analysis Report', 'qaproof' ),
                 'pdfDescFidelity'        => __( 'Pixel-level comparison of design mockup against live implementation', 'qaproof' ),
                 'pdfDescResponsive'      => __( 'Cross-viewport layout and usability analysis across breakpoints', 'qaproof' ),
-                'pdfDescAccessibility'   => __( 'WCAG 2.1 Level AA compliance evaluation and remediation guidance', 'qaproof' ),
+                'pdfDescAccessibility'   => sprintf( __( 'WCAG 2.1 Level %s compliance evaluation and remediation guidance', 'qaproof' ), get_option( 'qaproof_wcag_level', 'AA' ) ),
                 'pdfDescRegression'      => __( 'Visual change detection against previously established baseline', 'qaproof' ),
                 'pdfDescDesignAudit'     => __( 'Automated design system discovery, consistency audit, and design debt analysis', 'qaproof' ),
                 'pdfVerdictPass'         => __( 'PASS', 'qaproof' ),
