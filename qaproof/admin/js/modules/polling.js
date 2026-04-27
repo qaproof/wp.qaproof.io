@@ -151,6 +151,8 @@
     var page = opts.page || 'tests';
     var cancelled = false;
     var done = false; // guard against duplicate responses when polls overlap
+    var consecutiveErrors = 0;
+    var MAX_CONSECUTIVE_ERRORS = 5; // give up after 5 errors in a row (~25s)
 
     var pollInterval = setInterval(function () {
       if (cancelled || done) return;
@@ -160,9 +162,17 @@
         headers: { 'X-WP-Nonce': qaproof.nonce },
         credentials: 'same-origin',
       })
-        .then(Q.safeJson)
+        .then(function (res) {
+          // 404 = job no longer exists (API restarted, job lost from memory).
+          // Tag the error so the catch handler can stop immediately.
+          if (res.status === 404) throw new Error('JOB_NOT_FOUND');
+          // 502 = WP got an error back from the API — also non-retryable for poll
+          if (res.status === 502) throw new Error('JOB_NOT_FOUND');
+          return Q.safeJson(res);
+        })
         .then(function (pollData) {
           if (cancelled || done) return;
+          consecutiveErrors = 0; // reset on success
           if (!pollData.success) {
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
@@ -204,7 +214,26 @@
           }
         })
         .catch(function (pollErr) {
-          console.warn('[QAProof] Poll error (retrying):', pollErr.message);
+          if (cancelled || done) return;
+
+          // Job not found (API restarted) — stop immediately, don't retry
+          if (pollErr.message === 'JOB_NOT_FOUND') {
+            console.warn('[QAProof] Job not found (API may have restarted) — stopping poll (jobId=' + jobId + ')');
+            clearInterval(pollInterval);
+            Q.clearActiveJob(page);
+            onFailed('Test session lost — the server was restarted while your test was running. Please run the test again.');
+            return;
+          }
+
+          consecutiveErrors++;
+          console.warn('[QAProof] Poll error ' + consecutiveErrors + '/' + MAX_CONSECUTIVE_ERRORS + ' (retrying):', pollErr.message);
+
+          if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+            console.error('[QAProof] Too many consecutive poll errors — giving up (jobId=' + jobId + ')');
+            clearInterval(pollInterval);
+            Q.clearActiveJob(page);
+            onFailed('Lost connection to the server after ' + MAX_CONSECUTIVE_ERRORS + ' retries. Please check your connection and try again.');
+          }
         });
     }, 5000);
 

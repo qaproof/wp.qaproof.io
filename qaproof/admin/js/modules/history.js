@@ -211,6 +211,8 @@
       if (extractedData.designSystem) result.designSystem = extractedData.designSystem;
       if (extractedData.components) result.components = extractedData.components;
       if (extractedData.designDebtScore != null) result.designDebtScore = extractedData.designDebtScore;
+      // Restore WCAG target level so PDF subtitle shows the correct level (A/AA/AAA)
+      if (extractedData.wcagLevel) result.targetWcagLevel = extractedData.wcagLevel;
 
       return result;
     }
