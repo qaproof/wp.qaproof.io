@@ -35,13 +35,17 @@
    * Save active job to localStorage.
    * phase: 'submitting' (before API responds) or 'polling' (jobId known, polling for results)
    */
-  function saveActiveJob(jobId, testType, pageUrl, page, phase, retries) {
+  function saveActiveJob(jobId, testType, pageUrl, page, phase, retries, wcagLevel) {
     try {
-      localStorage.setItem(JOB_KEY_PREFIX + page, JSON.stringify({
+      var data = {
         jobId: jobId, testType: testType, pageUrl: pageUrl, page: page,
         phase: phase || 'polling', startedAt: Date.now(),
         retries: retries || 0,
-      }));
+      };
+      // Store the user-selected WCAG level (A/AA/AAA) so recovery flow can
+      // inject targetWcagLevel into resultData and PDF shows the correct level.
+      if (wcagLevel) data.wcagLevel = wcagLevel;
+      localStorage.setItem(JOB_KEY_PREFIX + page, JSON.stringify(data));
     } catch (e) { /* quota exceeded or private mode */ }
   }
 

@@ -93,6 +93,7 @@ class QAProof_Admin_Assets {
             'autoSaveHistory'   => (bool) get_option( 'qaproof_auto_save_history', true ),
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
+            'adminEmail'        => get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
             // Usage is now per-fileKey. `byFile` carries each file's own
             // counters and rateLimit (retryAt). Aggregate total/byType are
@@ -334,7 +335,7 @@ class QAProof_Admin_Assets {
                 'pdfLabelDefault'        => __( 'QA Analysis Report', 'qaproof' ),
                 'pdfDescFidelity'        => __( 'Pixel-level comparison of design mockup against live implementation', 'qaproof' ),
                 'pdfDescResponsive'      => __( 'Cross-viewport layout and usability analysis across breakpoints', 'qaproof' ),
-                'pdfDescAccessibility'   => __( 'WCAG 2.1 Level AA compliance evaluation and remediation guidance', 'qaproof' ),
+                'pdfDescAccessibility'   => sprintf( __( 'WCAG 2.1 Level %s compliance evaluation and remediation guidance', 'qaproof' ), get_option( 'qaproof_wcag_level', 'AA' ) ),
                 'pdfDescRegression'      => __( 'Visual change detection against previously established baseline', 'qaproof' ),
                 'pdfDescDesignAudit'     => __( 'Automated design system discovery, consistency audit, and design debt analysis', 'qaproof' ),
                 'pdfVerdictPass'         => __( 'PASS', 'qaproof' ),
