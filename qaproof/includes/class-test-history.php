@@ -198,6 +198,11 @@ class QAProof_Test_History {
         if ( isset( $data['designDebtScore'] ) ) {
             $extracted['designDebtScore'] = $data['designDebtScore'];
         }
+        // Persist the user-selected WCAG conformance level (A/AA/AAA) so PDF
+        // reports loaded from history always show the correct target level.
+        if ( isset( $data['targetWcagLevel'] ) && in_array( $data['targetWcagLevel'], [ 'A', 'AA', 'AAA' ], true ) ) {
+            $extracted['wcagLevel'] = sanitize_text_field( $data['targetWcagLevel'] );
+        }
 
         return ! empty( $extracted ) ? wp_json_encode( $extracted ) : null;
     }

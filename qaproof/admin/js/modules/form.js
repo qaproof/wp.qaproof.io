@@ -1637,7 +1637,7 @@
 
     var _pendingRetries = window.__qaproofPendingRetries || 0;
     window.__qaproofPendingRetries = 0;
-    Q.saveActiveJob(null, body.testType, body.pageUrl, 'tests', 'submitting', _pendingRetries);
+    Q.saveActiveJob(null, body.testType, body.pageUrl, 'tests', 'submitting', _pendingRetries, body.wcagLevel);
 
     // Submit test via WP proxy
     fetch(qaproof.restUrl, {
@@ -1657,7 +1657,7 @@
 
         var jobId = data.data.jobId;
         console.log('[QAProof] Job created:', jobId);
-        Q.saveActiveJob(jobId, body.testType, body.pageUrl, 'tests', 'polling');
+        Q.saveActiveJob(jobId, body.testType, body.pageUrl, 'tests', 'polling', 0, body.wcagLevel);
 
         Q.startJobPolling(jobId, {
           page: 'tests',
@@ -1666,6 +1666,11 @@
           },
           onDone: function (resultData) {
             loadingTimers.forEach(clearTimeout);
+
+            // Inject targetWcagLevel from form so PDF subtitle always shows correct level
+            if (resultData.testType === 'accessibility' && body.wcagLevel) {
+              resultData.targetWcagLevel = body.wcagLevel;
+            }
 
             if (resultData.testType === 'responsive') {
               Q.renderResponsiveResults(resultData);
@@ -1726,7 +1731,7 @@
       return;
     }
 
-    var userEmail = typeof qaproofAdmin !== 'undefined' && qaproofAdmin.adminEmail ? qaproofAdmin.adminEmail : 'your account email';
+    var userEmail = (qaproof && qaproof.adminEmail) ? qaproof.adminEmail : 'your account email';
 
     emailBtn._originalHtml = emailBtn.innerHTML;
     emailBtn.classList.add('qaproof-email-expanded');
@@ -1749,13 +1754,53 @@
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span>' + (qaproof.i18n.emailSending || ' Sending...');
 
-      setTimeout(function() {
-        sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailSent || ' Sent!');
-        sendBtn.classList.add('qaproof-email-sent');
+      // Generate PDF and send to WP REST endpoint
+      var lastResult = window.QAProof && window.QAProof.state && window.QAProof.state.lastResult;
+      var pdfBase64 = null;
+
+      try {
+        if (window.QAProof && typeof window.QAProof.generatePdfBase64 === 'function' && lastResult) {
+          pdfBase64 = window.QAProof.generatePdfBase64(lastResult);
+        }
+      } catch(e) { /* PDF generation optional */ }
+
+      fetch(qaproof.restBase + '/send-report-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': qaproof.nonce,
+        },
+        body: JSON.stringify({
+          pdfBase64: pdfBase64,
+          fileName: 'qaproof-report-' + Date.now() + '.pdf',
+          testType: (lastResult && lastResult.testType) || '',
+          pageUrl: (lastResult && lastResult.pageUrl) || '',
+          score: (lastResult && lastResult.score) || 0,
+        }),
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailSent || ' Sent!');
+          sendBtn.classList.add('qaproof-email-sent');
+          setTimeout(function() { collapseEmailBtn(emailBtn); }, 1200);
+        } else {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + (data.error || 'Failed');
+          setTimeout(function() {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailConfirm || ' Confirm');
+          }, 2500);
+        }
+      })
+      .catch(function() {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> Error';
         setTimeout(function() {
-          collapseEmailBtn(emailBtn);
-        }, 1200);
-      }, 1500);
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailConfirm || ' Confirm');
+        }, 2500);
+      });
     });
   }
 
