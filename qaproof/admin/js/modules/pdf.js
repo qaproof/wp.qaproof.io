@@ -15,7 +15,7 @@
   // ============================
   function generatePdfReport(data) {
     if (!window.jspdf || !window.jspdf.jsPDF) {
-      alert((qaproof.i18n.pdfLibraryError || 'PDF library failed to load. Please refresh the page and try again.'));
+      alert(i18n(qaproof.i18n.pdfLibraryError, 'PDF library failed to load. Please refresh the page and try again.'));
       return;
     }
     var jsPDF = window.jspdf.jsPDF;
@@ -39,27 +39,36 @@
     };
 
     var currentTestType = data.testType || S.testType;
+
+    // Determine WCAG level: targetWcagLevel (A/AA/AAA from API) > DOM element > WP setting
+    // data.targetWcagLevel = exact level user selected (stored in result since fix)
+    // data.wcagLevel = AI conformance assessment ("partial-AA") — NOT the target level
+    var wcagLevelEl = document.getElementById('qaproof-a11y-wcag-level');
+    var currentWcagLevel = data.targetWcagLevel ||
+      (wcagLevelEl && wcagLevelEl.value) ||
+      (qaproof && qaproof.wcagLevel) || 'AA';
+
     var labels = {
-      fidelity: (qaproof.i18n.pdfLabelFidelity || 'Design Fidelity Analysis'),
-      responsive: (qaproof.i18n.pdfLabelResponsive || 'Responsive Testing Report'),
-      accessibility: (qaproof.i18n.pdfLabelAccessibility || 'Accessibility Audit Report'),
-      regression: (qaproof.i18n.pdfLabelRegression || 'Visual Regression Report'),
-      'design-audit': (qaproof.i18n.pdfLabelDesignAudit || 'Design System Audit Report')
+      fidelity: i18n(qaproof.i18n.pdfLabelFidelity, 'Design Fidelity Analysis'),
+      responsive: i18n(qaproof.i18n.pdfLabelResponsive, 'Responsive Testing Report'),
+      accessibility: i18n(qaproof.i18n.pdfLabelAccessibility, 'Accessibility Audit Report'),
+      regression: i18n(qaproof.i18n.pdfLabelRegression, 'Visual Regression Report'),
+      'design-audit': i18n(qaproof.i18n.pdfLabelDesignAudit, 'Design System Audit Report')
     };
     var descs = {
-      fidelity: (qaproof.i18n.pdfDescFidelity || 'Pixel-level comparison of design mockup against live implementation'),
-      responsive: (qaproof.i18n.pdfDescResponsive || 'Cross-viewport layout and usability analysis across breakpoints'),
-      accessibility: (qaproof.i18n.pdfDescAccessibility || 'WCAG 2.1 Level AA compliance evaluation and remediation guidance'),
-      regression: (qaproof.i18n.pdfDescRegression || 'Visual change detection against previously established baseline'),
-      'design-audit': (qaproof.i18n.pdfDescDesignAudit || 'Automated design system discovery, consistency audit, and design debt analysis')
+      fidelity: i18n(qaproof.i18n.pdfDescFidelity, 'Pixel-level comparison of design mockup against live implementation'),
+      responsive: i18n(qaproof.i18n.pdfDescResponsive, 'Cross-viewport layout and usability analysis across breakpoints'),
+      accessibility: 'WCAG 2.1 Level ' + currentWcagLevel + ' compliance evaluation and remediation guidance',
+      regression: i18n(qaproof.i18n.pdfDescRegression, 'Visual change detection against previously established baseline'),
+      'design-audit': i18n(qaproof.i18n.pdfDescDesignAudit, 'Automated design system discovery, consistency audit, and design debt analysis')
     };
-    var reportLabel = labels[currentTestType] || (qaproof.i18n.pdfLabelDefault || 'QA Analysis Report');
+    var reportLabel = labels[currentTestType] || i18n(qaproof.i18n.pdfLabelDefault, 'QA Analysis Report');
     var reportDesc = descs[currentTestType] || '';
     var urlText = data.pageUrl || (document.getElementById('qaproof-page-url') ? document.getElementById('qaproof-page-url').value : '') || (document.getElementById('qaproof-a11y-url') ? document.getElementById('qaproof-a11y-url').value : '');
     var score = data.score;
     var scoreColor = score >= 90 ? C.teal : score >= 70 ? C.amber : C.red;
     var scoreGrade = score >= 95 ? 'A+' : score >= 90 ? 'A' : score >= 85 ? 'B+' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-    var scoreVerdict = score >= 90 ? (qaproof.i18n.pdfVerdictPass || 'PASS') : score >= 70 ? (qaproof.i18n.pdfVerdictNeedsWork || 'NEEDS WORK') : (qaproof.i18n.pdfVerdictFail || 'FAIL');
+    var scoreVerdict = score >= 90 ? i18n(qaproof.i18n.pdfVerdictPass, 'PASS') : score >= 70 ? i18n(qaproof.i18n.pdfVerdictNeedsWork, 'NEEDS WORK') : i18n(qaproof.i18n.pdfVerdictFail, 'FAIL');
     var now = new Date();
     var dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -103,7 +112,30 @@
         .replace(/[\u2260]/g, '!=')                     // not-equal
         .replace(/[\u00D7]/g, 'x')                      // multiplication
         .replace(/[\u00F7]/g, '/')                      // division
-        .replace(/[^\x00-\xFF]/g, '');                  // strip any remaining non-Latin1
+        // Replace consecutive non-Latin1 sequences (Cyrillic, CJK, Arabic, etc.)
+        // with a readable placeholder instead of silently dropping them.
+        // This prevents descriptions like 'Heading skips from H1 to H3: ""' when
+        // the heading text is in a non-Latin script.
+        .replace(/[^\x00-\xFF]+/g, '[...]')             // non-Latin1 block → placeholder
+        .replace(/\[?\.\.\.\]?\s*\[?\.\.\.\]?/g, '[...]') // collapse adjacent placeholders
+        .trim();
+    }
+
+    // Safe i18n: strip non-Latin1 from translation, fall back to English if empty.
+    // Prevents garbled output when WordPress is installed with non-Latin locale (e.g. Ukrainian).
+    //
+    // pdfSafe() now replaces non-Latin sequences with '[...]' instead of stripping them.
+    // This is correct for issue descriptions (mixed Latin + Cyrillic heading text), but
+    // for pure UI translation strings ("Звіт про доступність") it would return "[...]"
+    // which is truthy — incorrectly bypassing the English fallback.
+    //
+    // Fix: treat a string that contains ONLY placeholders (no real Latin content) as empty
+    // so it falls through to the English fallback.
+    function i18n(val, fallback) {
+      var cleaned = pdfSafe(String(val || ''));
+      // Remove placeholders and check if meaningful Latin content remains
+      var meaningful = cleaned.trim().replace(/\[\.\.\.\]/g, '').trim();
+      return meaningful ? cleaned : (fallback || '');
     }
 
     function checkPage(needed) {
@@ -156,16 +188,16 @@
       doc.rect(M, H - 16, 20, 0.8, 'F');
       doc.setFontSize(7);
       setC(C.gray);
-      doc.text((qaproof.i18n.pdfFooter || 'QAProof  |  Automated Web Quality Assurance  |  qaproof.io'), M, H - 11);
+      doc.text(i18n(qaproof.i18n.pdfFooter, 'QAProof  |  Automated Web Quality Assurance  |  qaproof.io'), M, H - 11);
       doc.setFontSize(6.5);
       setC(C.grayLight);
-      doc.text((qaproof.i18n.pdfReportId || 'Report ID: ') + reportId + '  |  ' + (qaproof.i18n.pdfGenerated || 'Generated: ') + dateStr + ' ' + timeStr, M, H - 7.5);
+      doc.text(i18n(qaproof.i18n.pdfReportId, 'Report ID: ') + reportId + '  |  ' + i18n(qaproof.i18n.pdfGenerated, 'Generated: ') + dateStr + ' ' + timeStr, M, H - 7.5);
       doc.setFontSize(8);
       setC(C.dark);
       doc.text(String(pn), W - M, H - 10, { align: 'right' });
       doc.setFontSize(6.5);
       setC(C.grayLight);
-      doc.text((qaproof.i18n.pdfOf || 'of ') + tp, W - M, H - 6.5, { align: 'right' });
+      doc.text(i18n(qaproof.i18n.pdfOf, 'of ') + tp, W - M, H - 6.5, { align: 'right' });
     }
 
     // ══════════════════════════════════════════════
@@ -229,10 +261,10 @@
     doc.roundedRect(M, y, CW * 0.65 - 3, metaH, 2, 2, 'F');
     doc.setFontSize(6.5);
     setC(C.gray);
-    doc.text((qaproof.i18n.pdfTargetUrl || 'TARGET URL'), M + 6, y + 6);
+    doc.text(i18n(qaproof.i18n.pdfTargetUrl, 'TARGET URL'), M + 6, y + 6);
     doc.setFontSize(9.5);
     setC(C.dark);
-    var urlDisp = (urlText || (qaproof.i18n.pdfNA || 'N/A')).length > 55 ? urlText.substring(0, 52) + '...' : (urlText || (qaproof.i18n.pdfNA || 'N/A'));
+    var urlDisp = (urlText || i18n(qaproof.i18n.pdfNA, 'N/A')).length > 55 ? urlText.substring(0, 52) + '...' : (urlText || i18n(qaproof.i18n.pdfNA, 'N/A'));
     doc.text(urlDisp, M + 6, y + 14);
     doc.setFontSize(7);
     setC(C.grayLight);
@@ -244,19 +276,19 @@
     doc.roundedRect(scX, y, scW, metaH, 2, 2, 'F');
     doc.setFontSize(6.5);
     setC(C.gray);
-    doc.text((qaproof.i18n.pdfOverallScore || 'OVERALL SCORE'), scX + 6, y + 6);
+    doc.text(i18n(qaproof.i18n.pdfOverallScore, 'OVERALL SCORE'), scX + 6, y + 6);
     doc.setFontSize(9.5);
     setC(C.dark);
-    doc.text((qaproof.i18n.pdfGrade || 'Grade: ') + scoreGrade + '  |  ' + scoreVerdict, scX + 6, y + 14);
+    doc.text(i18n(qaproof.i18n.pdfGrade, 'Grade: ') + scoreGrade + '  |  ' + scoreVerdict, scX + 6, y + 14);
     doc.setFontSize(7);
     setC(C.grayLight);
-    doc.text(catKeys.length + ' ' + (qaproof.i18n.pdfCategories || 'categories') + '  |  ' + differences.length + ' ' + (qaproof.i18n.pdfIssues || 'issues'), scX + 6, y + 19);
+    doc.text(catKeys.length + ' ' + i18n(qaproof.i18n.pdfCategories, 'categories') + '  |  ' + differences.length + ' ' + i18n(qaproof.i18n.pdfIssues, 'issues'), scX + 6, y + 19);
 
     y += metaH + 8;
 
     // Executive Summary
     if (data.summary) {
-      sectionHeading(qaproof.i18n.pdfExecutiveSummary || 'Executive Summary');
+      sectionHeading(i18n(qaproof.i18n.pdfExecutiveSummary, 'Executive Summary'));
       doc.setFontSize(9);
       setC(C.body);
       var sumLines = doc.splitTextToSize(pdfSafe(data.summary), CW);
@@ -267,7 +299,7 @@
     // ══════════════════════════════════════════════
     // SCORE OVERVIEW
     // ══════════════════════════════════════════════
-    sectionHeading(qaproof.i18n.pdfScoreOverview || 'Score Overview');
+    sectionHeading(i18n(qaproof.i18n.pdfScoreOverview, 'Score Overview'));
 
     var cardH = 32;
     setF(C.white);
@@ -320,13 +352,13 @@
     // CATEGORIES
     // ══════════════════════════════════════════════
     if (catKeys.length > 0) {
-      sectionHeading(qaproof.i18n.pdfCategoryBreakdown || 'Category Breakdown', catKeys.length + ' ' + (qaproof.i18n.pdfCategories || 'categories'));
+      sectionHeading(i18n(qaproof.i18n.pdfCategoryBreakdown, 'Category Breakdown'), catKeys.length + ' ' + i18n(qaproof.i18n.pdfCategories, 'categories'));
 
       var catRows = [];
       catKeys.forEach(function (key) {
         var cat = categories[key];
         var cs = cat.score;
-        var status = cs >= 90 ? (qaproof.i18n.pdfStatusPass || 'Pass') : cs >= 70 ? (qaproof.i18n.pdfStatusWarning || 'Warning') : (qaproof.i18n.pdfStatusFail || 'Fail');
+        var status = cs >= 90 ? i18n(qaproof.i18n.pdfStatusPass, 'Pass') : cs >= 70 ? i18n(qaproof.i18n.pdfStatusWarning, 'Warning') : i18n(qaproof.i18n.pdfStatusFail, 'Fail');
         catRows.push([
           key.replace(/_/g, ' ').replace(/\b\w/g, function (l) { return l.toUpperCase(); }),
           String(cs),
@@ -337,7 +369,7 @@
 
       doc.autoTable({
         startY: y,
-        head: [[(qaproof.i18n.pdfColCategory || 'Category'), (qaproof.i18n.pdfColScore || 'Score'), (qaproof.i18n.pdfColStatus || 'Status'), (qaproof.i18n.pdfColNotes || 'Notes')]],
+        head: [[i18n(qaproof.i18n.pdfColCategory, 'Category'), i18n(qaproof.i18n.pdfColScore, 'Score'), i18n(qaproof.i18n.pdfColStatus, 'Status'), i18n(qaproof.i18n.pdfColNotes, 'Notes')]],
         body: catRows,
         margin: { left: M, right: M },
         styles: { cellPadding: { top: 3, right: 3, bottom: 5, left: 3 }, fontSize: 8.5, lineColor: [235, 237, 240], lineWidth: 0.15, overflow: 'linebreak' },
@@ -390,16 +422,16 @@
     // ISSUES
     // ══════════════════════════════════════════════
     if (differences.length > 0) {
-      sectionHeading(qaproof.i18n.pdfIssuesFound || 'Issues Found', differences.length + ' ' + (qaproof.i18n.pdfTotal || 'total'));
+      sectionHeading(i18n(qaproof.i18n.pdfIssuesFound, 'Issues Found'), differences.length + ' ' + i18n(qaproof.i18n.pdfTotal, 'total'));
 
       checkPage(14);
       setF(C.bg);
       doc.roundedRect(M, y, CW, 11, 2, 2, 'F');
       var sx = M + 6;
       var sevItems = [
-        { count: sevCounts.high, label: (qaproof.i18n.pdfSeverityCritical || 'Critical / High'), color: C.red },
-        { count: sevCounts.medium, label: (qaproof.i18n.pdfSeverityMedium || 'Medium'), color: C.amber },
-        { count: sevCounts.low, label: (qaproof.i18n.pdfSeverityLow || 'Low'), color: C.blue }
+        { count: sevCounts.high, label: i18n(qaproof.i18n.pdfSeverityCritical, 'Critical / High'), color: C.red },
+        { count: sevCounts.medium, label: i18n(qaproof.i18n.pdfSeverityMedium, 'Medium'), color: C.amber },
+        { count: sevCounts.low, label: i18n(qaproof.i18n.pdfSeverityLow, 'Low'), color: C.blue }
       ];
       for (var sv = 0; sv < sevItems.length; sv++) {
         if (sevItems[sv].count > 0) {
@@ -432,7 +464,7 @@
 
       doc.autoTable({
         startY: y,
-        head: [[(qaproof.i18n.pdfColNum || '#'), (qaproof.i18n.pdfColSeverity || 'Severity'), (qaproof.i18n.pdfColCategory || 'Category'), (qaproof.i18n.pdfColDescription || 'Description')]],
+        head: [[i18n(qaproof.i18n.pdfColNum, '#'), i18n(qaproof.i18n.pdfColSeverity, 'Severity'), i18n(qaproof.i18n.pdfColCategory, 'Category'), i18n(qaproof.i18n.pdfColDescription, 'Description')]],
         body: issueRows,
         margin: { left: M, right: M },
         styles: { cellPadding: { top: 3, right: 3, bottom: 5, left: 3 }, fontSize: 8, lineColor: [235, 237, 240], lineWidth: 0.15, overflow: 'linebreak' },
@@ -471,7 +503,7 @@
     // RECOMMENDATIONS
     // ══════════════════════════════════════════════
     if (recommendations.length > 0) {
-      sectionHeading(qaproof.i18n.pdfRecommendations || 'Recommendations', recommendations.length + ' ' + (qaproof.i18n.pdfItems || 'items'));
+      sectionHeading(i18n(qaproof.i18n.pdfRecommendations, 'Recommendations'), recommendations.length + ' ' + i18n(qaproof.i18n.pdfItems, 'items'));
 
       for (var ri = 0; ri < recommendations.length; ri++) {
         checkPage(18);
@@ -500,7 +532,7 @@
     // METHODOLOGY / STANDARDS (accessibility)
     // ══════════════════════════════════════════════
     if (currentTestType === 'accessibility') {
-      sectionHeading(qaproof.i18n.pdfMethodology || 'Methodology & Standards');
+      sectionHeading(i18n(qaproof.i18n.pdfMethodology, 'Methodology & Standards'));
       checkPage(40);
 
       setF(C.bg);
@@ -508,14 +540,17 @@
 
       doc.setFontSize(8);
       setC(C.dark);
-      doc.text(qaproof.i18n.pdfTestingMethod || 'Testing Methodology', M + 6, y + 7);
+      doc.text(i18n(qaproof.i18n.pdfTestingMethod, 'Testing Methodology'), M + 6, y + 7);
       doc.setFontSize(7.5);
       setC(C.body);
+      // NOTE: do NOT wrap these in i18n() — Ukrainian translations contain Latin
+      // acronyms (URL, Claude Vision, WCAG 2.1, AA) that survive Cyrillic stripping
+      // and produce truncated/wrong strings instead of the full English fallback.
       var methodLines = [
-        (qaproof.i18n.pdfMethodStep1 || 'Automated screenshot capture of the target URL'),
-        (qaproof.i18n.pdfMethodStep2 || 'AI-powered visual analysis using Claude Vision'),
-        (qaproof.i18n.pdfMethodStep3 || 'Pattern matching against WCAG 2.1 Level AA criteria'),
-        (qaproof.i18n.pdfMethodStep4 || 'Severity classification based on user impact')
+        'Automated screenshot capture of the target URL',
+        'AI-powered visual analysis using Claude Vision',
+        'Pattern matching against WCAG 2.1 Level ' + currentWcagLevel + ' criteria',
+        'Severity classification based on user impact'
       ];
       for (var mi = 0; mi < methodLines.length; mi++) {
         setF(C.teal);
@@ -528,9 +563,9 @@
       var refX = M + CW * 0.55;
       doc.setFontSize(8);
       setC(C.dark);
-      doc.text(qaproof.i18n.pdfStandards || 'Standards Reference', refX, y + 7);
+      doc.text(i18n(qaproof.i18n.pdfStandards, 'Standards Reference'), refX, y + 7);
       var refs = [
-        'WCAG 2.1 Level AA  —  w3.org/TR/WCAG21/',
+        'WCAG 2.1 Level ' + currentWcagLevel + '  —  w3.org/TR/WCAG21/',
         'Understanding WCAG  —  w3.org/WAI/WCAG21/Understanding/',
         'Quick Reference  —  w3.org/WAI/WCAG21/quickref/',
         'WAI-ARIA 1.1  —  w3.org/TR/wai-aria-1.1/'
@@ -552,10 +587,10 @@
     checkPage(22);
     doc.setFontSize(7);
     setC(C.grayLight);
-    var discText = qaproof.i18n.pdfDisclaimerGeneral ||
-      ('This report was generated by QAProof automated testing. Results are based on AI-powered visual analysis and may not capture all issues. ' +
+    var discText = i18n(qaproof.i18n.pdfDisclaimerGeneral,
+      'This report was generated by QAProof automated testing. Results are based on AI-powered visual analysis and may not capture all issues. ' +
       'Manual testing by accessibility experts is recommended for comprehensive compliance verification. This report does not constitute legal advice regarding ' +
-      (currentTestType === 'accessibility' ? (qaproof.i18n.pdfDisclaimerA11y || 'ADA, Section 508, or EN 301 549 compliance.') : 'regulatory compliance.'));
+      (currentTestType === 'accessibility' ? i18n(qaproof.i18n.pdfDisclaimerA11y, 'ADA, Section 508, or EN 301 549 compliance.') : 'regulatory compliance.'));
     var discLines = doc.splitTextToSize(discText, CW);
     doc.text(discLines, M, y);
     y += discLines.length * 3.5 + 4;
@@ -576,13 +611,13 @@
       doc.setFontSize(6);
       doc.setFont('helvetica', 'bold');
       setC(C.teal);
-      doc.text((qaproof.i18n.pdfQaproofVerified || 'QAPROOF VERIFIED'), sealX, sealY, { align: 'center' });
+      doc.text(i18n(qaproof.i18n.pdfQaproofVerified, 'QAPROOF VERIFIED'), sealX, sealY, { align: 'center' });
     }
 
     doc.setFontSize(5);
     doc.setFont('helvetica', 'bold');
     setC(C.tealDark);
-    doc.text((qaproof.i18n.pdfScore || 'Score: ') + (score != null ? score + '/100' : (qaproof.i18n.pdfNA || 'N/A')), sealX, sealY + sealSize / 2 + 4, { align: 'center' });
+    doc.text(i18n(qaproof.i18n.pdfScore, 'Score: ') + (score != null ? score + '/100' : i18n(qaproof.i18n.pdfNA, 'N/A')), sealX, sealY + sealSize / 2 + 4, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setLineWidth(0.2);
 
@@ -596,8 +631,35 @@
     doc.save(filename);
   }
 
+  /**
+   * Generate PDF and return as base64 string (for email sending).
+   * Returns null if jsPDF is not available or generation fails.
+   */
+  function generatePdfBase64(data) {
+    if (!window.jspdf || !window.jspdf.jsPDF) return null;
+    try {
+      // Temporarily override doc.save to capture output instead of downloading
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      // Run the full report generation — reuse generatePdfReport logic
+      // by calling output() instead of save()
+      // We call generatePdfReport but intercept via jsPDF's output method
+      var originalSave = jsPDF.prototype.save;
+      var base64Result = null;
+      jsPDF.prototype.save = function() {
+        base64Result = this.output('datauristring');
+      };
+      generatePdfReport(data);
+      jsPDF.prototype.save = originalSave;
+      return base64Result;
+    } catch(e) {
+      return null;
+    }
+  }
+
   // ============================
   // Expose on namespace
   // ============================
   Q.generatePdfReport = generatePdfReport;
+  Q.generatePdfBase64 = generatePdfBase64;
 })();

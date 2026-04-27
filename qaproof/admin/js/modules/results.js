@@ -306,20 +306,31 @@
 
     submitBtn.addEventListener('click', function () {
       var comment = commentEl ? commentEl.value.trim() : '';
-      // Store feedback locally for now (will be sent via email later)
-      var feedback = {
-        rating: selectedRating,
-        comment: comment,
-        testType: id.replace('qaproof-', '').replace('qaproof', 'fidelity'),
-        timestamp: new Date().toISOString()
-      };
-      var stored = JSON.parse(localStorage.getItem('qaproof_feedback') || '[]');
-      stored.push(feedback);
-      localStorage.setItem('qaproof_feedback', JSON.stringify(stored));
+      var lastResult = window.QAProof && window.QAProof.state && window.QAProof.state.lastResult;
 
-      // Show success state
-      if (innerEl) innerEl.classList.add('hidden');
-      if (successEl) successEl.classList.remove('hidden');
+      submitBtn.disabled = true;
+
+      fetch(qaproof.restBase + '/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': qaproof.nonce,
+        },
+        body: JSON.stringify({
+          rating: selectedRating,
+          comment: comment,
+          testType: (lastResult && lastResult.testType) || id.replace('qaproof-', ''),
+          pageUrl: (lastResult && lastResult.pageUrl) || '',
+          score: (lastResult && lastResult.score) || 0,
+        }),
+      })
+      .then(function(r) { return r.json(); })
+      .catch(function() { return { success: false }; })
+      .finally(function() {
+        // Show success regardless of server response (best-effort)
+        if (innerEl) innerEl.classList.add('hidden');
+        if (successEl) successEl.classList.remove('hidden');
+      });
     });
   }
 

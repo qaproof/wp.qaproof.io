@@ -1087,7 +1087,7 @@
 
       var _a11yPendingRetries = window.__qaproofPendingRetries || 0;
       window.__qaproofPendingRetries = 0;
-      Q.saveActiveJob(null, 'accessibility', pageUrl, 'accessibility', 'submitting', _a11yPendingRetries);
+      Q.saveActiveJob(null, 'accessibility', pageUrl, 'accessibility', 'submitting', _a11yPendingRetries, wcagLevel);
 
       fetch(qaproof.restUrl, {
         method: 'POST',
@@ -1105,7 +1105,7 @@
         }
 
         var jobId = data.data.jobId;
-        Q.saveActiveJob(jobId, 'accessibility', pageUrl, 'accessibility', 'polling');
+        Q.saveActiveJob(jobId, 'accessibility', pageUrl, 'accessibility', 'polling', 0, wcagLevel);
 
         Q.startJobPolling(jobId, {
           page: 'accessibility',
@@ -1114,6 +1114,8 @@
           },
           onDone: function (resultData) {
             a11yTimers.forEach(clearTimeout);
+            // Inject user-selected WCAG level so PDF/history always shows the correct level
+            if (wcagLevel) resultData.targetWcagLevel = wcagLevel;
             S.resultsContainer = a11yResults;
             if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(resultData);
 
@@ -1639,6 +1641,10 @@
         },
         onDone: function (resultData) {
           resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
+          // Restore WCAG target level from saved job so PDF subtitle is correct
+          if (resultData.testType === 'accessibility' && activeJob.wcagLevel) {
+            resultData.targetWcagLevel = activeJob.wcagLevel;
+          }
           if (resultData.testType === 'responsive') {
             Q.renderResponsiveResults(resultData);
           } else if (resultData.testType === 'accessibility') {
@@ -1752,6 +1758,8 @@
         },
         onDone: function (resultData) {
           a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
+          // Restore WCAG target level from saved job so PDF subtitle is correct
+          if (activeJob.wcagLevel) resultData.targetWcagLevel = activeJob.wcagLevel;
           S.resultsContainer = a11yRes;
           if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(resultData);
 
