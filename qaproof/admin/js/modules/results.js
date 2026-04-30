@@ -988,6 +988,9 @@
 
     // Auto-switch to the device tab with the most differences
     // (responsive tests often have no desktop issues, so default desktop tab shows nothing)
+    // Uses double-rAF so it runs AFTER setupDeviceTabs() initialises the slider position
+    // (rAF A → initialise at Desktop; rAF B → re-enable transition; then our switch fires
+    // and animates the slider smoothly to whichever device has the most issues).
     (function () {
       var normDevice = function (dev) { return dev === 'tablet_portrait' ? 'tablet' : dev; };
       var counts = {};
@@ -998,7 +1001,13 @@
       Object.keys(counts).forEach(function (dev) {
         if (counts[dev] > bestN) { bestN = counts[dev]; best = dev; }
       });
-      if (best !== 'desktop' && bestN > 0) switchDeviceTab(best);
+      if (best !== 'desktop' && bestN > 0) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            switchDeviceTab(best);
+          });
+        });
+      }
     })();
 
     // Markers after images load
@@ -2900,8 +2909,27 @@
   function switchDeviceTab(device) {
     S.activeDevice = device;
 
+    // Switch visible panel
     S.resultsContainer.querySelectorAll('.qaproof-device-panel').forEach(function (p) {
       p.classList.toggle('active', p.id === 'qaproof-panel-' + device);
+    });
+
+    // Sync tab button active states (fixes programmatic calls that bypass the click handler)
+    S.resultsContainer.querySelectorAll('.qaproof-device-tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.device === device);
+    });
+
+    // Move slider to newly-active tab
+    S.resultsContainer.querySelectorAll('.qaproof-device-tabs').forEach(function (container) {
+      var slider = container.querySelector('.qaproof-device-tab-slider');
+      var activeBtn = container.querySelector('.qaproof-device-tab[data-device="' + device + '"]');
+      if (slider && activeBtn) {
+        var navRect = container.getBoundingClientRect();
+        var btnRect = activeBtn.getBoundingClientRect();
+        slider.style.width  = btnRect.width  + 'px';
+        slider.style.height = btnRect.height + 'px';
+        slider.style.transform = 'translateX(' + (btnRect.left - navRect.left - container.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - container.clientTop) + 'px)';
+      }
     });
 
     renderMarkersForDevice(device, S.allDifferences);
