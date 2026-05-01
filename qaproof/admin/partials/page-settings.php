@@ -85,15 +85,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
             <?php submit_button(); ?>
         </form>
-
-        <?php if ( $active_tab === 'general' ) : ?>
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <h3 style="margin-top:0;">Network Diagnostics</h3>
-            <p style="opacity:0.7; margin-bottom:12px;">Test connectivity from this WordPress server to the QAProof API. Useful for troubleshooting connection issues.</p>
-            <button type="button" id="qaproof-diagnose-btn" class="button button-secondary" style="margin-bottom:12px;">Run Diagnostics</button>
-            <pre id="qaproof-diagnose-output" style="display:none; background:rgba(0,0,0,0.3); color:#00FFC6; padding:16px; border-radius:10px; white-space:pre-wrap; word-break:break-all; font-size:12px; line-height:1.6; max-height:500px; overflow:auto;"></pre>
-        </div>
-        <?php endif; ?>
     </div>
 
     <!-- Brand Badge -->
