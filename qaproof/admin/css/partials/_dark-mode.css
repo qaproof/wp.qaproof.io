@@ -174,10 +174,10 @@ body.qaproof-dark-page #wpbody-content {
   box-shadow: 0 2px 12px rgba(0, 173, 181, 0.1);
 }
 #qaproof-app.qaproof-dark .qaproof-history-date {
-  color: #6b7280;
+  color: var(--qp-text-secondary);
 }
 #qaproof-app.qaproof-dark .qaproof-history-url {
-  color: #9ca3af;
+  color: var(--qp-text-secondary);
 }
 #qaproof-app.qaproof-dark .qaproof-history-type {
   color: var(--qp-text-primary);
@@ -185,7 +185,7 @@ body.qaproof-dark-page #wpbody-content {
 #qaproof-app.qaproof-dark .qaproof-history-actions .button {
   background: var(--qp-bg-surface) !important;
   border: 1px solid var(--qp-border) !important;
-  color: var(--qp-text-primary) !important;
+  color: var(--qp-text-secondary) !important;
   border-radius: var(--qp-radius-pill) !important;
   transition: all 0.25s ease !important;
 }

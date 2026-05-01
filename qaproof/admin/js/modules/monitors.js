@@ -830,7 +830,7 @@
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
-      html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
+      html += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
       html += '      <div class="qaproof-chrome-title">' + (qaproof.i18n.monitorVisualComp || 'Visual Comparison') + '</div>';
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> ' + (qaproof.i18n.monitorMarkers || 'Markers') + '</button>';
