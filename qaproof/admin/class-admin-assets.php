@@ -76,6 +76,7 @@ class QAProof_Admin_Assets {
         wp_enqueue_script( 'qaproof-init',     $js_base . 'init.js',     [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results' ], QAPROOF_VERSION, true );
 
         wp_localize_script( 'qaproof-helpers', 'qaproof', [
+            'pluginUrl'     => QAPROOF_PLUGIN_URL,
             'restUrl'       => rest_url( QAProof_Admin::REST_NAMESPACE . '/run-test' ),
             'restBase'      => untrailingslashit( rest_url( QAProof_Admin::REST_NAMESPACE ) ),
             'nonce'         => wp_create_nonce( 'wp_rest' ),
