@@ -25,22 +25,22 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-#qaproof-app .qaproof-chrome-dots {
+#qaproof-app .qaproof-chrome-logo {
   display: flex;
-  gap: 6px;
+  align-items: center;
   flex-shrink: 0;
+  position: relative;
 }
 
-#qaproof-app .qaproof-chrome-dots span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+#qaproof-app .qaproof-chrome-logo img {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 50px;
+  height: auto;
 }
-
-#qaproof-app .qaproof-chrome-dots span:nth-child(1) { background: var(--qp-score-low); opacity: 0.7; }
-#qaproof-app .qaproof-chrome-dots span:nth-child(2) { background: #F0B429; opacity: 0.7; }
-#qaproof-app .qaproof-chrome-dots span:nth-child(3) { background: #22C55E; opacity: 0.7; }
 
 #qaproof-app .qaproof-chrome-title {
   flex: 1;
@@ -84,8 +84,8 @@
 }
 
 #qaproof-app .qaproof-chrome-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(238, 238, 238, 0.7);
+  border-color: var(--qp-white);
+  color: var(--qp-white);
 }
 
 /* Screenshot viewport (single) */
