@@ -3,7 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class QAProof_API_Client {
 
-    const TIMEOUT = 30; // Short timeout — API now returns jobId immediately
+    const TIMEOUT          = 30;  // Short timeout — API now returns jobId immediately
+    const BASELINE_TIMEOUT = 300; // Baseline creation: Playwright scroll-and-stitch can take 60-180 s on complex pages (Shopify etc.)
 
     /**
      * Submit a test job to the SaaS API (async — returns jobId).
@@ -188,11 +189,14 @@ class QAProof_API_Client {
     /**
      * Create a baseline screenshot via the SaaS API.
      *
+     * Uses a longer timeout (300 s) because the API captures a full-page
+     * Playwright screenshot synchronously before responding (complex pages like Shopify can take 2-3 min).
+     *
      * @param string $page_url URL to capture as baseline.
      * @return array|WP_Error Baseline data on success, WP_Error on failure.
      */
     public static function create_baseline( $page_url ) {
-        return self::api_request( 'POST', '/api/baselines', array( 'pageUrl' => $page_url ) );
+        return self::api_request( 'POST', '/api/baselines', array( 'pageUrl' => $page_url ), self::BASELINE_TIMEOUT );
     }
 
     /**
@@ -227,12 +231,13 @@ class QAProof_API_Client {
     /**
      * Generic API request helper.
      *
-     * @param string     $method HTTP method (GET, POST, DELETE).
-     * @param string     $path   API path (e.g. '/api/baselines').
-     * @param array|null $body   Request body for POST requests.
+     * @param string     $method   HTTP method (GET, POST, DELETE).
+     * @param string     $path     API path (e.g. '/api/baselines').
+     * @param array|null $body     Request body for POST requests.
+     * @param int        $timeout  cURL timeout in seconds (default: TIMEOUT = 30).
      * @return array|WP_Error
      */
-    private static function api_request( $method, $path, $body = null ) {
+    private static function api_request( $method, $path, $body = null, $timeout = self::TIMEOUT ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . $path;
         $api_key  = QAProof_Settings::get_api_key();
 
@@ -249,7 +254,7 @@ class QAProof_API_Client {
                 'Content-Type'  => 'application/json',
                 'Authorization' => 'Bearer ' . $api_key,
             ),
-            'timeout'   => self::TIMEOUT,
+            'timeout'   => $timeout,
             'sslverify' => true,
         );
 

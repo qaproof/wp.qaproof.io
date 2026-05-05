@@ -65,6 +65,15 @@ class QAProof_Settings {
             'default'           => 90,
         ]);
 
+        register_setting( self::GROUP_MONITORS, 'qaproof_cron_hour', [
+            'type'              => 'integer',
+            'sanitize_callback' => function( $val ) {
+                $val = (int) $val;
+                return max( 0, min( 23, $val ) );
+            },
+            'default'           => 8,
+        ]);
+
         add_settings_section(
             'qaproof_monitoring_section',
             __( 'Monitoring Defaults', 'qaproof' ),
@@ -100,6 +109,14 @@ class QAProof_Settings {
             'qaproof_default_threshold',
             __( 'Default Threshold Score', 'qaproof' ),
             [ __CLASS__, 'render_default_threshold_field' ],
+            'qaproof-settings-monitors',
+            'qaproof_monitoring_section'
+        );
+
+        add_settings_field(
+            'qaproof_cron_hour',
+            __( 'Report Delivery Time', 'qaproof' ),
+            [ __CLASS__, 'render_cron_hour_field' ],
             'qaproof-settings-monitors',
             'qaproof_monitoring_section'
         );
@@ -438,6 +455,49 @@ class QAProof_Settings {
         $value = get_option( 'qaproof_default_threshold', 95 );
         echo '<input type="number" name="qaproof_default_threshold" value="' . esc_attr( $value ) . '" min="0" max="100" step="1" class="small-text" />';
         echo '<p class="description">' . esc_html__( 'Score below this threshold triggers notifications. 0-100, default 95.', 'qaproof' ) . '</p>';
+    }
+
+    public static function render_cron_hour_field() {
+        $value    = (int) get_option( 'qaproof_cron_hour', 8 );
+        $site_tz  = wp_timezone_string();
+        $sections = [
+            [ 'icon' => '🌙', 'label' => __( 'Night',     'qaproof' ), 'start' => 0,  'end' => 5  ],
+            [ 'icon' => '🌅', 'label' => __( 'Morning',   'qaproof' ), 'start' => 6,  'end' => 11 ],
+            [ 'icon' => '☀️', 'label' => __( 'Afternoon', 'qaproof' ), 'start' => 12, 'end' => 17 ],
+            [ 'icon' => '🌆', 'label' => __( 'Evening',   'qaproof' ), 'start' => 18, 'end' => 23 ],
+        ];
+        ?>
+        <div class="qaproof-hour-picker" data-field="qaproof_cron_hour">
+            <?php foreach ( $sections as $section ) : ?>
+            <div class="qaproof-hour-section">
+                <div class="qaproof-hour-section-label">
+                    <span class="qaproof-hour-section-icon"><?php echo esc_html( $section['icon'] ); ?></span>
+                    <span><?php echo esc_html( $section['label'] ); ?></span>
+                </div>
+                <div class="qaproof-hour-section-pills">
+                    <?php for ( $h = $section['start']; $h <= $section['end']; $h++ ) : ?>
+                        <button type="button"
+                                class="qaproof-hour-btn<?php echo $value === $h ? ' active' : ''; ?>"
+                                data-hour="<?php echo $h; ?>">
+                            <?php echo sprintf( '%02d', $h ); ?>
+                        </button>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <input type="hidden" name="qaproof_cron_hour" id="qaproof_cron_hour" value="<?php echo esc_attr( $value ); ?>">
+        <p class="description" style="margin-top: 10px;">
+            <?php
+            printf(
+                /* translators: 1: selected hour, 2: timezone string */
+                esc_html__( 'Monitors run at %s:00 (%s). Changes apply from the next scheduled run.', 'qaproof' ),
+                '<strong id="qaproof-hour-display">' . sprintf( '%02d', $value ) . '</strong>',
+                '<strong>' . esc_html( $site_tz ) . '</strong>'
+            );
+            ?>
+        </p>
+        <?php
     }
 
     // ============================
