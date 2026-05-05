@@ -29,6 +29,7 @@ class QAProof_Database {
             is_enabled tinyint(1) DEFAULT 1 NOT NULL,
             notify_email tinyint(1) DEFAULT 1 NOT NULL,
             notify_admin tinyint(1) DEFAULT 1 NOT NULL,
+            notify_on varchar(10) DEFAULT 'failures' NOT NULL,
             threshold_score int(3) DEFAULT 90 NOT NULL,
             scheduled_at datetime DEFAULT NULL,
             last_run_at datetime DEFAULT NULL,
@@ -81,7 +82,7 @@ class QAProof_Database {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.4.0' );
+        update_option( 'qaproof_db_version', '1.5.0' );
     }
 
     /**
@@ -90,7 +91,7 @@ class QAProof_Database {
      */
     public static function maybe_upgrade() {
         $current = get_option( 'qaproof_db_version', '0' );
-        if ( version_compare( $current, '1.4.0', '>=' ) ) {
+        if ( version_compare( $current, '1.5.0', '>=' ) ) {
             return;
         }
         // Re-run create_tables() — dbDelta() handles ADD COLUMN / ADD KEY safely.

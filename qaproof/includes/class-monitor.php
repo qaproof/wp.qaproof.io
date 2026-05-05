@@ -64,6 +64,7 @@ class QAProof_Monitor {
      *     @type string $schedule       Optional. 'daily', 'weekly', 'monthly'. Default 'daily'.
      *     @type bool   $notify_email   Optional. Default true.
      *     @type bool   $notify_admin   Optional. Default true.
+     *     @type string $notify_on      Optional. 'failures' or 'all'. Default 'failures'.
      *     @type int    $threshold_score Optional. Default 90.
      * }
      * @return int|false Insert ID or false on failure.
@@ -78,12 +79,13 @@ class QAProof_Monitor {
             'is_enabled'      => isset( $data['is_enabled'] ) ? (int) $data['is_enabled'] : 1,
             'notify_email'    => isset( $data['notify_email'] ) ? (int) $data['notify_email'] : 1,
             'notify_admin'    => isset( $data['notify_admin'] ) ? (int) $data['notify_admin'] : 1,
+            'notify_on'       => isset( $data['notify_on'] ) && in_array( $data['notify_on'], array( 'all', 'failures' ), true ) ? $data['notify_on'] : 'failures',
             'threshold_score' => isset( $data['threshold_score'] ) ? (int) $data['threshold_score'] : 90,
             'scheduled_at'    => ! empty( $data['scheduled_at'] ) ? $data['scheduled_at'] : current_time( 'mysql' ),
             'created_at'      => current_time( 'mysql' ),
         );
 
-        $result = $wpdb->insert( $table, $insert, array( '%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s' ) );
+        $result = $wpdb->insert( $table, $insert, array( '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%s', '%s' ) );
         return $result ? $wpdb->insert_id : false;
     }
 
@@ -100,9 +102,12 @@ class QAProof_Monitor {
 
         $allowed = array(
             'page_url', 'baseline_key', 'schedule', 'is_enabled',
-            'notify_email', 'notify_admin', 'threshold_score',
+            'notify_email', 'notify_admin', 'notify_on', 'threshold_score',
             'scheduled_at', 'last_run_at', 'last_score', 'has_baseline',
         );
+
+        // Fields stored as strings (not integers)
+        $string_fields = array( 'page_url', 'baseline_key', 'schedule', 'notify_on', 'scheduled_at', 'last_run_at' );
 
         $update = array();
         $format = array();
@@ -110,7 +115,7 @@ class QAProof_Monitor {
         foreach ( $allowed as $field ) {
             if ( isset( $data[ $field ] ) ) {
                 $update[ $field ] = $data[ $field ];
-                $format[] = in_array( $field, array( 'page_url', 'baseline_key', 'schedule', 'scheduled_at', 'last_run_at' ), true ) ? '%s' : '%d';
+                $format[] = in_array( $field, $string_fields, true ) ? '%s' : '%d';
             }
         }
 

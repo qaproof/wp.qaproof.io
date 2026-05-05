@@ -133,9 +133,12 @@
     // so it falls through to the English fallback.
     function i18n(val, fallback) {
       var cleaned = pdfSafe(String(val || ''));
-      // Remove placeholders and check if meaningful Latin content remains
-      var meaningful = cleaned.trim().replace(/\[\.\.\.\]/g, '').trim();
-      return meaningful ? cleaned : (fallback || '');
+      // i18n() is called ONLY for UI label strings (footer, headers, section titles),
+      // never for AI-generated content. If ANY [...]  placeholder remains after sanitization,
+      // the whole label is a non-Latin translation — use the English fallback entirely.
+      // Example: "QAProof | Автоматизоване..." → "QAProof | [...] [...]-[...]..." → fallback.
+      if (cleaned.indexOf('[...]') !== -1) return (fallback || '');
+      return cleaned || (fallback || '');
     }
 
     function checkPage(needed) {
