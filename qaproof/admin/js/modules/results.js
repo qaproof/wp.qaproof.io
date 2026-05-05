@@ -457,7 +457,7 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           layout: { padding: { top: 16, bottom: 12, left: 16, right: 16 } },
           scales: {
             r: {
@@ -617,7 +617,7 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           cutout: '66%',
           layout: { padding: { top: 8, bottom: 8 } },
           animation: {
