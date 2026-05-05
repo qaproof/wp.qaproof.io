@@ -1407,6 +1407,31 @@
   })();
 
   // ============================
+  // Hour Picker
+  // ============================
+  (function () {
+    document.querySelectorAll('.qaproof-hour-picker').forEach(function (picker) {
+      var fieldName = picker.dataset.field;
+      var hiddenInput = document.querySelector('input[name="' + fieldName + '"]');
+      var display = document.getElementById('qaproof-hour-display');
+
+      picker.addEventListener('click', function (e) {
+        var btn = e.target.closest('.qaproof-hour-btn');
+        if (!btn) return;
+
+        picker.querySelectorAll('.qaproof-hour-btn').forEach(function (b) {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+
+        var hour = parseInt(btn.dataset.hour, 10);
+        if (hiddenInput) hiddenInput.value = hour;
+        if (display) display.textContent = ('0' + hour).slice(-2);
+      });
+    });
+  })();
+
+  // ============================
   // Job Recovery on Page Reload
   // ============================
   (function () {

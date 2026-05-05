@@ -93,6 +93,17 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         </label>
                     </td>
                 </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="qaproof-monitor-notify-on"><?php esc_html_e( 'Send when', 'qaproof' ); ?></label>
+                    </th>
+                    <td>
+                        <select id="qaproof-monitor-notify-on">
+                            <option value="failures"><?php esc_html_e( 'Only on failures (score below threshold)', 'qaproof' ); ?></option>
+                            <option value="all"><?php esc_html_e( 'Every run (always)', 'qaproof' ); ?></option>
+                        </select>
+                    </td>
+                </tr>
             </table>
             <p class="submit">
                 <button type="submit" class="button button-primary"><?php esc_html_e( 'Save Monitor', 'qaproof' ); ?></button>
@@ -130,6 +141,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Brand Badge -->
     <div class="qaproof-brand-badge">
         <?php include QAPROOF_PLUGIN_DIR . 'admin/partials/partial-brand-icon.php'; ?>
-        <?php esc_html_e( 'QAProof v1.0', 'qaproof' ); ?>
+        <span>QAProof v<?php echo esc_html( QAPROOF_VERSION ); ?></span>
     </div>
 </div>

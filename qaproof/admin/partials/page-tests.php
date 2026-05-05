@@ -262,6 +262,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Brand Badge -->
     <div class="qaproof-brand-badge">
         <?php include QAPROOF_PLUGIN_DIR . 'admin/partials/partial-brand-icon.php'; ?>
-        <?php esc_html_e( 'QAProof v1.0', 'qaproof' ); ?>
+        <span>QAProof v<?php echo esc_html( QAPROOF_VERSION ); ?></span>
     </div>
 </div>

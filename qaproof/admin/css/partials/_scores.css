@@ -246,6 +246,44 @@
   line-height: 120%;
 }
 
+/* Score breakdown (Responsive test: AI + DOM → final) */
+#qaproof-app .qaproof-score-breakdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 12px;
+}
+
+#qaproof-app .qaproof-score-breakdown-item {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: rgba(238,238,238,0.6);
+  cursor: default;
+  white-space: nowrap;
+}
+
+#qaproof-app .qaproof-score-breakdown-item:hover {
+  background: rgba(255,255,255,0.12);
+  color: #EEEEEE;
+}
+
+#qaproof-app .qaproof-score-breakdown-final {
+  color: #00ADB5;
+  border-color: rgba(0,173,181,0.35);
+  background: rgba(0,173,181,0.1);
+  font-weight: 700;
+}
+
+#qaproof-app .qaproof-score-breakdown-sep {
+  color: rgba(238,238,238,0.25);
+  font-size: 11px;
+}
+
 #qaproof-app .qaproof-summary {
   font-size: 14px;
   font-weight: 400;
@@ -347,11 +385,10 @@
 
 #qaproof-app .qaproof-chart-wrap {
   position: relative;
-  flex: 1;
+  height: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
 }
 
 #qaproof-app .qaproof-chart-wrap canvas {
@@ -359,7 +396,7 @@
 }
 
 #qaproof-app .qaproof-donut-wrap {
-  min-height: 200px;
+  height: 240px;
 }
 
 #qaproof-app .qaproof-donut-wrap canvas {
