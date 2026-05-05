@@ -76,6 +76,7 @@ class QAProof_Admin_Assets {
         wp_enqueue_script( 'qaproof-init',     $js_base . 'init.js',     [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results' ], QAPROOF_VERSION, true );
 
         wp_localize_script( 'qaproof-helpers', 'qaproof', [
+            'pluginUrl'     => QAPROOF_PLUGIN_URL,
             'restUrl'       => rest_url( QAProof_Admin::REST_NAMESPACE . '/run-test' ),
             'restBase'      => untrailingslashit( rest_url( QAProof_Admin::REST_NAMESPACE ) ),
             'nonce'         => wp_create_nonce( 'wp_rest' ),
@@ -291,11 +292,6 @@ class QAProof_Admin_Assets {
                 'apiConnected'           => __( 'Connected! API status: ', 'qaproof' ),
                 'apiFailed'              => __( 'Failed: ', 'qaproof' ),
                 'apiNetworkError'        => __( 'Network error — could not reach API.', 'qaproof' ),
-                'diagRunning'            => __( 'Running diagnostics...', 'qaproof' ),
-                'diagWait'               => __( 'Please wait (up to 60 seconds)...', 'qaproof' ),
-                'diagRunBtn'             => __( 'Run Diagnostics', 'qaproof' ),
-                'diagError'              => __( 'Error: ', 'qaproof' ),
-                'diagRequestFailed'      => __( 'Request failed: ', 'qaproof' ),
                 'apiKeyStartError'       => __( 'API key must start with "qap_"', 'qaproof' ),
                 'apiKeyLengthError'      => __( ' characters — expected 68 (qap_ + 64 hex chars)', 'qaproof' ),
                 'apiKeyCharError'        => __( 'Key contains invalid characters — only 0-9 and a-f are allowed after "qap_"', 'qaproof' ),

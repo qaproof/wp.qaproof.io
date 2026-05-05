@@ -581,8 +581,8 @@
 
 #qaproof-app .button-secondary:hover,
 #qaproof-app .button:not(.button-primary):not(.button-link-delete):hover {
-  color: var(--qp-text-primary) !important;
-  border-color: var(--qp-text-primary) !important;
+  color: var(--qp-white) !important;
+  border-color: var(--qp-white) !important;
   box-shadow: none !important;
   transform: translateY(-1px);
 }

@@ -17,7 +17,6 @@ class QAProof_Admin {
         add_action( 'rest_api_init', [ __CLASS__, 'register_rest_routes' ] );
         add_action( 'wp_ajax_qaproof_health_check',       [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
         add_action( 'wp_ajax_qaproof_save_history',       [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
-        add_action( 'wp_ajax_qaproof_diagnose',           [ 'QAProof_Admin_AJAX', 'ajax_diagnose' ] );
         add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
         // Hook at priority -999 so we run first and can remove all subsequent notice callbacks
         add_action( 'admin_notices',         [ __CLASS__, 'suppress_third_party_notices' ], -999 );

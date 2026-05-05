@@ -406,7 +406,7 @@
 
     var chartFont = "'Kodchasan', 'Inter', system-ui, sans-serif";
     var isDark = document.getElementById('qaproof-app') && document.getElementById('qaproof-app').classList.contains('qaproof-dark');
-    var chartTextColor = isDark ? '#EEEEEE' : '#374151';
+    var chartTextColor = isDark ? '#f0f3f7' : '#222831';
     var chartTickColor = isDark ? 'rgba(238,238,238,0.5)' : '#9CA3AF';
     var chartGridColor = isDark ? 'rgba(238,238,238,0.1)' : 'rgba(0,0,0,0.08)';
     var chartAngleColor = isDark ? 'rgba(238,238,238,0.08)' : 'rgba(0,0,0,0.06)';
@@ -548,7 +548,7 @@
 
       var totalIssues = differences.length;
 
-      // Center text plugin — renders issue count inside the ring
+      // Center text plugin — renders issue count inside the ring, or hovered segment info
       var centerTextPlugin = {
         id: 'centerText_' + containerId,
         afterDraw: function(chart) {
@@ -557,23 +557,43 @@
           var cx = area.left + (area.right - area.left) / 2;
           var cy = area.top + (area.bottom - area.top) / 2;
           var innerRadius = chart.getDatasetMeta(0).data[0] ? chart.getDatasetMeta(0).data[0].innerRadius : 0;
+          var isChartDark = document.getElementById('qaproof-app') && document.getElementById('qaproof-app').classList.contains('qaproof-dark');
+
+          var activeEls = chart.tooltip._active;
+          var isHovered = activeEls && activeEls.length > 0;
 
           ctx.save();
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
-          // Large number
           var numSize = Math.max(28, Math.min(42, innerRadius * 0.55));
-          var isChartDark = document.getElementById('qaproof-app') && document.getElementById('qaproof-app').classList.contains('qaproof-dark');
-          ctx.font = '700 ' + numSize + 'px ' + chartFont;
-          ctx.fillStyle = isChartDark ? '#EEEEEE' : '#222831';
-          ctx.fillText(totalIssues, cx, cy - numSize * 0.22);
-
-          // "issues" or "issue" label
           var labelSize = Math.max(11, Math.min(15, innerRadius * 0.18));
-          ctx.font = '500 ' + labelSize + 'px ' + chartFont;
-          ctx.fillStyle = isChartDark ? 'rgba(238,238,238,0.5)' : '#9CA3AF';
-          ctx.fillText(totalIssues === 1 ? 'issue' : 'issues found', cx, cy + numSize * 0.42);
+          var subTextColor = isChartDark ? '#f0f3f7' : '#222831';
+
+          if (isHovered) {
+            var idx = activeEls[0].index;
+            var segLabel = chart.data.labels[idx];
+            var segCount = chart.data.datasets[0].data[idx];
+            var segColor = chart.data.datasets[0].backgroundColor[idx];
+            var total = chart.data.datasets[0].data.reduce(function(a, b) { return a + b; }, 0);
+            var pct = Math.round((segCount / total) * 100);
+
+            ctx.font = '700 ' + numSize + 'px ' + chartFont;
+            ctx.fillStyle = segColor;
+            ctx.fillText(segCount, cx, cy - numSize * 0.22);
+
+            ctx.font = '500 ' + labelSize + 'px ' + chartFont;
+            ctx.fillStyle = subTextColor;
+            ctx.fillText(segLabel + ' · ' + pct + '%', cx, cy + numSize * 0.42);
+          } else {
+            ctx.font = '700 ' + numSize + 'px ' + chartFont;
+            ctx.fillStyle = isChartDark ? '#EEEEEE' : '#222831';
+            ctx.fillText(totalIssues, cx, cy - numSize * 0.22);
+
+            ctx.font = '500 ' + labelSize + 'px ' + chartFont;
+            ctx.fillStyle = subTextColor;
+            ctx.fillText(totalIssues === 1 ? 'issue' : 'issues found', cx, cy + numSize * 0.42);
+          }
 
           ctx.restore();
         }
@@ -618,11 +638,13 @@
                 color: chartTextColor,
                 generateLabels: function(chart) {
                   var ds = chart.data.datasets[0];
+                  var dark = document.getElementById('qaproof-app') && document.getElementById('qaproof-app').classList.contains('qaproof-dark');
+                  var col = dark ? '#f0f3f7' : '#222831';
                   return chart.data.labels.map(function(label, i) {
                     return {
                       text: label + '  ' + ds.data[i],
                       fillStyle: ds.backgroundColor[i],
-                      fontColor: chartTextColor,
+                      fontColor: col,
                       strokeStyle: 'transparent',
                       lineWidth: 0,
                       pointStyle: 'rectRounded',
@@ -634,6 +656,7 @@
               }
             },
             tooltip: {
+              enabled: false,
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.95)' : 'rgba(34, 40, 49, 0.95)',
               titleFont: { family: chartFont, size: 0 },
               titleColor: isDark ? '#222831' : '#ffffff',
@@ -714,7 +737,7 @@
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
-      html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
+      html += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
       html += '      <div class="qaproof-chrome-title">Visual Comparison</div>';
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
@@ -872,7 +895,7 @@
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
-      html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
+      html += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
       html += '      <div class="qaproof-chrome-title">Responsive Screenshots</div>';
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <div class="qaproof-device-tabs">';
@@ -1083,7 +1106,7 @@
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
-      html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
+      html += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
       html += '      <div class="qaproof-chrome-title">Page Screenshot</div>';
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
@@ -1560,7 +1583,7 @@
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
-      html += '      <div class="qaproof-chrome-dots"><span></span><span></span><span></span></div>';
+      html += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
       html += '      <div class="qaproof-chrome-title">Page Screenshot</div>';
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
