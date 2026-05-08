@@ -2943,3 +2943,114 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* ============================
+   Custom modal dialog (QAProof.confirm / QAProof.alert)
+   Replaces native window.confirm / window.alert popups in WP admin so they
+   match the rest of the QAProof UI (Kodchasan font, teal accents, pill
+   buttons). Mounted into #qaproof-modal-root which is appended either inside
+   #qaproof-app (so dark-mode + scoped styles cascade) or document.body.
+   ============================ */
+@keyframes qaproof-modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes qaproof-modal-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.qaproof-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 22, 32, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.qaproof-modal-overlay.qaproof-modal-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.qaproof-modal {
+  background: var(--qp-white, #fff);
+  color: var(--qp-text-primary, #222831);
+  border-radius: var(--qp-radius-card, 16px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0, 0, 0, 0.12);
+  width: min(440px, calc(100vw - 32px));
+  padding: 28px 28px 22px;
+  font-family: var(--qp-font, 'Kodchasan', sans-serif);
+  animation: qaproof-modal-pop-in 0.18s ease both;
+}
+
+.qaproof-modal-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--qp-text-primary, #222831);
+  line-height: 1.3;
+}
+
+.qaproof-modal-msg {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--qp-text-secondary, #4b5563);
+  margin-bottom: 22px;
+  /* Preserve newlines / spaces from message text without stripping HTML
+     escapes — escapeHtml runs in helpers.js before we render. */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.qaproof-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.qaproof-modal-btn {
+  border: 0;
+  border-radius: var(--qp-radius-pill, 999px);
+  padding: 9px 22px;
+  font-family: var(--qp-font, 'Kodchasan', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  line-height: 1.3;
+}
+.qaproof-modal-btn:active {
+  transform: translateY(1px);
+}
+
+.qaproof-modal-btn-primary {
+  background: var(--qp-accent, #00ADB5);
+  color: #fff;
+}
+.qaproof-modal-btn-primary:hover {
+  background: var(--qp-accent-hover, #009aa1);
+}
+.qaproof-modal-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+.qaproof-modal-btn-danger:hover {
+  background: #dc2626;
+}
+
+.qaproof-modal-cancel {
+  background: transparent;
+  border: 1px solid var(--qp-border, #e5e7eb);
+  color: var(--qp-text-secondary, #4b5563);
+}
+.qaproof-modal-cancel:hover {
+  background: var(--qp-bg-surface, #f3f4f6);
+  color: var(--qp-text-primary, #222831);
+}

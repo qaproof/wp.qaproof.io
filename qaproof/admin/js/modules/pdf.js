@@ -15,7 +15,9 @@
   // ============================
   function generatePdfReport(data) {
     if (!window.jspdf || !window.jspdf.jsPDF) {
-      alert(i18n(qaproof.i18n.pdfLibraryError, 'PDF library failed to load. Please refresh the page and try again.'));
+      // i18n() lives later inside this function; use raw qaproof.i18n lookup
+      // here so we don't crash before the function body sets up its helpers.
+      Q.alert((qaproof.i18n && qaproof.i18n.pdfLibraryError) || 'PDF library failed to load. Please refresh the page and try again.');
       return;
     }
     var jsPDF = window.jspdf.jsPDF;
