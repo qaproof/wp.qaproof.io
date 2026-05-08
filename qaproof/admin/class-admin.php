@@ -434,19 +434,21 @@ class QAProof_Admin {
         $avg_score         = $history_stats['avg_score'];
         $has_api_key       = ! empty( QAProof_Settings::get_api_key() );
 
-        // Fetch live account data from API (AI generations + plan)
-        $ai_used      = 0;
-        $ai_limit     = 20;
-        $account_plan = 'free';
-        $reset_label  = '';
+        // Fetch live account data from API (AI generations + plan + monitor limit)
+        $ai_used       = 0;
+        $ai_limit      = 20;
+        $monitor_limit = 1; // free-plan default
+        $account_plan  = 'free';
+        $reset_label   = '';
 
         if ( $has_api_key ) {
             $account_info = QAProof_API_Client::get_account_info();
             if ( ! is_wp_error( $account_info ) && isset( $account_info['workspace'] ) ) {
-                $ws           = $account_info['workspace'];
-                $ai_used      = (int) ( $ws['aiGenerations']['used']  ?? 0 );
-                $ai_limit     = (int) ( $ws['aiGenerations']['limit'] ?? 20 );
-                $account_plan = ucfirst( $ws['plan'] ?? 'free' );
+                $ws            = $account_info['workspace'];
+                $ai_used       = (int) ( $ws['aiGenerations']['used']  ?? 0 );
+                $ai_limit      = (int) ( $ws['aiGenerations']['limit'] ?? 20 );
+                $monitor_limit = (int) ( $ws['monitors']['limit']      ?? 1 );
+                $account_plan  = ucfirst( $ws['plan'] ?? 'free' );
             }
         }
 
