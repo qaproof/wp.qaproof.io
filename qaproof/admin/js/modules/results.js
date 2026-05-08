@@ -1776,8 +1776,12 @@
       // Use _origIndex (set by renderDifferencesInto) so marker clicks select
       // the correct list item even when differences are filtered by device.
       var origIdx = diff._origIndex !== undefined ? diff._origIndex : i;
-      var t = diff.location.top;
-      var l = diff.location.left;
+      var dloc = diff.location;
+      // Use element-snapped position (same as createMarkerEl) for consistent grouping.
+      var t = (dloc.elTop != null && dloc.elLeft != null && dloc.width && dloc.height)
+        ? dloc.elTop : dloc.top;
+      var l = (dloc.elTop != null && dloc.elLeft != null && dloc.width && dloc.height)
+        ? (dloc.elLeft + dloc.width / 2) : dloc.left;
       var merged = false;
       for (var g = 0; g < groups.length; g++) {
         var gt = groups[g].top;
@@ -1833,7 +1837,13 @@
     if (diff.noMarker || diff.noHighlight) return false;
     var loc = diff.location;
     if (!loc) return false;
-    return !!(loc.width && loc.height && loc.elTop != null && loc.elLeft != null);
+    if (!(loc.width && loc.height && loc.elTop != null && loc.elLeft != null)) return false;
+    // Reject bounds that are inconsistent with the pin position (AI gave two different elements).
+    var pinTop  = loc.top;
+    var pinLeft = loc.left;
+    var vertOk = pinTop  >= (loc.elTop           - 12) && pinTop  <= (loc.elTop  + loc.height + 12);
+    var horzOk = pinLeft >= (loc.elLeft          - 12) && pinLeft <= (loc.elLeft + loc.width  + 12);
+    return vertOk && horzOk;
   }
 
   /**
@@ -1860,9 +1870,26 @@
     var marker = document.createElement('div');
     marker.className = 'qaproof-marker ' + severityClass + (isNoPin ? ' qaproof-marker-nopin' : '');
     marker.dataset.index = idx;
-    marker.style.top = diff.location.top + '%';
+
+    // When the AI supplies explicit element bounds, snap the pin to the top-left
+    // corner of the element so the tail points directly into the changed region.
+    var loc = diff.location;
+    var pinTop = loc.top;
+    var pinLeft = loc.left;
+    if (!isNoPin && loc.elTop != null && loc.elLeft != null && loc.width && loc.height) {
+      // Only snap to element bounds if they're consistent with the pin position.
+      // If the AI gave mismatched data (pin and bounds on different elements), keep original top/left.
+      var vertOk = loc.top >= (loc.elTop - 12) && loc.top <= (loc.elTop + loc.height + 12);
+      var horzOk = loc.left >= (loc.elLeft - 12) && loc.left <= (loc.elLeft + loc.width + 12);
+      if (vertOk && horzOk) {
+        pinTop = loc.elTop;
+        pinLeft = loc.elLeft + loc.width / 2; // center-top of element
+      }
+    }
+
+    marker.style.top = pinTop + '%';
     // No-pin markers (page-level issues) are always centered horizontally
-    marker.style.left = isNoPin ? '50%' : (diff.location.left + '%');
+    marker.style.left = isNoPin ? '50%' : (pinLeft + '%');
 
     // Pin head shows count (always 1 for single marker)
     var head = document.createElement('div');
@@ -2050,6 +2077,9 @@
     // DOM-snapped bounds (from accessibility extractor or responsive DOM queries)
     // are pixel-perfect — show them at any size.
     var hasDomBounds = !!diff.wcag_criterion || !!diff._domSnapped;
+    // AI provided explicit element bounds (regression/fidelity/responsive prompts
+    // all include elTop + elLeft + width + height). Trust these for real elements.
+    var hasExplicitBounds = loc.elTop != null && loc.elLeft != null && !!loc.width && !!loc.height;
 
     if (!w || !h) {
       if (hasDomBounds) return; // DOM snap returned nothing — don't guess
@@ -2060,9 +2090,31 @@
     }
 
     if (!hasDomBounds) {
-      // Cap: skip highlight if AI-estimated box covers too much of the page.
-      // Max 35% width and 10% height. Tight AI boxes are still shown.
-      if (w > 35 || h > 10) return;
+      if (!hasExplicitBounds) {
+        // No element bounds at all — skip boxes that would cover too much of the page.
+        if (w > 35 || h > 10) return;
+      } else {
+        // AI supplied explicit element bounds — trust them for any reasonable element.
+        // Only skip if the box would span the entire page height (almost certainly wrong).
+        if (w > 100 || h > 80) return;
+
+        // Sanity-check: the pin's top/left (center of the changed area) must fall
+        // inside the element bounds (with ±12% tolerance for AI rounding).
+        // If the pin is above or below the element, the AI gave inconsistent data
+        // (pin points to one element, bounds to another) — fall back to no highlight.
+        var pinTop  = loc.top;
+        var pinLeft = loc.left;
+        var elBottom = loc.elTop + h;
+        var elRight  = loc.elLeft + w;
+        var vertOk = pinTop  >= (loc.elTop  - 12) && pinTop  <= (elBottom + 12);
+        var horzOk = pinLeft >= (loc.elLeft - 12) && pinLeft <= (elRight  + 12);
+        if (!vertOk || !horzOk) {
+          // Bounds are inconsistent with the pin — show small fallback box at pin
+          w = 20;
+          h = 3;
+          hasExplicitBounds = false; // trigger fallback centering below
+        }
+      }
     }
 
     // Find the markers layer (parent of the marker)

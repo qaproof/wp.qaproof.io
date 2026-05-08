@@ -428,6 +428,10 @@
   font-weight: 400;
   color: var(--qp-text-muted);
 }
+/* Score colors inside detail-meta must be readable on the light card background */
+#qaproof-app .qaproof-detail-meta .score-high { color: #00959c !important; }
+#qaproof-app .qaproof-detail-meta .score-medium { color: #c08a00 !important; }
+#qaproof-app .qaproof-detail-meta .score-low { color: #dc2626 !important; }
 
 /* Results Timeline — rounded card */
 #qaproof-app .qaproof-results-timeline {

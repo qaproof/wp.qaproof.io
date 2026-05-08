@@ -2909,3 +2909,37 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   border-radius: 50%;
   animation: qaproof-spinner 0.7s linear infinite;
 }
+
+/* ============================
+   Coming Soon wrapper for tabs
+   ============================ */
+#qaproof-app .qaproof-coming-soon-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+}
+#qaproof-app .qaproof-coming-soon-wrap .qaproof-coming-soon-btn {
+  flex: 1;
+  opacity: 0.38;
+  filter: blur(0.4px);
+  cursor: not-allowed !important;
+  pointer-events: none;
+  user-select: none;
+}
+#qaproof-app .qaproof-coming-soon-wrap::after {
+  content: 'Soon';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: rgba(0,173,181,0.18);
+  color: var(--qp-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 20px;
+  pointer-events: none;
+  white-space: nowrap;
+}
