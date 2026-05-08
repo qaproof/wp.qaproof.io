@@ -1220,7 +1220,7 @@
         try { sessionStorage.setItem('qaproof_pending_run_' + id, '1'); } catch(e) {}
         showMonitorDetail(id, true);
       } else {
-        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
+        Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
       }
     }).catch(function () {
       if (row) row.classList.remove('qaproof-monitor-running');
@@ -1521,21 +1521,26 @@
   }
 
   function approveResult(resultId, monitorId, btn) {
-    if (!confirm(qaproof.i18n.monitorApproveConfirm || 'Approve these changes? This will update the baseline to the current page state.')) return;
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
-    }
-    apiCall('POST', '/results/' + resultId + '/approve').then(function (resp) {
-      if (resp.success) {
-        showMonitorDetail(monitorId);
-      } else {
-        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorApproveFailed || 'Failed to approve.'));
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
-        }
+    Q.confirm(
+      qaproof.i18n.monitorApproveConfirm || 'Approve these changes? This will update the baseline to the current page state.',
+      { okLabel: qaproof.i18n.monitorApproveChanges || 'Approve Changes' }
+    ).then(function (ok) {
+      if (!ok) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
       }
+      apiCall('POST', '/results/' + resultId + '/approve').then(function (resp) {
+        if (resp.success) {
+          showMonitorDetail(monitorId);
+        } else {
+          Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorApproveFailed || 'Failed to approve.'));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
+          }
+        }
+      });
     });
   }
 

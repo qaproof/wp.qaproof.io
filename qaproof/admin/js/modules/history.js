@@ -172,8 +172,12 @@
       });
 
       row.querySelector('.qaproof-history-delete').addEventListener('click', function () {
-        if (!confirm(qaproof.i18n.histDeleteConfirm || 'Delete this test result?')) return;
-        deleteItem(item.id, row);
+        Q.confirm(
+          qaproof.i18n.histDeleteConfirm || 'Delete this test result?',
+          { danger: true, okLabel: qaproof.i18n.modalDelete || 'Delete' }
+        ).then(function (ok) {
+          if (ok) deleteItem(item.id, row);
+        });
       });
 
       return row;
@@ -309,7 +313,7 @@
           }
         })
         .catch(function () {
-          alert(qaproof.i18n.histFailedDownload || 'Failed to download report.');
+          Q.alert(qaproof.i18n.histFailedDownload || 'Failed to download report.');
         });
     }
 
