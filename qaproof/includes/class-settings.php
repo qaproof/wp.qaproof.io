@@ -412,7 +412,7 @@ class QAProof_Settings {
         // Monitors + History row
         echo '    <div class="qaproof-account-info__row qaproof-account-info__meta">';
         echo '      <div class="qaproof-account-info__meta-item">';
-        echo '        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+        echo '        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
         echo '        <span id="qaproof-account-monitors"></span>';
         echo '      </div>';
         echo '      <div class="qaproof-account-info__meta-item">';
