@@ -3,7 +3,7 @@
  * Plugin Name: QAProof
  * Plugin URI:  https://qaproof.io
  * Description: Automated design fidelity and responsive testing powered by AI. Compare your live pages against Figma designs or analyze responsive behavior across devices.
- * Version:     1.0.0
+ * Version:     1.0
  * Author:      QAProof
  * Author URI:  https://qaproof.io
  * License:     GPL-2.0-or-later
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'QAPROOF_VERSION', '1.2.59' );
+define( 'QAPROOF_VERSION', '1.0' );
 define( 'QAPROOF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
