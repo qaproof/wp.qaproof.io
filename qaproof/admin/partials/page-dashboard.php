@@ -22,6 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *   $ai_used          (int)    — AI generations consumed this period
  *   $ai_limit         (int)    — AI generations limit for the plan
  *   $ai_pct           (int)    — percentage used (0–100)
+ *   $monitor_limit    (int)    — monitor count allowed by the plan
  *   $account_plan     (string) — capitalized plan name ("Free", "Pro", etc.)
  *   $reset_label      (string) — e.g. "Resets on May 1, 2026"
  */
@@ -103,7 +104,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <div class="qaproof-dash-stat">
                 <div class="qaproof-dash-stat-icon icon-monitors"><span class="dashicons dashicons-desktop"></span></div>
                 <div>
-                    <div class="qaproof-dash-stat-val"><?php echo esc_html( $active_monitors . '/' . $total_monitors ); ?></div>
+                    <div class="qaproof-dash-stat-val"><?php echo esc_html( $total_monitors . '/' . $monitor_limit ); ?></div>
                     <div class="qaproof-dash-stat-name"><?php esc_html_e( 'Monitors', 'qaproof' ); ?></div>
                 </div>
             </div>
