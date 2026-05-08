@@ -55,10 +55,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <span class="dashicons dashicons-smartphone"></span>
                 <?php esc_html_e( 'Responsive Test', 'qaproof' ); ?>
             </button>
-            <button type="button" class="qaproof-test-type-btn" data-type="design-audit">
-                <span class="dashicons dashicons-admin-appearance"></span>
-                <?php esc_html_e( 'Design Audit', 'qaproof' ); ?>
-            </button>
+            <div class="qaproof-coming-soon-wrap">
+                <button type="button" class="qaproof-test-type-btn qaproof-coming-soon-btn" data-type="design-audit" disabled>
+                    <span class="dashicons dashicons-admin-appearance"></span>
+                    <?php esc_html_e( 'Design Audit', 'qaproof' ); ?>
+                </button>
+            </div>
         </div>
 
         <form id="qaproof-test-form">
