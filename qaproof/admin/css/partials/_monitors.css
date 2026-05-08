@@ -1,0 +1,698 @@
+/* ============================
+   Monitor Cards Grid
+   ============================ */
+#qaproof-app .qaproof-monitors-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ── Card shell ── */
+#qaproof-app .qaproof-monitor-card {
+  background: var(--qp-white);
+  border: 1px solid var(--qp-border-mid);
+  border-radius: 18px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+#qaproof-app .qaproof-monitor-card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+  border-color: rgba(0,173,181,0.35);
+  transform: translateY(-1px);
+}
+
+/* Left accent stripe per state */
+#qaproof-app .qaproof-monitor-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 18px 0 0 18px;
+}
+#qaproof-app .qaproof-card-active::before  { background: var(--qp-accent); }
+#qaproof-app .qaproof-card-setup::before   { background: #f59e0b; }
+#qaproof-app .qaproof-card-paused::before  { background: #d1d5db; }
+#qaproof-app .qaproof-card-running::before { background: linear-gradient(180deg, #33d9e0 0%, #00adb5 100%); }
+
+/* Running: scan animation */
+@keyframes qaproof-card-scan {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translateX(300%); opacity: 0; }
+}
+@keyframes qaproof-card-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0,173,181,0.2), 0 4px 18px rgba(0,173,181,0.08); }
+  50%       { box-shadow: 0 0 0 1px rgba(0,173,181,0.38), 0 4px 24px rgba(0,173,181,0.16); }
+}
+#qaproof-app .qaproof-card-running {
+  border-color: rgba(0,173,181,0.28) !important;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(230,251,252,0.45) 100%) !important;
+  animation: qaproof-card-glow 2s ease-in-out infinite;
+}
+#qaproof-app .qaproof-card-running::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 40%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #33d9e0 40%, #00adb5 60%, transparent 100%);
+  animation: qaproof-card-scan 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Card body ── */
+#qaproof-app .qaproof-mc-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px 12px 22px;
+}
+
+/* Left: favicon + info */
+#qaproof-app .qaproof-mc-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Favicon circle */
+#qaproof-app .qaproof-mc-favicon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--qp-bg-surface);
+  border: 1px solid var(--qp-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--qp-text-muted);
+  position: relative;
+}
+#qaproof-app .qaproof-mc-favicon::after {
+  content: attr(data-initial);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+}
+#qaproof-app .qaproof-mc-favicon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* URL info block */
+#qaproof-app .qaproof-mc-url-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Top row: domain + badge inline */
+#qaproof-app .qaproof-mc-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#qaproof-app .qaproof-mc-domain {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--qp-text-primary) !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: ellipsis;
+  max-width: 300px;
+  line-height: 1.4;
+  display: inline-block;
+}
+#qaproof-app .qaproof-mc-domain:hover {
+  color: var(--qp-accent) !important;
+}
+
+#qaproof-app .qaproof-mc-path {
+  display: block;
+  font-size: 11px;
+  color: var(--qp-text-muted);
+  font-weight: 400;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+}
+
+/* Meta chips row */
+#qaproof-app .qaproof-mc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+#qaproof-app .qaproof-mc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--qp-radius-pill);
+  background: var(--qp-bg-surface);
+  color: var(--qp-text-muted);
+  border: 1px solid var(--qp-border-light);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+#qaproof-app .qaproof-mc-chip-muted {
+  opacity: 0.75;
+}
+#qaproof-app .qaproof-mc-chip-warn {
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Right: score circle */
+#qaproof-app .qaproof-mc-score-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+#qaproof-app .qaproof-mc-score-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--qp-bg-surface);
+  border: 2.5px solid var(--qp-border);
+}
+
+/* Score states */
+#qaproof-app .qaproof-mc-score-circle.qaproof-score-high,
+#qaproof-app .qaproof-mc-score-circle.score-high {
+  background: rgba(0,173,181,0.08);
+  border-color: var(--qp-accent);
+}
+#qaproof-app .qaproof-mc-score-circle.qaproof-score-medium,
+#qaproof-app .qaproof-mc-score-circle.score-medium {
+  background: rgba(240,180,41,0.08);
+  border-color: #f59e0b;
+}
+#qaproof-app .qaproof-mc-score-circle.qaproof-score-low,
+#qaproof-app .qaproof-mc-score-circle.score-low {
+  background: rgba(239,68,68,0.08);
+  border-color: #ef4444;
+}
+
+#qaproof-app .qaproof-mc-score-num {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--qp-text-muted);
+}
+#qaproof-app .qaproof-mc-score-circle.qaproof-score-high .qaproof-mc-score-num,
+#qaproof-app .qaproof-mc-score-circle.score-high .qaproof-mc-score-num {
+  color: var(--qp-accent);
+}
+#qaproof-app .qaproof-mc-score-circle.qaproof-score-medium .qaproof-mc-score-num,
+#qaproof-app .qaproof-mc-score-circle.score-medium .qaproof-mc-score-num {
+  color: #b45309;
+}
+#qaproof-app .qaproof-mc-score-circle.qaproof-score-low .qaproof-mc-score-num,
+#qaproof-app .qaproof-mc-score-circle.score-low .qaproof-mc-score-num {
+  color: #dc2626;
+}
+
+#qaproof-app .qaproof-mc-score-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--qp-text-muted);
+}
+
+/* ── Card footer ── */
+#qaproof-app .qaproof-mc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 18px 10px 22px;
+  border-top: 1px solid var(--qp-border-light);
+}
+
+/* Secondary action buttons */
+#qaproof-app .qaproof-mc-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+#qaproof-app .qaproof-mc-action-btn {
+  background: transparent !important;
+  border: 1px solid var(--qp-border) !important;
+  color: var(--qp-text-muted) !important;
+  border-radius: var(--qp-radius-pill) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 3px 12px !important;
+  height: auto !important;
+  line-height: 1.6 !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+  font-family: var(--qp-font) !important;
+  box-shadow: none !important;
+}
+#qaproof-app .qaproof-mc-action-btn:hover {
+  background: var(--qp-bg-surface) !important;
+  border-color: var(--qp-text-muted) !important;
+  color: var(--qp-text-primary) !important;
+}
+#qaproof-app .qaproof-mc-action-delete {
+  border-color: rgba(239,68,68,0.3) !important;
+  color: #dc2626 !important;
+}
+#qaproof-app .qaproof-mc-action-delete:hover {
+  background: rgba(239,68,68,0.08) !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+}
+
+/* Primary run button in footer */
+#qaproof-app .qaproof-mc-run-btn {
+  border-radius: var(--qp-radius-pill) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 5px 18px !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  flex-shrink: 0;
+  font-family: var(--qp-font) !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+/* Set Up variant */
+#qaproof-app .qaproof-mc-run-btn.qaproof-btn-setup {
+  background: transparent !important;
+  border: 1.5px solid var(--qp-accent) !important;
+  color: var(--qp-accent) !important;
+}
+#qaproof-app .qaproof-mc-run-btn.qaproof-btn-setup:hover {
+  background: var(--qp-accent-dim) !important;
+}
+/* Running variant */
+#qaproof-app .qaproof-mc-run-btn.qaproof-btn-running {
+  background: rgba(99,102,241,0.1) !important;
+  border: 1.5px solid #6366f1 !important;
+  color: #4f46e5 !important;
+  cursor: default !important;
+  opacity: 0.85;
+}
+#qaproof-app .qaproof-mc-run-btn.qaproof-btn-running::after {
+  content: '...';
+  display: inline-block;
+  overflow: hidden;
+  width: 0;
+  vertical-align: bottom;
+  animation: qaproof-badge-ellipsis 1.6s steps(1, end) infinite;
+  letter-spacing: 1px;
+}
+/* Default Check Now variant — filled teal */
+#qaproof-app .qaproof-mc-run-btn:not(.qaproof-btn-setup):not(.qaproof-btn-running) {
+  background: var(--qp-accent) !important;
+  border: 1.5px solid var(--qp-accent) !important;
+  color: #fff !important;
+  text-shadow: none !important;
+}
+#qaproof-app .qaproof-mc-run-btn:not(.qaproof-btn-setup):not(.qaproof-btn-running):hover,
+#qaproof-app .qaproof-mc-run-btn:not(.qaproof-btn-setup):not(.qaproof-btn-running):focus {
+  background: #009aa1 !important;
+  border-color: #009aa1 !important;
+  color: #fff !important;
+  text-shadow: none !important;
+  box-shadow: 0 2px 10px rgba(0,173,181,0.35) !important;
+}
+
+/* ============================
+   Baseline success screen
+   ============================ */
+#qaproof-app .qaproof-baseline-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 32px;
+  gap: 12px;
+}
+#qaproof-app .qaproof-baseline-success-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 36px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+  margin-bottom: 8px;
+  animation: qaproof-scale-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+#qaproof-app .qaproof-baseline-success h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--qp-text);
+}
+#qaproof-app .qaproof-baseline-success p {
+  margin: 0;
+  color: var(--qp-text-muted);
+  font-size: 14px;
+  max-width: 380px;
+  line-height: 1.6;
+}
+#qaproof-app .qaproof-baseline-success-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+#qaproof-app .qaproof-baseline-success-actions .button-primary {
+  border-radius: var(--qp-radius-pill) !important;
+  padding: 8px 24px !important;
+  height: auto !important;
+  font-weight: 700 !important;
+}
+#qaproof-app .qaproof-baseline-success-actions .button:not(.button-primary) {
+  border-radius: var(--qp-radius-pill) !important;
+  padding: 8px 20px !important;
+  height: auto !important;
+}
+
+/* ============================
+   Inline confirm dialog
+   ============================ */
+#qaproof-app .qaproof-inline-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--qp-radius, 12px);
+  font-size: 13px;
+  color: #991b1b;
+  flex-wrap: wrap;
+}
+#qaproof-app .qaproof-inline-confirm span {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+/* ============================
+   Status badge pills
+   ============================ */
+#qaproof-app .qaproof-monitor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--qp-radius-pill);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+#qaproof-app .qaproof-badge-active {
+  background: rgba(0, 173, 181, 0.1);
+  color: var(--qp-accent);
+}
+#qaproof-app .qaproof-badge-running {
+  background: rgba(0, 173, 181, 0.12);
+  color: #007a82;
+}
+#qaproof-app .qaproof-badge-setup {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+#qaproof-app .qaproof-badge-paused {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--qp-text-muted);
+}
+
+#qaproof-app .qaproof-state-hint {
+  font-size: 11px;
+  color: var(--qp-text-muted);
+  margin-top: 5px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+#qaproof-app .qaproof-monitor-status-cell {
+  min-width: 180px;
+}
+
+#qaproof-app .qaproof-monitor-actions .button {
+  margin-right: 4px;
+}
+
+/* "Set Up" run button */
+#qaproof-app .qaproof-monitor-actions .qaproof-btn-setup {
+  background: var(--qp-accent) !important;
+  border-color: var(--qp-accent) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+#qaproof-app .qaproof-monitor-actions .qaproof-btn-setup:hover {
+  background: var(--qp-accent-hover) !important;
+  border-color: var(--qp-accent-hover) !important;
+}
+
+/* ============================
+   Hour Picker — time-section grid
+   ============================ */
+#qaproof-app .qaproof-hour-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 520px;
+  margin-top: 4px;
+}
+
+#qaproof-app .qaproof-hour-section {
+  background: var(--qp-bg-card-dark);
+  border: 1px solid var(--qp-border-light);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+#qaproof-app .qaproof-hour-section-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--qp-text-muted);
+  margin-bottom: 10px;
+}
+
+#qaproof-app .qaproof-hour-section-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+#qaproof-app .qaproof-hour-section-pills {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+}
+
+#qaproof-app .qaproof-hour-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  width: 100%;
+  min-width: 0;
+  border: 1.5px solid var(--qp-border);
+  border-radius: 50%;
+  background: var(--qp-white);
+  color: var(--qp-text-secondary);
+  font-family: var(--qp-font);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  padding: 0;
+  line-height: 1;
+  box-shadow: none;
+}
+#qaproof-app .qaproof-hour-btn:hover {
+  border-color: var(--qp-accent);
+  color: var(--qp-accent);
+  background: var(--qp-accent-dim);
+  transform: scale(1.08);
+}
+#qaproof-app .qaproof-hour-btn.active {
+  background: var(--qp-accent);
+  border-color: var(--qp-accent);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0, 173, 181, 0.45);
+  transform: scale(1.1);
+}
+
+/* ============================
+   Dark theme
+   ============================ */
+#qaproof-app.qaproof-dark .qaproof-monitor-card {
+  background: var(--qp-bg-dark);
+  border-color: rgba(255,255,255,0.07);
+}
+#qaproof-app.qaproof-dark .qaproof-monitor-card:hover {
+  border-color: rgba(0,173,181,0.38);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+#qaproof-app.qaproof-dark .qaproof-card-running {
+  background: linear-gradient(135deg, #1e2a2b 0%, rgba(0,173,181,0.08) 100%) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-card-paused::before { background: #374151; }
+
+#qaproof-app.qaproof-dark .qaproof-mc-favicon {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.1);
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-domain {
+  color: #e8edf2 !important;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-path {
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-chip {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-chip-warn {
+  background: rgba(245,158,11,0.12);
+  border-color: rgba(245,158,11,0.25);
+  color: #fbbf24;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+}
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle.qaproof-score-high,
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle.score-high {
+  background: rgba(0,173,181,0.1);
+  border-color: var(--qp-accent);
+}
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle.qaproof-score-medium,
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle.score-medium {
+  background: rgba(240,180,41,0.1);
+  border-color: #f59e0b;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle.qaproof-score-low,
+#qaproof-app.qaproof-dark .qaproof-mc-score-circle.score-low {
+  background: rgba(239,68,68,0.1);
+  border-color: #ef4444;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-score-num {
+  color: #6b7280;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-score-label {
+  color: #4b5563;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-footer {
+  border-top-color: rgba(255,255,255,0.06);
+}
+#qaproof-app.qaproof-dark .qaproof-mc-action-btn {
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #6b7280 !important;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-action-btn:hover {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: #d1d5db !important;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-action-delete {
+  border-color: rgba(239,68,68,0.25) !important;
+  color: #f87171 !important;
+}
+#qaproof-app.qaproof-dark .qaproof-mc-action-delete:hover {
+  background: rgba(239,68,68,0.1) !important;
+}
+
+#qaproof-app.qaproof-dark .qaproof-inline-confirm {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+#qaproof-app.qaproof-dark .qaproof-badge-active {
+  background: rgba(0, 173, 181, 0.15);
+}
+#qaproof-app.qaproof-dark .qaproof-badge-setup {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+#qaproof-app.qaproof-dark .qaproof-badge-paused {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+#qaproof-app.qaproof-dark .qaproof-hour-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+#qaproof-app.qaproof-dark .qaproof-hour-section-label {
+  color: rgba(255, 255, 255, 0.4);
+}
+#qaproof-app.qaproof-dark .qaproof-hour-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d1d5db;
+}
+#qaproof-app.qaproof-dark .qaproof-hour-btn:hover {
+  border-color: var(--qp-accent);
+  color: var(--qp-accent);
+  background: var(--qp-accent-dim);
+}
+#qaproof-app.qaproof-dark .qaproof-hour-btn.active {
+  background: var(--qp-accent);
+  border-color: var(--qp-accent);
+  color: #fff;
+}
