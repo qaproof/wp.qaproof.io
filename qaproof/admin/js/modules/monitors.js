@@ -294,6 +294,32 @@
       });
     }
 
+    // On fresh navigation (not a reload), clear saved monitor so the nav link always
+    // shows the monitors list, never a stale detail view.
+    try {
+      var navEntry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      var isReload = navEntry ? navEntry.type === 'reload' : (performance.navigation && performance.navigation.type === 1);
+      if (!isReload) { sessionStorage.removeItem('qaproof_open_monitor'); }
+    } catch(e) {}
+
+    // Handle browser back/forward navigation
+    window.addEventListener('popstate', function (evt) {
+      if (evt.state && evt.state.monitorId) {
+        showMonitorDetail(evt.state.monitorId, false, true);
+      } else {
+        stopMonitorPoll();
+        try { sessionStorage.removeItem('qaproof_open_monitor'); } catch(e2) {}
+        if (monitorDetail) {
+          monitorDetail.classList.add('hidden');
+          monitorDetail.innerHTML = '';
+        }
+        if (monitorsListEl) monitorsListEl.classList.remove('hidden');
+        if (addMonitorBtn) addMonitorBtn.classList.remove('hidden');
+        if (monitorsLoading) monitorsLoading.classList.add('hidden');
+        loadMonitors(true);
+      }
+    });
+
     // Check if URL has monitor_id param to show detail
     var urlParams = new URLSearchParams(window.location.search);
     var monitorId = urlParams.get('monitor_id');
@@ -414,7 +440,7 @@
       } else {
         runBtnCls      = 'button qaproof-run-monitor';
         runBtnLabel    = qaproof.i18n.monitorBtnRun || 'Check Now';
-        runBtnDisabled = '';
+        runBtnDisabled = !isEnabled ? ' disabled' : '';
       }
 
       // URL parts
@@ -491,7 +517,10 @@
       // ── Card footer: actions ──
       html += '<div class="qaproof-mc-footer">';
       html += '<div class="qaproof-mc-actions">';
-      html += '<button type="button" class="qaproof-mc-action-btn qaproof-toggle-monitor" data-id="' + m.id + '" data-enabled="' + m.is_enabled + '">' + (isEnabled ? 'Pause' : 'Enable') + '</button>';
+      var toggleBusyCls = isPendingRun ? ' qaproof-mc-btn-busy' : '';
+      var toggleEnableCls = (!isPendingRun && !isEnabled) ? ' qaproof-mc-btn-enable' : '';
+      var toggleBusyAttr = isPendingRun ? ' data-busy="1"' : '';
+      html += '<button type="button" class="qaproof-mc-action-btn qaproof-toggle-monitor' + toggleBusyCls + toggleEnableCls + '" data-id="' + m.id + '" data-enabled="' + m.is_enabled + '"' + toggleBusyAttr + '>' + (isEnabled ? 'Pause' : 'Enable') + '</button>';
       html += '<button type="button" class="qaproof-mc-action-btn qaproof-edit-monitor" data-id="' + m.id + '">Edit</button>';
       html += '<button type="button" class="qaproof-mc-action-btn qaproof-mc-action-delete qaproof-delete-monitor" data-id="' + m.id + '">Delete</button>';
       html += '</div>';
@@ -507,7 +536,7 @@
     // Bind card click → detail view
     monitorsListEl.querySelectorAll('.qaproof-monitor-card').forEach(function (card) {
       card.addEventListener('click', function (e) {
-        if (e.target.closest('button') || e.target.closest('a')) return;
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[disabled]')) return;
         showMonitorDetail(parseInt(card.dataset.id, 10));
       });
     });
@@ -530,6 +559,7 @@
     monitorsListEl.querySelectorAll('.qaproof-toggle-monitor').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
+        if (this.dataset.busy) return;
         toggleMonitor(parseInt(this.dataset.id, 10), parseInt(this.dataset.enabled, 10));
       });
     });
@@ -667,33 +697,57 @@
     });
   }
 
-  function deleteMonitor(id, btn) {
-    // Avoid native confirm() — it blocks CDP and hangs the browser extension.
-    // Instead, inject an inline confirmation row right next to the delete button.
-    if (btn && !btn.dataset.confirming) {
-      btn.dataset.confirming = '1';
-      var card = btn.closest('.qaproof-monitor-card') || btn.parentElement;
-      var confirmRow = document.createElement('div');
-      confirmRow.className = 'qaproof-inline-confirm';
-      confirmRow.innerHTML =
-        '<span>' + (qaproof.i18n.monitorDeleteConfirm || 'Delete this monitor and all its results?') + '</span>' +
-        ' <button type="button" class="button button-link-delete qaproof-inline-confirm-yes">Yes, Delete</button>' +
-        ' <button type="button" class="button qaproof-inline-confirm-no">Cancel</button>';
-      card.appendChild(confirmRow);
+  function rebindCardFooter(footer, id) {
+    var tb = footer.querySelector('.qaproof-toggle-monitor');
+    var eb = footer.querySelector('.qaproof-edit-monitor');
+    var db = footer.querySelector('.qaproof-delete-monitor');
+    var rb = footer.querySelector('.qaproof-run-monitor');
+    if (tb) tb.addEventListener('click', function(e) { e.stopPropagation(); if (!this.dataset.busy) toggleMonitor(id, parseInt(this.dataset.enabled, 10)); });
+    if (eb) eb.addEventListener('click', function(e) { e.stopPropagation(); editMonitor(id); });
+    if (db) db.addEventListener('click', function(e) { e.stopPropagation(); deleteMonitor(id, this); });
+    if (rb) rb.addEventListener('click', function(e) { e.stopPropagation(); runMonitor(id, this); });
+  }
 
-      confirmRow.querySelector('.qaproof-inline-confirm-yes').addEventListener('click', function () {
-        confirmRow.remove();
-        delete btn.dataset.confirming;
-        apiCall('DELETE', '/monitors/' + id).then(function (resp) {
-          if (resp.success) loadMonitors(true);
-        });
+  function deleteMonitor(id, btn) {
+    var footer = btn ? btn.closest('.qaproof-mc-footer') : null;
+    if (!footer) return;
+
+    // Save original HTML so Cancel can restore instantly (no API call)
+    var savedHTML = footer.innerHTML;
+
+    footer.innerHTML =
+      '<div class="qaproof-inline-confirm">' +
+      '<span>' + (qaproof.i18n.monitorDeleteConfirm || 'Видалити монітор та всі результати?') + '</span>' +
+      '<div class="qaproof-inline-confirm-btns">' +
+      '<button type="button" class="qaproof-inline-confirm-yes">Видалити</button>' +
+      '<button type="button" class="qaproof-inline-confirm-no">Скасувати</button>' +
+      '</div>' +
+      '</div>';
+
+    footer.querySelector('.qaproof-inline-confirm-yes').addEventListener('click', function () {
+      var card = footer.closest('.qaproof-monitor-card');
+      var domainEl = card ? card.querySelector('.qaproof-mc-domain') : null;
+      var domainName = domainEl ? domainEl.textContent : 'Monitor';
+      apiCall('DELETE', '/monitors/' + id).then(function (resp) {
+        if (resp.success) {
+          showToast(domainName + ' — монітор видалено.', 'success');
+          loadMonitors(true);
+        } else {
+          footer.innerHTML = savedHTML;
+          rebindCardFooter(footer, id);
+          showToast((resp.error && resp.error.message) || 'Failed to delete monitor.', 'error');
+        }
+      }).catch(function () {
+        footer.innerHTML = savedHTML;
+        rebindCardFooter(footer, id);
+        showToast('Failed to delete monitor.', 'error');
       });
-      confirmRow.querySelector('.qaproof-inline-confirm-no').addEventListener('click', function () {
-        confirmRow.remove();
-        delete btn.dataset.confirming;
-      });
-      return;
-    }
+    });
+
+    footer.querySelector('.qaproof-inline-confirm-no').addEventListener('click', function () {
+      footer.innerHTML = savedHTML;
+      rebindCardFooter(footer, id);
+    });
   }
 
   function toggleMonitor(id, currentEnabled) {
@@ -1177,13 +1231,22 @@
     });
   }
 
-  function showMonitorDetail(id, shouldPoll) {
+  function showMonitorDetail(id, shouldPoll, fromPopstate) {
     if (!monitorDetail) return;
     // Survive page reloads — remember which monitor is open
     try { sessionStorage.setItem('qaproof_open_monitor', id); } catch(e) {}
     // Survive page reloads — check if this monitor has a pending run
     if (!shouldPoll) {
       try { shouldPoll = !!sessionStorage.getItem('qaproof_pending_run_' + id); } catch(e) {}
+    }
+
+    // Push history state so browser back button returns to monitors list
+    if (!fromPopstate) {
+      try {
+        var cleanParams = new URLSearchParams(window.location.search);
+        cleanParams.set('monitor_id', id);
+        history.pushState({ monitorId: id }, '', window.location.pathname + '?' + cleanParams.toString());
+      } catch(e) {}
     }
 
     // Stop any active polling
@@ -1303,11 +1366,12 @@
     html += '    <span>Threshold: <strong>' + monitor.threshold_score + '</strong></span>';
     html += '    <span>Last Score: <strong class="' + Q.getScoreClass(parseInt(monitor.last_score, 10)) + '">' + (monitor.last_score != null ? monitor.last_score : '—') + '</strong></span>';
     html += '  </div>';
-    // Button: disabled while any job is in progress (baseline capture or regression run)
-    var runBtnDisabled = shouldPoll ? ' disabled' : '';
+    // Button: disabled while any job is in progress or monitor is paused
+    var isPaused = !parseInt(monitor.is_enabled, 10);
+    var runBtnDisabled = (shouldPoll || isPaused) ? ' disabled' : '';
     var runBtnText = isSettingUp
       ? (qaproof.i18n.monitorSettingUp || 'Setting up...')
-      : (shouldPoll ? (qaproof.i18n.monitorRunning || 'Running...') : (qaproof.i18n.monitorBtnRun || 'Check Now'));
+      : (shouldPoll ? (qaproof.i18n.monitorRunning || 'Running...') : (!pollHasBaseline ? 'Set Up' : (qaproof.i18n.monitorBtnRun || 'Check Now')));
     html += '  <button type="button" id="qaproof-detail-run" class="button button-primary" data-id="' + monitor.id + '"' + runBtnDisabled + '>' + runBtnText + '</button>';
     html += '</div>';
 
@@ -1393,6 +1457,12 @@
       backBtn.addEventListener('click', function () {
         stopMonitorPoll();
         try { sessionStorage.removeItem('qaproof_open_monitor'); } catch(e) {}
+        try {
+          var listParams = new URLSearchParams(window.location.search);
+          listParams.delete('monitor_id');
+          var newSearch = listParams.toString();
+          history.pushState({}, '', window.location.pathname + (newSearch ? '?' + newSearch : ''));
+        } catch(e) {}
         monitorDetail.classList.add('hidden');
         monitorDetail.innerHTML = '';
         if (monitorsListEl) monitorsListEl.classList.remove('hidden');

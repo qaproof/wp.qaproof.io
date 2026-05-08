@@ -564,7 +564,7 @@
 
 /* Secondary button — outlined pill, matches Group 594 style */
 #qaproof-app .button-secondary,
-#qaproof-app .button:not(.button-primary):not(.button-link-delete) {
+#qaproof-app .button:not(.button-primary):not(.button-link-delete):not(.qaproof-mc-run-btn) {
   background: transparent !important;
   border: 1px solid var(--qp-accent) !important;
   border-radius: var(--qp-radius-pill) !important;
@@ -580,7 +580,7 @@
 }
 
 #qaproof-app .button-secondary:hover,
-#qaproof-app .button:not(.button-primary):not(.button-link-delete):hover {
+#qaproof-app .button:not(.button-primary):not(.button-link-delete):not(.qaproof-mc-run-btn):hover {
   color: var(--qp-white) !important;
   border-color: var(--qp-white) !important;
   box-shadow: none !important;
