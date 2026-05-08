@@ -168,41 +168,55 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Schedule the monitor job via WP-Cron and immediately trigger it.
-        // spawn_cron() fires a non-blocking HTTP request to wp-cron.php, which
-        // runs the job in a separate PHP process — so this REST response returns
-        // immediately (< 1s) and the UI polls for the result.
+        // Send the "queued" response BEFORE running the job, then keep the PHP
+        // process alive to execute the monitor inline. This bypasses WP-Cron
+        // entirely — which is unreliable in Docker because spawn_cron()'s
+        // non-blocking HTTP request to localhost:PORT often fails to reach
+        // Apache from inside the WP container, leaving the job stuck for
+        // minutes until JS-pinged wp-cron.php finally fires it.
         //
-        // The cron_request filter in QAProof_Scheduler::fix_cron_url_for_docker()
-        // rewrites localhost:PORT → localhost so the request reaches Apache's
-        // internal port 80 inside Docker containers.
-        wp_schedule_single_event( time(), 'qaproof_run_monitor', [ $id ] );
+        // fastcgi_finish_request() (PHP-FPM) and flush()+ignore_user_abort()
+        // (mod_php) both let us return the HTTP response and continue working.
+        // The browser sees a 200 immediately and starts polling for results;
+        // the actual capture runs synchronously here in the same PHP process,
+        // taking ~50–90 s for baseline creation or ~30–50 s for regression.
 
-        // Clear any stale doing_cron lock from a previously interrupted cron run,
-        // otherwise spawn_cron() will silently skip firing the new cron request.
-        $doing_cron_ts = get_transient( 'doing_cron' );
-        if ( false !== $doing_cron_ts && ( floatval( $doing_cron_ts ) + 60 ) < microtime( true ) ) {
-            delete_transient( 'doing_cron' );
-        }
-
-        spawn_cron();
-
-        // Belt-and-suspenders for Docker environments where spawn_cron's non-blocking
-        // HTTP request to localhost:PORT may fail to connect from inside the container.
-        // We fire a direct curl call to the internal Apache port (80) in the background.
-        // WP-Cron's own doing_cron transient prevents double-execution if both fire.
-        if ( function_exists( 'exec' ) ) {
-            $internal_cron_url = 'http://localhost/wp-cron.php?doing_wp_cron=' . sprintf( '%.22F', microtime( true ) );
-            @exec( 'curl -s --connect-timeout 5 --max-time 180 ' . escapeshellarg( $internal_cron_url ) . ' > /dev/null 2>&1 &' );
-        }
-
-        return new WP_REST_Response( [
+        $response_body = wp_json_encode( [
             'success' => true,
             'data'    => [
                 'monitor' => $monitor,
-                'message' => __( 'Monitor test started in background. Results will appear shortly.', 'qaproof' ),
+                'message' => __( 'Monitor test started. Results will appear shortly.', 'qaproof' ),
             ],
-        ], 200 );
+        ] );
+
+        // Make sure long-running background work isn't aborted if the browser
+        // closes the connection mid-capture.
+        ignore_user_abort( true );
+        @set_time_limit( 360 );
+
+        if ( function_exists( 'fastcgi_finish_request' ) ) {
+            // PHP-FPM path — preferred when available
+            header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+            header( 'Content-Length: ' . strlen( $response_body ) );
+            echo $response_body;
+            fastcgi_finish_request();
+        } else {
+            // mod_php path — close output buffer + flush before continuing
+            header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+            header( 'Connection: close' );
+            header( 'Content-Length: ' . strlen( $response_body ) );
+            echo $response_body;
+            // Flush output buffers so the bytes leave PHP and reach the client
+            while ( ob_get_level() > 0 ) { @ob_end_flush(); }
+            @flush();
+        }
+
+        // Now execute the monitor inline — runs in the same PHP process but
+        // the client has already received the response and is polling.
+        QAProof_Scheduler::run_single_monitor( $id );
+
+        // exit() prevents WP from sending its own response on top of ours
+        exit;
     }
 
     public static function handle_get_results( WP_REST_Request $request ) {
