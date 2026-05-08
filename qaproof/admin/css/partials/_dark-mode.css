@@ -996,6 +996,12 @@ body.qaproof-dark-page #wpbody-content {
 #qaproof-app.qaproof-dark .qaproof-star-btn {
   color: var(--qp-text-muted);
 }
+/* Active stars keep the same warm yellow as light theme — the muted grey
+   above only applies to unselected stars. Without this override the dark-mode
+   rule shadows .active and selected stars look identical to unselected ones. */
+#qaproof-app.qaproof-dark .qaproof-star-btn.active {
+  color: #F59E0B;
+}
 #qaproof-app.qaproof-dark .qaproof-feedback-labels {
   color: var(--qp-text-muted);
 }
