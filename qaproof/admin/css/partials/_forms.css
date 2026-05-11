@@ -579,11 +579,15 @@
   line-height: 120% !important;
 }
 
+/* Hover: fill with the teal accent + use white text. The old "white text +
+   white border" hover became invisible on light backgrounds (Approve Changes /
+   View buttons sit on a white card and faded out completely on hover). */
 #qaproof-app .button-secondary:hover,
 #qaproof-app .button:not(.button-primary):not(.button-link-delete):not(.qaproof-mc-run-btn):hover {
-  color: var(--qp-white) !important;
-  border-color: var(--qp-white) !important;
-  box-shadow: none !important;
+  background: var(--qp-accent) !important;
+  border-color: var(--qp-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(0,173,181,0.32) !important;
   transform: translateY(-1px);
 }
 
