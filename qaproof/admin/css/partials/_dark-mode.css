@@ -414,10 +414,11 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-secondary);
 }
 
-/* Dark: monitors loading overlay */
+/* Dark: monitors loading overlay (and the monitor-detail inline capturing state) */
 #qaproof-app.qaproof-dark #qaproof-loading,
 #qaproof-app.qaproof-dark #qaproof-a11y-loading,
-#qaproof-app.qaproof-dark #qaproof-monitors-loading {
+#qaproof-app.qaproof-dark #qaproof-monitors-loading,
+#qaproof-app.qaproof-dark .qaproof-capturing-state {
   background: var(--qp-bg-card);
 }
 /* Light-theme rule sets the loading title color to var(--qp-border-light),
@@ -426,11 +427,13 @@ body.qaproof-dark-page #wpbody-content {
    "Generating audit report…" / "Taking screenshot…" stand out. */
 #qaproof-app.qaproof-dark #qaproof-loading-text,
 #qaproof-app.qaproof-dark #qaproof-a11y-loading-text,
-#qaproof-app.qaproof-dark #qaproof-monitors-loading-text {
+#qaproof-app.qaproof-dark #qaproof-monitors-loading-text,
+#qaproof-app.qaproof-dark .qaproof-capturing-text {
   color: var(--qp-text-primary) !important;
 }
 #qaproof-app.qaproof-dark #qaproof-loading-subtext,
-#qaproof-app.qaproof-dark #qaproof-a11y-loading-subtext {
+#qaproof-app.qaproof-dark #qaproof-a11y-loading-subtext,
+#qaproof-app.qaproof-dark .qaproof-capturing-sub {
   color: var(--qp-text-secondary) !important;
 }
 

@@ -553,12 +553,17 @@
   box-shadow: none !important;
 }
 
+/* Hover: fill with teal + white text. Same fix as the monitor card run
+   button — the old "white text + white border" hover became invisible on
+   dark theme because the base background uses var(--qp-text-primary), which
+   flips to a near-white color in dark mode (white text on light bg = gone). */
 #qaproof-app .button-primary:hover,
 #qaproof-app .button-hero.button-primary:hover,
 #qaproof-app #qaproof-submit-btn:hover {
-  color: var(--qp-white) !important;
-  border: 1px solid var(--qp-white) !important;
-  box-shadow: none !important;
+  background: var(--qp-accent) !important;
+  border: 1px solid var(--qp-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(0,173,181,0.32) !important;
   transform: translateY(-1px);
 }
 
