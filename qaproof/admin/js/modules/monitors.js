@@ -345,9 +345,10 @@
 
     var menu = document.getElementById('adminmenu');
     if (!menu) return;
-    // The menu item's anchor has href ending with page=qaproof. Strip the
-    // .awaiting-mod span inside it (added by QAProof_Notifications::add_menu_badge).
-    var anchors = menu.querySelectorAll('a[href*="page=qaproof"]');
+    // The Monitors submenu anchor has href ending with page=qaproof-monitors.
+    // We strip the .awaiting-mod span only from there (and not from the
+    // parent QAProof anchor that contains "page=qaproof" as a substring).
+    var anchors = menu.querySelectorAll('a[href*="page=qaproof-monitors"]');
     anchors.forEach(function (a) {
       var badge = a.querySelector('.awaiting-mod');
       if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
