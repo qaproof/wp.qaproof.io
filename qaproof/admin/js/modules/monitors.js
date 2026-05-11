@@ -274,6 +274,7 @@
 
   function initMonitorsPage() {
     loadMonitors();
+    clearAdminMenuBadge();
 
     if (addMonitorBtn) {
       addMonitorBtn.addEventListener('click', function () {
@@ -326,6 +327,31 @@
     if (monitorId) {
       showMonitorDetail(parseInt(monitorId, 10));
     }
+  }
+
+  /**
+   * Clear the WP admin "QAProof — 20" menu badge whenever the user opens the
+   * Monitors page. The badge counts how many monitor regressions scored
+   * below threshold since it was last cleared, and the natural "I've seen
+   * the alerts" moment is when the user lands on the page that shows them.
+   *
+   * Two-step: POST to the REST clear-endpoint (so the WP transient counter
+   * resets server-side, the next page render won't re-emit the badge), and
+   * yank the .awaiting-mod span out of the sidebar so the user sees the
+   * count disappear immediately without waiting for a full reload.
+   */
+  function clearAdminMenuBadge() {
+    apiCall('POST', '/notifications/clear').catch(function () { /* best-effort */ });
+
+    var menu = document.getElementById('adminmenu');
+    if (!menu) return;
+    // The menu item's anchor has href ending with page=qaproof. Strip the
+    // .awaiting-mod span inside it (added by QAProof_Notifications::add_menu_badge).
+    var anchors = menu.querySelectorAll('a[href*="page=qaproof"]');
+    anchors.forEach(function (a) {
+      var badge = a.querySelector('.awaiting-mod');
+      if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
+    });
   }
 
   function apiCall(method, path, body) {
