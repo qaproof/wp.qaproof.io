@@ -544,13 +544,25 @@
   line-height: 120%;
 }
 
+/* Disabled state: keep the same dark pill base (so it still reads as
+   "our submit button") instead of flattening into a generic grey #999 block
+   which looked like a half-transparent rectangle floating on the dark page
+   bg. We just dim the colors, grey out the border, and disable hover/
+   pointer feedback. */
 #qaproof-app #qaproof-submit-btn:disabled,
-#qaproof-app #qaproof-a11y-submit-btn:disabled {
-  background: #999 !important;
+#qaproof-app #qaproof-a11y-submit-btn:disabled,
+#qaproof-app .button-primary:disabled,
+#qaproof-app .button-primary[disabled],
+#qaproof-app .button-hero.button-primary:disabled {
+  background: var(--qp-text-primary) !important;
+  border-color: rgba(0, 173, 181, 0.35) !important;
+  color: rgba(0, 173, 181, 0.45) !important;
   cursor: not-allowed !important;
-  opacity: 0.7 !important;
+  opacity: 0.6 !important;
   transform: none !important;
   box-shadow: none !important;
+  filter: grayscale(35%) !important;
+  pointer-events: none;
 }
 
 /* Hover: fill with teal + white text. Same fix as the monitor card run
