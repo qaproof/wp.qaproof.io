@@ -23,6 +23,16 @@ class QAProof_Admin_Assets {
             return;
         }
 
+        // Cache-busting version: append file mtime so every edit invalidates
+        // the browser cache automatically (no manual hard-reload needed).
+        $asset_ver = function ( $rel_path ) {
+            $full = QAPROOF_PLUGIN_DIR . $rel_path;
+            if ( file_exists( $full ) ) {
+                return QAPROOF_VERSION . '.' . filemtime( $full );
+            }
+            return QAPROOF_VERSION;
+        };
+
         wp_enqueue_style(
             'qaproof-google-fonts',
             'https://fonts.googleapis.com/css2?family=Kodchasan:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap',
@@ -30,12 +40,35 @@ class QAProof_Admin_Assets {
             null
         );
 
-        wp_enqueue_style(
-            'qaproof-admin',
-            QAPROOF_PLUGIN_URL . 'admin/css/admin.css',
-            [ 'qaproof-google-fonts' ],
-            QAPROOF_VERSION
-        );
+        // Enqueue each partial individually so cache-busting via filemtime
+        // actually works. (admin.css used to @import them, but @import URLs
+        // don't get a ?ver= query, so browsers cached them indefinitely.)
+        $css_partials = [
+            '_variables',
+            '_base',
+            '_forms',
+            '_scores',
+            '_categories',
+            '_screenshots',
+            '_differences',
+            '_components',
+            '_dashboard',
+            '_ui',
+            '_dark-mode',
+            '_monitors',
+        ];
+        $prev_handle = 'qaproof-google-fonts';
+        foreach ( $css_partials as $partial ) {
+            $handle  = 'qaproof-' . ltrim( $partial, '_' );
+            $rel     = 'admin/css/partials/' . $partial . '.css';
+            wp_enqueue_style(
+                $handle,
+                QAPROOF_PLUGIN_URL . $rel,
+                [ $prev_handle ],
+                $asset_ver( $rel )
+            );
+            $prev_handle = $handle;
+        }
 
         wp_enqueue_script(
             'chartjs',
@@ -64,16 +97,16 @@ class QAProof_Admin_Assets {
         // JS Modules (load order matters — dependency chain)
         $js_base = QAPROOF_PLUGIN_URL . 'admin/js/modules/';
 
-        wp_enqueue_script( 'qaproof-helpers',  $js_base . 'helpers.js',  [],                   QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-state',    $js_base . 'state.js',    [ 'qaproof-helpers' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-theme',    $js_base . 'theme.js',    [],                   QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-polling',  $js_base . 'polling.js',  [ 'qaproof-helpers' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-results',  $js_base . 'results.js',  [ 'qaproof-state', 'chartjs' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-pdf',      $js_base . 'pdf.js',      [ 'qaproof-helpers', 'jspdf', 'jspdf-autotable' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-monitors', $js_base . 'monitors.js', [ 'qaproof-state', 'qaproof-results' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-history',  $js_base . 'history.js',  [ 'qaproof-state', 'qaproof-results' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-form',     $js_base . 'form.js',     [ 'qaproof-state', 'qaproof-polling', 'qaproof-results' ], QAPROOF_VERSION, true );
-        wp_enqueue_script( 'qaproof-init',     $js_base . 'init.js',     [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results' ], QAPROOF_VERSION, true );
+        wp_enqueue_script( 'qaproof-helpers',  $js_base . 'helpers.js',  [],                   $asset_ver( 'admin/js/modules/helpers.js' ), true );
+        wp_enqueue_script( 'qaproof-state',    $js_base . 'state.js',    [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/state.js' ), true );
+        wp_enqueue_script( 'qaproof-theme',    $js_base . 'theme.js',    [],                   $asset_ver( 'admin/js/modules/theme.js' ), true );
+        wp_enqueue_script( 'qaproof-polling',  $js_base . 'polling.js',  [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/polling.js' ), true );
+        wp_enqueue_script( 'qaproof-results',  $js_base . 'results.js',  [ 'qaproof-state', 'chartjs' ], $asset_ver( 'admin/js/modules/results.js' ), true );
+        wp_enqueue_script( 'qaproof-pdf',      $js_base . 'pdf.js',      [ 'qaproof-helpers', 'jspdf', 'jspdf-autotable' ], $asset_ver( 'admin/js/modules/pdf.js' ), true );
+        wp_enqueue_script( 'qaproof-monitors', $js_base . 'monitors.js', [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/monitors.js' ), true );
+        wp_enqueue_script( 'qaproof-history',  $js_base . 'history.js',  [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/history.js' ), true );
+        wp_enqueue_script( 'qaproof-form',     $js_base . 'form.js',     [ 'qaproof-state', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/form.js' ), true );
+        wp_enqueue_script( 'qaproof-init',     $js_base . 'init.js',     [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/init.js' ), true );
 
         wp_localize_script( 'qaproof-helpers', 'qaproof', [
             'pluginUrl'     => QAPROOF_PLUGIN_URL,

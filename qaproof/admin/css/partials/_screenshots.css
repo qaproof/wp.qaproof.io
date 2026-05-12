@@ -249,6 +249,28 @@
   transform: translate(-50%, -50%) scale(1.25);
 }
 
+/* Flipped variant — for anchors near the top of the viewport. The marker draws
+   downward from its anchor (tail at the top pointing UP at the anchor, head
+   below). Tail is positioned INSIDE the marker so it can't poke above the
+   layer and get clipped by overflow:hidden. */
+#qaproof-app .qaproof-marker.qaproof-marker-flipped {
+  transform: translate(-50%, 0);
+}
+#qaproof-app .qaproof-marker.qaproof-marker-flipped .marker-tail {
+  bottom: auto;
+  top: 0;
+  border-top: none;
+  border-bottom: 12px solid currentColor;
+}
+#qaproof-app .qaproof-marker.qaproof-marker-flipped .marker-head {
+  top: auto;
+  bottom: 0;
+}
+#qaproof-app .qaproof-marker.qaproof-marker-flipped::before {
+  top: auto;
+  bottom: 0;
+}
+
 /* Multi-issue pie marker */
 #qaproof-app .qaproof-marker-pie .marker-head { background: var(--qp-pie-bg); }
 #qaproof-app .qaproof-marker-pie .marker-tail { color: var(--qp-white); }
@@ -260,6 +282,9 @@
   z-index: 10;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
 }
+#qaproof-app .qaproof-marker.qaproof-marker-flipped:hover {
+  transform: translate(-50%, 0) scale(1.2);
+}
 #qaproof-app .qaproof-marker:hover::before {
   animation: none;
   opacity: 0;
@@ -270,6 +295,9 @@
   transform: translate(-50%, -100%) scale(1.25);
   z-index: 10;
   filter: drop-shadow(0 0 8px rgba(0, 173, 181, 0.6)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+#qaproof-app .qaproof-marker.qaproof-marker-flipped.active {
+  transform: translate(-50%, 0) scale(1.25);
 }
 #qaproof-app .qaproof-marker.active .marker-head {
   border-color: var(--qp-accent);
