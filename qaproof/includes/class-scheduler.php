@@ -189,10 +189,11 @@ class QAProof_Scheduler {
      * @param int $monitor_id
      */
     public static function run_single_monitor( $monitor_id ) {
-        // Extend PHP execution limit so polling loop (up to 5 min) and
+        // Extend PHP execution limit so polling loop (up to 12 min) and
         // baseline creation (60–90 s screenshot) don't hit max_execution_time.
-        // 0 = unlimited; capped at 360 s as a safety net.
-        @set_time_limit( 360 );
+        // 900s lines up with Apache Timeout (apache-timeout.conf) + php.ini
+        // (uploads.ini) so neither layer kills us mid-iteration.
+        @set_time_limit( 900 );
 
         $monitor = QAProof_Monitor::get( $monitor_id );
         if ( ! $monitor || ! $monitor['is_enabled'] ) {
@@ -268,8 +269,11 @@ class QAProof_Scheduler {
             return;
         }
 
-        // Step 2: Poll for results (max 5 minutes, every 10 seconds)
-        $max_attempts = 30;
+        // Step 2: Poll for results — max 3 minutes (18 attempts × 10s).
+        // Typical regression tests finish in 30–120s; capping at 180s means a
+        // truly hung job surfaces a clear "timed out" failure to the user
+        // instead of leaving them in limbo for 5+ minutes.
+        $max_attempts = 18;
         $result = null;
 
         for ( $i = 0; $i < $max_attempts; $i++ ) {
@@ -312,7 +316,7 @@ class QAProof_Scheduler {
             QAProof_Result::create( array(
                 'monitor_id'    => $monitor['id'],
                 'status'        => 'failed',
-                'error_message' => 'Test timed out after 5 minutes.',
+                'error_message' => 'Test timed out after 3 minutes.',
             ) );
 
             QAProof_Monitor::update( $monitor['id'], array(
