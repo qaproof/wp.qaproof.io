@@ -31,9 +31,18 @@ class QAProof_Test_History {
             $row = array_merge( [ 'job_id' => $job_id ], $row );
         }
 
+        // Tag with current account hash when the column exists.
+        if ( self::column_exists( 'api_key_hash' ) ) {
+            $row['api_key_hash'] = QAProof_Settings::get_api_key_hash();
+        }
+
         $formats = $has_job_id_col && $job_id ? [ '%s', '%s', '%s' ] : [ '%s', '%s' ];
         $formats[] = $row['score'] !== null ? '%d' : '%s';
-        $formats = array_merge( $formats, [ '%s', '%s', '%s', '%s', '%s', '%s' ] );
+        $extra = [ '%s', '%s', '%s', '%s', '%s', '%s' ];
+        if ( isset( $row['api_key_hash'] ) ) {
+            $extra[] = '%s';
+        }
+        $formats = array_merge( $formats, $extra );
 
         $result = $wpdb->insert( self::table_name(), $row, $formats );
 
@@ -73,38 +82,36 @@ class QAProof_Test_History {
         $defaults = [ 'limit' => 50, 'offset' => 0, 'test_type' => '', 'exclude_type' => '' ];
         $args     = wp_parse_args( $args, $defaults );
 
+        // Build WHERE conditions.
+        $where  = [ '1=1' ];
+        $values = [];
+
+        // Scope to current account when the column exists.
+        if ( self::column_exists( 'api_key_hash' ) ) {
+            $hash = QAProof_Settings::get_api_key_hash();
+            if ( $hash !== '' ) {
+                $where[]  = 'api_key_hash = %s';
+                $values[] = $hash;
+            }
+        }
+
         if ( ! empty( $args['test_type'] ) ) {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            return $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE test_type = %s ORDER BY created_at DESC LIMIT %d OFFSET %d",
-                    sanitize_text_field( $args['test_type'] ),
-                    $args['limit'],
-                    $args['offset']
-                ),
-                ARRAY_A
-            );
+            $where[]  = 'test_type = %s';
+            $values[] = sanitize_text_field( $args['test_type'] );
+        } elseif ( ! empty( $args['exclude_type'] ) ) {
+            $where[]  = 'test_type != %s';
+            $values[] = sanitize_text_field( $args['exclude_type'] );
         }
 
-        if ( ! empty( $args['exclude_type'] ) ) {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            return $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE test_type != %s ORDER BY created_at DESC LIMIT %d OFFSET %d",
-                    sanitize_text_field( $args['exclude_type'] ),
-                    $args['limit'],
-                    $args['offset']
-                ),
-                ARRAY_A
-            );
-        }
+        $values[] = (int) $args['limit'];
+        $values[] = (int) $args['offset'];
 
+        $where_sql = implode( ' AND ', $where );
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table} ORDER BY created_at DESC LIMIT %d OFFSET %d",
-                $args['limit'],
-                $args['offset']
+                "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                ...$values
             ),
             ARRAY_A
         );
@@ -127,22 +134,32 @@ class QAProof_Test_History {
 
     public static function count( $test_type = '', $exclude_type = '' ) {
         global $wpdb;
-        $table = self::table_name();
+        $table  = self::table_name();
+        $where  = [ '1=1' ];
+        $values = [];
+
+        // Scope to current account.
+        if ( self::column_exists( 'api_key_hash' ) ) {
+            $hash = QAProof_Settings::get_api_key_hash();
+            if ( $hash !== '' ) {
+                $where[]  = 'api_key_hash = %s';
+                $values[] = $hash;
+            }
+        }
 
         if ( ! empty( $test_type ) ) {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            return (int) $wpdb->get_var(
-                $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE test_type = %s", sanitize_text_field( $test_type ) )
-            );
+            $where[]  = 'test_type = %s';
+            $values[] = sanitize_text_field( $test_type );
+        } elseif ( ! empty( $exclude_type ) ) {
+            $where[]  = 'test_type != %s';
+            $values[] = sanitize_text_field( $exclude_type );
         }
 
-        if ( ! empty( $exclude_type ) ) {
+        $where_sql = implode( ' AND ', $where );
+        if ( ! empty( $values ) ) {
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            return (int) $wpdb->get_var(
-                $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE test_type != %s", sanitize_text_field( $exclude_type ) )
-            );
+            return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", ...$values ) );
         }
-
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
     }

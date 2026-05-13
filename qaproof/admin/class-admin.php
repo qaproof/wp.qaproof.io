@@ -154,7 +154,7 @@ class QAProof_Admin {
             ],
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>\d+)', [
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[\w-]+)', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_get_monitor' ],
@@ -172,19 +172,19 @@ class QAProof_Admin {
             ],
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>\d+)/run', [
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[\w-]+)/run', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_run_monitor' ],
             'permission_callback' => $permission,
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>\d+)/results', [
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[\w-]+)/results', [
             'methods'             => 'GET',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_get_results' ],
             'permission_callback' => $permission,
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/results/(?P<id>\d+)/approve', [
+        register_rest_route( self::REST_NAMESPACE, '/results/(?P<id>[\w-]+)/approve', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_approve_result' ],
             'permission_callback' => $permission,
@@ -287,7 +287,7 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/test-history/(?P<id>\d+)', [
+        register_rest_route( self::REST_NAMESPACE, '/test-history/(?P<id>[\w-]+)', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ 'QAProof_Admin_REST_History', 'handle_get_test_history' ],
@@ -299,6 +299,7 @@ class QAProof_Admin {
                 'permission_callback' => $permission,
             ],
         ]);
+
     }
 
     // ============================
@@ -420,18 +421,27 @@ class QAProof_Admin {
     public static function render_dashboard_page() {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
 
-        $monitors        = QAProof_Monitor::get_all();
-        $total_monitors  = count( $monitors );
+        // Fetch monitors + history stats from the SaaS API
+        $monitors        = [];
+        $total_monitors  = 0;
         $active_monitors = 0;
-
-        foreach ( $monitors as $m ) {
-            if ( (int) $m['is_enabled'] ) $active_monitors++;
+        $monitors_raw    = QAProof_API_Client::monitors_list();
+        if ( ! is_wp_error( $monitors_raw ) ) {
+            $monitors       = $monitors_raw;
+            $total_monitors = count( $monitors );
+            foreach ( $monitors as $m ) {
+                if ( (int) $m['is_enabled'] ) $active_monitors++;
+            }
         }
 
         $default_threshold = (int) get_option( 'qaproof_default_threshold', 95 );
-        $history_stats     = QAProof_Test_History::get_stats( $default_threshold );
-        $total_tests       = $history_stats['total'];
-        $avg_score         = $history_stats['avg_score'];
+        $total_tests = 0;
+        $avg_score   = null;
+        $history_stats_raw = QAProof_API_Client::history_stats( $default_threshold );
+        if ( ! is_wp_error( $history_stats_raw ) ) {
+            $total_tests = $history_stats_raw['total']     ?? 0;
+            $avg_score   = $history_stats_raw['avg_score'] ?? null;
+        }
         $has_api_key       = ! empty( QAProof_Settings::get_api_key() );
 
         // Fetch live account data from API (AI generations + plan + monitor limit)
