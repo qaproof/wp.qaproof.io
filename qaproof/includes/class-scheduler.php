@@ -167,7 +167,12 @@ class QAProof_Scheduler {
      * @param string $schedule 'daily', 'weekly', or 'monthly'.
      */
     private static function dispatch_monitors( $schedule ) {
-        $monitors = QAProof_Monitor::get_due( $schedule );
+        $monitors = QAProof_API_Client::monitors_list_due( $schedule );
+
+        if ( is_wp_error( $monitors ) ) {
+            error_log( '[QAProof] dispatch_monitors failed: ' . $monitors->get_error_message() );
+            return;
+        }
 
         // Stagger events by 120 seconds each so they run sequentially.
         // Each regression test takes ~60 s; 120 s gap ensures the previous
@@ -177,7 +182,7 @@ class QAProof_Scheduler {
             wp_schedule_single_event(
                 time() + $delay,
                 self::RUN_HOOK,
-                array( (int) $monitor['id'] )
+                array( (string) $monitor['id'] )  // UUID string
             );
             $delay += 120;
         }
@@ -186,7 +191,7 @@ class QAProof_Scheduler {
     /**
      * Execute a single monitor: create baseline or run regression test.
      *
-     * @param int $monitor_id
+     * @param string $monitor_id UUID string (from the SaaS API).
      */
     public static function run_single_monitor( $monitor_id ) {
         // Extend PHP execution limit so polling loop (up to 12 min) and
@@ -195,8 +200,8 @@ class QAProof_Scheduler {
         // (uploads.ini) so neither layer kills us mid-iteration.
         @set_time_limit( 900 );
 
-        $monitor = QAProof_Monitor::get( $monitor_id );
-        if ( ! $monitor || ! $monitor['is_enabled'] ) {
+        $monitor = QAProof_API_Client::monitors_get( (string) $monitor_id );
+        if ( is_wp_error( $monitor ) || ! $monitor['is_enabled'] ) {
             return;
         }
 
@@ -213,31 +218,30 @@ class QAProof_Scheduler {
     /**
      * Create a baseline for a monitor via the API.
      *
-     * @param array $monitor
+     * @param array $monitor Normalised monitor row.
      */
     private static function create_baseline_for_monitor( $monitor ) {
         $result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
 
         if ( is_wp_error( $result ) ) {
-            QAProof_Result::create( array(
-                'monitor_id'    => $monitor['id'],
+            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => $result->get_error_message(),
             ) );
             return;
         }
 
-        QAProof_Monitor::update( $monitor['id'], array(
+        QAProof_API_Client::monitors_update( $monitor['id'], array(
             'baseline_key' => $result['key'],
-            'has_baseline'  => 1,
-            'last_run_at'   => current_time( 'mysql' ),
+            'has_baseline' => 1,
+            'last_run_at'  => gmdate( 'c' ),
         ) );
     }
 
     /**
      * Run a regression test for a monitor via the API.
      *
-     * @param array $monitor
+     * @param array $monitor Normalised monitor row.
      */
     private static function run_regression_for_monitor( $monitor ) {
         // Step 1: Submit test job (returns jobId immediately)
@@ -247,22 +251,19 @@ class QAProof_Scheduler {
         ) );
 
         if ( is_wp_error( $job_response ) ) {
-            QAProof_Result::create( array(
-                'monitor_id'    => $monitor['id'],
+            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => $job_response->get_error_message(),
             ) );
-
-            QAProof_Monitor::update( $monitor['id'], array(
-                'last_run_at' => current_time( 'mysql' ),
+            QAProof_API_Client::monitors_update( $monitor['id'], array(
+                'last_run_at' => gmdate( 'c' ),
             ) );
             return;
         }
 
         $job_id = isset( $job_response['jobId'] ) ? $job_response['jobId'] : null;
         if ( empty( $job_id ) ) {
-            QAProof_Result::create( array(
-                'monitor_id'    => $monitor['id'],
+            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => 'API did not return a job ID.',
             ) );
@@ -289,7 +290,6 @@ class QAProof_Scheduler {
                 $result = $poll['result'];
 
                 // Fetch screenshots separately — the poll endpoint strips them to keep responses small.
-                // get_job_screenshots() calls GET /api/jobs/:id/screenshots which returns the full base64 data.
                 $screenshots_response = QAProof_API_Client::get_job_screenshots( $job_id );
                 if ( ! is_wp_error( $screenshots_response ) && ! empty( $screenshots_response['screenshots'] ) ) {
                     $result['screenshots'] = $screenshots_response['screenshots'];
@@ -299,57 +299,52 @@ class QAProof_Scheduler {
             }
 
             if ( isset( $poll['status'] ) && $poll['status'] === 'failed' ) {
-                QAProof_Result::create( array(
-                    'monitor_id'    => $monitor['id'],
+                QAProof_API_Client::monitors_save_result( $monitor['id'], array(
                     'status'        => 'failed',
                     'error_message' => isset( $poll['error'] ) ? $poll['error'] : 'Test failed on the server.',
                 ) );
-
-                QAProof_Monitor::update( $monitor['id'], array(
-                    'last_run_at' => current_time( 'mysql' ),
+                QAProof_API_Client::monitors_update( $monitor['id'], array(
+                    'last_run_at' => gmdate( 'c' ),
                 ) );
                 return;
             }
         }
 
         if ( $result === null ) {
-            QAProof_Result::create( array(
-                'monitor_id'    => $monitor['id'],
+            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => 'Test timed out after 3 minutes.',
             ) );
-
-            QAProof_Monitor::update( $monitor['id'], array(
-                'last_run_at' => current_time( 'mysql' ),
+            QAProof_API_Client::monitors_update( $monitor['id'], array(
+                'last_run_at' => gmdate( 'c' ),
             ) );
             return;
         }
 
-        $score = isset( $result['score'] ) ? (int) $result['score'] : null;
+        $score       = isset( $result['score'] )      ? (int) $result['score']   : null;
         $has_changes = ! empty( $result['hasChanges'] );
 
-        // Store the result
-        QAProof_Result::create( array(
-            'monitor_id'      => $monitor['id'],
+        // Store the result in the SaaS API
+        QAProof_API_Client::monitors_save_result( $monitor['id'], array(
             'score'           => $score,
             'has_changes'     => $has_changes ? 1 : 0,
-            'summary'         => isset( $result['summary'] ) ? $result['summary'] : null,
-            'categories'      => isset( $result['categories'] ) ? $result['categories'] : null,
-            'differences'     => isset( $result['differences'] ) ? $result['differences'] : null,
+            'summary'         => isset( $result['summary'] )         ? $result['summary']         : null,
+            'categories'      => isset( $result['categories'] )      ? $result['categories']      : null,
+            'differences'     => isset( $result['differences'] )     ? $result['differences']     : null,
             'recommendations' => isset( $result['recommendations'] ) ? $result['recommendations'] : null,
-            'screenshots'     => isset( $result['screenshots'] ) ? $result['screenshots'] : null,
+            'screenshots'     => isset( $result['screenshots'] )     ? $result['screenshots']     : null,
             'status'          => 'completed',
         ) );
 
-        QAProof_Monitor::update( $monitor['id'], array(
-            'last_run_at' => current_time( 'mysql' ),
+        QAProof_API_Client::monitors_update( $monitor['id'], array(
+            'last_run_at' => gmdate( 'c' ),
             'last_score'  => $score,
         ) );
 
         // Send notifications based on the monitor's notify_on setting:
         //   'failures' (default) — only when score drops below threshold
         //   'all'               — after every completed run
-        $notify_on = isset( $monitor['notify_on'] ) ? $monitor['notify_on'] : 'failures';
+        $notify_on       = isset( $monitor['notify_on'] ) ? $monitor['notify_on'] : 'failures';
         $below_threshold = $score !== null && $score < (int) $monitor['threshold_score'];
 
         if ( $notify_on === 'all' || ( $notify_on === 'failures' && $below_threshold ) ) {

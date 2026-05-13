@@ -1034,6 +1034,21 @@ class QAProof_Settings {
     }
 
     /**
+     * Return a short hash of the given API key (or the currently saved one).
+     * Used to scope monitors and test history per account without storing the key itself.
+     *
+     * @param string|null $key  Key to hash, or null to use the saved option.
+     * @return string  16-char hex string, or '' if no key.
+     */
+    public static function get_api_key_hash( $key = null ) {
+        $key = ( $key !== null ) ? $key : self::get_api_key();
+        if ( empty( $key ) ) {
+            return '';
+        }
+        return substr( hash( 'sha256', $key ), 0, 16 );
+    }
+
+    /**
      * Sanitize max history — clamp between 5 and 30.
      */
     public static function sanitize_max_history( $value ) {
