@@ -20,8 +20,10 @@ class QAProof_Admin_AJAX {
     }
 
     /**
-     * AJAX handler: fetch account info from /api/me (uses saved API key).
-     * Returns user email, plan, AI generation usage, and limits.
+     * AJAX handler: fetch account info from /api/me.
+     * Accepts an optional `api_key` POST param so the JS can preview an unsaved key
+     * without triggering a false "Invalid API key" error for the previously saved one.
+     * Falls back to the saved option when no key is provided.
      */
     public static function ajax_fetch_account_info() {
         check_ajax_referer( 'qaproof_ajax', 'nonce' );
@@ -30,7 +32,16 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
         }
 
-        $result = QAProof_API_Client::get_account_info();
+        // Use the key passed from the browser (unsaved preview) if it looks valid,
+        // otherwise fall back to whatever is stored in options.
+        $posted_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+        $legacy     = '/^qap_[0-9a-f]{64}$/i';
+        $current    = '/^qap_(?:live|test)_sk_[0-9a-f]{48}$/i';
+        $use_key    = ( preg_match( $legacy, $posted_key ) || preg_match( $current, $posted_key ) )
+                      ? $posted_key
+                      : null; // null → get_account_info() will use saved option
+
+        $result = QAProof_API_Client::get_account_info( $use_key );
 
         if ( is_wp_error( $result ) ) {
             wp_send_json_error( [ 'message' => $result->get_error_message() ] );

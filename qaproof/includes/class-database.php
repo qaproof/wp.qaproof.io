@@ -35,10 +35,12 @@ class QAProof_Database {
             last_run_at datetime DEFAULT NULL,
             last_score int(3) DEFAULT NULL,
             has_baseline tinyint(1) DEFAULT 0 NOT NULL,
+            api_key_hash varchar(16) DEFAULT '' NOT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
             KEY baseline_key (baseline_key),
-            KEY is_enabled (is_enabled)
+            KEY is_enabled (is_enabled),
+            KEY api_key_hash (api_key_hash)
         ) {$charset_collate};
 
         CREATE TABLE {$results_table} (
@@ -72,17 +74,19 @@ class QAProof_Database {
             recommendations_json longtext DEFAULT NULL,
             screenshots_json longtext DEFAULT NULL,
             extracted_data_json longtext DEFAULT NULL,
+            api_key_hash varchar(16) DEFAULT '' NOT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY job_id (job_id),
             KEY test_type (test_type),
-            KEY created_at (created_at)
+            KEY created_at (created_at),
+            KEY api_key_hash (api_key_hash)
         ) {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.5.0' );
+        update_option( 'qaproof_db_version', '1.6.0' );
     }
 
     /**
@@ -91,7 +95,7 @@ class QAProof_Database {
      */
     public static function maybe_upgrade() {
         $current = get_option( 'qaproof_db_version', '0' );
-        if ( version_compare( $current, '1.5.0', '>=' ) ) {
+        if ( version_compare( $current, '1.6.0', '>=' ) ) {
             return;
         }
         // Re-run create_tables() — dbDelta() handles ADD COLUMN / ADD KEY safely.
