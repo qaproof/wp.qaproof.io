@@ -141,6 +141,104 @@
   }
 
   // ============================
+  // Branded modal dialogs (replacement for native window.confirm / window.alert).
+  // The native popups break out of the WP admin's visual style and look generic;
+  // these match the rest of the QAProof UI (Kodchasan font, teal accents, pill
+  // buttons, dark-mode aware via ancestor #qaproof-app.qaproof-dark).
+  //
+  //   QAProof.confirm(message, opts)  → Promise<boolean>
+  //   QAProof.alert(message, opts)    → Promise<void>
+  //
+  // opts: { title?, okLabel?, cancelLabel?, danger? }
+  // ============================
+  function ensureModalRoot() {
+    var root = document.getElementById('qaproof-modal-root');
+    if (root) return root;
+    root = document.createElement('div');
+    root.id = 'qaproof-modal-root';
+    // Mount inside the QAProof app container when present so dark-mode +
+    // scoped styles cascade. Fall back to <body> when invoked from a page
+    // that doesn't render the app shell (e.g. settings without dashboard).
+    var host = document.getElementById('qaproof-app') || document.body;
+    host.appendChild(root);
+    return root;
+  }
+
+  function openModal(opts) {
+    var o = opts || {};
+    var isConfirm = !!o.confirm;
+    var root = ensureModalRoot();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'qaproof-modal-overlay';
+    if (o.danger) overlay.classList.add('qaproof-modal-danger');
+
+    overlay.innerHTML =
+      '<div class="qaproof-modal" role="dialog" aria-modal="true" aria-labelledby="qaproof-modal-title">' +
+        (o.title ? '<h3 class="qaproof-modal-title" id="qaproof-modal-title">' + escapeHtml(o.title) + '</h3>' : '') +
+        '<div class="qaproof-modal-msg">' + escapeHtml(o.message || '') + '</div>' +
+        '<div class="qaproof-modal-actions">' +
+          (isConfirm
+            ? '<button type="button" class="qaproof-modal-btn qaproof-modal-cancel">' +
+                escapeHtml(o.cancelLabel || (qaproof.i18n && qaproof.i18n.modalCancel) || 'Cancel') +
+              '</button>'
+            : '') +
+          '<button type="button" class="qaproof-modal-btn qaproof-modal-ok' +
+            (o.danger ? ' qaproof-modal-btn-danger' : ' qaproof-modal-btn-primary') + '">' +
+            escapeHtml(o.okLabel || (qaproof.i18n && qaproof.i18n.modalOk) || 'OK') +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    root.appendChild(overlay);
+    // Trigger entry animation on next frame
+    requestAnimationFrame(function () { overlay.classList.add('qaproof-modal-visible'); });
+
+    return new Promise(function (resolve) {
+      function close(value) {
+        overlay.classList.remove('qaproof-modal-visible');
+        // Wait for the fade-out so users see it dismiss
+        setTimeout(function () { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
+        document.removeEventListener('keydown', onKey, true);
+        resolve(value);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') { e.preventDefault(); close(isConfirm ? false : undefined); }
+        else if (e.key === 'Enter' && document.activeElement === okBtn) { e.preventDefault(); close(isConfirm ? true : undefined); }
+      }
+
+      var okBtn = overlay.querySelector('.qaproof-modal-ok');
+      var cancelBtn = overlay.querySelector('.qaproof-modal-cancel');
+      okBtn.addEventListener('click', function () { close(isConfirm ? true : undefined); });
+      if (cancelBtn) cancelBtn.addEventListener('click', function () { close(false); });
+      // Click on the dim backdrop (outside the dialog) cancels confirm,
+      // dismisses alert. Clicks inside the dialog itself are absorbed.
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) close(isConfirm ? false : undefined);
+      });
+      document.addEventListener('keydown', onKey, true);
+      // Auto-focus the primary button so Enter / Esc work without clicking.
+      setTimeout(function () { okBtn.focus(); }, 30);
+    });
+  }
+
+  function qpConfirm(message, opts) {
+    return openModal({ message: message, confirm: true,
+      title:       opts && opts.title,
+      okLabel:     opts && opts.okLabel,
+      cancelLabel: opts && opts.cancelLabel,
+      danger:      opts && opts.danger,
+    });
+  }
+  function qpAlert(message, opts) {
+    return openModal({ message: message, confirm: false,
+      title:       opts && opts.title,
+      okLabel:     opts && opts.okLabel,
+      danger:      opts && opts.danger,
+    });
+  }
+
+  // ============================
   // Expose on namespace
   // ============================
   QAProof.safeJson = safeJson;
@@ -156,6 +254,8 @@
   QAProof.escapeAttr = escapeAttr;
   QAProof.truncate = truncate;
   QAProof.waitForImage = waitForImage;
+  QAProof.confirm = qpConfirm;
+  QAProof.alert = qpAlert;
 
   // QAProof seal PNG for PDF reports — loaded from separate inline to keep helpers clean
   // This is set here so pdf.js can reference Q.cachedSealPng

@@ -274,6 +274,7 @@
 
   function initMonitorsPage() {
     loadMonitors();
+    clearAdminMenuBadge();
 
     if (addMonitorBtn) {
       addMonitorBtn.addEventListener('click', function () {
@@ -326,6 +327,32 @@
     if (monitorId) {
       showMonitorDetail(parseInt(monitorId, 10));
     }
+  }
+
+  /**
+   * Clear the WP admin "QAProof — 20" menu badge whenever the user opens the
+   * Monitors page. The badge counts how many monitor regressions scored
+   * below threshold since it was last cleared, and the natural "I've seen
+   * the alerts" moment is when the user lands on the page that shows them.
+   *
+   * Two-step: POST to the REST clear-endpoint (so the WP transient counter
+   * resets server-side, the next page render won't re-emit the badge), and
+   * yank the .awaiting-mod span out of the sidebar so the user sees the
+   * count disappear immediately without waiting for a full reload.
+   */
+  function clearAdminMenuBadge() {
+    apiCall('POST', '/notifications/clear').catch(function () { /* best-effort */ });
+
+    var menu = document.getElementById('adminmenu');
+    if (!menu) return;
+    // The Monitors submenu anchor has href ending with page=qaproof-monitors.
+    // We strip the .awaiting-mod span only from there (and not from the
+    // parent QAProof anchor that contains "page=qaproof" as a substring).
+    var anchors = menu.querySelectorAll('a[href*="page=qaproof-monitors"]');
+    anchors.forEach(function (a) {
+      var badge = a.querySelector('.awaiting-mod');
+      if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
+    });
   }
 
   function apiCall(method, path, body) {
@@ -401,9 +428,11 @@
       var isEnabled    = parseInt(m.is_enabled, 10);
       var lastScore    = m.last_score != null ? parseInt(m.last_score, 10) : null;
 
-      // Check if a background job (baseline or regression) is currently running for this card
-      var isPendingRun = false;
-      try { isPendingRun = !!sessionStorage.getItem('qaproof_pending_run_' + m.id); } catch(e) {}
+      // Check if a background job (baseline or regression) is currently running for this card.
+      // hasActivePendingRun() applies a stale guard: if the run started > 8 min ago and no
+      // result materialised, the server-side PHP process most likely died (Apache request
+      // timeout) — clear the flags so the card returns to its real state, surface an error.
+      var isPendingRun = hasActivePendingRun(m.id);
 
       // Badge
       var badgeClass, badgeLabel;
@@ -682,6 +711,10 @@
       if (resp.success) {
         hideMonitorForm();
         loadMonitors(true);
+        showToast(editId
+          ? (qaproof.i18n.monitorUpdated || 'Монітор оновлено.')
+          : (qaproof.i18n.monitorCreated || 'Монітор додано.'),
+          'success');
       } else {
         var msg = (resp.error && resp.error.message) || (qaproof.i18n.monitorSaveFailed || 'Failed to save monitor.');
         showToast(msg, 'error');
@@ -874,6 +907,35 @@
   // Runs silently in the list view while a baseline or regression job is in progress.
   // On completion it calls loadMonitors() to refresh the card state.
 
+  // Returns true if monitor has an active pending run within the stale window.
+  // If the run started > 8 min ago, treats it as a failed/dead run, clears the
+  // session flags, and fires a one-time error toast so the user knows why the
+  // "Running" indicator vanished.
+  var STALE_RUN_MS = 8 * 60 * 1000;
+  function hasActivePendingRun(monitorId) {
+    try {
+      if (!sessionStorage.getItem('qaproof_pending_run_' + monitorId)) return false;
+      var startedAt = parseInt(sessionStorage.getItem('qaproof_run_start_' + monitorId), 10);
+      if (!startedAt || (Date.now() - startedAt) <= STALE_RUN_MS) return true;
+
+      // Stale — clean up and warn (once per monitor per browser tab)
+      sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
+      sessionStorage.removeItem('qaproof_run_start_' + monitorId);
+      var warnKey = 'qaproof_run_stale_warned_' + monitorId;
+      if (!sessionStorage.getItem(warnKey)) {
+        sessionStorage.setItem(warnKey, '1');
+        setTimeout(function () {
+          showToast('A monitor run started ' + Math.round((Date.now() - startedAt) / 60000) +
+            ' min ago never completed. The job likely failed on the server. Try running it again.',
+            'error');
+        }, 200);
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Show a slide-in toast notification (auto-dismisses after 5s).
   function showToast(message, type, onAction, actionLabel) {
     type = type || 'success';
@@ -1022,9 +1084,7 @@
   function startListPolling(monitors) {
     stopListPolling();
     monitors.forEach(function (m) {
-      var pendingRun = false;
-      try { pendingRun = !!sessionStorage.getItem('qaproof_pending_run_' + m.id); } catch(e) {}
-      if (!pendingRun) return;
+      if (!hasActivePendingRun(m.id)) return;
 
       if (!parseInt(m.has_baseline, 10)) {
         // Baseline capture in progress
@@ -1220,7 +1280,7 @@
         try { sessionStorage.setItem('qaproof_pending_run_' + id, '1'); } catch(e) {}
         showMonitorDetail(id, true);
       } else {
-        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
+        Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
       }
     }).catch(function () {
       if (row) row.classList.remove('qaproof-monitor-running');
@@ -1235,9 +1295,10 @@
     if (!monitorDetail) return;
     // Survive page reloads — remember which monitor is open
     try { sessionStorage.setItem('qaproof_open_monitor', id); } catch(e) {}
-    // Survive page reloads — check if this monitor has a pending run
+    // Survive page reloads — check if this monitor has a pending run.
+    // Skip stale runs (see hasActivePendingRun for the stale window logic).
     if (!shouldPoll) {
-      try { shouldPoll = !!sessionStorage.getItem('qaproof_pending_run_' + id); } catch(e) {}
+      shouldPoll = hasActivePendingRun(id);
     }
 
     // Push history state so browser back button returns to monitors list
@@ -1521,21 +1582,26 @@
   }
 
   function approveResult(resultId, monitorId, btn) {
-    if (!confirm(qaproof.i18n.monitorApproveConfirm || 'Approve these changes? This will update the baseline to the current page state.')) return;
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
-    }
-    apiCall('POST', '/results/' + resultId + '/approve').then(function (resp) {
-      if (resp.success) {
-        showMonitorDetail(monitorId);
-      } else {
-        alert((resp.error && resp.error.message) || (qaproof.i18n.monitorApproveFailed || 'Failed to approve.'));
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
-        }
+    Q.confirm(
+      qaproof.i18n.monitorApproveConfirm || 'Approve these changes? This will update the baseline to the current page state.',
+      { okLabel: qaproof.i18n.monitorApproveChanges || 'Approve Changes' }
+    ).then(function (ok) {
+      if (!ok) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
       }
+      apiCall('POST', '/results/' + resultId + '/approve').then(function (resp) {
+        if (resp.success) {
+          showMonitorDetail(monitorId);
+        } else {
+          Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorApproveFailed || 'Failed to approve.'));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
+          }
+        }
+      });
     });
   }
 

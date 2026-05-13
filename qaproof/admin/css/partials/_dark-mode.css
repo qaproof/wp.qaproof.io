@@ -414,11 +414,50 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-secondary);
 }
 
-/* Dark: monitors loading overlay */
+/* Dark: monitors loading overlay (and the monitor-detail inline capturing state) */
 #qaproof-app.qaproof-dark #qaproof-loading,
 #qaproof-app.qaproof-dark #qaproof-a11y-loading,
-#qaproof-app.qaproof-dark #qaproof-monitors-loading {
+#qaproof-app.qaproof-dark #qaproof-monitors-loading,
+#qaproof-app.qaproof-dark .qaproof-capturing-state {
   background: var(--qp-bg-card);
+}
+/* Light-theme rule sets the loading title color to var(--qp-border-light),
+   which on dark theme resolves to rgba(255,255,255,0.08) — almost invisible
+   on the dark card. Override to a fully readable light color so titles like
+   "Generating audit report…" / "Taking screenshot…" stand out. */
+#qaproof-app.qaproof-dark #qaproof-loading-text,
+#qaproof-app.qaproof-dark #qaproof-a11y-loading-text,
+#qaproof-app.qaproof-dark #qaproof-monitors-loading-text,
+#qaproof-app.qaproof-dark .qaproof-capturing-text {
+  color: var(--qp-text-primary) !important;
+}
+#qaproof-app.qaproof-dark #qaproof-loading-subtext,
+#qaproof-app.qaproof-dark #qaproof-a11y-loading-subtext,
+#qaproof-app.qaproof-dark .qaproof-capturing-sub {
+  color: var(--qp-text-secondary) !important;
+}
+
+/* Custom confirm/alert modal — dark theme. The modal mounts inside
+   #qaproof-app so the .qaproof-dark scope cascades correctly. */
+#qaproof-app.qaproof-dark .qaproof-modal {
+  background: var(--qp-bg-card);
+  color: var(--qp-text-primary);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+#qaproof-app.qaproof-dark .qaproof-modal-title {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-modal-msg {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-modal-cancel {
+  background: transparent;
+  border-color: var(--qp-border);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-modal-cancel:hover {
+  background: var(--qp-bg-surface);
+  color: var(--qp-text-primary);
 }
 
 /* Dark: monitor table */
@@ -995,6 +1034,12 @@ body.qaproof-dark-page #wpbody-content {
 }
 #qaproof-app.qaproof-dark .qaproof-star-btn {
   color: var(--qp-text-muted);
+}
+/* Active stars keep the same warm yellow as light theme — the muted grey
+   above only applies to unselected stars. Without this override the dark-mode
+   rule shadows .active and selected stars look identical to unselected ones. */
+#qaproof-app.qaproof-dark .qaproof-star-btn.active {
+  color: #F59E0B;
 }
 #qaproof-app.qaproof-dark .qaproof-feedback-labels {
   color: var(--qp-text-muted);

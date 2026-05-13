@@ -190,9 +190,11 @@ class QAProof_Admin_REST_Monitors {
         ] );
 
         // Make sure long-running background work isn't aborted if the browser
-        // closes the connection mid-capture.
+        // closes the connection mid-capture. 900s lines up with Apache Timeout
+        // (apache-timeout.conf) + php.ini max_execution_time (uploads.ini) so
+        // the poll loop won't be killed mid-iteration.
         ignore_user_abort( true );
-        @set_time_limit( 360 );
+        @set_time_limit( 900 );
 
         if ( function_exists( 'fastcgi_finish_request' ) ) {
             // PHP-FPM path — preferred when available
