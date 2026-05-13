@@ -22,6 +22,15 @@ class QAProof_Monitor {
         $where = array( '1=1' );
         $values = array();
 
+        // Scope to the current account's monitors when the column exists.
+        if ( self::column_exists( 'api_key_hash' ) ) {
+            $hash = QAProof_Settings::get_api_key_hash();
+            if ( $hash !== '' ) {
+                $where[]  = 'api_key_hash = %s';
+                $values[] = $hash;
+            }
+        }
+
         if ( isset( $args['is_enabled'] ) ) {
             $where[] = 'is_enabled = %d';
             $values[] = (int) $args['is_enabled'];
@@ -42,6 +51,22 @@ class QAProof_Monitor {
         }
 
         return $wpdb->get_results( $sql, ARRAY_A );
+    }
+
+    /**
+     * Check if a column exists in the monitors table (cached per request).
+     */
+    private static function column_exists( $column ) {
+        static $cache = [];
+        if ( isset( $cache[ $column ] ) ) {
+            return $cache[ $column ];
+        }
+        global $wpdb;
+        $table = $wpdb->prefix . 'qaproof_monitors';
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $result = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) );
+        $cache[ $column ] = ! empty( $result );
+        return $cache[ $column ];
     }
 
     /**
@@ -85,7 +110,17 @@ class QAProof_Monitor {
             'created_at'      => current_time( 'mysql' ),
         );
 
-        $result = $wpdb->insert( $table, $insert, array( '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%s', '%s' ) );
+        // Tag with current account hash when the column exists.
+        if ( self::column_exists( 'api_key_hash' ) ) {
+            $insert['api_key_hash'] = QAProof_Settings::get_api_key_hash();
+        }
+
+        $formats = array( '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%s', '%s' );
+        if ( isset( $insert['api_key_hash'] ) ) {
+            $formats[] = '%s';
+        }
+
+        $result = $wpdb->insert( $table, $insert, $formats );
         return $result ? $wpdb->insert_id : false;
     }
 

@@ -149,7 +149,8 @@ class QAProof_Admin_REST_Tests {
     }
 
     /**
-     * Save a test result to history (used when browser calls SaaS API directly).
+     * Save a test result to history.
+     * Proxied to the SaaS API — data is stored in PostgreSQL, not local MySQL.
      */
     public static function handle_save_test_result( WP_REST_Request $request ) {
         $params = $request->get_json_params();
@@ -161,21 +162,21 @@ class QAProof_Admin_REST_Tests {
             ], 400 );
         }
 
+        $result_data = is_array( $params['result'] ) ? $params['result'] : [];
+
         $save_data = array_merge(
             [
                 'test_type' => sanitize_text_field( $params['testType'] ),
                 'page_url'  => sanitize_url( $params['pageUrl'] ),
             ],
-            is_array( $params['result'] ) ? $params['result'] : []
+            $result_data
         );
 
-        $saved_id = QAProof_Test_History::save( $save_data );
-        $max = (int) get_option( 'qaproof_max_history', 30 );
-        QAProof_Test_History::purge_old( $max > 0 ? $max : 30 );
+        $saved = QAProof_API_Client::history_save( $save_data );
 
         return new WP_REST_Response( [
             'success'      => true,
-            'historySaved' => $saved_id ? true : false,
+            'historySaved' => ! is_wp_error( $saved ),
         ], 200 );
     }
 }

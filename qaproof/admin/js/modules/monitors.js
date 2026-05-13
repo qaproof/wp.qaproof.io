@@ -16,12 +16,12 @@
   // Track active monitor polling (detail view)
   var monitorPollTimer = null;
   var monitorPollCount = 0;
-  var monitorPollMaxAttempts = 60; // 5 minutes (every 5s)
+  var monitorPollMaxAttempts = 120; // 10 minutes (every 5s)
   var capturingStepTimers = [];
 
   // Track background list-view polls (one per monitor that has a pending run)
   var listPollTimers = {};
-  var LIST_POLL_MAX = 36; // 3 minutes at 5s intervals
+  var LIST_POLL_MAX = 120; // 10 minutes at 5s intervals
 
   // ---- Custom Datepicker ----
   var qaproofDatepicker = (function () {
@@ -325,7 +325,7 @@
     var urlParams = new URLSearchParams(window.location.search);
     var monitorId = urlParams.get('monitor_id');
     if (monitorId) {
-      showMonitorDetail(parseInt(monitorId, 10));
+      showMonitorDetail(monitorId);
     }
   }
 
@@ -377,20 +377,22 @@
     apiCall('GET', '/monitors').then(function (resp) {
       if (monitorsLoading) monitorsLoading.classList.add('hidden');
       if (!resp.success) {
-        if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">Failed to load monitors.</p>';
+        var errMsg = (resp.error && resp.error.message) ? resp.error.message : 'Failed to load monitors.';
+        if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + errMsg + '</p>';
         return;
       }
       // Restore detail view after a page reload
       var savedId = null;
       try { savedId = sessionStorage.getItem('qaproof_open_monitor'); } catch(e) {}
       if (savedId) {
-        showMonitorDetail(parseInt(savedId, 10));
+        showMonitorDetail(savedId);
         return;
       }
       renderMonitorsList(resp.data);
-    }).catch(function () {
+    }).catch(function (err) {
       if (monitorsLoading) monitorsLoading.classList.add('hidden');
-      if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">Failed to load monitors.</p>';
+      var msg = (err && err.message) ? err.message : 'Failed to load monitors.';
+      if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + msg + '</p>';
     });
   }
 
@@ -566,7 +568,7 @@
     monitorsListEl.querySelectorAll('.qaproof-monitor-card').forEach(function (card) {
       card.addEventListener('click', function (e) {
         if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[disabled]')) return;
-        showMonitorDetail(parseInt(card.dataset.id, 10));
+        showMonitorDetail(card.dataset.id);
       });
     });
 
@@ -574,14 +576,14 @@
       link.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        showMonitorDetail(parseInt(this.dataset.id, 10));
+        showMonitorDetail(this.dataset.id);
       });
     });
 
     monitorsListEl.querySelectorAll('.qaproof-run-monitor').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        runMonitor(parseInt(this.dataset.id, 10), this);
+        runMonitor(this.dataset.id, this);
       });
     });
 
@@ -589,21 +591,21 @@
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         if (this.dataset.busy) return;
-        toggleMonitor(parseInt(this.dataset.id, 10), parseInt(this.dataset.enabled, 10));
+        toggleMonitor(this.dataset.id, parseInt(this.dataset.enabled, 10));
       });
     });
 
     monitorsListEl.querySelectorAll('.qaproof-edit-monitor').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        editMonitor(parseInt(this.dataset.id, 10));
+        editMonitor(this.dataset.id);
       });
     });
 
     monitorsListEl.querySelectorAll('.qaproof-delete-monitor').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        deleteMonitor(parseInt(this.dataset.id, 10), this);
+        deleteMonitor(this.dataset.id, this);
       });
     });
 
@@ -693,7 +695,7 @@
       var normalizedNew = data.page_url.toLowerCase().replace(/\/$/, '');
       var cards = document.querySelectorAll('.qaproof-monitor-card');
       for (var ci = 0; ci < cards.length; ci++) {
-        var cardId = parseInt(cards[ci].dataset.id, 10);
+        var cardId = cards[ci].dataset.id;
         // Get URL from the domain link text + path span
         var domainEl = cards[ci].querySelector('.qaproof-mc-domain');
         var pathEl   = cards[ci].querySelector('.qaproof-mc-path');
@@ -911,7 +913,7 @@
   // If the run started > 8 min ago, treats it as a failed/dead run, clears the
   // session flags, and fires a one-time error toast so the user knows why the
   // "Running" indicator vanished.
-  var STALE_RUN_MS = 8 * 60 * 1000;
+  var STALE_RUN_MS = 15 * 60 * 1000;
   function hasActivePendingRun(monitorId) {
     try {
       if (!sessionStorage.getItem('qaproof_pending_run_' + monitorId)) return false;
@@ -1570,13 +1572,13 @@
 
     monitorDetail.querySelectorAll('.qaproof-approve-result').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        approveResult(parseInt(this.dataset.id, 10), monitor.id, this);
+        approveResult(this.dataset.id, monitor.id, this);
       });
     });
 
     monitorDetail.querySelectorAll('.qaproof-view-result').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        viewResult(parseInt(this.dataset.id, 10));
+        viewResult(this.dataset.id);
       });
     });
   }
@@ -1591,7 +1593,8 @@
         btn.disabled = true;
         btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
       }
-      apiCall('POST', '/results/' + resultId + '/approve').then(function (resp) {
+      var approvePath = '/results/' + resultId + '/approve' + (monitorId ? '?monitorId=' + encodeURIComponent(monitorId) : '');
+      apiCall('POST', approvePath).then(function (resp) {
         if (resp.success) {
           showMonitorDetail(monitorId);
         } else {
@@ -1618,7 +1621,7 @@
       if (!resp.success) return;
       var result = null;
       for (var i = 0; i < resp.data.length; i++) {
-        if (parseInt(resp.data[i].id, 10) === resultId) { result = resp.data[i]; break; }
+        if (String(resp.data[i].id) === String(resultId)) { result = resp.data[i]; break; }
       }
       if (!result) {
         detailArea.innerHTML = '<p>' + (qaproof.i18n.monitorResultNotFound || 'Result not found.') + '</p>';

@@ -122,6 +122,9 @@
       var data = new FormData();
       data.append('action', 'qaproof_fetch_account_info');
       data.append('nonce', qaproof.ajaxNonce);
+      // Pass the current input value so the handler previews the unsaved key
+      // instead of falling back to the (possibly stale) saved option.
+      data.append('api_key', key);
 
       fetch(qaproof.ajaxUrl, {
         method: 'POST',
@@ -1160,24 +1163,21 @@
   // Settings saved toast
   // ============================
   function showQaproofToast(message) {
-    var app = document.getElementById('qaproof-app');
-    if (!app) return;
-
-    var existing = app.querySelector('.qaproof-toast');
+    // Remove any existing settings toast (not the monitors toast which uses an id)
+    var existing = document.querySelector('.qaproof-toast:not(#qaproof-toast)');
     if (existing) existing.remove();
 
     var toast = document.createElement('div');
-    toast.className = 'qaproof-toast';
-    toast.innerHTML = '<span class="dashicons dashicons-yes-alt"></span> ' + message;
-    app.prepend(toast);
+    toast.className = 'qaproof-toast qaproof-toast-success';
+    toast.innerHTML =
+      '<span class="qaproof-toast-icon"><span class="dashicons dashicons-yes-alt"></span></span>' +
+      '<span class="qaproof-toast-msg">' + message + '</span>';
+    document.body.appendChild(toast);
 
-    requestAnimationFrame(function () {
-      toast.classList.add('qaproof-toast-visible');
-    });
-
+    // Dismiss after 3s using the qaproof-toast-out animation (defined in CSS)
     setTimeout(function () {
-      toast.classList.remove('qaproof-toast-visible');
-      toast.addEventListener('transitionend', function () { toast.remove(); });
+      toast.classList.add('qaproof-toast-out');
+      toast.addEventListener('animationend', function () { toast.remove(); }, { once: true });
     }, 3000);
   }
 

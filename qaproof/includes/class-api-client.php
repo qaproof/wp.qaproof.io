@@ -280,7 +280,10 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        // Accept both 200 (OK) and 201 (Created) as success codes
+        $is_success_code = ( $status_code === 200 || $status_code === 201 );
+
+        if ( ! $is_success_code || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
@@ -457,11 +460,12 @@ class QAProof_API_Client {
      * Fetch account info for the currently configured API key.
      * Calls GET /api/me (Bearer token auth) — returns user + plan + limits.
      *
+     * @param string|null $api_key Optional key override (e.g. unsaved input value). Falls back to saved option.
      * @return array|WP_Error Account data or error.
      */
-    public static function get_account_info() {
+    public static function get_account_info( $api_key = null ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/me';
-        $api_key  = QAProof_Settings::get_api_key();
+        $api_key  = $api_key !== null ? $api_key : QAProof_Settings::get_api_key();
 
         if ( empty( $api_key ) ) {
             return new WP_Error(
@@ -539,10 +543,460 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_health_invalid_json',
-                __( 'API returned invalid response.', 'qaproof' )
+                __( 'API returned invalid JSON.', 'qaproof' )
             );
         }
 
         return $decoded;
+    }
+
+    // =========================================================================
+    // Monitors (remote API)
+    // =========================================================================
+
+    /**
+     * Normalize a monitor row returned by the SaaS API into the shape the
+     * WP plugin frontend and scheduler expect (integer booleans, snake_case fields).
+     *
+     * @param array $m Raw monitor row from the API.
+     * @return array
+     */
+    private static function normalize_monitor( $m ) {
+        $m['is_enabled']  = isset( $m['is_enabled'] )  ? (int) $m['is_enabled']  : 1;
+        $m['has_baseline'] = isset( $m['has_baseline'] ) ? (int) $m['has_baseline'] : 0;
+
+        // Map notify_email_enabled / notify_admin_enabled → notify_email / notify_admin
+        // so existing PHP + JS code that reads these fields keeps working unchanged.
+        $m['notify_email'] = isset( $m['notify_email_enabled'] ) ? (int) $m['notify_email_enabled'] : 1;
+        $m['notify_admin'] = isset( $m['notify_admin_enabled'] ) ? (int) $m['notify_admin_enabled'] : 1;
+
+        return $m;
+    }
+
+    /**
+     * Normalize a monitor result row from the API.
+     * Expands the result JSONB column into the separate _json fields that the
+     * WP frontend expects.
+     *
+     * @param array $r Raw result row from the API.
+     * @return array
+     */
+    private static function normalize_result( $r ) {
+        // Map run_at → run_date
+        if ( isset( $r['run_at'] ) && ! isset( $r['run_date'] ) ) {
+            $r['run_date'] = $r['run_at'];
+        }
+
+        // Expand result JSONB → separate _json columns
+        $result_data = [];
+        if ( ! empty( $r['result'] ) ) {
+            $result_data = is_array( $r['result'] ) ? $r['result'] : json_decode( $r['result'], true );
+        }
+
+        if ( ! isset( $r['categories_json'] ) ) {
+            $cats = isset( $result_data['categories'] ) ? $result_data['categories'] : null;
+            $r['categories_json'] = $cats !== null ? wp_json_encode( $cats ) : null;
+        }
+        if ( ! isset( $r['differences_json'] ) ) {
+            $diffs = isset( $result_data['differences'] ) ? $result_data['differences'] : null;
+            $r['differences_json'] = $diffs !== null ? wp_json_encode( $diffs ) : null;
+        }
+        if ( ! isset( $r['recommendations_json'] ) ) {
+            $recs = isset( $result_data['recommendations'] ) ? $result_data['recommendations'] : null;
+            $r['recommendations_json'] = $recs !== null ? wp_json_encode( $recs ) : null;
+        }
+
+        // Screenshots are stored as a separate JSONB column on the API
+        if ( ! isset( $r['screenshots_json'] ) ) {
+            $ss = isset( $r['screenshots'] ) ? $r['screenshots'] : null;
+            $r['screenshots_json'] = $ss !== null
+                ? ( is_string( $ss ) ? $ss : wp_json_encode( $ss ) )
+                : null;
+        }
+
+        $r['has_changes'] = isset( $r['has_changes'] ) ? (int) $r['has_changes'] : 0;
+
+        return $r;
+    }
+
+    /**
+     * Normalize a test-history row from the API.
+     *
+     * @param array $h Raw history row from the API.
+     * @return array
+     */
+    private static function normalize_history( $h ) {
+        $result_data = [];
+        if ( ! empty( $h['result'] ) ) {
+            $result_data = is_array( $h['result'] ) ? $h['result'] : json_decode( $h['result'], true );
+        }
+
+        if ( ! isset( $h['categories_json'] ) ) {
+            $cats = isset( $result_data['categories'] ) ? $result_data['categories'] : null;
+            $h['categories_json'] = $cats !== null ? wp_json_encode( $cats ) : null;
+        }
+        if ( ! isset( $h['differences_json'] ) ) {
+            $diffs = isset( $result_data['differences'] ) ? $result_data['differences'] : null;
+            $h['differences_json'] = $diffs !== null ? wp_json_encode( $diffs ) : null;
+        }
+        if ( ! isset( $h['recommendations_json'] ) ) {
+            $recs = isset( $result_data['recommendations'] ) ? $result_data['recommendations'] : null;
+            $h['recommendations_json'] = $recs !== null ? wp_json_encode( $recs ) : null;
+        }
+
+        // Screenshots
+        if ( ! isset( $h['screenshots_json'] ) ) {
+            $ss = isset( $h['screenshots'] ) ? $h['screenshots'] : null;
+            $h['screenshots_json'] = $ss !== null
+                ? ( is_string( $ss ) ? $ss : wp_json_encode( $ss ) )
+                : null;
+        }
+
+        // extracted_data_json: design-audit / wcag fields live inside result.extractedData
+        if ( ! isset( $h['extracted_data_json'] ) ) {
+            $extracted = isset( $result_data['extractedData'] ) ? $result_data['extractedData'] : null;
+            $h['extracted_data_json'] = $extracted !== null ? wp_json_encode( $extracted ) : null;
+        }
+
+        return $h;
+    }
+
+    // ── Monitor CRUD ──────────────────────────────────────────────────────────
+
+    /**
+     * List all monitors for the current workspace.
+     *
+     * @return array[]|WP_Error
+     */
+    public static function monitors_list() {
+        $result = self::api_request( 'GET', '/api/monitors' );
+        if ( is_wp_error( $result ) ) return $result;
+        return array_map( [ __CLASS__, 'normalize_monitor' ], (array) $result );
+    }
+
+    /**
+     * List monitors due for a given schedule (enabled + scheduled_at <= now).
+     *
+     * @param string $schedule 'daily'|'weekly'|'monthly'
+     * @return array[]|WP_Error
+     */
+    public static function monitors_list_due( $schedule ) {
+        $path   = '/api/monitors?schedule=' . rawurlencode( $schedule ) . '&due=1';
+        $result = self::api_request( 'GET', $path );
+        if ( is_wp_error( $result ) ) return $result;
+        return array_map( [ __CLASS__, 'normalize_monitor' ], (array) $result );
+    }
+
+    /**
+     * Get a single monitor.
+     *
+     * @param string $id UUID.
+     * @return array|WP_Error
+     */
+    public static function monitors_get( $id ) {
+        $result = self::api_request( 'GET', '/api/monitors/' . rawurlencode( $id ) );
+        if ( is_wp_error( $result ) ) return $result;
+        return self::normalize_monitor( $result );
+    }
+
+    /**
+     * Create a monitor.
+     *
+     * @param array $data { page_url, schedule, notify_email, notify_admin, notify_on, threshold_score, ... }
+     * @return array|WP_Error
+     */
+    public static function monitors_create( $data ) {
+        // WP plugin uses notify_email/notify_admin (bool int) → map to API field names
+        $payload = array(
+            'page_url'              => isset( $data['page_url'] )        ? $data['page_url']        : '',
+            'schedule'              => isset( $data['schedule'] )        ? $data['schedule']        : 'daily',
+            'is_enabled'            => isset( $data['is_enabled'] )      ? (bool) $data['is_enabled'] : true,
+            'notify_email_enabled'  => isset( $data['notify_email'] )    ? (bool) $data['notify_email'] : true,
+            'notify_admin_enabled'  => isset( $data['notify_admin'] )    ? (bool) $data['notify_admin'] : true,
+            'notify_on'             => isset( $data['notify_on'] )       ? $data['notify_on']       : 'failures',
+            'threshold_score'       => isset( $data['threshold_score'] ) ? (int) $data['threshold_score'] : 90,
+        );
+        if ( ! empty( $data['scheduled_at'] ) ) {
+            $payload['scheduled_at'] = $data['scheduled_at'];
+        }
+
+        $result = self::api_request( 'POST', '/api/monitors', $payload, self::BASELINE_TIMEOUT );
+        if ( is_wp_error( $result ) ) return $result;
+        return self::normalize_monitor( $result );
+    }
+
+    /**
+     * Update fields on a monitor.
+     *
+     * @param string $id   UUID.
+     * @param array  $data Fields to update (WP field names — will be mapped).
+     * @return array|WP_Error
+     */
+    public static function monitors_update( $id, $data ) {
+        $payload = array();
+
+        $direct_fields = array(
+            'page_url', 'schedule', 'baseline_key', 'scheduled_at',
+            'last_run_at', 'last_score', 'threshold_score', 'notify_on',
+        );
+        foreach ( $direct_fields as $field ) {
+            if ( array_key_exists( $field, $data ) ) {
+                $payload[ $field ] = $data[ $field ];
+            }
+        }
+
+        // Booleans: WP int (0/1) → PHP bool → JSON true/false
+        if ( array_key_exists( 'is_enabled', $data ) ) {
+            $payload['is_enabled'] = (bool) $data['is_enabled'];
+        }
+        if ( array_key_exists( 'has_baseline', $data ) ) {
+            $payload['has_baseline'] = (bool) $data['has_baseline'];
+        }
+        if ( array_key_exists( 'notify_email', $data ) ) {
+            $payload['notify_email_enabled'] = (bool) $data['notify_email'];
+        }
+        if ( array_key_exists( 'notify_admin', $data ) ) {
+            $payload['notify_admin_enabled'] = (bool) $data['notify_admin'];
+        }
+
+        if ( empty( $payload ) ) {
+            return new WP_Error( 'qaproof_no_data', __( 'No fields to update.', 'qaproof' ) );
+        }
+
+        $result = self::api_request( 'PUT', '/api/monitors/' . rawurlencode( $id ), $payload );
+        if ( is_wp_error( $result ) ) return $result;
+        return self::normalize_monitor( $result );
+    }
+
+    /**
+     * Delete a monitor (cascades to results).
+     *
+     * @param string $id UUID.
+     * @return true|WP_Error
+     */
+    public static function monitors_delete( $id ) {
+        $result = self::api_request( 'DELETE', '/api/monitors/' . rawurlencode( $id ) );
+        if ( is_wp_error( $result ) ) return $result;
+        return true;
+    }
+
+    // ── Monitor Results ───────────────────────────────────────────────────────
+
+    /**
+     * Get results for a monitor.
+     *
+     * @param string $id     Monitor UUID.
+     * @param array  $args   { limit, offset }
+     * @return array { data: array[], total: int }|WP_Error
+     */
+    public static function monitors_get_results( $id, $args = array() ) {
+        $limit  = isset( $args['limit'] )  ? (int) $args['limit']  : 20;
+        $offset = isset( $args['offset'] ) ? (int) $args['offset'] : 0;
+        $path   = '/api/monitors/' . rawurlencode( $id ) . '/results?limit=' . $limit . '&offset=' . $offset;
+
+        $endpoint = QAProof_Settings::get_api_endpoint() . $path;
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $response = wp_remote_get( $endpoint, array(
+            'headers'   => array( 'Authorization' => 'Bearer ' . $api_key ),
+            'timeout'   => self::TIMEOUT,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null || $status_code !== 200 || empty( $decoded['success'] ) ) {
+            $msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_api_error', $msg );
+        }
+
+        $rows = array_map( [ __CLASS__, 'normalize_result' ], (array) $decoded['data'] );
+        return array( 'data' => $rows, 'total' => isset( $decoded['total'] ) ? (int) $decoded['total'] : count( $rows ) );
+    }
+
+    /**
+     * Save a result for a monitor.
+     *
+     * @param string $monitor_id Monitor UUID.
+     * @param array  $data       Result data.
+     * @return array|WP_Error
+     */
+    public static function monitors_save_result( $monitor_id, $data ) {
+        $payload = array(
+            'score'         => isset( $data['score'] )         ? (int) $data['score']         : null,
+            'has_changes'   => isset( $data['has_changes'] )   ? (bool) $data['has_changes']   : null,
+            'status'        => isset( $data['status'] )        ? $data['status']               : 'completed',
+            'summary'       => isset( $data['summary'] )       ? $data['summary']              : null,
+            'error_message' => isset( $data['error_message'] ) ? $data['error_message']        : null,
+        );
+
+        // Pack separate _json columns back into result JSONB + screenshots
+        $result_obj = array();
+        if ( isset( $data['categories'] ) )      { $result_obj['categories']      = $data['categories']; }
+        if ( isset( $data['differences'] ) )     { $result_obj['differences']     = $data['differences']; }
+        if ( isset( $data['recommendations'] ) ) { $result_obj['recommendations'] = $data['recommendations']; }
+        if ( ! empty( $result_obj ) ) {
+            $payload['result'] = $result_obj;
+        }
+
+        if ( ! empty( $data['screenshots'] ) ) {
+            $payload['screenshots'] = $data['screenshots'];
+        }
+
+        $result = self::api_request(
+            'POST',
+            '/api/monitors/' . rawurlencode( $monitor_id ) . '/results',
+            $payload
+        );
+        if ( is_wp_error( $result ) ) return $result;
+        return self::normalize_result( $result );
+    }
+
+    /**
+     * Approve a monitor result (mark as approved in the API).
+     *
+     * @param string $result_id Result UUID.
+     * @return true|WP_Error
+     */
+    public static function monitors_approve_result( $result_id ) {
+        $result = self::api_request( 'PUT', '/api/results/' . rawurlencode( $result_id ) . '/approve' );
+        if ( is_wp_error( $result ) ) return $result;
+        return true;
+    }
+
+    // ── Test History ──────────────────────────────────────────────────────────
+
+    /**
+     * List test history.
+     *
+     * @param array $args { test_type, exclude_type, limit, offset }
+     * @return array { data: array[], total: int }|WP_Error
+     */
+    public static function history_list( $args = array() ) {
+        $params = array();
+        if ( ! empty( $args['test_type'] ) )    { $params[] = 'test_type='    . rawurlencode( $args['test_type'] ); }
+        if ( ! empty( $args['exclude_type'] ) ) { $params[] = 'exclude_type=' . rawurlencode( $args['exclude_type'] ); }
+        $limit  = isset( $args['limit'] )  ? (int) $args['limit']  : 50;
+        $offset = isset( $args['offset'] ) ? (int) $args['offset'] : 0;
+        $params[] = 'limit='  . $limit;
+        $params[] = 'offset=' . $offset;
+
+        $path     = '/api/history?' . implode( '&', $params );
+        $endpoint = QAProof_Settings::get_api_endpoint() . $path;
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $response = wp_remote_get( $endpoint, array(
+            'headers'   => array( 'Authorization' => 'Bearer ' . $api_key ),
+            'timeout'   => self::TIMEOUT,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null || $status_code !== 200 || empty( $decoded['success'] ) ) {
+            $msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_api_error', $msg );
+        }
+
+        $rows = array_map( [ __CLASS__, 'normalize_history' ], (array) $decoded['data'] );
+        return array( 'data' => $rows, 'total' => isset( $decoded['total'] ) ? (int) $decoded['total'] : count( $rows ) );
+    }
+
+    /**
+     * Get a single history item.
+     *
+     * @param string $id UUID.
+     * @return array|WP_Error
+     */
+    public static function history_get( $id ) {
+        $result = self::api_request( 'GET', '/api/history/' . rawurlencode( $id ) );
+        if ( is_wp_error( $result ) ) return $result;
+        return self::normalize_history( $result );
+    }
+
+    /**
+     * Save a test result to history.
+     *
+     * @param array $data { test_type, page_url, score, summary, categories, differences,
+     *                      recommendations, screenshots, extractedData, job_id }
+     * @return array|WP_Error
+     */
+    public static function history_save( $data ) {
+        // Pack separate fields into the result JSONB
+        $result_obj = array();
+        $copy_keys  = array( 'categories', 'differences', 'recommendations' );
+        foreach ( $copy_keys as $key ) {
+            if ( isset( $data[ $key ] ) ) { $result_obj[ $key ] = $data[ $key ]; }
+        }
+        // Design audit / WCAG extracted data
+        if ( isset( $data['designSystem'] ) )    { $result_obj['extractedData']['designSystem']    = $data['designSystem']; }
+        if ( isset( $data['components'] ) )      { $result_obj['extractedData']['components']      = $data['components']; }
+        if ( isset( $data['designDebtScore'] ) ) { $result_obj['extractedData']['designDebtScore'] = $data['designDebtScore']; }
+        if ( isset( $data['targetWcagLevel'] ) ) { $result_obj['extractedData']['wcagLevel']       = $data['targetWcagLevel']; }
+
+        $payload = array(
+            'test_type'   => isset( $data['test_type'] )  ? $data['test_type']       : '',
+            'page_url'    => isset( $data['page_url'] )   ? $data['page_url']        : '',
+            'score'       => isset( $data['score'] )      ? (int) $data['score']     : null,
+            'summary'     => isset( $data['summary'] )    ? $data['summary']         : null,
+            'job_id'      => isset( $data['job_id'] )     ? $data['job_id']          : null,
+        );
+        if ( ! empty( $result_obj ) ) { $payload['result'] = $result_obj; }
+        if ( ! empty( $data['screenshots'] ) ) { $payload['screenshots'] = $data['screenshots']; }
+
+        $result = self::api_request( 'POST', '/api/history', $payload );
+        if ( is_wp_error( $result ) ) return $result;
+        return self::normalize_history( $result );
+    }
+
+    /**
+     * Delete a history item.
+     *
+     * @param string $id UUID.
+     * @return true|WP_Error
+     */
+    public static function history_delete( $id ) {
+        $result = self::api_request( 'DELETE', '/api/history/' . rawurlencode( $id ) );
+        if ( is_wp_error( $result ) ) return $result;
+        return true;
+    }
+
+    /**
+     * Get aggregated history stats for the dashboard.
+     *
+     * @param int $threshold Score below which a test is considered failing. Default 70.
+     * @return array { total, avg_score, below_threshold, by_type }|WP_Error
+     */
+    public static function history_stats( $threshold = 70 ) {
+        $path   = '/api/history/stats?threshold=' . (int) $threshold;
+        $result = self::api_request( 'GET', $path );
+        if ( is_wp_error( $result ) ) return $result;
+        return $result;
     }
 }
