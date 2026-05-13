@@ -101,10 +101,15 @@ class QAProof_Notifications {
     }
 
     /**
-     * Add badge count to the QAProof admin menu item.
+     * Add badge count to the Monitors submenu item.
+     *
+     * The badge counts regression alerts (monitor scored below threshold), so
+     * the most relevant place to surface it is right next to the "Монітори"
+     * submenu entry — not on the parent "QAProof" item, which would suggest
+     * the alerts apply to the whole plugin.
      */
     public static function add_menu_badge() {
-        global $menu;
+        global $submenu;
 
         $count = self::get_badge_count();
         if ( $count < 1 ) {
@@ -116,9 +121,14 @@ class QAProof_Notifications {
             $count
         );
 
-        foreach ( $menu as $key => $item ) {
-            if ( isset( $item[2] ) && $item[2] === 'qaproof' ) {
-                $menu[ $key ][0] .= $badge;
+        if ( empty( $submenu['qaproof'] ) ) {
+            return;
+        }
+
+        foreach ( $submenu['qaproof'] as $key => $item ) {
+            // $item[2] is the page slug; match the Monitors slug exactly.
+            if ( isset( $item[2] ) && $item[2] === 'qaproof-monitors' ) {
+                $submenu['qaproof'][ $key ][0] .= $badge;
                 break;
             }
         }

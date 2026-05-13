@@ -772,13 +772,18 @@
       var resetBtn = widget.querySelector('.qaproof-figma-usage-reset');
       if (resetBtn) {
         resetBtn.addEventListener('click', function () {
-          if (!confirm(qaproof.i18n.resetFigmaConfirm || 'Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma\'s actual quota on their side.)')) return;
-          fetch(window.qaproof.restBase + '/figma-api-usage/reset', {
-            method: 'POST',
-            headers: { 'X-WP-Nonce': window.qaproof.nonce }
-          })
-          .then(function (r) { return r.json(); })
-          .then(function (j) { if (j && j.success) renderUsage(j.data); });
+          Q.confirm(
+            qaproof.i18n.resetFigmaConfirm || 'Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma\'s actual quota on their side.)',
+            { okLabel: qaproof.i18n.modalReset || 'Reset' }
+          ).then(function (ok) {
+            if (!ok) return;
+            fetch(window.qaproof.restBase + '/figma-api-usage/reset', {
+              method: 'POST',
+              headers: { 'X-WP-Nonce': window.qaproof.nonce }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { if (j && j.success) renderUsage(j.data); });
+          });
         });
       }
     })();

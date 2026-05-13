@@ -361,15 +361,9 @@
   flex-shrink: 0;
   transition: all 0.25s ease !important;
 }
-/* Set Up variant */
-#qaproof-app .qaproof-mc-run-btn.qaproof-btn-setup {
-  background: transparent !important;
-  border: 1.5px solid var(--qp-accent) !important;
-  color: var(--qp-accent) !important;
-}
-#qaproof-app .qaproof-mc-run-btn.qaproof-btn-setup:hover {
-  background: var(--qp-accent-dim) !important;
-}
+/* Set Up looks identical to Check Now — same default style, same hover.
+   The user wanted these visually consistent so both share .qaproof-mc-run-btn
+   base styles without a .qaproof-btn-setup override. */
 /* Running variant */
 #qaproof-app .qaproof-mc-run-btn.qaproof-btn-running {
   background: rgba(0,173,181,0.12) !important;
@@ -397,12 +391,16 @@
   filter: grayscale(40%) !important;
 }
 
-/* Hover for ALL run buttons (Set Up + Check Now) — matches primary button hover */
+/* Hover for ALL run buttons (Set Up + Check Now) — fills with the teal accent
+   and uses white text. The previous "white text + white border" hover became
+   invisible on dark theme because the base background is var(--qp-text-primary)
+   which flips to a light shade in dark mode (white text on near-white bg). */
 #qaproof-app .qaproof-mc-run-btn:not(.qaproof-btn-running):not([disabled]):hover,
 #qaproof-app .qaproof-mc-run-btn:not(.qaproof-btn-running):not([disabled]):focus {
-  color: var(--qp-white) !important;
-  border-color: var(--qp-white) !important;
-  box-shadow: none !important;
+  background: var(--qp-accent) !important;
+  border-color: var(--qp-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(0,173,181,0.32) !important;
   transform: translateY(-1px) !important;
 }
 

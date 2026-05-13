@@ -1904,6 +1904,12 @@
       marker.appendChild(tail);
     }
 
+    // Flip-on-clip decision is deferred to flipClippedMarkers() which runs
+    // after the image has loaded — that's the only place we know the layer's
+    // real pixel height and can tell whether the upward-drawn marker would
+    // actually be clipped by the viewport. A naive %-threshold here triggers
+    // false flips on tall screenshots (where 8% is hundreds of pixels down).
+
     var tooltipData = {
       severity: severity,
       category: diff.category || '',
@@ -1961,6 +1967,7 @@
     // No-pin pie markers (all page-level issues) are always centered horizontally
     marker.style.left = !anyHasPin ? '50%' : (group.left + '%');
     marker.style.setProperty('--qp-pie-bg', pieGradient);
+
 
     // Pin head (circle with count)
     var head = document.createElement('div');
@@ -2033,22 +2040,32 @@
       selectDifference(diffs[0].idx, 'marker');
     });
 
+    // Flip-on-clip is decided in flipClippedMarkers() after image load — see
+    // the comment in createMarkerEl explaining why a %-threshold here is wrong.
+
     return marker;
   }
 
   /**
    * Render markers into a layer, merging overlapping ones into pie markers.
    */
-  function renderMarkersIntoLayer(markersLayer, differences, filterFn) {
+  function renderMarkersIntoLayer(markersLayer, differences, filterFn, locKey) {
     if (!markersLayer) return;
     markersLayer.innerHTML = '';
+    // locKey: 'locationBaseline' for baseline screenshot, 'location' (default) for current.
+    // When locKey is set and a diff has that key, we render a shallow copy with
+    // location overridden — this lets createMarkerEl/groupMarkersByLocation work
+    // unchanged while still hitting the correct coordinate space.
     var filtered = [];
     for (var i = 0; i < differences.length; i++) {
-      var diff = differences[i];
-      if (!diff.location) continue;
+      var rawDiff = differences[i];
+      if (!rawDiff.location) continue;
       // noMarker items are rendered as round markers without the pin tail
-      if (filterFn && !filterFn(diff, i)) continue;
-      filtered.push(differences[i]);
+      if (filterFn && !filterFn(rawDiff, i)) continue;
+      var diff = (locKey && locKey !== 'location' && rawDiff[locKey])
+        ? Object.assign({}, rawDiff, { location: rawDiff[locKey] })
+        : rawDiff;
+      filtered.push(diff);
     }
     var groups = groupMarkersByLocation(filtered);
     for (var g = 0; g < groups.length; g++) {
@@ -2058,6 +2075,68 @@
       } else {
         markersLayer.appendChild(createPieMarkerEl(group));
       }
+    }
+    flipClippedMarkers(markersLayer);
+  }
+
+  // Apply flipped styling via inline styles so this works even if the CSS
+  // file is stale in the browser cache. For pin markers, this puts the head
+  // below the anchor with the tail apex pointing up at the anchor. For no-pin
+  // markers (round circles centered on the anchor), we just shift the marker
+  // so its TOP touches the anchor instead of its center, keeping the whole
+  // circle below the anchor.
+  function applyFlippedStyle(marker) {
+    if (marker.dataset.flipped === '1') return;
+    marker.dataset.flipped = '1';
+    marker.classList.add('qaproof-marker-flipped');
+    marker.style.transform = 'translate(-50%, 0)';
+    if (marker.classList.contains('qaproof-marker-nopin')) return; // no head/tail to rearrange
+    var head = marker.querySelector('.marker-head');
+    var tail = marker.querySelector('.marker-tail');
+    if (head) {
+      head.style.top = 'auto';
+      head.style.bottom = '0';
+    }
+    if (tail) {
+      tail.style.bottom = 'auto';
+      tail.style.top = '0';
+      tail.style.borderTop = 'none';
+      tail.style.borderBottom = '12px solid currentColor';
+    }
+  }
+
+  // After the screenshot image has loaded (so the layer has its real pixel
+  // height), measure each marker's box against its layer. If the marker's top
+  // edge would sit above the layer (clipped by the viewport's overflow), flip
+  // it so it draws downward from its anchor instead.
+  function flipClippedMarkers(layer) {
+    if (!layer) return;
+    var attempts = 0;
+    var check = function () {
+      var layerRect = layer.getBoundingClientRect();
+      // If the layer hasn't been measured yet (image not loaded / no layout),
+      // retry up to ~2 seconds. We need real pixel positions to decide.
+      if (layerRect.height < 1) {
+        if (attempts++ < 20) setTimeout(check, 100);
+        return;
+      }
+      var markers = layer.querySelectorAll('.qaproof-marker');
+      for (var i = 0; i < markers.length; i++) {
+        var m = markers[i];
+        if (m.dataset.flipped === '1') continue;
+        var r = m.getBoundingClientRect();
+        // 4px tolerance so we don't flip markers that just barely touch the edge.
+        if (r.top < layerRect.top + 4) {
+          applyFlippedStyle(m);
+        }
+      }
+    };
+    var img = layer.parentElement && layer.parentElement.querySelector('img');
+    requestAnimationFrame(check);
+    if (img && !img.complete) {
+      img.addEventListener('load', function () {
+        requestAnimationFrame(check);
+      }, { once: true });
     }
   }
 
@@ -2797,7 +2876,9 @@
   function renderMarkers(differences) {
     var markersFigma = document.getElementById('qaproof-markers-figma');
     var markersLive = document.getElementById('qaproof-markers-live');
-    renderMarkersIntoLayer(markersFigma, differences);
+    // Baseline screenshot: use locationBaseline coordinates if available (regression tests).
+    // For fidelity tests locationBaseline is absent, so it falls back to location.
+    renderMarkersIntoLayer(markersFigma, differences, null, 'locationBaseline');
     renderMarkersIntoLayer(markersLive, differences);
   }
 
