@@ -41,6 +41,8 @@
         jobId: jobId, testType: testType, pageUrl: pageUrl, page: page,
         phase: phase || 'polling', startedAt: Date.now(),
         retries: retries || 0,
+        // API key fingerprint — used to discard the job if the key changes.
+        apiKeyFp: (typeof qaproof !== 'undefined' && qaproof.apiKeyFp) ? qaproof.apiKeyFp : '',
       };
       // Store the user-selected WCAG level (A/AA/AAA) so recovery flow can
       // inject targetWcagLevel into resultData and PDF shows the correct level.
@@ -60,6 +62,12 @@
       var job = JSON.parse(raw);
       // Expire after 10 minutes
       if (Date.now() - job.startedAt > 10 * 60 * 1000) {
+        clearActiveJob(page);
+        return null;
+      }
+      // Discard if the API key changed — the job belongs to a different workspace.
+      var currentFp = (typeof qaproof !== 'undefined' && qaproof.apiKeyFp) ? qaproof.apiKeyFp : '';
+      if (job.apiKeyFp && currentFp && job.apiKeyFp !== currentFp) {
         clearActiveJob(page);
         return null;
       }

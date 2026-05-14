@@ -1185,6 +1185,10 @@
   (function () {
     if (sessionStorage.getItem('qaproof_settings_saved')) {
       sessionStorage.removeItem('qaproof_settings_saved');
+      // Clear any active jobs — the API key may have changed so a job that was
+      // running under the previous key must not resume under the new workspace.
+      Q.clearActiveJob('tests');
+      Q.clearActiveJob('accessibility');
       var wpNotice = document.querySelector('.notice-success, .updated');
       if (wpNotice) wpNotice.style.display = 'none';
       showQaproofToast((qaproof.i18n.settingsSaved || 'Settings saved successfully'));

@@ -117,6 +117,9 @@ class QAProof_Admin_Assets {
             'ajaxNonce'     => wp_create_nonce( 'qaproof_ajax' ),
             'siteUrl'       => home_url( '/' ),
             'hasApiKey'     => ! empty( QAProof_Settings::get_api_key() ),
+            // Short fingerprint of the current API key (first 8 chars of md5).
+            // JS uses this to detect key changes and discard stale active jobs.
+            'apiKeyFp'      => substr( md5( QAProof_Settings::get_api_key() ), 0, 8 ),
             'dashboardUrl'  => admin_url( 'admin.php?page=' . QAProof_Admin::MENU_SLUG ),
             'testsUrl'      => admin_url( 'admin.php?page=' . QAProof_Admin::TESTS_SLUG ),
             'settingsUrl'   => admin_url( 'admin.php?page=' . QAProof_Admin::SETTINGS_SLUG ),

@@ -216,6 +216,32 @@ class QAProof_Scheduler {
     }
 
     /**
+     * Save a monitor result with up to $attempts retries (2 s gap between each).
+     * Transient HTTP errors (rate limits, timeouts, 5xx) can silently swallow results
+     * without retry, leaving the monitor stuck in "Running" indefinitely.
+     *
+     * @param string $monitor_id UUID string.
+     * @param array  $data       Result payload for monitors_save_result.
+     * @param int    $attempts   Max attempts (default 3).
+     * @return array|WP_Error Last response (success or final error).
+     */
+    private static function save_result_with_retry( $monitor_id, $data, $attempts = 3 ) {
+        $last_error = null;
+        for ( $i = 0; $i < $attempts; $i++ ) {
+            $result = QAProof_API_Client::monitors_save_result( $monitor_id, $data );
+            if ( ! is_wp_error( $result ) ) {
+                return $result;
+            }
+            $last_error = $result;
+            if ( $i < $attempts - 1 ) {
+                sleep( 2 );
+            }
+        }
+        error_log( '[QAProof] monitors_save_result failed after ' . $attempts . ' attempts for monitor ' . $monitor_id . ': ' . $last_error->get_error_message() );
+        return $last_error;
+    }
+
+    /**
      * Create a baseline for a monitor via the API.
      *
      * @param array $monitor Normalised monitor row.
@@ -224,7 +250,7 @@ class QAProof_Scheduler {
         $result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
 
         if ( is_wp_error( $result ) ) {
-            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
+            self::save_result_with_retry( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => $result->get_error_message(),
             ) );
@@ -251,7 +277,7 @@ class QAProof_Scheduler {
         ) );
 
         if ( is_wp_error( $job_response ) ) {
-            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
+            self::save_result_with_retry( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => $job_response->get_error_message(),
             ) );
@@ -263,18 +289,22 @@ class QAProof_Scheduler {
 
         $job_id = isset( $job_response['jobId'] ) ? $job_response['jobId'] : null;
         if ( empty( $job_id ) ) {
-            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
+            self::save_result_with_retry( $monitor['id'], array(
                 'status'        => 'failed',
                 'error_message' => 'API did not return a job ID.',
+            ) );
+            QAProof_API_Client::monitors_update( $monitor['id'], array(
+                'last_run_at' => gmdate( 'c' ),
             ) );
             return;
         }
 
-        // Step 2: Poll for results — max 3 minutes (18 attempts × 10s).
-        // Typical regression tests finish in 30–120s; capping at 180s means a
-        // truly hung job surfaces a clear "timed out" failure to the user
-        // instead of leaving them in limbo for 5+ minutes.
-        $max_attempts = 18;
+        // Step 2: Poll for results — max 8 minutes (48 attempts × 10s).
+        // Typical regression tests finish in 30–120s, but heavy sites (large SPAs,
+        // novaposhta.ua, streifeneder.de) can take 4–6 min for screenshot + AI analysis.
+        // The API's own regression job timeout is 5 min, so 8 min gives a safe 3 min buffer.
+        // PHP max_execution_time is already extended to 900s via set_time_limit() above.
+        $max_attempts = 48;
         $result = null;
 
         for ( $i = 0; $i < $max_attempts; $i++ ) {
@@ -299,7 +329,7 @@ class QAProof_Scheduler {
             }
 
             if ( isset( $poll['status'] ) && $poll['status'] === 'failed' ) {
-                QAProof_API_Client::monitors_save_result( $monitor['id'], array(
+                self::save_result_with_retry( $monitor['id'], array(
                     'status'        => 'failed',
                     'error_message' => isset( $poll['error'] ) ? $poll['error'] : 'Test failed on the server.',
                 ) );
@@ -311,9 +341,9 @@ class QAProof_Scheduler {
         }
 
         if ( $result === null ) {
-            QAProof_API_Client::monitors_save_result( $monitor['id'], array(
+            self::save_result_with_retry( $monitor['id'], array(
                 'status'        => 'failed',
-                'error_message' => 'Test timed out after 3 minutes.',
+                'error_message' => 'Test timed out after 8 minutes.',
             ) );
             QAProof_API_Client::monitors_update( $monitor['id'], array(
                 'last_run_at' => gmdate( 'c' ),
@@ -324,8 +354,8 @@ class QAProof_Scheduler {
         $score       = isset( $result['score'] )      ? (int) $result['score']   : null;
         $has_changes = ! empty( $result['hasChanges'] );
 
-        // Store the result in the SaaS API
-        QAProof_API_Client::monitors_save_result( $monitor['id'], array(
+        // Store the result in the SaaS API (with retry — the most important call)
+        self::save_result_with_retry( $monitor['id'], array(
             'score'           => $score,
             'has_changes'     => $has_changes ? 1 : 0,
             'summary'         => isset( $result['summary'] )         ? $result['summary']         : null,

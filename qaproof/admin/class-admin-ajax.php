@@ -51,11 +51,11 @@ class QAProof_Admin_AJAX {
     }
 
     /**
-     * AJAX handler: save test result to history.
+     * AJAX handler: save test result to history (SaaS PostgreSQL via API).
      *
      * Screenshots are NOT sent from the browser — the client passes jobId instead.
-     * This handler saves the analysis data first (fast), then fetches full-quality
-     * screenshots from the API server-to-server and updates the record.
+     * This handler fetches full-quality screenshots from the API server-to-server,
+     * then saves the complete record to the SaaS API in a single call.
      * This completely bypasses admin-ajax.php POST size limits.
      */
     public static function ajax_save_history() {
@@ -87,7 +87,7 @@ class QAProof_Admin_AJAX {
             $dedup_key = 'qaproof_saved_job_' . substr( md5( $job_id ), 0, 16 );
             if ( get_transient( $dedup_key ) ) {
                 error_log( '[QAProof] ajax_save_history: duplicate jobId detected, skipping — jobId=' . $job_id );
-                wp_send_json_success( [ 'saved' => true, 'id' => 0, 'deduplicated' => true ] );
+                wp_send_json_success( [ 'saved' => true, 'id' => null, 'deduplicated' => true ] );
             }
             set_transient( $dedup_key, 1, 120 );
         }
@@ -101,43 +101,17 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => 'Invalid result data.' ] );
         }
 
-        // Save history record without screenshots first (fast, no size limit concerns).
-        $save_data = array_merge(
-            [ 'test_type' => $test_type, 'page_url' => $page_url, 'job_id' => $job_id ?: null ],
-            $result
-        );
-        unset( $save_data['screenshots'] ); // ensure no screenshots in initial insert
-
-        $saved_id = QAProof_Test_History::save( $save_data );
-
-        if ( $saved_id === 0 ) {
-            // 0 means either: (a) duplicate blocked by UNIQUE job_id constraint, or (b) real DB error.
-            global $wpdb;
-            $last_err = $wpdb->last_error;
-            if ( ! empty( $job_id ) && strpos( $last_err, '1062' ) !== false ) {
-                // Duplicate key — record already exists, this is fine.
-                error_log( '[QAProof] ajax_save_history: duplicate blocked by UNIQUE constraint (ok) — jobId=' . $job_id );
-                wp_send_json_success( [ 'saved' => true, 'id' => 0, 'deduplicated' => true ] );
-            }
-            error_log( '[QAProof] ajax_save_history: DB insert returned 0 — last_error=' . ( $last_err ?: '(none)' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type . ' pageUrl=' . $page_url );
-            wp_send_json_error( [ 'message' => 'DB insert failed.', 'detail' => $last_err ] );
-        }
-
-        error_log( '[QAProof] ajax_save_history: record saved id=' . $saved_id . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
-
-        // Fetch full-quality screenshots from the API server-to-server.
+        // Fetch full-quality screenshots from the API server-to-server before saving.
         // This bypasses all browser POST size limits and preserves full quality.
         $has_screenshots = false;
         if ( ! empty( $job_id ) ) {
             $screenshots_data = QAProof_API_Client::get_job_screenshots( $job_id );
             if ( ! is_wp_error( $screenshots_data ) && ! empty( $screenshots_data['screenshots'] ) ) {
-                $screenshots_json = wp_json_encode( $screenshots_data['screenshots'] );
-                $updated = QAProof_Test_History::update_screenshots( $saved_id, $screenshots_json );
-                $has_screenshots = (bool) $updated;
+                $result['screenshots'] = $screenshots_data['screenshots'];
+                $has_screenshots = true;
                 error_log( sprintf(
-                    '[QAProof] ajax_save_history: screenshots fetched server-side — viewports=%s updated=%s',
-                    implode( ',', array_keys( $screenshots_data['screenshots'] ) ),
-                    $updated ? 'yes' : 'no'
+                    '[QAProof] ajax_save_history: screenshots fetched server-side — viewports=%s',
+                    implode( ',', array_keys( $screenshots_data['screenshots'] ) )
                 ) );
             } else {
                 $err = is_wp_error( $screenshots_data ) ? $screenshots_data->get_error_message() : 'empty response';
@@ -145,8 +119,22 @@ class QAProof_Admin_AJAX {
             }
         }
 
-        $max = (int) get_option( 'qaproof_max_history', 30 );
-        QAProof_Test_History::purge_old( $max > 0 ? $max : 30 );
+        // Build the save payload and write to SaaS API (PostgreSQL).
+        $save_data = array_merge(
+            [ 'test_type' => $test_type, 'page_url' => $page_url, 'job_id' => $job_id ?: null ],
+            $result
+        );
+
+        $saved = QAProof_API_Client::history_save( $save_data );
+
+        if ( is_wp_error( $saved ) ) {
+            $err_msg = $saved->get_error_message();
+            error_log( '[QAProof] ajax_save_history: API save failed — ' . $err_msg . ' jobId=' . ( $job_id ?: '(none)' ) );
+            wp_send_json_error( [ 'message' => 'Failed to save history: ' . $err_msg ] );
+        }
+
+        $saved_id = isset( $saved['id'] ) ? $saved['id'] : null;
+        error_log( '[QAProof] ajax_save_history: record saved id=' . ( $saved_id ?: '?' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
 
         wp_send_json_success( [ 'saved' => true, 'id' => $saved_id, 'hasScreenshots' => $has_screenshots ] );
     }
