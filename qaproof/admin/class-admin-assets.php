@@ -130,7 +130,7 @@ class QAProof_Admin_Assets {
             'autoSaveHistory'   => (bool) get_option( 'qaproof_auto_save_history', true ),
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
-            'adminEmail'        => get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
+            'adminEmail'        => wp_get_current_user()->user_email ?: get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
             // Usage is now per-fileKey. `byFile` carries each file's own
             // counters and rateLimit (retryAt). Aggregate total/byType are
@@ -443,6 +443,3 @@ class QAProof_Admin_Assets {
                 'elementsSource'  => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
             ];
         }
-        return $result;
-    }
-}
