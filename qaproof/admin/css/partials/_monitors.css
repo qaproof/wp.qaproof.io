@@ -816,3 +816,23 @@
 #qaproof-app.qaproof-dark .qaproof-detail-skeleton-meta {
   background: rgba(255,255,255,0.07);
 }
+
+/* ── Results loading spinner (shown while results API call is in flight) ── */
+#qaproof-app .qaproof-results-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 0;
+}
+#qaproof-app .qaproof-results-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--qp-border);
+  border-top-color: var(--qp-accent);
+  border-radius: 50%;
+  animation: qaproof-spinner 0.75s linear infinite;
+}
+#qaproof-app.qaproof-dark .qaproof-results-loading-spinner {
+  border-color: rgba(255,255,255,0.12);
+  border-top-color: var(--qp-accent);
+}
