@@ -1667,7 +1667,8 @@
           onDone: function (resultData) {
             loadingTimers.forEach(clearTimeout);
 
-            // Inject targetWcagLevel from form so PDF subtitle always shows correct level
+            // Inject pageUrl and wcagLevel so PDF always has correct metadata
+            resultData.pageUrl = resultData.pageUrl || body.pageUrl || '';
             if (resultData.testType === 'accessibility' && body.wcagLevel) {
               resultData.targetWcagLevel = body.wcagLevel;
             }
@@ -1825,6 +1826,4 @@
   // Expose on namespace
   // ============================
   Q.updateFigmaPreviewVisibility = updateFigmaPreviewVisibility;
-  Q.updateSavedDesignVisibility = updateSavedDesignVisibility;
-  Q.clearElementOverlays = clearElementOverlays;
-})();
+  Q.updateSavedDesignVisibility = updateSavedDesignVisibi

@@ -8,15 +8,24 @@
   // ============================
   function safeJson(response) {
     if (!response.ok) {
-      return response.text().then(function (text) {
-        var msg = (qaproof.i18n.errHttp || 'Server returned HTTP ') + response.status;
-        if (response.status === 404) {
-          msg = qaproof.i18n.err404 || 'REST API endpoint not found (404).';
-        } else if (response.status === 403) {
-          msg = qaproof.i18n.err403 || 'Access denied (403).';
-        } else if (response.status === 500) {
-          msg = qaproof.i18n.err500 || 'Internal server error (500).';
+      // Try to parse the JSON error body first — the API returns structured errors
+      // like { success: false, error: { code, message } } even on 4xx responses.
+      // If JSON parsing succeeds, resolve (not reject) so callers can handle the
+      // error gracefully via the normal `resp.success === false` branch.
+      return response.json().then(function (data) {
+        if (data && (data.success === false || data.error)) {
+          return data; // pass through to .then() handler
         }
+        // Unexpected non-error JSON on a failed status — fall back to generic message
+        var msg = (qaproof.i18n.errHttp || 'Server returned HTTP ') + response.status;
+        throw new Error(msg);
+      }).catch(function (err) {
+        // JSON parse failed — build a generic error message
+        if (err && err.message && err.message.indexOf('HTTP') !== -1) throw err; // re-throw our own
+        var msg = (qaproof.i18n.errHttp || 'Server returned HTTP ') + response.status;
+        if (response.status === 404) msg = qaproof.i18n.err404 || 'REST API endpoint not found (404).';
+        else if (response.status === 403) msg = qaproof.i18n.err403 || 'Access denied (403).';
+        else if (response.status === 500) msg = qaproof.i18n.err500 || 'Internal server error (500).';
         throw new Error(msg);
       });
     }

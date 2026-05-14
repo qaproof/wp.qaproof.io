@@ -693,6 +693,7 @@
   // Render Fidelity Results
   // ============================
   function renderFidelityResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.syncScrollEnabled = true;
     S.markersVisible = true;
@@ -854,6 +855,7 @@
   // Render Responsive Results
   // ============================
   function renderResponsiveResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.allDifferences = data.differences || [];
     S.activeDevice = 'desktop';
@@ -1063,6 +1065,7 @@
   // Render Accessibility Results
   // ============================
   function renderAccessibilityResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.allDifferences = data.differences || [];
     S.markersVisible = true;
@@ -1223,6 +1226,7 @@
   // Render Design Audit Results
   // ============================
   function renderDesignAuditResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.allDifferences = data.differences || [];
     S.markersVisible = true;
@@ -3264,15 +3268,4 @@
   Q.renderMarkersIntoLayer = renderMarkersIntoLayer;
   Q.renderMarkersForDevice = renderMarkersForDevice;
   Q.renderAccessibilityMarkers = renderAccessibilityMarkers;
-  Q.selectDifference = selectDifference;
-  Q.deselectAll = deselectAll;
-  Q.setupDeviceTabs = setupDeviceTabs;
-  Q.switchDeviceTab = switchDeviceTab;
-  Q.setupSyncScroll = setupSyncScroll;
-  Q.setupToolbar = setupToolbar;
-  Q.setupFilterFor = setupFilterFor;
-  Q.showTooltip = showTooltip;
-  Q.hideTooltip = hideTooltip;
-  Q.categoryDescriptions = categoryDescriptions;
-
-})();
+  Q.selectDifference = selectDiff
