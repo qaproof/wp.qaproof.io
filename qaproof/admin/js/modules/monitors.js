@@ -596,7 +596,7 @@
       html += '<button type="button" class="qaproof-mc-action-btn qaproof-edit-monitor" data-id="' + m.id + '">Edit</button>';
       html += '<button type="button" class="qaproof-mc-action-btn qaproof-mc-action-delete qaproof-delete-monitor" data-id="' + m.id + '">Delete</button>';
       html += '</div>';
-      html += '<button type="button" class="' + runBtnCls + ' qaproof-mc-run-btn" data-id="' + m.id + '"' + runBtnDisabled + '>' + runBtnLabel + '</button>';
+      html += '<button type="button" class="' + runBtnCls + ' qaproof-mc-run-btn" data-id="' + m.id + '" data-has-baseline="' + (hasBaseline ? '1' : '0') + '"' + runBtnDisabled + '>' + runBtnLabel + '</button>';
       html += '</div>'; // .qaproof-mc-footer
 
       html += '</div>'; // .qaproof-monitor-card
@@ -1336,6 +1336,7 @@
   }
 
   function runMonitor(id, btn) {
+    var hasBaseline = btn && btn.dataset.hasBaseline === '1';
     // Add running animation to the row
     var row = btn ? btn.closest('tr[data-id]') : null;
     if (row) row.classList.add('qaproof-monitor-running');
@@ -1345,20 +1346,44 @@
       btn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span>';
     }
 
-    apiCall('POST', '/monitors/' + id + '/run').then(function (resp) {
-      if (row) row.classList.remove('qaproof-monitor-running');
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = qaproof.i18n.monitorBtnRun || 'Check Now';
-      }
-      if (resp.success) {
-        loadMonitors(true);
-        // Open detail view and immediately start polling for the background result
-        try { sessionStorage.setItem('qaproof_pending_run_' + id, '1'); } catch(e) {}
-        showMonitorDetail(id, true);
-      } else {
-        Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
-      }
+    var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
+
+    // Before running a regression check, snapshot the current result count so
+    // pollResultInList knows when a new result appears.
+    var getResultCount = hasBaseline
+      ? apiCall('GET', '/monitors/' + id + '/results' + sep + 'limit=1')
+          .then(function (r) { return (r.success && r.total) ? r.total : 0; })
+          .catch(function () { return 0; })
+      : Promise.resolve(0);
+
+    getResultCount.then(function (resultCount) {
+      return apiCall('POST', '/monitors/' + id + '/run').then(function (resp) {
+        if (row) row.classList.remove('qaproof-monitor-running');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = qaproof.i18n.monitorBtnRun || 'Check Now';
+        }
+        if (resp.success) {
+          // Mark pending run so the card shows "Running" badge
+          try {
+            sessionStorage.setItem('qaproof_pending_run_' + id, '1');
+            sessionStorage.setItem('qaproof_run_start_' + id, String(Date.now()));
+            // Store pre-run result count so detail view can detect completion at render time
+            if (hasBaseline) {
+              sessionStorage.setItem('qaproof_pre_run_count_' + id, String(resultCount));
+            }
+          } catch(e) {}
+          loadMonitors(true);
+          // Stay in the list view — use background list-mode polling
+          if (!hasBaseline) {
+            pollBaselineInList(id);
+          } else {
+            pollResultInList(id, resultCount, 0, null);
+          }
+        } else {
+          Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
+        }
+      });
     }).catch(function () {
       if (row) row.classList.remove('qaproof-monitor-running');
       if (btn) {
@@ -1449,6 +1474,24 @@
       }
 
       var totalResults = resultsResp.total || (resultsResp.data ? resultsResp.data.length : 0);
+
+      // Race-condition guard: if shouldPoll is true (sessionStorage says a run is in progress)
+      // but the fetched data already shows the result appeared, the run finished while the
+      // user wasn't watching. Don't show the loader in that case.
+      if (shouldPoll) {
+        var preRunCount = null;
+        try { preRunCount = parseInt(sessionStorage.getItem('qaproof_pre_run_count_' + id), 10); } catch(e) {}
+        if (!isNaN(preRunCount) && totalResults > preRunCount) {
+          // New result already saved — run completed before we opened the detail view
+          shouldPoll = false;
+          try {
+            sessionStorage.removeItem('qaproof_pending_run_' + id);
+            sessionStorage.removeItem('qaproof_run_start_' + id);
+            sessionStorage.removeItem('qaproof_pre_run_count_' + id);
+          } catch(e) {}
+        }
+      }
+
       // switchToDetail is called inside renderMonitorDetail via the helper below
       renderMonitorDetail(monitorResp.data, resultsResp.success ? resultsResp.data : [], totalResults, shouldPoll, switchToDetail);
     }).catch(function () {

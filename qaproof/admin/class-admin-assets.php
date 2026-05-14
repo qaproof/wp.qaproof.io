@@ -443,3 +443,6 @@ class QAProof_Admin_Assets {
                 'elementsSource'  => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
             ];
         }
+        return $result;
+    }
+}

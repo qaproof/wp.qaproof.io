@@ -1715,4 +1715,13 @@
             .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
         },
         onFailed: function (errorMsg) {
-       
+          a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
+          if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
+          if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
+          if (a11yLoad) a11yLoad.classList.add('hidden');
+          if (a11yBtn) a11yBtn.disabled = false;
+        },
+      });
+    }
+  })();
+})();
