@@ -13,6 +13,9 @@
   var addMonitorBtn = document.getElementById('qaproof-add-monitor');
   var monitorCancelBtn = document.getElementById('qaproof-monitor-cancel');
 
+  // Plan quota — populated by loadMonitors() from API meta
+  var monitorsQuota = { used: 0, limit: 999 };
+
   // Track active monitor polling (detail view)
   var monitorPollTimer = null;
   var monitorPollCount = 0;
@@ -268,6 +271,29 @@
   })();
   // ---- End Datepicker ----
 
+  /**
+   * Updates the "Add Monitor" button to reflect the current plan quota.
+   * When at the limit: shows a quota badge next to the button.
+   * When under the limit: removes any existing badge.
+   */
+  function updateAddMonitorBtnState() {
+    if (!addMonitorBtn) return;
+    var atLimit = monitorsQuota.limit < 999 && monitorsQuota.used >= monitorsQuota.limit;
+    var existingBadge = document.getElementById('qaproof-monitor-limit-badge');
+
+    if (atLimit) {
+      if (!existingBadge) {
+        var badge = document.createElement('span');
+        badge.id = 'qaproof-monitor-limit-badge';
+        badge.style.cssText = 'margin-left:10px;font-size:12px;color:#f87171;font-weight:500;';
+        badge.textContent = '(' + monitorsQuota.used + '/' + monitorsQuota.limit + ' — limit reached)';
+        addMonitorBtn.parentNode.insertBefore(badge, addMonitorBtn.nextSibling);
+      }
+    } else {
+      if (existingBadge) existingBadge.remove();
+    }
+  }
+
   if (monitorsListEl) {
     initMonitorsPage();
   }
@@ -278,6 +304,13 @@
 
     if (addMonitorBtn) {
       addMonitorBtn.addEventListener('click', function () {
+        if (monitorsQuota.used >= monitorsQuota.limit) {
+          showToast(
+            'Monitor limit reached (' + monitorsQuota.used + '/' + monitorsQuota.limit + '). Upgrade your plan to add more monitors.',
+            'error'
+          );
+          return;
+        }
         showMonitorForm();
       });
     }
@@ -383,6 +416,12 @@
         if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + errMsg + '</p>';
         return;
       }
+      // Store plan quota for use in showMonitorForm / addMonitorBtn click
+      if (resp.meta) {
+        monitorsQuota.used  = resp.meta.used  || 0;
+        monitorsQuota.limit = resp.meta.limit || 999;
+      }
+      updateAddMonitorBtnState();
       // Restore detail view after a page reload
       var savedId = null;
       try { savedId = sessionStorage.getItem('qaproof_open_monitor'); } catch(e) {}
@@ -735,6 +774,9 @@
         var msg = (resp.error && resp.error.message) || (qaproof.i18n.monitorSaveFailed || 'Failed to save monitor.');
         showToast(msg, 'error');
       }
+    }).catch(function (err) {
+      var msg = (err && err.message) || (qaproof.i18n.monitorSaveFailed || 'Failed to save monitor.');
+      showToast(msg, 'error');
     });
   }
 

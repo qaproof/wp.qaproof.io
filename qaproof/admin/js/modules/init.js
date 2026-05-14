@@ -1579,7 +1579,8 @@
         },
         onDone: function (resultData) {
           resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
-          // Restore WCAG target level from saved job so PDF subtitle is correct
+          // Inject pageUrl and wcagLevel so PDF always has correct metadata
+          resultData.pageUrl = resultData.pageUrl || activeJob.pageUrl || '';
           if (resultData.testType === 'accessibility' && activeJob.wcagLevel) {
             resultData.targetWcagLevel = activeJob.wcagLevel;
           }
@@ -1714,9 +1715,4 @@
           if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
           if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
           if (a11yLoad) a11yLoad.classList.add('hidden');
-          if (a11yBtn) a11yBtn.disabled = false;
-        },
-      });
-    }
-  })();
-})();
+          if (a11yBtn
