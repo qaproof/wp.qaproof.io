@@ -1003,4 +1003,21 @@ class QAProof_API_Client {
         if ( is_wp_error( $result ) ) return $result;
         return $result;
     }
+
+    /**
+     * Send a PDF report via email using the SaaS API (AWS SES).
+     *
+     * @param array $params {
+     *   pdfBase64 string  jsPDF datauristring
+     *   to        string  Recipient email
+     *   fileName  string  Attachment filename
+     *   testType  string  e.g. 'accessibility'
+     *   pageUrl   string
+     *   score     int
+     * }
+     * @return array|WP_Error { success, sentTo } or WP_Error
+     */
+    public static function send_report_email( $params ) {
+        return self::api_request( 'POST', '/api/send-report-email', $params, 60 );
+    }
 }

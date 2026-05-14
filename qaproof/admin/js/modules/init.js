@@ -1026,6 +1026,8 @@
           },
           onDone: function (resultData) {
             a11yTimers.forEach(clearTimeout);
+            // Inject pageUrl so PDF always has correct metadata
+            resultData.pageUrl = resultData.pageUrl || pageUrl || '';
             // Inject user-selected WCAG level so PDF/history always shows the correct level
             if (wcagLevel) resultData.targetWcagLevel = wcagLevel;
             S.resultsContainer = a11yResults;
@@ -1579,7 +1581,8 @@
         },
         onDone: function (resultData) {
           resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
-          // Restore WCAG target level from saved job so PDF subtitle is correct
+          // Inject pageUrl and wcagLevel so PDF always has correct metadata
+          resultData.pageUrl = resultData.pageUrl || activeJob.pageUrl || '';
           if (resultData.testType === 'accessibility' && activeJob.wcagLevel) {
             resultData.targetWcagLevel = activeJob.wcagLevel;
           }
@@ -1696,6 +1699,8 @@
         },
         onDone: function (resultData) {
           a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
+          // Inject pageUrl so PDF always has correct metadata
+          resultData.pageUrl = resultData.pageUrl || activeJob.pageUrl || '';
           // Restore WCAG target level from saved job so PDF subtitle is correct
           if (activeJob.wcagLevel) resultData.targetWcagLevel = activeJob.wcagLevel;
           S.resultsContainer = a11yRes;

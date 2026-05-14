@@ -693,6 +693,7 @@
   // Render Fidelity Results
   // ============================
   function renderFidelityResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.syncScrollEnabled = true;
     S.markersVisible = true;
@@ -854,6 +855,7 @@
   // Render Responsive Results
   // ============================
   function renderResponsiveResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.allDifferences = data.differences || [];
     S.activeDevice = 'desktop';
@@ -1063,6 +1065,7 @@
   // Render Accessibility Results
   // ============================
   function renderAccessibilityResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.allDifferences = data.differences || [];
     S.markersVisible = true;
@@ -1223,6 +1226,7 @@
   // Render Design Audit Results
   // ============================
   function renderDesignAuditResults(data) {
+    if (window.QAProof && window.QAProof.state) window.QAProof.state.lastResult = data;
     S.activeDiffIndex = null;
     S.allDifferences = data.differences || [];
     S.markersVisible = true;

@@ -6,25 +6,37 @@
    * Fetch screenshots for a completed job and inject into existing DOM.
    * Screenshots are fetched separately to avoid multi-MB responses
    * through the WP proxy during polling.
+   *
+   * Retries up to MAX_RETRIES times with a 2-second delay between attempts.
+   * Handles transient PHP memory limits, network hiccups, and in-memory job
+   * expiry after API restarts.
    */
   function fetchAndInjectScreenshots(jobId, resultData, onComplete) {
-    console.log('[QAProof] Fetching screenshots separately for job:', jobId);
+    var MAX_RETRIES = 3;
+    var RETRY_DELAY_MS = 2000;
 
-    fetch(Q.buildScreenshotsUrl(jobId), {
-      method: 'GET',
-      headers: { 'X-WP-Nonce': qaproof.nonce },
-      credentials: 'same-origin',
-    })
-    .then(Q.safeJson)
-    .then(function (resp) {
-      if (!resp.success || !resp.data || !resp.data.screenshots) {
-        console.warn('[QAProof] Screenshots fetch failed or empty');
-        // Remove loading placeholder
-        var placeholder = document.getElementById('qaproof-screenshots-loading');
-        if (placeholder) placeholder.remove();
-        if (onComplete) onComplete(resultData);
-        return;
-      }
+    function attempt(retriesLeft) {
+      console.log('[QAProof] Fetching screenshots for job:', jobId, '(attempts left after this:', retriesLeft, ')');
+
+      fetch(Q.buildScreenshotsUrl(jobId), {
+        method: 'GET',
+        headers: { 'X-WP-Nonce': qaproof.nonce },
+        credentials: 'same-origin',
+      })
+      .then(Q.safeJson)
+      .then(function (resp) {
+        if (!resp.success || !resp.data || !resp.data.screenshots) {
+          console.warn('[QAProof] Screenshots fetch returned empty/failure, retriesLeft:', retriesLeft);
+          if (retriesLeft > 0) {
+            setTimeout(function () { attempt(retriesLeft - 1); }, RETRY_DELAY_MS);
+            return;
+          }
+          // All retries exhausted — remove placeholder silently
+          var placeholder = document.getElementById('qaproof-screenshots-loading');
+          if (placeholder) placeholder.remove();
+          if (onComplete) onComplete(resultData);
+          return;
+        }
 
       var screenshots = resp.data.screenshots;
       console.log('[QAProof] Screenshots received:', Object.keys(screenshots).length, 'viewports');
@@ -129,11 +141,19 @@
       if (onComplete) onComplete(resultData);
     })
     .catch(function (err) {
-      console.warn('[QAProof] Screenshots fetch error:', err.message);
+      console.warn('[QAProof] Screenshots fetch error:', err.message, '— retriesLeft:', retriesLeft);
+      if (retriesLeft > 0) {
+        setTimeout(function () { attempt(retriesLeft - 1); }, RETRY_DELAY_MS);
+        return;
+      }
+      // All retries exhausted — show error
       var placeholder = document.getElementById('qaproof-screenshots-loading');
       if (placeholder) placeholder.textContent = (qaproof.i18n.screenshotsLoadError || 'Screenshots could not be loaded.');
       if (onComplete) onComplete(resultData);
     });
+    } // end attempt()
+
+    attempt(MAX_RETRIES);
   }
 
   /**

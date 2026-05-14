@@ -1667,7 +1667,8 @@
           onDone: function (resultData) {
             loadingTimers.forEach(clearTimeout);
 
-            // Inject targetWcagLevel from form so PDF subtitle always shows correct level
+            // Inject pageUrl and wcagLevel so PDF always has correct metadata
+            resultData.pageUrl = resultData.pageUrl || body.pageUrl || '';
             if (resultData.testType === 'accessibility' && body.wcagLevel) {
               resultData.targetWcagLevel = body.wcagLevel;
             }
@@ -1758,11 +1759,36 @@
       var lastResult = window.QAProof && window.QAProof.state && window.QAProof.state.lastResult;
       var pdfBase64 = null;
 
+      if (!lastResult) {
+        console.warn('[QAProof] Email: lastResult is null — no active test result in state');
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + (qaproof.i18n.emailErrNoResult || 'Run a test first.');
+        setTimeout(function() { collapseEmailBtn(emailBtn); }, 2500);
+        return;
+      }
+
       try {
-        if (window.QAProof && typeof window.QAProof.generatePdfBase64 === 'function' && lastResult) {
-          pdfBase64 = window.QAProof.generatePdfBase64(lastResult);
+        if (window.QAProof && typeof window.QAProof.generatePdfBase64 === 'function') {
+          // Strip screenshots before email generation to keep payload small
+          // (screenshots are base64 images that can be 5-15 MB each)
+          var emailData = Object.assign({}, lastResult);
+          if (emailData.screenshots) emailData.screenshots = {};
+          pdfBase64 = window.QAProof.generatePdfBase64(emailData);
+          console.log('[QAProof] pdfBase64 type:', typeof pdfBase64, 'length:', pdfBase64 ? pdfBase64.length : 0, 'prefix:', pdfBase64 ? pdfBase64.slice(0, 40) : 'null');
+        } else {
+          console.warn('[QAProof] generatePdfBase64 not found on window.QAProof:', window.QAProof);
         }
-      } catch(e) { /* PDF generation optional */ }
+      } catch(e) {
+        console.error('[QAProof] PDF generation error:', e);
+      }
+
+      if (!pdfBase64) {
+        console.warn('[QAProof] Email: PDF generation returned null — jsPDF may not be loaded');
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + (qaproof.i18n.emailErrPdf || 'PDF generation failed. Refresh the page.');
+        setTimeout(function() { collapseEmailBtn(emailBtn); }, 2500);
+        return;
+      }
 
       fetch(qaproof.restBase + '/send-report-email', {
         method: 'POST',
