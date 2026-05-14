@@ -567,8 +567,9 @@ class QAProof_API_Client {
 
         // Map notify_email_enabled / notify_admin_enabled → notify_email / notify_admin
         // so existing PHP + JS code that reads these fields keeps working unchanged.
-        $m['notify_email'] = isset( $m['notify_email_enabled'] ) ? (int) $m['notify_email_enabled'] : 1;
-        $m['notify_admin'] = isset( $m['notify_admin_enabled'] ) ? (int) $m['notify_admin_enabled'] : 1;
+        // Fallback to 0 (off) when the key is absent — safer than silently enabling notifications.
+        $m['notify_email'] = isset( $m['notify_email_enabled'] ) ? (int) $m['notify_email_enabled'] : 0;
+        $m['notify_admin'] = isset( $m['notify_admin_enabled'] ) ? (int) $m['notify_admin_enabled'] : 0;
 
         return $m;
     }
@@ -856,10 +857,12 @@ class QAProof_API_Client {
             $payload['screenshots'] = $data['screenshots'];
         }
 
+        // Use a longer timeout: result payloads can include full-quality screenshots (2–5 MB).
         $result = self::api_request(
             'POST',
             '/api/monitors/' . rawurlencode( $monitor_id ) . '/results',
-            $payload
+            $payload,
+            self::BASELINE_TIMEOUT
         );
         if ( is_wp_error( $result ) ) return $result;
         return self::normalize_result( $result );
@@ -970,7 +973,8 @@ class QAProof_API_Client {
         if ( ! empty( $result_obj ) ) { $payload['result'] = $result_obj; }
         if ( ! empty( $data['screenshots'] ) ) { $payload['screenshots'] = $data['screenshots']; }
 
-        $result = self::api_request( 'POST', '/api/history', $payload );
+        // Use a longer timeout: history payloads can include full-quality screenshots (2–5 MB).
+        $result = self::api_request( 'POST', '/api/history', $payload, self::BASELINE_TIMEOUT );
         if ( is_wp_error( $result ) ) return $result;
         return self::normalize_history( $result );
     }

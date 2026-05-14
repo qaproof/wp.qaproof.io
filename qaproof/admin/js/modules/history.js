@@ -290,14 +290,21 @@
             rowEl.style.opacity = '0';
             rowEl.style.transform = 'translateX(20px)';
             setTimeout(function () { rowEl.remove(); }, 300);
+            // Decrement total count but NOT offset — offset tracks how many items
+            // were fetched, not displayed. Decrementing offset would cause the next
+            // "Load More" to overlap or skip a boundary item.
             total--;
-            offset--;
             if (list.children.length === 0) {
               empty.classList.remove('hidden');
             }
+          } else {
+            var msg = (resp.error && resp.error.message) ? resp.error.message : (qaproof.i18n.histDeleteFailed || 'Failed to delete.');
+            if (cfg.showError) cfg.showError(msg);
           }
         })
-        .catch(function () {});
+        .catch(function () {
+          if (cfg.showError) cfg.showError(qaproof.i18n.histDeleteFailed || 'Failed to delete.');
+        });
     }
 
     function downloadItemPdf(id) {

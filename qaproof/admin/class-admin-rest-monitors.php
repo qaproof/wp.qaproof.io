@@ -4,17 +4,53 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * WP REST handlers for visual regression monitors.
  * All data lives in the SaaS API (PostgreSQL) — this class is a pure proxy.
+ *
+ * READ endpoints use short-lived WP transient cache (9s TTL) so that the
+ * browser's 10s polling loop hits local WordPress MySQL instead of making
+ * a remote HTTP request to the SaaS API on every tick.
+ * WRITE endpoints (create/update/delete/run/approve) always bypass the cache
+ * and call the API directly, then flush affected cache keys.
  */
 class QAProof_Admin_REST_Monitors {
 
+    /** Cache TTL in seconds — just under the JS poll interval (10s). */
+    const CACHE_TTL = 9;
+
+    // ── Cache helpers ──────────────────────────────────────────────────────────
+
+    private static function cache_key_list()         { return 'qaproof_mon_list'; }
+    private static function cache_key_monitor( $id ) { return 'qaproof_mon_' . md5( $id ); }
+    private static function cache_key_results( $id ) { return 'qaproof_mon_res_' . md5( $id ); }
+
+    /** Flush all transient cache entries for a specific monitor (and the list). */
+    private static function flush_monitor_cache( $id ) {
+        delete_transient( self::cache_key_list() );
+        delete_transient( self::cache_key_monitor( $id ) );
+        delete_transient( self::cache_key_results( $id ) );
+    }
+
+    /** Flush only the list cache (e.g. after create). */
+    private static function flush_list_cache() {
+        delete_transient( self::cache_key_list() );
+    }
+
+    // ── Read handlers (cached) ─────────────────────────────────────────────────
+
     public static function handle_list_monitors() {
+        $cached = get_transient( self::cache_key_list() );
+        if ( $cached !== false ) {
+            return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
+        }
+
         $monitors = QAProof_API_Client::monitors_list();
 
         if ( is_wp_error( $monitors ) ) {
+            $data = $monitors->get_error_data();
+            $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
             return new WP_REST_Response( [
                 'success' => false,
                 'error'   => [ 'message' => $monitors->get_error_message() ],
-            ], 502 );
+            ], $http );
         }
 
         // Augment each monitor with the next WP-Cron timestamp for its schedule.
@@ -31,11 +67,18 @@ class QAProof_Admin_REST_Monitors {
         }
         unset( $m );
 
+        set_transient( self::cache_key_list(), $monitors, self::CACHE_TTL );
+
         return new WP_REST_Response( [ 'success' => true, 'data' => $monitors ], 200 );
     }
 
     public static function handle_get_monitor( WP_REST_Request $request ) {
-        $id      = sanitize_text_field( $request['id'] );
+        $id     = sanitize_text_field( $request['id'] );
+        $cached = get_transient( self::cache_key_monitor( $id ) );
+        if ( $cached !== false ) {
+            return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
+        }
+
         $monitor = QAProof_API_Client::monitors_get( $id );
 
         if ( is_wp_error( $monitor ) ) {
@@ -46,6 +89,8 @@ class QAProof_Admin_REST_Monitors {
                 'error'   => [ 'message' => $monitor->get_error_message() ],
             ], $http );
         }
+
+        set_transient( self::cache_key_monitor( $id ), $monitor, self::CACHE_TTL );
 
         return new WP_REST_Response( [ 'success' => true, 'data' => $monitor ], 200 );
     }
@@ -89,6 +134,7 @@ class QAProof_Admin_REST_Monitors {
         $monitor = QAProof_API_Client::monitors_create( $create_data );
 
         if ( is_wp_error( $monitor ) ) {
+            // (error handled below)
             $data = $monitor->get_error_data();
             $http = 500;
             $code = '';
@@ -102,7 +148,8 @@ class QAProof_Admin_REST_Monitors {
             ], $http );
         }
 
-        return new WP_REST_Response( [ 'success' => true, 'data' => $monitor ], 201 );
+        self::flush_list_cache();
+        return new WP_REST_Response( [ 'success' => true, 'data' => $monitor ], 200 );
     }
 
     public static function handle_update_monitor( WP_REST_Request $request ) {
@@ -132,6 +179,7 @@ class QAProof_Admin_REST_Monitors {
             ], $http );
         }
 
+        self::flush_monitor_cache( $id );
         return new WP_REST_Response( [ 'success' => true, 'data' => $monitor ], 200 );
     }
 
@@ -140,10 +188,15 @@ class QAProof_Admin_REST_Monitors {
         $monitor = QAProof_API_Client::monitors_get( $id );
 
         if ( is_wp_error( $monitor ) ) {
+            $data = $monitor->get_error_data();
+            $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
+            // Return 404 only when the API actually said 404; propagate real status otherwise.
             return new WP_REST_Response( [
                 'success' => false,
-                'error'   => [ 'message' => __( 'Monitor not found.', 'qaproof' ) ],
-            ], 404 );
+                'error'   => [ 'message' => $http === 404
+                    ? __( 'Monitor not found.', 'qaproof' )
+                    : $monitor->get_error_message() ],
+            ], $http );
         }
 
         // Delete baseline from API storage if one exists
@@ -160,6 +213,7 @@ class QAProof_Admin_REST_Monitors {
             ], 502 );
         }
 
+        self::flush_monitor_cache( $id );
         return new WP_REST_Response( [ 'success' => true ], 200 );
     }
 
@@ -174,50 +228,49 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Send the "queued" response BEFORE running the job, then keep the PHP
-        // process alive to execute the monitor inline. This bypasses WP-Cron
-        // entirely — which is unreliable in Docker because spawn_cron()'s
-        // non-blocking HTTP request to localhost:PORT often fails to reach
-        // Apache from inside the WP container, leaving the job stuck for minutes.
+        // Schedule the monitor run as a WP-Cron single event and return 200
+        // immediately — this frees the PHP-FPM worker right away.
         //
-        // fastcgi_finish_request() (PHP-FPM) and flush()+ignore_user_abort()
-        // (mod_php) both let us return the HTTP response and continue working.
-        // The browser sees a 200 immediately and starts polling for results.
-        $response_body = wp_json_encode( [
+        // The browser JS pings /wp-cron.php from outside Docker on the FIRST
+        // poll tick, which reliably fires the event (internal spawn_cron() HTTP
+        // requests often fail in Docker because localhost resolves to the
+        // container, not the host's exposed port).
+        wp_schedule_single_event( time() - 1, 'qaproof_run_monitor', [ $id ] );
+        // Only flush the individual monitor + results caches, NOT the list cache.
+        // The list data doesn't change when a run starts (only on completion), so
+        // keeping the list cache warm prevents a 502 on page reload while the SaaS
+        // API is busy capturing screenshots (60–90 s baseline creation).
+        delete_transient( self::cache_key_monitor( $id ) );
+        delete_transient( self::cache_key_results( $id ) );
+
+        return new WP_REST_Response( [
             'success' => true,
             'data'    => [
                 'monitor' => $monitor,
-                'message' => __( 'Monitor test started. Results will appear shortly.', 'qaproof' ),
+                'message' => __( 'Monitor test queued. Results will appear shortly.', 'qaproof' ),
             ],
-        ] );
-
-        ignore_user_abort( true );
-        @set_time_limit( 900 );
-
-        if ( function_exists( 'fastcgi_finish_request' ) ) {
-            header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
-            header( 'Content-Length: ' . strlen( $response_body ) );
-            echo $response_body;
-            fastcgi_finish_request();
-        } else {
-            header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
-            header( 'Connection: close' );
-            header( 'Content-Length: ' . strlen( $response_body ) );
-            echo $response_body;
-            while ( ob_get_level() > 0 ) { @ob_end_flush(); }
-            @flush();
-        }
-
-        // Now execute the monitor inline — client has already received the response.
-        QAProof_Scheduler::run_single_monitor( $id );
-
-        exit;
+        ], 200 );
     }
 
     public static function handle_get_results( WP_REST_Request $request ) {
         $id     = sanitize_text_field( $request['id'] );
         $limit  = $request->get_param( 'limit' )  ? (int) $request->get_param( 'limit' )  : 20;
         $offset = $request->get_param( 'offset' ) ? (int) $request->get_param( 'offset' ) : 0;
+
+        // Only cache the default first-page fetch (limit=1 or 20, offset=0) that
+        // the polling loop uses. Paginated requests bypass cache to stay fresh.
+        $use_cache = ( $offset === 0 && $limit <= 20 );
+        if ( $use_cache ) {
+            $cache_key = self::cache_key_results( $id ) . '_' . $limit;
+            $cached    = get_transient( $cache_key );
+            if ( $cached !== false ) {
+                return new WP_REST_Response( [
+                    'success' => true,
+                    'data'    => $cached['data'],
+                    'total'   => $cached['total'],
+                ], 200 );
+            }
+        }
 
         $result = QAProof_API_Client::monitors_get_results( $id, [
             'limit'  => $limit,
@@ -229,6 +282,10 @@ class QAProof_Admin_REST_Monitors {
                 'success' => false,
                 'error'   => [ 'message' => $result->get_error_message() ],
             ], 502 );
+        }
+
+        if ( $use_cache ) {
+            set_transient( $cache_key, [ 'data' => $result['data'], 'total' => $result['total'] ], self::CACHE_TTL );
         }
 
         return new WP_REST_Response( [
@@ -281,6 +338,7 @@ class QAProof_Admin_REST_Monitors {
         // Mark result as approved
         QAProof_API_Client::monitors_approve_result( $result_id );
 
+        self::flush_monitor_cache( $monitor_id );
         return new WP_REST_Response( [ 'success' => true ], 200 );
     }
 
