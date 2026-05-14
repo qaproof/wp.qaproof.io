@@ -365,7 +365,9 @@
       credentials: 'same-origin',
     };
     if (body) opts.body = JSON.stringify(body);
-    return fetch(qaproof.restBase + path, opts).then(Q.safeJson);
+    // Guard: if Q or Q.safeJson is not yet available, fall back to basic JSON parser.
+    var parser = (Q && Q.safeJson) ? Q.safeJson : function (r) { return r.json(); };
+    return fetch(qaproof.restBase + path, opts).then(parser);
   }
 
   function loadMonitors(silent) {
@@ -650,11 +652,23 @@
     }
 
     monitorFormWrap.classList.remove('hidden');
-    if (urlInput) urlInput.focus();
+    requestAnimationFrame(function () {
+      monitorFormWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (urlInput) urlInput.focus({ preventScroll: true });
+    });
   }
 
   function hideMonitorForm() {
     if (monitorFormWrap) monitorFormWrap.classList.add('hidden');
+    // Scroll the "Add Monitor" button back into view.
+    // scrollIntoView is the only reliable way to target the WP admin scroll container.
+    // block:'center' ensures the button lands in the middle of the viewport,
+    // well clear of the sticky WP admin bar.
+    if (addMonitorBtn) {
+      requestAnimationFrame(function () {
+        addMonitorBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
   }
 
   function saveMonitor() {
@@ -1039,7 +1053,7 @@
   }
 
   // Poll GET /monitors/:id/results until total exceeds expectedCount, then reload the list.
-  function pollResultInList(monitorId, expectedCount, attempts) {
+  function pollResultInList(monitorId, expectedCount, attempts, lastRunAtBefore) {
     attempts = attempts || 0;
     if (attempts > LIST_POLL_MAX) {
       try {
@@ -1073,11 +1087,29 @@
             'View Result'
           );
           loadMonitors(true);
+        } else if (attempts >= 5 && lastRunAtBefore) {
+          // Fallback: check last_run_at directly in case result-count never updates
+          // (e.g. monitors_save_result failed but scheduler still updated last_run_at)
+          apiCall('GET', '/monitors/' + monitorId).then(function (mResp) {
+            var mon = mResp.success && mResp.data;
+            if (mon && mon.last_run_at && mon.last_run_at !== lastRunAtBefore) {
+              try {
+                sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
+                sessionStorage.removeItem('qaproof_run_start_' + monitorId);
+              } catch(e) {}
+              showToast('Monitor run finished. Refreshing…', 'info');
+              loadMonitors(true);
+            } else {
+              pollResultInList(monitorId, expectedCount, attempts + 1, lastRunAtBefore);
+            }
+          }).catch(function () {
+            pollResultInList(monitorId, expectedCount, attempts + 1, lastRunAtBefore);
+          });
         } else {
-          pollResultInList(monitorId, expectedCount, attempts + 1);
+          pollResultInList(monitorId, expectedCount, attempts + 1, lastRunAtBefore);
         }
       }).catch(function () {
-        pollResultInList(monitorId, expectedCount, attempts + 1);
+        pollResultInList(monitorId, expectedCount, attempts + 1, lastRunAtBefore);
       });
     }, 5000);
   }
@@ -1094,11 +1126,12 @@
       } else {
         // Regression run in progress — fetch current result count first, then poll for increase
         var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
+        var lastRunAtBefore = m.last_run_at || null;
         apiCall('GET', '/monitors/' + m.id + '/results' + sep + 'limit=1').then(function (resp) {
           var currentCount = (resp.success && resp.total) ? resp.total : 0;
-          pollResultInList(m.id, currentCount, 0);
+          pollResultInList(m.id, currentCount, 0, lastRunAtBefore);
         }).catch(function () {
-          pollResultInList(m.id, 0, 0);
+          pollResultInList(m.id, 0, 0, lastRunAtBefore);
         });
       }
     });

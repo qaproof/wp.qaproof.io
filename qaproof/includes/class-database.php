@@ -86,7 +86,7 @@ class QAProof_Database {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.6.0' );
+        update_option( 'qaproof_db_version', '1.7.0' );
     }
 
     /**
@@ -95,11 +95,81 @@ class QAProof_Database {
      */
     public static function maybe_upgrade() {
         $current = get_option( 'qaproof_db_version', '0' );
-        if ( version_compare( $current, '1.6.0', '>=' ) ) {
+        if ( version_compare( $current, '1.7.0', '>=' ) ) {
             return;
         }
         // Re-run create_tables() — dbDelta() handles ADD COLUMN / ADD KEY safely.
         self::create_tables();
+
+        // v1.7.0: One-time migration — copy monitors from WP MySQL → SaaS API.
+        // Monitors moved to PostgreSQL; any monitors created before this version
+        // are still in the local MySQL table and need to be pushed to the API.
+        self::migrate_monitors_to_api();
+    }
+
+    /**
+     * Copy monitors from the legacy WP MySQL table to the SaaS API (one-time).
+     * Guarded by a WP option so it never runs more than once.
+     */
+    private static function migrate_monitors_to_api() {
+        global $wpdb;
+
+        if ( get_option( 'qaproof_monitors_api_migrated' ) ) {
+            return;
+        }
+
+        // Mark as done immediately — prevents re-runs even if individual creates fail.
+        update_option( 'qaproof_monitors_api_migrated', 1 );
+
+        $table = $wpdb->prefix . 'qaproof_monitors';
+
+        // Table may not exist on fresh installs — skip silently.
+        if ( ! $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) ) {
+            return;
+        }
+
+        $monitors = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A );
+        if ( empty( $monitors ) ) {
+            return;
+        }
+
+        $migrated = 0;
+        $failed   = 0;
+
+        foreach ( $monitors as $m ) {
+            $create_data = array(
+                'page_url'        => $m['page_url'],
+                'schedule'        => ! empty( $m['schedule'] ) ? $m['schedule'] : 'daily',
+                'is_enabled'      => (int) $m['is_enabled'],
+                'notify_email'    => (int) $m['notify_email'],
+                'notify_admin'    => (int) $m['notify_admin'],
+                'notify_on'       => ! empty( $m['notify_on'] ) ? $m['notify_on'] : 'failures',
+                'threshold_score' => (int) $m['threshold_score'],
+            );
+
+            $result = QAProof_API_Client::monitors_create( $create_data );
+
+            if ( is_wp_error( $result ) ) {
+                $failed++;
+                error_log( '[QAProof] migrate_monitors_to_api: failed to create monitor for ' . $m['page_url'] . ' — ' . $result->get_error_message() );
+                continue;
+            }
+
+            $migrated++;
+
+            // Restore baseline_key + has_baseline if the monitor had a baseline.
+            if ( ! empty( $m['baseline_key'] ) && ! empty( $m['has_baseline'] ) ) {
+                QAProof_API_Client::monitors_update( $result['id'], array(
+                    'baseline_key' => $m['baseline_key'],
+                    'has_baseline' => 1,
+                ) );
+            }
+        }
+
+        error_log( sprintf(
+            '[QAProof] migrate_monitors_to_api: migrated %d/%d monitors to SaaS API (%d failed)',
+            $migrated, count( $monitors ), $failed
+        ) );
     }
 
     /**
