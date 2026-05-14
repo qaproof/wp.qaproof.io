@@ -287,4 +287,26 @@
     saveData.append('nonce', qaproof.ajaxNonce);
     saveData.append('testType', testType);
     saveData.append('pageUrl', pageUrl);
-    if (jo
+    if (jobId) saveData.append('jobId', jobId);
+    saveData.append('result', JSON.stringify(payload));
+
+    return fetch(qaproof.ajaxUrl, {
+      method: 'POST',
+      body: saveData,
+      credentials: 'same-origin',
+    })
+    .then(Q.safeJson)
+    .then(function (resp) {
+      console.log('[QAProof] saveTestHistory response — success=' + resp.success + ' id=' + (resp.data && resp.data.id) + ' deduplicated=' + (resp.data && resp.data.deduplicated) + ' jobId=' + (jobId || '(none)'));
+      return resp;
+    })
+    .catch(function (err) {
+      console.error('[QAProof] saveTestHistory FAILED — ' + err.message + ' jobId=' + (jobId || '(none)'));
+      throw err;
+    });
+  }
+
+  Q.fetchAndInjectScreenshots = fetchAndInjectScreenshots;
+  Q.startJobPolling = startJobPolling;
+  Q.saveTestHistory = saveTestHistory;
+})();
