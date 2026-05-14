@@ -13,7 +13,7 @@
   // ============================
   // PDF Report Generation
   // ============================
-  function generatePdfReport(data) {
+  function generatePdfReport(data, captureMode) {
     if (!window.jspdf || !window.jspdf.jsPDF) {
       // i18n() lives later inside this function; use raw qaproof.i18n lookup
       // here so we don't crash before the function body sets up its helpers.
@@ -631,33 +631,25 @@
       addFooter();
     }
 
-    // Download
+    // Download or return base64
     var filename = 'qaproof-' + currentTestType + '-report-' + now.toISOString().slice(0, 10) + '.pdf';
+    if (captureMode) {
+      return doc.output('datauristring');
+    }
     doc.save(filename);
   }
 
   /**
-   * Generate PDF and return as base64 string (for email sending).
+   * Generate PDF and return as base64 data URI string (for email sending).
    * Returns null if jsPDF is not available or generation fails.
+   * Does NOT trigger a file download.
    */
   function generatePdfBase64(data) {
     if (!window.jspdf || !window.jspdf.jsPDF) return null;
     try {
-      // Temporarily override doc.save to capture output instead of downloading
-      var jsPDF = window.jspdf.jsPDF;
-      var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      // Run the full report generation — reuse generatePdfReport logic
-      // by calling output() instead of save()
-      // We call generatePdfReport but intercept via jsPDF's output method
-      var originalSave = jsPDF.prototype.save;
-      var base64Result = null;
-      jsPDF.prototype.save = function() {
-        base64Result = this.output('datauristring');
-      };
-      generatePdfReport(data);
-      jsPDF.prototype.save = originalSave;
-      return base64Result;
+      return generatePdfReport(data, true) || null;
     } catch(e) {
+      console.error('[QAProof] generatePdfBase64 failed:', e);
       return null;
     }
   }
