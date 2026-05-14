@@ -787,3 +787,32 @@
   border-color: var(--qp-accent);
   color: #fff;
 }
+
+/* ── Detail view skeleton placeholders (immediate HTML while API loads) ── */
+@keyframes qp-skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.9; }
+}
+.qaproof-detail-skeleton-title {
+  height: 22px;
+  width: 260px;
+  max-width: 60%;
+  border-radius: 6px;
+  background: var(--qp-border);
+  animation: qp-skeleton-pulse 1.4s ease-in-out infinite;
+}
+.qaproof-detail-skeleton-meta {
+  display: inline-block;
+  height: 14px;
+  width: 80px;
+  border-radius: 4px;
+  background: var(--qp-border-light);
+  animation: qp-skeleton-pulse 1.4s ease-in-out infinite;
+  margin-right: 4px;
+}
+#qaproof-app.qaproof-dark .qaproof-detail-skeleton-title {
+  background: rgba(255,255,255,0.12);
+}
+#qaproof-app.qaproof-dark .qaproof-detail-skeleton-meta {
+  background: rgba(255,255,255,0.07);
+}
