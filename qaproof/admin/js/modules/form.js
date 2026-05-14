@@ -1826,4 +1826,6 @@
   // Expose on namespace
   // ============================
   Q.updateFigmaPreviewVisibility = updateFigmaPreviewVisibility;
-  Q.updateSavedDesignVisibility = updateSavedDesignVisibi
+  Q.updateSavedDesignVisibility = updateSavedDesignVisibility;
+  Q.clearElementOverlays = clearElementOverlays;
+})();

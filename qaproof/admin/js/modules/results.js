@@ -3268,4 +3268,15 @@
   Q.renderMarkersIntoLayer = renderMarkersIntoLayer;
   Q.renderMarkersForDevice = renderMarkersForDevice;
   Q.renderAccessibilityMarkers = renderAccessibilityMarkers;
-  Q.selectDifference = selectDiff
+  Q.selectDifference = selectDifference;
+  Q.deselectAll = deselectAll;
+  Q.setupDeviceTabs = setupDeviceTabs;
+  Q.switchDeviceTab = switchDeviceTab;
+  Q.setupSyncScroll = setupSyncScroll;
+  Q.setupToolbar = setupToolbar;
+  Q.setupFilterFor = setupFilterFor;
+  Q.showTooltip = showTooltip;
+  Q.hideTooltip = hideTooltip;
+  Q.categoryDescriptions = categoryDescriptions;
+
+})();
