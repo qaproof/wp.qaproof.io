@@ -16,6 +16,12 @@
   // Plan quota — populated by loadMonitors() from API meta
   var monitorsQuota = { used: 0, limit: 999 };
 
+  // In-memory cache of monitor objects keyed by id.
+  // Populated whenever loadMonitors() renders the list so showMonitorDetail()
+  // can instantly render the detail header without waiting for a GET /monitors/:id
+  // round-trip (results still need a separate fetch).
+  var monitorsCache = {};
+
   // Track active monitor polling (detail view)
   var monitorPollTimer = null;
   var monitorPollCount = 0;
@@ -457,6 +463,12 @@
 
   function renderMonitorsList(monitors) {
     if (!monitorsListEl) return;
+
+    // Rebuild in-memory cache so detail view can render instantly on click
+    monitorsCache = {};
+    if (monitors && monitors.length) {
+      monitors.forEach(function (m) { monitorsCache[String(m.id)] = m; });
+    }
 
     if (!monitors || monitors.length === 0) {
       monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + (qaproof.i18n.noMonitors || 'No monitors yet. Click "Add Monitor" to get started.') + '</p>';
@@ -1416,15 +1428,22 @@
     stopMonitorPoll();
     if (monitorsLoading) monitorsLoading.classList.add('hidden');
 
-    // ── Keep the list visible while data loads — no intermediate loading flash ──
-    // We swap list → detail only once the API responds, so the user sees an
-    // instant transition directly to the real content (no "Loading monitor..." blink).
-
     function switchToDetail(html) {
       monitorDetail.innerHTML = html;
       if (monitorsListEl) monitorsListEl.classList.add('hidden');
       if (addMonitorBtn) addMonitorBtn.classList.add('hidden');
       monitorDetail.classList.remove('hidden');
+    }
+
+    // ── Instant render from cache ──────────────────────────────────────────────
+    // If we already have this monitor's data (from the list), render the detail
+    // header + a results skeleton immediately — no waiting. Then fetch only the
+    // results in the background and swap in the real content when it arrives.
+    // This eliminates the 1-2s blank/wait before the detail appears.
+    var cachedMonitor = monitorsCache[String(id)];
+    if (cachedMonitor) {
+      // Render header + skeleton immediately
+      renderMonitorDetail(cachedMonitor, null /* skeleton mode */, 0, shouldPoll, switchToDetail);
     }
 
     // Bail to error view if API doesn't respond within 20s
@@ -1446,8 +1465,13 @@
       });
     }, 20000);
 
+    // Fetch monitor data + results. When we have a cached monitor, only results
+    // are strictly needed — but we still fetch the monitor too to get fresh
+    // last_score / has_baseline in case it changed since the list loaded.
     Promise.all([
-      apiCall('GET', '/monitors/' + id),
+      cachedMonitor
+        ? Promise.resolve({ success: true, data: cachedMonitor })
+        : apiCall('GET', '/monitors/' + id),
       apiCall('GET', '/monitors/' + id + '/results'),
     ]).then(function (results) {
       clearTimeout(detailLoadTimeout);
@@ -1492,7 +1516,7 @@
         }
       }
 
-      // switchToDetail is called inside renderMonitorDetail via the helper below
+      // Render (or re-render) with real results data
       renderMonitorDetail(monitorResp.data, resultsResp.success ? resultsResp.data : [], totalResults, shouldPoll, switchToDetail);
     }).catch(function () {
       clearTimeout(detailLoadTimeout);
@@ -1517,6 +1541,9 @@
 
   function renderMonitorDetail(monitor, monitorResults, totalResultCount, shouldPoll, switchToDetail) {
     if (!monitorDetail) return;
+    // Stop any poll that might have been started by a previous skeleton render
+    // so we don't get duplicate polling loops when real data replaces the skeleton.
+    if (monitorResults !== null) stopMonitorPoll();
     // If no switchToDetail helper provided (e.g. called after poll refresh), use direct assignment
     if (!switchToDetail) {
       switchToDetail = function(h) {
@@ -1557,8 +1584,12 @@
     html += '</div>';
 
     // Results timeline
+    // monitorResults === null means "skeleton mode" — data not yet fetched.
+    // Render a shimmer placeholder; the real content will be swapped in shortly.
     html += '<h3>' + (qaproof.i18n.monitorResultsHistory || 'Results History') + '</h3>';
-    if (!monitorResults || monitorResults.length === 0) {
+    if (monitorResults === null) {
+      html += '<div class="qaproof-results-loading"><div class="qaproof-results-loading-spinner"></div></div>';
+    } else if (monitorResults.length === 0) {
       html += '<p class="qaproof-monitors-empty">' + (qaproof.i18n.monitorNoResults || 'No results yet. Click "Run Now" to run the first check.') + '</p>';
     } else {
       html += '<div class="qaproof-results-timeline">';
@@ -1620,6 +1651,11 @@
     html += '<div id="qaproof-result-detail"></div>';
 
     switchToDetail(html);
+
+    // In skeleton mode (monitorResults === null) we rendered the header immediately
+    // from cache but results haven't loaded yet. Don't start polling here — the
+    // second renderMonitorDetail call (with real results) will start it.
+    if (monitorResults === null) return;
 
     if (shouldPoll) {
       if (!pollHasBaseline) {
