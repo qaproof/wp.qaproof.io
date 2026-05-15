@@ -47,11 +47,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Test Type Selector -->
     <div class="qaproof-card">
         <div class="qaproof-test-type-selector">
-            <button type="button" class="qaproof-test-type-btn active" data-type="fidelity">
-                <span class="dashicons dashicons-art"></span>
-                <?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?>
-            </button>
-            <button type="button" class="qaproof-test-type-btn" data-type="responsive">
+            <?php
+                $fidelity_launch = new DateTime( '2026-05-22', new DateTimeZone( 'UTC' ) );
+                $now_dt          = new DateTime( 'now', new DateTimeZone( 'UTC' ) );
+                $diff_dt         = $now_dt->diff( $fidelity_launch );
+                $days_left       = ( ! $diff_dt->invert && $diff_dt->days > 0 ) ? $diff_dt->days : 0;
+                $fidelity_label  = $days_left > 0 ? 'In ' . $days_left . ' day' . ( $days_left === 1 ? '' : 's' ) : 'Soon';
+            ?>
+            <div class="qaproof-coming-soon-wrap qaproof-coming-soon-fidelity" data-label="<?php echo esc_attr( $fidelity_label ); ?>">
+                <button type="button" class="qaproof-test-type-btn qaproof-coming-soon-btn" data-type="fidelity" disabled>
+                    <span class="dashicons dashicons-art"></span>
+                    <?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?>
+                </button>
+            </div>
+            <button type="button" class="qaproof-test-type-btn active" data-type="responsive">
                 <span class="dashicons dashicons-smartphone"></span>
                 <?php esc_html_e( 'Responsive Test', 'qaproof' ); ?>
             </button>
