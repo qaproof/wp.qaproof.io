@@ -432,7 +432,21 @@
       var savedId = null;
       try { savedId = sessionStorage.getItem('qaproof_open_monitor'); } catch(e) {}
       if (savedId) {
-        showMonitorDetail(savedId);
+        // Populate in-memory cache so the detail view can render instantly.
+        // Do this even if we skip calling showMonitorDetail below.
+        if (resp.data && resp.data.length) {
+          resp.data.forEach(function (m) { monitorsCache[String(m.id)] = m; });
+        }
+        // If the URL already has monitor_id set to this same monitor, the
+        // URL-param block above (initMonitorsPage) already called
+        // showMonitorDetail. Calling it a second time would stop the running
+        // poll and restart it from scratch, causing visible flicker and a race
+        // condition where the stale-run guard can fire prematurely.
+        var urlMonitorId = null;
+        try { urlMonitorId = new URLSearchParams(window.location.search).get('monitor_id'); } catch(e) {}
+        if (!urlMonitorId || String(urlMonitorId) !== String(savedId)) {
+          showMonitorDetail(savedId);
+        }
         return;
       }
       renderMonitorsList(resp.data);
@@ -484,10 +498,10 @@
       var lastScore    = m.last_score != null ? parseInt(m.last_score, 10) : null;
 
       // Check if a background job (baseline or regression) is currently running for this card.
-      // hasActivePendingRun() applies a stale guard: if the run started > 8 min ago and no
-      // result materialised, the server-side PHP process most likely died (Apache request
-      // timeout) — clear the flags so the card returns to its real state, surface an error.
-      var isPendingRun = hasActivePendingRun(m.id);
+      // isRunQueued() uses the server-side WP transient — authoritative, survives page reloads.
+      // hasActivePendingRun() is kept as a fallback for the brief window between the user
+      // clicking the button and the next list refresh bringing fresh server data.
+      var isPendingRun = isRunQueued(m) || hasActivePendingRun(m.id);
 
       // Badge
       var badgeClass, badgeLabel;
@@ -982,6 +996,18 @@
   // session flags, and fires a one-time error toast so the user knows why the
   // "Running" indicator vanished.
   var STALE_RUN_MS = 15 * 60 * 1000;
+
+  // Returns true if the server reports a run was queued for this monitor
+  // within the past 25 minutes (matches the PHP transient TTL).
+  // This is the AUTHORITATIVE check — survives page reloads and new tabs.
+  function isRunQueued(monitor) {
+    if (!monitor || !monitor.run_queued_at) return false;
+    try {
+      var elapsed = Date.now() - new Date(monitor.run_queued_at).getTime();
+      return elapsed >= 0 && elapsed <= STALE_RUN_MS;
+    } catch(e) { return false; }
+  }
+
   function hasActivePendingRun(monitorId) {
     try {
       if (!sessionStorage.getItem('qaproof_pending_run_' + monitorId)) return false;
@@ -1172,7 +1198,8 @@
   function startListPolling(monitors) {
     stopListPolling();
     monitors.forEach(function (m) {
-      if (!hasActivePendingRun(m.id)) return;
+      // Use server-side run_queued_at as primary signal; sessionStorage as fallback.
+      if (!isRunQueued(m) && !hasActivePendingRun(m.id)) return;
 
       if (!parseInt(m.has_baseline, 10)) {
         // Baseline capture in progress
@@ -1221,7 +1248,12 @@
       btn.disabled = true;
       btn.textContent = 'Starting…';
 
-      try { sessionStorage.setItem('qaproof_pending_run_' + monitorId, '1'); } catch(e) {}
+      try {
+        sessionStorage.removeItem('qaproof_run_start_' + monitorId);
+        sessionStorage.removeItem('qaproof_run_stale_warned_' + monitorId);
+        sessionStorage.setItem('qaproof_pending_run_' + monitorId, '1');
+        sessionStorage.setItem('qaproof_run_start_' + monitorId, String(Date.now()));
+      } catch(e) {}
 
       apiCall('POST', '/monitors/' + monitorId + '/run').then(function (resp) {
         if (resp.success) {
@@ -1409,10 +1441,15 @@
     if (!monitorDetail) return;
     // Survive page reloads — remember which monitor is open
     try { sessionStorage.setItem('qaproof_open_monitor', id); } catch(e) {}
-    // Survive page reloads — check if this monitor has a pending run.
-    // Skip stale runs (see hasActivePendingRun for the stale window logic).
+    // Quick optimistic check from sessionStorage — only set shouldPoll to true,
+    // never to false, and NEVER fire the stale toast here. The stale toast fires
+    // later (after server data arrives) when the server also confirms no active run.
+    // This prevents a false "never completed" error from showing before we know
+    // the server's authoritative state.
     if (!shouldPoll) {
-      shouldPoll = hasActivePendingRun(id);
+      try {
+        if (sessionStorage.getItem('qaproof_pending_run_' + id)) shouldPoll = true;
+      } catch(e) {}
     }
 
     // Push history state so browser back button returns to monitors list
@@ -1499,20 +1536,50 @@
 
       var totalResults = resultsResp.total || (resultsResp.data ? resultsResp.data.length : 0);
 
-      // Race-condition guard: if shouldPoll is true (sessionStorage says a run is in progress)
-      // but the fetched data already shows the result appeared, the run finished while the
-      // user wasn't watching. Don't show the loader in that case.
-      if (shouldPoll) {
-        var preRunCount = null;
-        try { preRunCount = parseInt(sessionStorage.getItem('qaproof_pre_run_count_' + id), 10); } catch(e) {}
-        if (!isNaN(preRunCount) && totalResults > preRunCount) {
-          // New result already saved — run completed before we opened the detail view
-          shouldPoll = false;
-          try {
-            sessionStorage.removeItem('qaproof_pending_run_' + id);
-            sessionStorage.removeItem('qaproof_run_start_' + id);
-            sessionStorage.removeItem('qaproof_pre_run_count_' + id);
-          } catch(e) {}
+      // ── Server-driven run state (primary signal) ───────────────────────────
+      // The PHP handler injects run_queued_at into every GET /monitors/:id
+      // response. This WP transient is set when the user triggers a run and
+      // deleted by the scheduler when the job finishes — so it survives page
+      // reloads, multiple tabs, and any sessionStorage loss.
+      var serverRunActive = isRunQueued(monitorResp.data);
+
+      if (serverRunActive) {
+        // Server confirms a run is in progress — always start polling.
+        shouldPoll = true;
+        // Keep sessionStorage in sync so animation timers have a start time.
+        try {
+          if (!sessionStorage.getItem('qaproof_pending_run_' + id)) {
+            sessionStorage.setItem('qaproof_pending_run_' + id, '1');
+          }
+          if (!sessionStorage.getItem('qaproof_run_start_' + id)) {
+            // Use the server's queue time as the animation start reference.
+            var queuedMs = new Date(monitorResp.data.run_queued_at).getTime();
+            sessionStorage.setItem('qaproof_run_start_' + id, String(queuedMs || Date.now()));
+          }
+        } catch(e) {}
+      } else {
+        // Server says no active run.
+        if (shouldPoll) {
+          // sessionStorage thought there was a run — check if it's stale and
+          // fire the "never completed" toast if needed (now safe to call since
+          // the server confirmed the run is not actually in progress).
+          shouldPoll = hasActivePendingRun(id);
+        }
+
+        // Race-condition guard: if shouldPoll is true (sessionStorage says a run
+        // is in progress) but fetched data already shows the result appeared,
+        // the run finished — don't show the loader.
+        if (shouldPoll) {
+          var preRunCount = null;
+          try { preRunCount = parseInt(sessionStorage.getItem('qaproof_pre_run_count_' + id), 10); } catch(e) {}
+          if (!isNaN(preRunCount) && totalResults > preRunCount) {
+            shouldPoll = false;
+            try {
+              sessionStorage.removeItem('qaproof_pending_run_' + id);
+              sessionStorage.removeItem('qaproof_run_start_' + id);
+              sessionStorage.removeItem('qaproof_pre_run_count_' + id);
+            } catch(e) {}
+          }
         }
       }
 
@@ -1699,9 +1766,25 @@
         // Show the inline loading block without re-rendering the entire detail
         var loadingBlock = document.getElementById('qaproof-loading-block');
         if (loadingBlock) loadingBlock.style.display = '';
-        startRegressionAnimation(monitor.id);
 
-        try { sessionStorage.setItem('qaproof_pending_run_' + monitor.id, '1'); } catch(e) {}
+        // Always write a fresh start timestamp so hasActivePendingRun()
+        // doesn't see a stale value from a previous run and fire a false
+        // "never completed" error on the next page refresh.
+        // Also clear the old stale-warned guard so the warning can fire
+        // again if this new run genuinely fails.
+        try {
+          sessionStorage.removeItem('qaproof_run_start_' + monitor.id);
+          sessionStorage.removeItem('qaproof_run_stale_warned_' + monitor.id);
+          sessionStorage.setItem('qaproof_pending_run_' + monitor.id, '1');
+          sessionStorage.setItem('qaproof_run_start_' + monitor.id, String(Date.now()));
+        } catch(e) {}
+
+        // Use the correct animation for each run type
+        if (!pollHasBaseline) {
+          startCapturingAnimation(monitor.id);
+        } else {
+          startRegressionAnimation(monitor.id);
+        }
 
         apiCall('POST', '/monitors/' + monitor.id + '/run').then(function (resp) {
           if (resp.success) {

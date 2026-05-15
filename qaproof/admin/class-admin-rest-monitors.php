@@ -21,6 +21,8 @@ class QAProof_Admin_REST_Monitors {
     private static function cache_key_list()         { return 'qaproof_mon_list'; }
     private static function cache_key_monitor( $id ) { return 'qaproof_mon_' . md5( $id ); }
     private static function cache_key_results( $id ) { return 'qaproof_mon_res_' . md5( $id ); }
+    /** Transient key for "a run was queued for this monitor" (server-side run state). */
+    public static function run_queued_key( $id )     { return 'qaproof_run_q_' . md5( $id ); }
 
     /** Flush all transient cache entries for a specific monitor (and the list). */
     private static function flush_monitor_cache( $id ) {
@@ -68,31 +70,43 @@ class QAProof_Admin_REST_Monitors {
         unset( $m );
 
         set_transient( self::cache_key_list(), $monitors, self::CACHE_TTL );
+        $cached = $monitors;
 
-        return new WP_REST_Response( [ 'success' => true, 'data' => $monitors ], 200 );
+        // Always inject run_queued_at fresh from WP transients — never cache this
+        // flag so that the client always sees the live "is a run in progress?" state.
+        foreach ( $cached as &$m ) {
+            $run_ts = get_transient( self::run_queued_key( $m['id'] ) );
+            $m['run_queued_at'] = $run_ts ? gmdate( 'c', (int) $run_ts ) : null;
+        }
+        unset( $m );
+
+        return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
     }
 
     public static function handle_get_monitor( WP_REST_Request $request ) {
         $id     = sanitize_text_field( $request['id'] );
         $cached = get_transient( self::cache_key_monitor( $id ) );
-        if ( $cached !== false ) {
-            return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
+        if ( $cached === false ) {
+            $monitor = QAProof_API_Client::monitors_get( $id );
+
+            if ( is_wp_error( $monitor ) ) {
+                $data = $monitor->get_error_data();
+                $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
+                return new WP_REST_Response( [
+                    'success' => false,
+                    'error'   => [ 'message' => $monitor->get_error_message() ],
+                ], $http );
+            }
+
+            set_transient( self::cache_key_monitor( $id ), $monitor, self::CACHE_TTL );
+            $cached = $monitor;
         }
 
-        $monitor = QAProof_API_Client::monitors_get( $id );
+        // Always inject run_queued_at fresh — see handle_list_monitors comment above.
+        $run_ts = get_transient( self::run_queued_key( $id ) );
+        $cached['run_queued_at'] = $run_ts ? gmdate( 'c', (int) $run_ts ) : null;
 
-        if ( is_wp_error( $monitor ) ) {
-            $data = $monitor->get_error_data();
-            $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
-            return new WP_REST_Response( [
-                'success' => false,
-                'error'   => [ 'message' => $monitor->get_error_message() ],
-            ], $http );
-        }
-
-        set_transient( self::cache_key_monitor( $id ), $monitor, self::CACHE_TTL );
-
-        return new WP_REST_Response( [ 'success' => true, 'data' => $monitor ], 200 );
+        return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
     }
 
     public static function handle_create_monitor( WP_REST_Request $request ) {
@@ -236,12 +250,18 @@ class QAProof_Admin_REST_Monitors {
         // requests often fail in Docker because localhost resolves to the
         // container, not the host's exposed port).
         wp_schedule_single_event( time() - 1, 'qaproof_run_monitor', [ $id ] );
-        // Only flush the individual monitor + results caches, NOT the list cache.
-        // The list data doesn't change when a run starts (only on completion), so
-        // keeping the list cache warm prevents a 502 on page reload while the SaaS
-        // API is busy capturing screenshots (60–90 s baseline creation).
-        delete_transient( self::cache_key_monitor( $id ) );
-        delete_transient( self::cache_key_results( $id ) );
+
+        // Mark this monitor as "a run is in progress" using a WP transient.
+        // The scheduler deletes this transient when the job completes or fails.
+        // JS reads it via the GET /monitors/:id response and uses it as the
+        // authoritative "is a run in progress?" signal — robust across page
+        // reloads, new tabs, and any sessionStorage loss.
+        // TTL = 25 min (longer than the scheduler's 8-min poll + WP PHP timeout).
+        set_transient( self::run_queued_key( $id ), time(), 25 * MINUTE_IN_SECONDS );
+
+        // Flush all caches for this monitor so the next GET immediately returns
+        // fresh data (including the new run_queued_at flag).
+        self::flush_monitor_cache( $id );
 
         return new WP_REST_Response( [
             'success' => true,
