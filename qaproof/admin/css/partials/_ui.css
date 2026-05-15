@@ -2982,11 +2982,12 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
    ============================ */
 #qaproof-app .qaproof-coming-soon-wrap {
   flex: 1;
-  position: relative;
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 #qaproof-app .qaproof-coming-soon-wrap .qaproof-coming-soon-btn {
-  flex: 1;
+  flex: 0 1 auto;
   opacity: 0.38;
   filter: blur(0.4px);
   cursor: not-allowed !important;
@@ -2995,10 +2996,10 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
 }
 #qaproof-app .qaproof-coming-soon-wrap::after {
   content: 'Soon';
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
+  position: static;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: 6px;
   background: rgba(0,173,181,0.18);
   color: var(--qp-accent);
   font-size: 9px;
