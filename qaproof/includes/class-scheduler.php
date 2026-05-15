@@ -208,11 +208,19 @@ class QAProof_Scheduler {
         // First run: create baseline
         if ( ! $monitor['has_baseline'] ) {
             self::create_baseline_for_monitor( $monitor );
-            return;
+        } else {
+            // Subsequent runs: regression test
+            self::run_regression_for_monitor( $monitor );
         }
 
-        // Subsequent runs: regression test
-        self::run_regression_for_monitor( $monitor );
+        // Clear the server-side "run in progress" marker so the next GET
+        // /monitors/:id response no longer shows run_queued_at.
+        // Also bust the monitor transient cache so fresh data is served immediately.
+        $run_queued_key = 'qaproof_run_q_' . md5( (string) $monitor_id );
+        delete_transient( $run_queued_key );
+        $mon_cache_key  = 'qaproof_mon_' . md5( (string) $monitor_id );
+        delete_transient( $mon_cache_key );
+        delete_transient( 'qaproof_mon_list' );
     }
 
     /**
