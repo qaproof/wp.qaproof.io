@@ -42,9 +42,6 @@ class QAProof_Admin_REST_Tests {
             if ( ! empty( $params['figmaImageBase64'] ) ) {
                 $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
             }
-            if ( ! empty( $params['figmaToken'] ) ) {
-                $api_params['figmaToken'] = sanitize_text_field( $params['figmaToken'] );
-            }
             // Pass ignoreText setting
             if ( isset( $params['ignoreText'] ) ) {
                 $api_params['ignoreText'] = rest_sanitize_boolean( $params['ignoreText'] );

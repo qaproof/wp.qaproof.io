@@ -136,12 +136,9 @@
       }
       if (!found) return;
 
-      // Auto-fill form fields
-      var figmaTokenEl = document.getElementById('qaproof-figma-token');
-      var figmaUrlEl   = document.getElementById('qaproof-figma-url');
-
-      if (figmaTokenEl && found.figmaToken) figmaTokenEl.value = found.figmaToken;
-      if (figmaUrlEl && found.figmaUrl)  figmaUrlEl.value = found.figmaUrl;
+      // Auto-fill form fields (figmaUrl only — the API uses its own service token)
+      var figmaUrlEl = document.getElementById('qaproof-figma-url');
+      if (figmaUrlEl && found.figmaUrl) figmaUrlEl.value = found.figmaUrl;
 
       // If this design has a saved image, load it from WP (zero Figma API calls)
       if (found.hasImage) {
@@ -304,9 +301,9 @@
 
   function mapFigmaErrorMessage(code, fallback) {
     var map = {
-      'FIGMA_AUTH_FAILED':          (qaproof.i18n.figmaAuthFailed || 'Invalid or expired Figma token.'),
+      'FIGMA_NOT_SHARED':           (qaproof.i18n.figmaNotShared || 'Share this file with figma@qaproof.io (Can view) and try again.'),
       'FIGMA_FILE_NOT_FOUND':       (qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.'),
-      'FIGMA_RATE_LIMITED':         (qaproof.i18n.figmaRateLimited || 'Figma rate limit exceeded.'),// This is often caused by Starter plan restrictions (very low API limits). Ensure your Figma file is in a Professional or higher workspace, or use "Upload Image" instead. Wait 1-2 minutes, then try again.',
+      'FIGMA_RATE_LIMITED':         (qaproof.i18n.figmaRateLimited || 'Figma temporarily throttled our requests. Try again in a minute.'),
       'FIGMA_RENDER_TIMEOUT':       (qaproof.i18n.figmaRenderTimeout || 'Design too complex to preview.'),
       'FIGMA_EXPORT_FAILED':        (qaproof.i18n.figmaExportFailed || 'Figma could not export this design.'),
       'FIGMA_NODE_NOT_RENDERABLE':  (qaproof.i18n.figmaNodeNotRenderable || 'This node cannot be rendered. Try a different frame.'),
@@ -320,21 +317,19 @@
   }
 
   function triggerFigmaPreview(manual) {
-    var token = '';
-    var url   = '';
+    var url = '';
     var designSelect = document.getElementById('qaproof-saved-design');
     if (designSelect && designSelect.value) {
       var designs = qaproof.savedDesigns || [];
       for (var i = 0; i < designs.length; i++) {
         if (designs[i].id === designSelect.value) {
-          token = designs[i].figmaToken || '';
-          url   = designs[i].figmaUrl || '';
+          url = designs[i].figmaUrl || '';
           break;
         }
       }
     }
 
-    if (!token || !url) {
+    if (!url) {
       setPreviewState('empty');
       return;
     }
@@ -347,7 +342,7 @@
       return;
     }
 
-    var cacheKey = url + '|' + token;
+    var cacheKey = url;
     var cached   = figmaPreviewCache[cacheKey];
     if (cached && (Date.now() - cached.ts < 30 * 60 * 1000)) {
       showPreviewResult(cached.data);
@@ -362,7 +357,7 @@
         'Content-Type': 'application/json',
         'X-WP-Nonce':   qaproof.nonce,
       },
-      body: JSON.stringify({ figmaUrl: url, figmaToken: token }),
+      body: JSON.stringify({ figmaUrl: url }),
     })
     .then(function (res) { return res.json(); })
     .then(function (json) {
@@ -399,15 +394,13 @@
 
   // Debounced input listeners (800ms)
   function attachPreviewListeners() {
-    var tokenEl = document.getElementById('qaproof-figma-token');
-    var urlEl   = document.getElementById('qaproof-figma-url');
-    if (!tokenEl || !urlEl) return;
+    var urlEl = document.getElementById('qaproof-figma-url');
+    if (!urlEl) return;
 
     function onInput() {
       clearTimeout(figmaPreviewTimeout);
       figmaPreviewTimeout = setTimeout(triggerFigmaPreview, 1200);
     }
-    tokenEl.addEventListener('input', onInput);
     urlEl.addEventListener('input', onInput);
 
     urlEl.addEventListener('paste', function () {
@@ -446,20 +439,19 @@
   if (refreshFigmaBtn) {
     refreshFigmaBtn.addEventListener('click', function () {
       var designSel = document.getElementById('qaproof-saved-design');
-      var token = '', url = '';
+      var url = '';
       if (designSel && designSel.value) {
         var ds = qaproof.savedDesigns || [];
         for (var i = 0; i < ds.length; i++) {
           if (ds[i].id === designSel.value) {
-            token = ds[i].figmaToken || '';
             url = ds[i].figmaUrl || '';
             break;
           }
         }
       }
-      if (!token || !url) return;
+      if (!url) return;
 
-      var cacheKey = url + '|' + token;
+      var cacheKey = url;
       delete figmaPreviewCache[cacheKey];
 
       setPreviewState('loading');
@@ -471,7 +463,7 @@
           'Content-Type': 'application/json',
           'X-WP-Nonce':   qaproof.nonce,
         },
-        body: JSON.stringify({ figmaUrl: url, figmaToken: token, forceRefresh: true }),
+        body: JSON.stringify({ figmaUrl: url, forceRefresh: true }),
       })
       .then(function (res) { return res.json(); })
       .then(function (json) {
@@ -642,8 +634,8 @@
         }
 
         var bgRequestBody;
-        if (bgSd && bgSd.figmaUrl && bgSd.figmaToken) {
-          bgRequestBody = { figmaUrl: bgSd.figmaUrl, figmaToken: bgSd.figmaToken };
+        if (bgSd && bgSd.figmaUrl) {
+          bgRequestBody = { figmaUrl: bgSd.figmaUrl };
         } else if (imageData && imageData.startsWith('data:image')) {
           var bgParts = imageData.split(',');
           if (bgParts.length < 2 || !bgParts[1]) return Promise.resolve({ ok: false });
@@ -1239,9 +1231,9 @@
     }
 
     // Saved design with Figma URL
-    if (sd && sd.figmaUrl && sd.figmaToken) {
-      cacheKey = sd.figmaUrl + '|' + sd.figmaToken;
-      requestBody = { figmaUrl: sd.figmaUrl, figmaToken: sd.figmaToken };
+    if (sd && sd.figmaUrl) {
+      cacheKey = sd.figmaUrl;
+      requestBody = { figmaUrl: sd.figmaUrl };
     } else if (S.uploadedFileBase64) {
       var base64Parts = S.uploadedFileBase64.split(',');
       if (base64Parts.length < 2 || !base64Parts[1]) return;
@@ -1550,10 +1542,6 @@
           if (allDesigns[di].id === designSelect.value) { selectedDesign = allDesigns[di]; break; }
         }
       }
-      if (selectedDesign && selectedDesign.figmaToken) {
-        body.figmaToken = selectedDesign.figmaToken;
-      }
-
       if (S.savedDesignImageBase64) {
         var savedParts2 = S.savedDesignImageBase64.split(',');
         if (savedParts2.length >= 2 && savedParts2[1]) {

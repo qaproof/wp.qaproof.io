@@ -959,19 +959,6 @@ body.qaproof-dark-page #wpbody-content {
   border-color: rgba(0, 173, 181, 0.25);
 }
 
-/* Token show/hide button */
-#qaproof-app.qaproof-dark .qaproof-token-toggle {
-  color: var(--qp-text-secondary);
-}
-#qaproof-app.qaproof-dark .qaproof-token-toggle:hover {
-  color: var(--qp-accent) !important;
-}
-
-/* Token fade gradient — matches dark input background */
-#qaproof-app.qaproof-dark .qaproof-token-fade {
-  background: linear-gradient(to right, transparent, var(--qp-bg-card));
-}
-
 /* Remove button */
 #qaproof-app.qaproof-dark .qaproof-design-remove:not(.button-primary):not(.button-link-delete) {
   background: transparent !important;

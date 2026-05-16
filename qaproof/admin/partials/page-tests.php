@@ -159,7 +159,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                             <!-- Empty state -->
                             <div class="qaproof-preview-empty" id="qaproof-preview-empty">
                                 <span class="dashicons dashicons-format-image"></span>
-                                <p><?php esc_html_e( 'Enter your Figma Token and URL to preview the design before testing.', 'qaproof' ); ?></p>
+                                <p><?php esc_html_e( 'Select a saved design or upload an image to preview it before testing.', 'qaproof' ); ?></p>
                             </div>
                             <!-- Loading state -->
                             <div class="qaproof-preview-loading hidden" id="qaproof-preview-loading">
