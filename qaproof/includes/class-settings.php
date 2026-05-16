@@ -198,14 +198,42 @@ class QAProof_Settings {
 
                 $service_email = 'figma@qaproof.io';
                 ?>
-                <div class="qaproof-figma-access-card">
-                    <h3 class="qaproof-figma-access-title"><?php esc_html_e( 'How QAProof reads your Figma designs', 'qaproof' ); ?></h3>
-                    <p class="qaproof-figma-access-lead"><?php esc_html_e( 'QAProof reads Figma files through a service account. Share each file you want to test with the account email below — once, and it works for every future test.', 'qaproof' ); ?></p>
+                <?php
+                // ── OAuth connection card (primary path) ─────────────────────
+                // Initial state is rendered as "Loading…" so the page paints
+                // without a layout flash. init.js calls /figma-oauth/status
+                // immediately on mount and swaps the content in. Subsequent
+                // postMessage from the OAuth popup also triggers a re-render.
+                ?>
+                <div class="qaproof-figma-conn-card" id="qaproof-figma-conn-card" data-state="loading">
+                    <div class="qaproof-figma-conn-header">
+                        <h3 class="qaproof-figma-conn-title"><?php esc_html_e( 'Figma connection', 'qaproof' ); ?></h3>
+                        <span class="qaproof-figma-conn-badge" data-conn-badge></span>
+                    </div>
+                    <div class="qaproof-figma-conn-body" data-conn-body>
+                        <p class="qaproof-figma-conn-loading"><?php esc_html_e( 'Checking connection…', 'qaproof' ); ?></p>
+                    </div>
+                </div>
+
+                <?php
+                // ── Service-account card (fallback / manual sharing) ─────────
+                // Stays visible as the alternative path. JS adds a
+                // .qaproof-figma-access-card--alt class to dim it when OAuth
+                // is connected, so it's clearly the second-choice flow.
+                ?>
+                <details class="qaproof-figma-access-card qaproof-figma-access-card--alt" id="qaproof-figma-access-fallback">
+                    <summary class="qaproof-figma-access-summary">
+                        <?php esc_html_e( 'Alternative: share files manually with our service account', 'qaproof' ); ?>
+                    </summary>
+                    <p class="qaproof-figma-access-lead"><?php esc_html_e( 'Prefer not to connect an account? Share each file you want to test with the address below. Works on any Figma plan.', 'qaproof' ); ?></p>
                     <div class="qaproof-figma-access-email">
                         <label class="qaproof-figma-access-email-label"><?php esc_html_e( 'Service email', 'qaproof' ); ?></label>
                         <code class="qaproof-figma-access-email-value"><?php echo esc_html( $service_email ); ?></code>
                         <button type="button" class="button qaproof-copy-email-btn" data-copy="<?php echo esc_attr( $service_email ); ?>">
                             <?php esc_html_e( 'Copy', 'qaproof' ); ?>
+                        </button>
+                        <button type="button" class="button qaproof-figma-guide-open">
+                            <?php esc_html_e( 'Show me how →', 'qaproof' ); ?>
                         </button>
                     </div>
                     <ol class="qaproof-figma-access-steps">
@@ -217,7 +245,7 @@ class QAProof_Settings {
                         <li><?php esc_html_e( 'Send the invite, then paste the file URL into a saved design below.', 'qaproof' ); ?></li>
                         <li><?php esc_html_e( 'Click Verify access to confirm the link works.', 'qaproof' ); ?></li>
                     </ol>
-                </div>
+                </details>
                 <?php
             },
             'qaproof-settings-tests-fidelity'
