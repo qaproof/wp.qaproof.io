@@ -316,6 +316,28 @@
     return code === 'FIGMA_RATE_LIMITED' || code === 'FIGMA_RENDER_TIMEOUT';
   }
 
+  // When the Figma preview fails because the user hasn't shared the file with
+  // figma@qaproof.io, auto-pop the step-by-step guide. Without this prompt the
+  // inline "Share this file..." red message gives no path forward — users
+  // typically don't know what to do next. The modal is exposed by init.js as
+  // window.QAProof.showFigmaShareGuide. Small delay lets the inline error
+  // render first so the modal feels causal.
+  //
+  // Skip when OAuth is connected — the guide teaches sharing with
+  // figma@qaproof.io, which is wrong for OAuth users (they need to grant
+  // their CONNECTED Figma account access to the file in Figma directly).
+  function maybeOpenFigmaShareGuide(code, figmaUrl, retryFn) {
+    if (code !== 'FIGMA_NOT_SHARED') return;
+    if (!(window.QAProof && typeof window.QAProof.showFigmaShareGuide === 'function')) return;
+    if (window.QAProof.isFigmaOAuthConnected && window.QAProof.isFigmaOAuthConnected()) return;
+    setTimeout(function () {
+      window.QAProof.showFigmaShareGuide({
+        figmaUrl: figmaUrl || '',
+        onRetry: typeof retryFn === 'function' ? retryFn : null,
+      });
+    }, 600);
+  }
+
   function triggerFigmaPreview(manual) {
     var url = '';
     var designSelect = document.getElementById('qaproof-saved-design');
@@ -372,6 +394,7 @@
           figmaRateLimitUntil = Date.now() + 60000;
         }
         setPreviewState('error', mapFigmaErrorMessage(code, msg), isRetryableError(code));
+        maybeOpenFigmaShareGuide(code, url, function () { triggerFigmaPreview(true); });
       }
     })
     .catch(function () {
@@ -507,6 +530,9 @@
             figmaRateLimitUntil = Date.now() + 60000;
           }
           setPreviewState('error', mapFigmaErrorMessage(code, msg), isRetryableError(code));
+          maybeOpenFigmaShareGuide(code, url, function () {
+            if (refreshFigmaBtn) refreshFigmaBtn.click();
+          });
         }
       })
       .catch(function () {
@@ -1693,6 +1719,15 @@
             S.loading.classList.add('hidden');
             S.submitBtn.disabled = false;
             S.testsPageBusy = false;
+            // The job-queue stores failures as a plain message string, not a
+            // structured code. We sniff the well-known FIGMA_NOT_SHARED
+            // marker ("figma@qaproof.io") to surface the share guide so the
+            // user can recover without leaving the page.
+            if (errorMsg && typeof errorMsg === 'string' &&
+                errorMsg.indexOf('figma@qaproof.io') !== -1 &&
+                body.figmaUrl) {
+              maybeOpenFigmaShareGuide('FIGMA_NOT_SHARED', body.figmaUrl, null);
+            }
           },
         });
       })

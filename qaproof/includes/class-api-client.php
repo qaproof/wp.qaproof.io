@@ -1080,4 +1080,42 @@ class QAProof_API_Client {
     public static function send_report_email( $params ) {
         return self::api_request( 'POST', '/api/send-report-email', $params, 60 );
     }
+
+    // ============================================================
+    // Figma OAuth — proxy to api.qaproof.io
+    // ============================================================
+
+    /**
+     * Start the OAuth flow: returns the Figma authorize URL the WP plugin
+     * should open in a popup. The backend creates a signed state token that
+     * carries the workspace id through the redirect.
+     *
+     * @return array|WP_Error { authorizeUrl }
+     */
+    public static function figma_oauth_start() {
+        return self::api_request( 'POST', '/api/figma-oauth/start', array() );
+    }
+
+    /**
+     * Get the workspace's Figma OAuth connection status. Used by Settings
+     * to render the "Connect Figma" vs "Connected as ..." card state.
+     *
+     * @return array|WP_Error {
+     *   connected, revoked, figmaUserEmail, figmaUserHandle, expiresAt,
+     *   scope, connectedAt, oauthEnabled, serviceFallbackAvailable
+     * }
+     */
+    public static function figma_oauth_status() {
+        return self::api_request( 'GET', '/api/figma-oauth/status' );
+    }
+
+    /**
+     * Drop the workspace's Figma OAuth connection. Next test falls back to
+     * the service-account PAT (if configured) or fails with a clear error.
+     *
+     * @return array|WP_Error { deleted: bool }
+     */
+    public static function figma_oauth_disconnect() {
+        return self::api_request( 'POST', '/api/figma-oauth/disconnect', array() );
+    }
 }

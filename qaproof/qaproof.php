@@ -38,6 +38,7 @@ require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-ajax.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-tests.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-monitors.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-designs.php';
+require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-figma-oauth.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-history.php';
 
 // Initialize

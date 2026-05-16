@@ -460,6 +460,37 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-primary);
 }
 
+/* Dark: Figma share guide modal */
+#qaproof-app.qaproof-dark .qaproof-figma-guide-lead,
+#qaproof-app.qaproof-dark .qaproof-figma-guide-email-label,
+#qaproof-app.qaproof-dark .qaproof-figma-guide-tip {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-email {
+  background: rgba(255, 255, 255, 0.05);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-email-value {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-steps > li {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-steps code {
+  background: rgba(0, 173, 181, 0.22);
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-tip {
+  background: rgba(0, 173, 181, 0.1);
+  border-color: rgba(0, 173, 181, 0.28);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-btn-open {
+  background: #4b5563;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-btn-open:hover {
+  background: #374151;
+}
+
 /* Dark: monitor table */
 #qaproof-app.qaproof-dark .qaproof-monitors-table {
   background: var(--qp-bg-dark);
@@ -1137,6 +1168,51 @@ body.qaproof-dark-page #wpbody-content {
   background: var(--qp-bg-input, var(--qp-bg-elevated));
   border-color: var(--qp-border);
   color: var(--qp-text-primary);
+}
+
+/* Figma OAuth connection card — dark theme */
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="connected"] {
+  border-color: rgba(0, 173, 181, 0.55);
+  background: linear-gradient(0deg, rgba(0,173,181,0.08), rgba(0,173,181,0.08)),
+              var(--qp-bg-card);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="revoked"] {
+  border-color: rgba(248, 81, 73, 0.55);
+  background: linear-gradient(0deg, rgba(248,81,73,0.08), rgba(248,81,73,0.08)),
+              var(--qp-bg-card);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-blurb,
+#qaproof-app.qaproof-dark .qaproof-figma-conn-loading,
+#qaproof-app.qaproof-dark .qaproof-figma-conn-meta dt {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-badge {
+  background: rgba(255,255,255,0.08);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="connected"] .qaproof-figma-conn-badge {
+  background: rgba(0, 173, 181, 0.22);
+  color: #7be0e6;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="revoked"] .qaproof-figma-conn-badge {
+  background: rgba(248, 81, 73, 0.22);
+  color: #ff9999;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-meta code {
+  background: var(--qp-bg-input, var(--qp-bg-elevated));
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-error {
+  background: rgba(248, 81, 73, 0.14);
+  border-color: rgba(248, 81, 73, 0.45);
+  color: #ff9999;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-access-card--alt > .qaproof-figma-access-summary {
+  color: var(--qp-text-secondary);
 }
 
 /* Verify-access button success/error tints */

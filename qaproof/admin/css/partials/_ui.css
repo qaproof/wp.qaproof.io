@@ -3121,3 +3121,117 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   background: var(--qp-bg-surface, #f3f4f6);
   color: var(--qp-text-primary, #222831);
 }
+
+/* ============================
+   Figma share guide modal
+   Wider variant of .qaproof-modal that walks users through inviting
+   figma@qaproof.io to their files. Triggered manually from Settings
+   ("Show me how") and auto-opened after a FIGMA_NOT_SHARED verify result.
+   ============================ */
+.qaproof-modal-wide {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.qaproof-figma-guide-lead {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--qp-text-secondary, #4b5563);
+  margin: 0 0 16px;
+}
+
+.qaproof-figma-guide-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--qp-bg-surface, #f3f4f6);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.qaproof-figma-guide-email-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--qp-text-secondary, #4b5563);
+  font-weight: 600;
+}
+.qaproof-figma-guide-email-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  background: transparent;
+  color: var(--qp-text-primary, #222831);
+  padding: 0;
+  margin-right: auto;
+}
+
+.qaproof-figma-guide-steps {
+  list-style: none;
+  counter-reset: qpfg;
+  padding: 0;
+  margin: 0 0 16px;
+}
+.qaproof-figma-guide-steps > li {
+  counter-increment: qpfg;
+  position: relative;
+  padding: 10px 12px 10px 44px;
+  border-radius: 10px;
+  background: var(--qp-bg-surface, #f9fafb);
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--qp-text-primary, #222831);
+}
+.qaproof-figma-guide-steps > li::before {
+  content: counter(qpfg);
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--qp-accent, #00ADB5);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qaproof-figma-guide-steps code {
+  background: rgba(0, 173, 181, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--qp-text-primary, #222831);
+}
+
+.qaproof-figma-guide-tip {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--qp-text-secondary, #4b5563);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 173, 181, 0.06);
+  border: 1px solid rgba(0, 173, 181, 0.18);
+  margin: 0 0 16px;
+}
+
+.qaproof-figma-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* "Open in Figma" — neutral dark pill, distinct from the teal primary
+   "Verify again" CTA so the two actions don't compete visually. */
+.qaproof-figma-guide-btn-open {
+  background: #1f2937;
+  color: #fff;
+}
+.qaproof-figma-guide-btn-open:hover {
+  background: #111827;
+}
