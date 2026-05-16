@@ -203,6 +203,12 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        register_rest_route( self::REST_NAMESPACE, '/designs/verify-access', [
+            'methods'             => 'POST',
+            'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_verify_access' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/save-design-image', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_save_design_image' ],

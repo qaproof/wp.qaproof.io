@@ -629,56 +629,66 @@
   border-color: var(--qp-score-low) !important;
 }
 
-/* Token field with eye toggle (mirrors API Key eye toggle) */
-#qaproof-app .qaproof-token-field-wrap {
-  position: relative;
+/* Figma access onboard card on Settings → Tests → Design Fidelity */
+#qaproof-app .qaproof-figma-access-card {
+  background: var(--qp-card-bg, #f6f7f7);
+  border: 1px solid var(--qp-border, #dcdcde);
+  border-radius: var(--qp-radius, 12px);
+  padding: 18px 22px;
+  margin: 12px 0 24px;
+}
+#qaproof-app .qaproof-figma-access-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+#qaproof-app .qaproof-figma-access-lead {
+  margin: 0 0 14px;
+  color: var(--qp-text-muted, #50575e);
+}
+#qaproof-app .qaproof-figma-access-email {
   display: flex;
   align-items: center;
-  width: 100%;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
-#qaproof-app .qaproof-token-field-wrap input.regular-text {
-  padding-right: 52px !important;
-  box-sizing: border-box !important;
-  text-overflow: ellipsis !important;
-  overflow: hidden !important;
+#qaproof-app .qaproof-figma-access-email-label {
+  font-weight: 500;
+  color: var(--qp-text-muted, #50575e);
 }
-/* Fade gradient before the eye icon */
-#qaproof-app .qaproof-token-fade {
-  position: absolute;
-  right: 40px;
-  top: 2px;
-  bottom: 2px;
-  width: 36px;
-  pointer-events: none;
-  z-index: 1;
-  border-radius: 0 var(--qp-radius, 12px) var(--qp-radius, 12px) 0;
+#qaproof-app .qaproof-figma-access-email-value {
+  background: var(--qp-input-bg, #fff);
+  border: 1px solid var(--qp-border, #c3c4c7);
+  padding: 4px 10px;
+  border-radius: var(--qp-radius, 8px);
+  font-family: var(--qp-font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 13px;
 }
-#qaproof-app .qaproof-token-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none !important;
-  background: none !important;
-  cursor: pointer;
-  padding: 4px !important;
-  color: var(--qp-gray, var(--qp-text-placeholder)) !important;
-  font-size: 0 !important;
-  box-shadow: none !important;
-  min-height: 0 !important;
-  line-height: 1 !important;
-  z-index: 2;
-  transition: color 0.2s ease;
+#qaproof-app .qaproof-figma-access-steps {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--qp-text-muted, #50575e);
 }
-#qaproof-app .qaproof-token-toggle:hover {
-  color: var(--qp-accent, var(--qp-accent)) !important;
+#qaproof-app .qaproof-figma-access-steps li {
+  margin: 4px 0;
 }
-#qaproof-app .qaproof-token-toggle:focus {
-  outline: none !important;
-  box-shadow: none !important;
+
+/* Saved-design row: Verify access button + transient feedback states */
+#qaproof-app .qaproof-design-verify-btn {
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-#qaproof-app .qaproof-token-toggle .qaproof-eye-icon {
-  display: block;
+#qaproof-app .qaproof-design-verify-btn.qaproof-verify-ok {
+  background: var(--qp-success-bg, #d4edda) !important;
+  color: var(--qp-success-fg, #155724) !important;
+  border-color: var(--qp-success-fg, #155724) !important;
+}
+#qaproof-app .qaproof-design-verify-btn.qaproof-verify-error {
+  background: var(--qp-error-bg, #f8d7da) !important;
+  color: var(--qp-error-fg, #721c24) !important;
+  border-color: var(--qp-error-fg, #721c24) !important;
+  white-space: normal;
 }
 
 #qaproof-app .button-small {

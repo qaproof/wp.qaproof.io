@@ -6,14 +6,13 @@ class QAProof_Admin_REST_Designs {
     public static function handle_figma_preview( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 
-        $figma_url     = isset( $params['figmaUrl'] )     ? sanitize_url( $params['figmaUrl'] )           : '';
-        $figma_token   = isset( $params['figmaToken'] )   ? sanitize_text_field( $params['figmaToken'] ) : '';
+        $figma_url     = isset( $params['figmaUrl'] ) ? sanitize_url( $params['figmaUrl'] ) : '';
         $force_refresh = ! empty( $params['forceRefresh'] );
 
-        if ( empty( $figma_url ) || empty( $figma_token ) ) {
+        if ( empty( $figma_url ) ) {
             return new WP_REST_Response( [
                 'success' => false,
-                'error'   => [ 'message' => __( 'Figma URL and Token are required.', 'qaproof' ) ],
+                'error'   => [ 'message' => __( 'Figma URL is required.', 'qaproof' ) ],
             ], 400 );
         }
 
@@ -36,7 +35,7 @@ class QAProof_Admin_REST_Designs {
             }
         }
 
-        $result = QAProof_API_Client::preview_figma( $figma_url, $figma_token, $force_refresh );
+        $result = QAProof_API_Client::preview_figma( $figma_url, $force_refresh );
 
         if ( is_wp_error( $result ) ) {
             $status = 502;
@@ -55,7 +54,7 @@ class QAProof_Admin_REST_Designs {
             // consume quota.
             $figma_hit_error_codes = [
                 'FIGMA_RATE_LIMITED',
-                'FIGMA_AUTH_FAILED',
+                'FIGMA_NOT_SHARED',
                 'FIGMA_FILE_NOT_FOUND',
                 'FIGMA_EXPORT_FAILED',
                 'FIGMA_RENDER_TIMEOUT',
@@ -244,9 +243,8 @@ class QAProof_Admin_REST_Designs {
         // Extract all supported design source params
         $api_params = array();
 
-        // Figma
+        // Figma — only the URL is needed; access is handled by the API's service account.
         if ( ! empty( $params['figmaUrl'] ) )         $api_params['figmaUrl']         = sanitize_url( $params['figmaUrl'] );
-        if ( ! empty( $params['figmaToken'] ) )       $api_params['figmaToken']       = sanitize_text_field( $params['figmaToken'] );
         if ( ! empty( $params['figmaImageBase64'] ) ) $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
 
         // Sketch
@@ -270,7 +268,6 @@ class QAProof_Admin_REST_Designs {
         // Per-file rate-limit gate: only block if we're about to call Figma
         // for a specific file that we know is rate-limited.
         $will_hit_figma = ! empty( $api_params['figmaUrl'] )
-            && ! empty( $api_params['figmaToken'] )
             && empty( $api_params['figmaImageBase64'] )
             && empty( $api_params['sketchFileBase64'] );
         $file_key = $will_hit_figma ? QAProof_Settings::extract_figma_file_key( $api_params['figmaUrl'] ) : '';
@@ -297,7 +294,6 @@ class QAProof_Admin_REST_Designs {
         // top of the image export — track it regardless of success (Figma
         // counts failed/rate-limited calls against the monthly quota).
         $hit_figma = ! empty( $api_params['figmaUrl'] )
-            && ! empty( $api_params['figmaToken'] )
             && empty( $api_params['figmaImageBase64'] )
             && empty( $api_params['sketchFileBase64'] );
 
@@ -333,6 +329,46 @@ class QAProof_Admin_REST_Designs {
         $source = is_array( $result ) && isset( $result['source'] ) ? $result['source'] : '';
         if ( $hit_figma && $source === 'figma-api' && $file_key !== '' ) {
             QAProof_Settings::track_figma_api_call( $file_key, 'nodes', true );
+        }
+
+        return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );
+    }
+
+    /**
+     * POST /qaproof/v1/designs/verify-access
+     *
+     * Confirms that QAProof's service account can read the given Figma file.
+     * Used by the Saved Designs settings page so the user gets immediate
+     * feedback after sharing the file with figma@qaproof.io.
+     *
+     * Body: { figmaUrl }
+     * 200: { success: true, data: { accessible: true, name, lastModified } }
+     * 4xx: { success: false, error: { message, code } }
+     */
+    public static function handle_verify_access( WP_REST_Request $request ) {
+        $params    = $request->get_json_params();
+        $figma_url = isset( $params['figmaUrl'] ) ? sanitize_url( $params['figmaUrl'] ) : '';
+
+        if ( empty( $figma_url ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Figma URL is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        $result = QAProof_API_Client::verify_figma_access( $figma_url );
+
+        if ( is_wp_error( $result ) ) {
+            $data       = $result->get_error_data();
+            $status     = is_array( $data ) && isset( $data['status'] )     ? (int) $data['status']     : 502;
+            $error_code = is_array( $data ) && isset( $data['error_code'] ) ? $data['error_code']       : 'API_ERROR';
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [
+                    'message' => $result->get_error_message(),
+                    'code'    => $error_code,
+                ],
+            ], $status );
         }
 
         return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );

@@ -872,14 +872,6 @@
   padding: 8px 12px !important;
   box-sizing: border-box !important;
 }
-/* Token input needs extra right padding for the eye icon */
-#qaproof-app .qaproof-design-row-fields .qaproof-token-field-wrap input.regular-text,
-#qaproof-app .form-table td .qaproof-design-row-fields .qaproof-token-field-wrap input.regular-text {
-  padding-right: 52px !important;
-}
-#qaproof-app .qaproof-design-row-fields .qaproof-token-field-wrap {
-  min-width: 0;
-}
 /* Specificity (1,3,0) to match/exceed the generic WP button override in
    _forms.css: #qaproof-app .button:not(.button-primary):not(.button-link-delete)
    which otherwise forces padding: 12px 24px !important on this button. */
