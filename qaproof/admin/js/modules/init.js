@@ -1819,6 +1819,7 @@
             btn.classList.add('qaproof-verify-ok');
             btn.textContent = qaproof.i18n.verifyAccessOk || 'Access OK';
             setTimeout(function () {
+              if (!btn.isConnected) return;
               btn.classList.remove('qaproof-verify-ok');
               btn.textContent = labelDefault;
             }, 4000);
@@ -1833,11 +1834,19 @@
               msg = (r.body && r.body.error && r.body.error.message) || 'Verification failed.';
             }
             // Cap arbitrary backend messages so a long error doesn't blow up
-            // the inline button layout.
-            if (msg.length > 200) msg = msg.slice(0, 197) + '...';
+            // the inline button layout. Trim trailing whitespace/orphan
+            // surrogate pair if slice landed mid-emoji to avoid � rendering.
+            if (msg.length > 200) {
+              msg = msg.slice(0, 197);
+              const lastCode = msg.charCodeAt(msg.length - 1);
+              // High-surrogate without its low half → drop the dangling half
+              if (lastCode >= 0xD800 && lastCode <= 0xDBFF) msg = msg.slice(0, -1);
+              msg = msg.trimEnd() + '...';
+            }
             btn.classList.add('qaproof-verify-error');
             btn.textContent = msg;
             setTimeout(function () {
+              if (!btn.isConnected) return; // row was removed mid-verify
               btn.classList.remove('qaproof-verify-error');
               btn.textContent = labelDefault;
             }, 6000);
@@ -1848,6 +1857,7 @@
           btn.classList.add('qaproof-verify-error');
           btn.textContent = 'Network error';
           setTimeout(function () {
+            if (!btn.isConnected) return;
             btn.classList.remove('qaproof-verify-error');
             btn.textContent = labelDefault;
           }, 3000);
