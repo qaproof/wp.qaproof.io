@@ -3011,10 +3011,6 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   pointer-events: none;
   white-space: nowrap;
 }
-#qaproof-app .qaproof-coming-soon-fidelity::after {
-  content: attr(data-label);
-}
-
 /* ============================
    Custom modal dialog (QAProof.confirm / QAProof.alert)
    Replaces native window.confirm / window.alert popups in WP admin so they
