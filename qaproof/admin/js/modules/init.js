@@ -286,30 +286,81 @@
   }
 
   function createDesignRow(data) {
+    var designId = data.id || generateId();
+    var verifyLabel = qaproof.i18n.verifyAccessLabel || 'Verify access';
+    var notCachedLabel = qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save';
+    var removeLabel = qaproof.i18n.designRemove || 'Remove';
+
     var row = document.createElement('div');
     row.className = 'qaproof-design-row';
-    var designId = data.id || generateId();
     row.setAttribute('data-design-id', designId);
-    row.innerHTML =
-      '<div class="qaproof-design-row-fields">' +
-        '<input type="text" placeholder="Design Name" value="' + (data.name || '') + '" data-field="name" class="regular-text" />' +
-        '<input type="url" placeholder="Figma URL" value="' + (data.figmaUrl || '') + '" data-field="figmaUrl" class="regular-text" />' +
-        '<button type="button" class="button qaproof-design-verify-btn" data-design-id="' + designId + '" title="' + (qaproof.i18n.verifyAccessLabel || 'Verify access') + '">' +
-          (qaproof.i18n.verifyAccessLabel || 'Verify access') +
-        '</button>' +
-        '<input type="hidden" value="' + designId + '" data-field="id" />' +
-      '</div>' +
-      '<div class="qaproof-design-status qaproof-status-empty" data-status="empty" title="' + (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save') + '">' +
-        '<span class="qaproof-design-status-dot"></span>' +
-        '<span class="qaproof-design-status-label">' + (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save') + '</span>' +
-      '</div>' +
-      '<button type="button" class="button qaproof-design-remove" title="' + (qaproof.i18n.designRemove || 'Remove') + '">' +
-        '<span class="dashicons dashicons-trash"></span>' +
-      '</button>';
+
+    // Build fields container — every value goes via attributes/textContent so
+    // hostile saved data can never break out of an attribute or inject HTML.
+    var fields = document.createElement('div');
+    fields.className = 'qaproof-design-row-fields';
+
+    var nameInp = document.createElement('input');
+    nameInp.type = 'text';
+    nameInp.placeholder = 'Design Name';
+    nameInp.value = data.name || '';
+    nameInp.setAttribute('data-field', 'name');
+    nameInp.className = 'regular-text';
+    fields.appendChild(nameInp);
+
+    var urlInp = document.createElement('input');
+    urlInp.type = 'url';
+    urlInp.placeholder = 'Figma URL';
+    urlInp.value = data.figmaUrl || '';
+    urlInp.setAttribute('data-field', 'figmaUrl');
+    urlInp.className = 'regular-text';
+    fields.appendChild(urlInp);
+
+    var verifyBtn = document.createElement('button');
+    verifyBtn.type = 'button';
+    verifyBtn.className = 'button qaproof-design-verify-btn';
+    verifyBtn.setAttribute('data-design-id', designId);
+    verifyBtn.title = verifyLabel;
+    verifyBtn.textContent = verifyLabel;
+    fields.appendChild(verifyBtn);
+
+    var idInp = document.createElement('input');
+    idInp.type = 'hidden';
+    idInp.value = designId;
+    idInp.setAttribute('data-field', 'id');
+    fields.appendChild(idInp);
+
+    row.appendChild(fields);
+
+    // Status badge
+    var status = document.createElement('div');
+    status.className = 'qaproof-design-status qaproof-status-empty';
+    status.setAttribute('data-status', 'empty');
+    status.title = notCachedLabel;
+    var dot = document.createElement('span');
+    dot.className = 'qaproof-design-status-dot';
+    status.appendChild(dot);
+    var label = document.createElement('span');
+    label.className = 'qaproof-design-status-label';
+    label.textContent = notCachedLabel;
+    status.appendChild(label);
+    row.appendChild(status);
+
+    // Remove button (uses dashicon span)
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'button qaproof-design-remove';
+    removeBtn.title = removeLabel;
+    var icon = document.createElement('span');
+    icon.className = 'dashicons dashicons-trash';
+    removeBtn.appendChild(icon);
+    row.appendChild(removeBtn);
+
+    // Wire input/remove listeners
     row.querySelectorAll('input').forEach(function (inp) {
       inp.addEventListener('input', syncDesignsToHidden);
     });
-    row.querySelector('.qaproof-design-remove').addEventListener('click', function () {
+    removeBtn.addEventListener('click', function () {
       row.remove();
       syncDesignsToHidden();
     });
@@ -1686,6 +1737,8 @@
     if (!window.qaproof || !qaproof.restBase) return;
 
     // Copy "figma@qaproof.io" to clipboard.
+    // We show ✓ only when copy actually succeeded; on hard failure show ✗ so
+    // the user knows to copy the email manually (it's visible in the card).
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-copy-email-btn');
       if (!btn) return;
@@ -1694,26 +1747,38 @@
       if (!email) return;
 
       var original = btn.textContent;
-      var done = function () {
-        btn.textContent = '✓';
-        setTimeout(function () { btn.textContent = original; }, 1500);
+      var flash = function (text, ms) {
+        btn.textContent = text;
+        setTimeout(function () { btn.textContent = original; }, ms || 1500);
+      };
+
+      var legacyCopy = function () {
+        var ta = document.createElement('textarea');
+        ta.value = email;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
       };
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(email).then(done, function () {
-          // Fallback: temporary textarea + execCommand for older browsers.
-          var ta = document.createElement('textarea');
-          ta.value = email; document.body.appendChild(ta); ta.select();
-          try { document.execCommand('copy'); } catch (_) {}
-          document.body.removeChild(ta);
-          done();
-        });
+        navigator.clipboard.writeText(email).then(
+          function () { flash('✓'); },
+          function () {
+            // Fallback for older browsers / clipboard permission denied
+            if (legacyCopy()) flash('✓');
+            else flash('✗', 2500);
+          }
+        );
+      } else if (legacyCopy()) {
+        flash('✓');
       } else {
-        var ta = document.createElement('textarea');
-        ta.value = email; document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); } catch (_) {}
-        document.body.removeChild(ta);
-        done();
+        flash('✗', 2500);
       }
     });
 
@@ -1767,6 +1832,9 @@
             } else {
               msg = (r.body && r.body.error && r.body.error.message) || 'Verification failed.';
             }
+            // Cap arbitrary backend messages so a long error doesn't blow up
+            // the inline button layout.
+            if (msg.length > 200) msg = msg.slice(0, 197) + '...';
             btn.classList.add('qaproof-verify-error');
             btn.textContent = msg;
             setTimeout(function () {

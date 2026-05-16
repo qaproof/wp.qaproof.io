@@ -392,7 +392,8 @@
     setPreviewState('success');
   }
 
-  // Debounced input listeners (800ms)
+  // Debounced input listeners (1200ms) — wait until the user stops typing
+  // before triggering a Figma preview request.
   function attachPreviewListeners() {
     var urlEl = document.getElementById('qaproof-figma-url');
     if (!urlEl) return;

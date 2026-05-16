@@ -1122,3 +1122,32 @@ body.qaproof-dark-page #wpbody-content {
   background: var(--qp-divider);
 }
 
+/* Figma onboard card (Settings → Tests → Fidelity)
+   light defaults are too bright on dark — use card / border variables. */
+#qaproof-app.qaproof-dark .qaproof-figma-access-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-access-lead,
+#qaproof-app.qaproof-dark .qaproof-figma-access-email-label,
+#qaproof-app.qaproof-dark .qaproof-figma-access-steps {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-access-email-value {
+  background: var(--qp-bg-input, var(--qp-bg-elevated));
+  border-color: var(--qp-border);
+  color: var(--qp-text-primary);
+}
+
+/* Verify-access button success/error tints */
+#qaproof-app.qaproof-dark .qaproof-design-verify-btn.qaproof-verify-ok {
+  background: rgba(46, 160, 67, 0.18) !important;
+  color: #7ee787 !important;
+  border-color: rgba(46, 160, 67, 0.55) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-design-verify-btn.qaproof-verify-error {
+  background: rgba(248, 81, 73, 0.18) !important;
+  color: #ff9999 !important;
+  border-color: rgba(248, 81, 73, 0.55) !important;
+}
+
