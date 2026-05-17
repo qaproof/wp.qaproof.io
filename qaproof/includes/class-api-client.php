@@ -195,8 +195,12 @@ class QAProof_API_Client {
      * @param string $page_url URL to capture as baseline.
      * @return array|WP_Error Baseline data on success, WP_Error on failure.
      */
-    public static function create_baseline( $page_url ) {
-        return self::api_request( 'POST', '/api/baselines', array( 'pageUrl' => $page_url ), self::BASELINE_TIMEOUT );
+    public static function create_baseline( $page_url, $force_capture = false ) {
+        $body = array( 'pageUrl' => $page_url );
+        if ( $force_capture ) {
+            $body['forceCapture'] = true;
+        }
+        return self::api_request( 'POST', '/api/baselines', $body, self::BASELINE_TIMEOUT );
     }
 
     /**
