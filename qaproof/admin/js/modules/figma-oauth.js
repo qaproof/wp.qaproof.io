@@ -301,13 +301,21 @@
           btn.disabled = false;
           btn.textContent = originalText;
         }
-        // Poll for user-closing-popup-without-finishing so we restore the
-        // button state instead of leaving "Opening Figma…" stuck.
+        // Watch the popup. Two roles:
+        //   1. If user closes it without finishing — restore the button so
+        //      "Opening Figma…" doesn't stay stuck.
+        //   2. Defense in depth — if the postMessage from the callback never
+        //      arrives (cross-origin COOP, browser blocks the message, JS
+        //      disabled in popup, etc.), the popup still ALWAYS closes after
+        //      auth completes. Refetch status on close — if it now says
+        //      connected, render that state. This way the UI auto-updates
+        //      even when postMessage silently fails.
         startPopupClosedWatcher(popup, function () {
           if (btn.isConnected) {
             btn.disabled = false;
             btn.textContent = originalText;
           }
+          fetchStatus().then(render);
         });
       })
       .catch(function () {
