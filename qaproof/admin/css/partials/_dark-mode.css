@@ -1227,3 +1227,20 @@ body.qaproof-dark-page #wpbody-content {
   border-color: rgba(248, 81, 73, 0.55) !important;
 }
 
+/* Verify-access message slot (dark theme) */
+#qaproof-app.qaproof-dark .qaproof-design-verify-msg {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--qp-border);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-design-verify-msg.qaproof-verify-msg-error {
+  background: rgba(248, 81, 73, 0.14);
+  border-color: rgba(248, 81, 73, 0.5);
+  color: #ff9999;
+}
+#qaproof-app.qaproof-dark .qaproof-design-verify-msg.qaproof-verify-msg-success {
+  background: rgba(0, 173, 181, 0.14);
+  border-color: rgba(0, 173, 181, 0.5);
+  color: #7be0e6;
+}
+

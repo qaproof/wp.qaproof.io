@@ -332,6 +332,15 @@
 
     row.appendChild(fields);
 
+    // Verify-result message slot — full text goes here, not into the button.
+    // Hidden until a verify call completes; toggled visible + colored by the
+    // verify-access click handler. Keeps the verify button compact instead of
+    // ballooning with long error messages.
+    var verifyMsg = document.createElement('div');
+    verifyMsg.className = 'qaproof-design-verify-msg';
+    verifyMsg.hidden = true;
+    row.appendChild(verifyMsg);
+
     // Status badge
     var status = document.createElement('div');
     status.className = 'qaproof-design-status qaproof-status-empty';
@@ -1952,6 +1961,26 @@
     });
 
     // Verify access: calls /designs/verify-access with the row's figmaUrl.
+    //
+    // Button label stays compact at all times — long error messages go into a
+    // sibling .qaproof-design-verify-msg slot below the row instead of being
+    // jammed into the button's textContent (which would balloon the layout).
+    function setVerifyMsg(row, kind, text) {
+      if (!row) return;
+      var slot = row.querySelector('.qaproof-design-verify-msg');
+      if (!slot) return;
+      slot.classList.remove('qaproof-verify-msg-error', 'qaproof-verify-msg-success');
+      if (!text) {
+        slot.hidden = true;
+        slot.textContent = '';
+        return;
+      }
+      if (kind === 'error') slot.classList.add('qaproof-verify-msg-error');
+      else if (kind === 'success') slot.classList.add('qaproof-verify-msg-success');
+      slot.textContent = text;
+      slot.hidden = false;
+    }
+
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-design-verify-btn');
       if (!btn) return;
@@ -1961,20 +1990,25 @@
       if (!row) return;
       var urlInp = row.querySelector('[data-field="figmaUrl"]');
       var url = urlInp ? urlInp.value.trim() : '';
+      var labelDefault = qaproof.i18n.verifyAccessLabel || 'Verify access';
+
       if (!url) {
         btn.classList.add('qaproof-verify-error');
-        btn.textContent = qaproof.i18n.verifyNoUrl || 'Add the Figma URL first.';
+        btn.textContent = '✗ ' + labelDefault;
+        setVerifyMsg(row, 'error', qaproof.i18n.verifyNoUrl || 'Add the Figma URL first.');
         setTimeout(function () {
+          if (!btn.isConnected) return;
           btn.classList.remove('qaproof-verify-error');
-          btn.textContent = qaproof.i18n.verifyAccessLabel || 'Verify access';
-        }, 2500);
+          btn.textContent = labelDefault;
+          setVerifyMsg(row, null, '');
+        }, 3500);
         return;
       }
 
-      var labelDefault = qaproof.i18n.verifyAccessLabel || 'Verify access';
       btn.disabled = true;
       btn.classList.remove('qaproof-verify-ok', 'qaproof-verify-error');
-      btn.textContent = qaproof.i18n.verifyChecking || 'Checking...';
+      btn.textContent = qaproof.i18n.verifyChecking || 'Checking…';
+      setVerifyMsg(row, null, '');
 
       fetch(qaproof.restBase + '/designs/verify-access', {
         method: 'POST',
@@ -1986,31 +2020,33 @@
           btn.disabled = false;
           if (r.ok && r.body && r.body.success) {
             btn.classList.add('qaproof-verify-ok');
-            btn.textContent = qaproof.i18n.verifyAccessOk || 'Access OK';
+            btn.textContent = '✓ ' + (qaproof.i18n.verifyAccessOk || 'Access OK');
+            // Surface the user we authenticated as, when the backend tells us
+            // (only present on OAuth-mode response). Brief, optional context.
+            var who = r.body.data && (r.body.data.figmaUserEmail || r.body.data.figmaUserHandle);
+            var fileName = r.body.data && r.body.data.name;
+            var okMsg = (qaproof.i18n.verifyAccessOk || 'Access OK');
+            if (fileName) okMsg += ' — ' + fileName;
+            if (who) okMsg += ' (via ' + who + ')';
+            setVerifyMsg(row, 'success', okMsg);
             setTimeout(function () {
               if (!btn.isConnected) return;
               btn.classList.remove('qaproof-verify-ok');
               btn.textContent = labelDefault;
-            }, 4000);
+              setVerifyMsg(row, null, '');
+            }, 6000);
           } else {
             var code = r.body && r.body.error && r.body.error.code ? r.body.error.code : '';
             var msg;
             if (code === 'FIGMA_NOT_SHARED') {
               // Prefer backend's message — it's auth-source-aware (OAuth mode
               // returns a different recovery hint than the service-PAT mode).
-              // Fall back to the static i18n only when backend omitted message.
               msg = (r.body && r.body.error && r.body.error.message) ||
                     qaproof.i18n.figmaNotShared ||
                     'Share this file with figma@qaproof.io';
               // Auto-open the share guide so users see actionable instructions
-              // instead of just an inline red message. Slight delay lets the
-              // inline state register first (so the modal feels causal), and
-              // the retry callback re-clicks the same verify button.
-              //
-              // Skip when OAuth is connected — the modal teaches the wrong
-              // recovery path (sharing with figma@qaproof.io) when the actual
-              // problem is that the user's connected Figma account doesn't
-              // have access to this file.
+              // instead of just an inline red message. Skip when OAuth is
+              // connected — the modal teaches the wrong recovery path then.
               var oauthOn = window.QAProof && typeof window.QAProof.isFigmaOAuthConnected === 'function'
                 && window.QAProof.isFigmaOAuthConnected();
               if (!oauthOn) {
@@ -2029,34 +2065,28 @@
             } else {
               msg = (r.body && r.body.error && r.body.error.message) || 'Verification failed.';
             }
-            // Cap arbitrary backend messages so a long error doesn't blow up
-            // the inline button layout. Trim trailing whitespace/orphan
-            // surrogate pair if slice landed mid-emoji to avoid � rendering.
-            if (msg.length > 200) {
-              msg = msg.slice(0, 197);
-              const lastCode = msg.charCodeAt(msg.length - 1);
-              // High-surrogate without its low half → drop the dangling half
-              if (lastCode >= 0xD800 && lastCode <= 0xDBFF) msg = msg.slice(0, -1);
-              msg = msg.trimEnd() + '...';
-            }
             btn.classList.add('qaproof-verify-error');
-            btn.textContent = msg;
+            btn.textContent = '✗ ' + (qaproof.i18n.verifyFailedShort || 'Failed');
+            setVerifyMsg(row, 'error', msg);
             setTimeout(function () {
               if (!btn.isConnected) return; // row was removed mid-verify
               btn.classList.remove('qaproof-verify-error');
               btn.textContent = labelDefault;
-            }, 6000);
+              setVerifyMsg(row, null, '');
+            }, 10000);
           }
         })
         .catch(function () {
           btn.disabled = false;
           btn.classList.add('qaproof-verify-error');
-          btn.textContent = 'Network error';
+          btn.textContent = '✗ ' + labelDefault;
+          setVerifyMsg(row, 'error', qaproof.i18n.verifyNetworkError || 'Network error — try again.');
           setTimeout(function () {
             if (!btn.isConnected) return;
             btn.classList.remove('qaproof-verify-error');
             btn.textContent = labelDefault;
-          }, 3000);
+            setVerifyMsg(row, null, '');
+          }, 4000);
         });
     });
   })();
