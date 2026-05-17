@@ -822,7 +822,9 @@
   transform: rotate(90deg);
 }
 
-/* Saved-design row: Verify access button + transient feedback states */
+/* Saved-design row: Verify access button + transient feedback states.
+   Button label stays SHORT in all states — never holds the full error
+   message; long text goes into the sibling .qaproof-design-verify-msg slot. */
 #qaproof-app .qaproof-design-verify-btn {
   white-space: nowrap;
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -836,7 +838,30 @@
   background: var(--qp-error-bg, #f8d7da) !important;
   color: var(--qp-error-fg, #721c24) !important;
   border-color: var(--qp-error-fg, #721c24) !important;
-  white-space: normal;
+}
+
+/* Verify result message — full-width slot below the field row. Shows the
+   backend's auth-aware error/success text without polluting the button. */
+#qaproof-app .qaproof-design-verify-msg {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+  background: var(--qp-bg-surface, #f3f4f6);
+  border: 1px solid var(--qp-border, #e5e7eb);
+  color: var(--qp-text-secondary, #4b5563);
+}
+#qaproof-app .qaproof-design-verify-msg.qaproof-verify-msg-error {
+  background: var(--qp-error-bg, #fdecea);
+  border-color: var(--qp-error-fg, #dc2626);
+  color: var(--qp-error-fg, #b91c1c);
+}
+#qaproof-app .qaproof-design-verify-msg.qaproof-verify-msg-success {
+  background: rgba(0, 173, 181, 0.08);
+  border-color: rgba(0, 173, 181, 0.4);
+  color: #00838a;
 }
 
 #qaproof-app .button-small {
