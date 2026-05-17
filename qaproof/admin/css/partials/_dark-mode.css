@@ -1211,6 +1211,10 @@ body.qaproof-dark-page #wpbody-content {
   border-color: rgba(248, 81, 73, 0.45);
   color: #ff9999;
 }
+#qaproof-app.qaproof-dark .qaproof-figma-conn-note {
+  background: rgba(255,255,255,0.04);
+  color: var(--qp-text-secondary);
+}
 #qaproof-app.qaproof-dark .qaproof-figma-access-card--alt > .qaproof-figma-access-summary {
   color: var(--qp-text-secondary);
 }
