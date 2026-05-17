@@ -257,12 +257,27 @@ class QAProof_Scheduler {
     private static function create_baseline_for_monitor( $monitor ) {
         $result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
 
+        // If the capture was rejected because too many images failed to load
+        // (CAPTURE_UNSTABLE), retry once with forceCapture=true. This handles
+        // sites like Steam or heavily CDN-gated pages where some images
+        // structurally fail to load in a headless browser — if the same images
+        // always fail, regression runs will also see the same blank spots, so
+        // there will be no false diffs. We log the warning so it's visible.
         if ( is_wp_error( $result ) ) {
-            self::save_result_with_retry( $monitor['id'], array(
-                'status'        => 'failed',
-                'error_message' => $result->get_error_message(),
-            ) );
-            return;
+            $error_data = $result->get_error_data( 'qaproof_api_error' );
+            $is_unstable = isset( $error_data['error_code'] ) && $error_data['error_code'] === 'CAPTURE_UNSTABLE';
+
+            if ( $is_unstable ) {
+                $result = QAProof_API_Client::create_baseline( $monitor['page_url'], true );
+            }
+
+            if ( is_wp_error( $result ) ) {
+                self::save_result_with_retry( $monitor['id'], array(
+                    'status'        => 'failed',
+                    'error_message' => $result->get_error_message(),
+                ) );
+                return;
+            }
         }
 
         QAProof_API_Client::monitors_update( $monitor['id'], array(
