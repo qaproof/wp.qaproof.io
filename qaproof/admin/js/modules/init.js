@@ -1996,7 +1996,12 @@
             var code = r.body && r.body.error && r.body.error.code ? r.body.error.code : '';
             var msg;
             if (code === 'FIGMA_NOT_SHARED') {
-              msg = qaproof.i18n.figmaNotShared || 'Share this file with figma@qaproof.io';
+              // Prefer backend's message — it's auth-source-aware (OAuth mode
+              // returns a different recovery hint than the service-PAT mode).
+              // Fall back to the static i18n only when backend omitted message.
+              msg = (r.body && r.body.error && r.body.error.message) ||
+                    qaproof.i18n.figmaNotShared ||
+                    'Share this file with figma@qaproof.io';
               // Auto-open the share guide so users see actionable instructions
               // instead of just an inline red message. Slight delay lets the
               // inline state register first (so the modal feels causal), and

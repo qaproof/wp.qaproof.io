@@ -300,6 +300,10 @@
   }
 
   function mapFigmaErrorMessage(code, fallback) {
+    // Backend message ("fallback" arg) is preferred for FIGMA_NOT_SHARED because
+    // it differs between OAuth and service-PAT auth modes. The i18n string only
+    // covers the PAT case; using it always would mis-advise OAuth users.
+    if (code === 'FIGMA_NOT_SHARED' && fallback) return fallback;
     var map = {
       'FIGMA_NOT_SHARED':           (qaproof.i18n.figmaNotShared || 'Share this file with figma@qaproof.io (Can view) and try again.'),
       'FIGMA_FILE_NOT_FOUND':       (qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.'),
