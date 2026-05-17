@@ -847,6 +847,7 @@
 #qaproof-app .qaproof-design-row {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;            /* allows .qaproof-design-verify-msg to break to a new line */
   gap: 10px;
   padding: 14px 16px;
   margin-bottom: 10px;

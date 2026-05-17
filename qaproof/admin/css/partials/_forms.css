@@ -796,6 +796,17 @@
   margin: 0 0 12px;
 }
 
+#qaproof-app .qaproof-figma-conn-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--qp-text-muted, #6b7280);
+  background: rgba(15, 23, 42, 0.04);
+  border-left: 3px solid var(--qp-accent, #00ADB5);
+  padding: 8px 12px;
+  margin: 0 0 14px;
+  border-radius: 6px;
+}
+
 /* Fallback (service-account) card shown as <details>: keep visible but
    visually de-emphasised when OAuth is the recommended path. */
 #qaproof-app .qaproof-figma-access-card--alt {
@@ -841,9 +852,13 @@
 }
 
 /* Verify result message — full-width slot below the field row. Shows the
-   backend's auth-aware error/success text without polluting the button. */
+   backend's auth-aware error/success text without polluting the button.
+   flex-basis: 100% forces it onto a new flex line so the Name/URL/Verify
+   row above it doesn't get squeezed. */
 #qaproof-app .qaproof-design-verify-msg {
-  margin: 8px 0 0;
+  flex-basis: 100%;
+  order: 1;                    /* pin to last in flex order, regardless of DOM position */
+  margin: 4px 0 0;
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 13px;

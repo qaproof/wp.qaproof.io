@@ -124,6 +124,14 @@
         (i18n.figmaOAuthReadsOnDemand || 'QAProof reads files only when you run a test against them.')
       ));
       bodyEl.appendChild(makeMeta(state));
+      // Figma REST API doesn't honor "Anyone with the link can view" sharing.
+      // Surface that as a persistent note in the connected state so users know
+      // why a Verify might fail later even though the file opens in browser.
+      var note = document.createElement('p');
+      note.className = 'qaproof-figma-conn-note';
+      note.textContent = i18n.figmaOAuthLinkSharingNote ||
+        'Note: files shared via "Anyone with the link" don\'t work through Figma\'s API. To test them, the owner must invite this account directly, or the file must live in your account / team.';
+      bodyEl.appendChild(note);
       bodyEl.appendChild(makeActions([
         button('qaproof-figma-conn-disconnect', i18n.figmaOAuthDisconnect || 'Disconnect', onDisconnectClick),
       ]));

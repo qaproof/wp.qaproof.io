@@ -203,6 +203,7 @@ class QAProof_Admin_Assets {
                 'figmaOAuthOpening'           => __( 'Opening Figma…', 'qaproof' ),
                 'figmaOAuthConnectedAs'       => __( 'Connected as', 'qaproof' ),
                 'figmaOAuthReadsOnDemand'     => __( 'QAProof reads files only when you run a test against them.', 'qaproof' ),
+                'figmaOAuthLinkSharingNote'   => __( 'Note: files shared via "Anyone with the link" don\'t work through Figma\'s API. To test them, the owner must invite this account directly, or the file must live in your account / team.', 'qaproof' ),
                 'figmaOAuthDisconnectedBlurb' => __( 'One-click connection. After you authorize QAProof in Figma, every file you can open is testable — no per-file sharing needed.', 'qaproof' ),
                 'figmaOAuthRevokedExplain'    => __( 'Your Figma connection is no longer valid (the app may have been removed in Figma settings). Reconnect to continue running fidelity tests.', 'qaproof' ),
                 'figmaOAuthPreviouslyConnectedAs' => __( 'Previously connected as', 'qaproof' ),
