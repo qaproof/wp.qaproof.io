@@ -1090,10 +1090,15 @@ class QAProof_API_Client {
      * should open in a popup. The backend creates a signed state token that
      * carries the workspace id through the redirect.
      *
+     * 60s timeout (vs default 30) because the start handler hits Figma's
+     * authorize endpoint server-side under rate-limit pressure during peak
+     * usage; 30s was tight enough that one stalled DNS resolve aborted the
+     * call before the popup user even saw a consent screen.
+     *
      * @return array|WP_Error { authorizeUrl }
      */
     public static function figma_oauth_start() {
-        return self::api_request( 'POST', '/api/figma-oauth/start', array() );
+        return self::api_request( 'POST', '/api/figma-oauth/start', array(), 60 );
     }
 
     /**
