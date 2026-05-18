@@ -460,6 +460,37 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-primary);
 }
 
+/* Dark: Figma share guide modal */
+#qaproof-app.qaproof-dark .qaproof-figma-guide-lead,
+#qaproof-app.qaproof-dark .qaproof-figma-guide-email-label,
+#qaproof-app.qaproof-dark .qaproof-figma-guide-tip {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-email {
+  background: rgba(255, 255, 255, 0.05);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-email-value {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-steps > li {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-steps code {
+  background: rgba(0, 173, 181, 0.22);
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-tip {
+  background: rgba(0, 173, 181, 0.1);
+  border-color: rgba(0, 173, 181, 0.28);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-btn-open {
+  background: #4b5563;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-guide-btn-open:hover {
+  background: #374151;
+}
+
 /* Dark: monitor table */
 #qaproof-app.qaproof-dark .qaproof-monitors-table {
   background: var(--qp-bg-dark);
@@ -959,19 +990,6 @@ body.qaproof-dark-page #wpbody-content {
   border-color: rgba(0, 173, 181, 0.25);
 }
 
-/* Token show/hide button */
-#qaproof-app.qaproof-dark .qaproof-token-toggle {
-  color: var(--qp-text-secondary);
-}
-#qaproof-app.qaproof-dark .qaproof-token-toggle:hover {
-  color: var(--qp-accent) !important;
-}
-
-/* Token fade gradient — matches dark input background */
-#qaproof-app.qaproof-dark .qaproof-token-fade {
-  background: linear-gradient(to right, transparent, var(--qp-bg-card));
-}
-
 /* Remove button */
 #qaproof-app.qaproof-dark .qaproof-design-remove:not(.button-primary):not(.button-link-delete) {
   background: transparent !important;
@@ -1133,5 +1151,100 @@ body.qaproof-dark-page #wpbody-content {
 /* Type scale hover */
 #qaproof-app.qaproof-dark .qaproof-type-scale-item:hover {
   background: var(--qp-divider);
+}
+
+/* Figma onboard card (Settings → Tests → Fidelity)
+   light defaults are too bright on dark — use card / border variables. */
+#qaproof-app.qaproof-dark .qaproof-figma-access-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-access-lead,
+#qaproof-app.qaproof-dark .qaproof-figma-access-email-label,
+#qaproof-app.qaproof-dark .qaproof-figma-access-steps {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-access-email-value {
+  background: var(--qp-bg-input, var(--qp-bg-elevated));
+  border-color: var(--qp-border);
+  color: var(--qp-text-primary);
+}
+
+/* Figma OAuth connection card — dark theme */
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card {
+  background: var(--qp-bg-card);
+  border-color: var(--qp-border);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="connected"] {
+  border-color: rgba(0, 173, 181, 0.55);
+  background: linear-gradient(0deg, rgba(0,173,181,0.08), rgba(0,173,181,0.08)),
+              var(--qp-bg-card);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="revoked"] {
+  border-color: rgba(248, 81, 73, 0.55);
+  background: linear-gradient(0deg, rgba(248,81,73,0.08), rgba(248,81,73,0.08)),
+              var(--qp-bg-card);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-blurb,
+#qaproof-app.qaproof-dark .qaproof-figma-conn-loading,
+#qaproof-app.qaproof-dark .qaproof-figma-conn-meta dt {
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-badge {
+  background: rgba(255,255,255,0.08);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="connected"] .qaproof-figma-conn-badge {
+  background: rgba(0, 173, 181, 0.22);
+  color: #7be0e6;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-card[data-state="revoked"] .qaproof-figma-conn-badge {
+  background: rgba(248, 81, 73, 0.22);
+  color: #ff9999;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-meta code {
+  background: var(--qp-bg-input, var(--qp-bg-elevated));
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-error {
+  background: rgba(248, 81, 73, 0.14);
+  border-color: rgba(248, 81, 73, 0.45);
+  color: #ff9999;
+}
+#qaproof-app.qaproof-dark .qaproof-figma-conn-note {
+  background: rgba(255,255,255,0.04);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-figma-access-card--alt > .qaproof-figma-access-summary {
+  color: var(--qp-text-secondary);
+}
+
+/* Verify-access button success/error tints */
+#qaproof-app.qaproof-dark .qaproof-design-verify-btn.qaproof-verify-ok {
+  background: rgba(46, 160, 67, 0.18) !important;
+  color: #7ee787 !important;
+  border-color: rgba(46, 160, 67, 0.55) !important;
+}
+#qaproof-app.qaproof-dark .qaproof-design-verify-btn.qaproof-verify-error {
+  background: rgba(248, 81, 73, 0.18) !important;
+  color: #ff9999 !important;
+  border-color: rgba(248, 81, 73, 0.55) !important;
+}
+
+/* Verify-access message slot (dark theme) */
+#qaproof-app.qaproof-dark .qaproof-design-verify-msg {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--qp-border);
+  color: var(--qp-text-secondary);
+}
+#qaproof-app.qaproof-dark .qaproof-design-verify-msg.qaproof-verify-msg-error {
+  background: rgba(248, 81, 73, 0.14);
+  border-color: rgba(248, 81, 73, 0.5);
+  color: #ff9999;
+}
+#qaproof-app.qaproof-dark .qaproof-design-verify-msg.qaproof-verify-msg-success {
+  background: rgba(0, 173, 181, 0.14);
+  border-color: rgba(0, 173, 181, 0.5);
+  color: #7be0e6;
 }
 

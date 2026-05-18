@@ -286,77 +286,105 @@
   }
 
   function createDesignRow(data) {
+    var designId = data.id || generateId();
+    var verifyLabel = qaproof.i18n.verifyAccessLabel || 'Verify access';
+    var notCachedLabel = qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save';
+    var removeLabel = qaproof.i18n.designRemove || 'Remove';
+
     var row = document.createElement('div');
     row.className = 'qaproof-design-row';
-    var designId = data.id || generateId();
     row.setAttribute('data-design-id', designId);
-    row.innerHTML =
-      '<div class="qaproof-design-row-fields">' +
-        '<input type="text" placeholder="Design Name" value="' + (data.name || '') + '" data-field="name" class="regular-text" />' +
-        '<input type="url" placeholder="Figma URL" value="' + (data.figmaUrl || '') + '" data-field="figmaUrl" class="regular-text" />' +
-        '<div class="qaproof-token-field-wrap">' +
-          '<input type="password" placeholder="Figma Token (figd_...)" value="' + (data.figmaToken || '') + '" data-field="figmaToken" class="regular-text" autocomplete="off" />' +
-          '<button type="button" class="qaproof-token-toggle" title="Show / Hide token">' +
-            '<svg class="qaproof-eye-icon qaproof-eye-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' +
-            '<svg class="qaproof-eye-icon qaproof-eye-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-          '</button>' +
-          '<span class="qaproof-token-fade"></span>' +
-        '</div>' +
-        '<input type="hidden" value="' + designId + '" data-field="id" />' +
-      '</div>' +
-      '<div class="qaproof-design-status qaproof-status-empty" data-status="empty" title="' + (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save') + '">' +
-        '<span class="qaproof-design-status-dot"></span>' +
-        '<span class="qaproof-design-status-label">' + (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save') + '</span>' +
-      '</div>' +
-      '<button type="button" class="button qaproof-design-remove" title="' + (qaproof.i18n.designRemove || 'Remove') + '">' +
-        '<span class="dashicons dashicons-trash"></span>' +
-      '</button>';
+
+    // Build fields container — every value goes via attributes/textContent so
+    // hostile saved data can never break out of an attribute or inject HTML.
+    var fields = document.createElement('div');
+    fields.className = 'qaproof-design-row-fields';
+
+    var nameInp = document.createElement('input');
+    nameInp.type = 'text';
+    nameInp.placeholder = 'Design Name';
+    nameInp.value = data.name || '';
+    nameInp.setAttribute('data-field', 'name');
+    nameInp.className = 'regular-text';
+    fields.appendChild(nameInp);
+
+    var urlInp = document.createElement('input');
+    urlInp.type = 'url';
+    urlInp.placeholder = 'Figma URL';
+    urlInp.value = data.figmaUrl || '';
+    urlInp.setAttribute('data-field', 'figmaUrl');
+    urlInp.className = 'regular-text';
+    fields.appendChild(urlInp);
+
+    var verifyBtn = document.createElement('button');
+    verifyBtn.type = 'button';
+    verifyBtn.className = 'button qaproof-design-verify-btn';
+    verifyBtn.setAttribute('data-design-id', designId);
+    verifyBtn.title = verifyLabel;
+    verifyBtn.textContent = verifyLabel;
+    fields.appendChild(verifyBtn);
+
+    var idInp = document.createElement('input');
+    idInp.type = 'hidden';
+    idInp.value = designId;
+    idInp.setAttribute('data-field', 'id');
+    fields.appendChild(idInp);
+
+    row.appendChild(fields);
+
+    // Verify-result message slot — full text goes here, not into the button.
+    // Hidden until a verify call completes; toggled visible + colored by the
+    // verify-access click handler. Keeps the verify button compact instead of
+    // ballooning with long error messages.
+    var verifyMsg = document.createElement('div');
+    verifyMsg.className = 'qaproof-design-verify-msg';
+    verifyMsg.hidden = true;
+    row.appendChild(verifyMsg);
+
+    // Status badge
+    var status = document.createElement('div');
+    status.className = 'qaproof-design-status qaproof-status-empty';
+    status.setAttribute('data-status', 'empty');
+    status.title = notCachedLabel;
+    var dot = document.createElement('span');
+    dot.className = 'qaproof-design-status-dot';
+    status.appendChild(dot);
+    var label = document.createElement('span');
+    label.className = 'qaproof-design-status-label';
+    label.textContent = notCachedLabel;
+    status.appendChild(label);
+    row.appendChild(status);
+
+    // Remove button (uses dashicon span)
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'button qaproof-design-remove';
+    removeBtn.title = removeLabel;
+    var icon = document.createElement('span');
+    icon.className = 'dashicons dashicons-trash';
+    removeBtn.appendChild(icon);
+    row.appendChild(removeBtn);
+
+    // Wire input/remove listeners. Editing the URL invalidates any previous
+    // verify result — clear the message slot so a stale "no access" doesn't
+    // linger under a freshly pasted URL.
     row.querySelectorAll('input').forEach(function (inp) {
       inp.addEventListener('input', syncDesignsToHidden);
+      if (inp.getAttribute('data-field') === 'figmaUrl') {
+        inp.addEventListener('input', function () {
+          if (!verifyMsg.hidden) {
+            verifyMsg.hidden = true;
+            verifyMsg.textContent = '';
+            verifyMsg.classList.remove('qaproof-verify-msg-error', 'qaproof-verify-msg-success');
+          }
+        });
+      }
     });
-    row.querySelector('.qaproof-design-remove').addEventListener('click', function () {
+    removeBtn.addEventListener('click', function () {
       row.remove();
       syncDesignsToHidden();
     });
-    // Token visibility toggle
-    wireTokenToggle(row);
     return row;
-  }
-
-  function wireTokenToggle(container) {
-    container.querySelectorAll('.qaproof-token-field-wrap').forEach(function (wrap) {
-      var btn    = wrap.querySelector('.qaproof-token-toggle');
-      var inp    = wrap.querySelector('input[data-field="figmaToken"]');
-      var eyeOff = wrap.querySelector('.qaproof-eye-off');
-      var eyeOn  = wrap.querySelector('.qaproof-eye-on');
-      var fadeEl = wrap.querySelector('.qaproof-token-fade');
-      if (!btn || !inp) return;
-
-      // Sync fade gradient to input background (same as API Key)
-      function syncFade() {
-        if (!fadeEl) return;
-        var bg = getComputedStyle(inp).backgroundColor;
-        fadeEl.style.background = 'linear-gradient(to right, transparent, ' + bg + ' 70%)';
-      }
-      syncFade();
-      inp.addEventListener('focus', function () { setTimeout(syncFade, 50); });
-      inp.addEventListener('blur',  function () { setTimeout(syncFade, 50); });
-      var themeBtn = document.getElementById('qaproof-theme-toggle');
-      if (themeBtn) {
-        themeBtn.addEventListener('click', function () { setTimeout(syncFade, 100); });
-      }
-
-      // Eye toggle
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var isPassword = inp.type === 'password';
-        inp.type = isPassword ? 'text' : 'password';
-        if (eyeOff && eyeOn) {
-          eyeOff.style.display = isPassword ? 'none'  : 'block';
-          eyeOn.style.display  = isPassword ? 'block' : 'none';
-        }
-      });
-    });
   }
 
   if (addDesignBtn && designsList) {
@@ -378,7 +406,6 @@
           syncDesignsToHidden();
         });
       }
-      wireTokenToggle(row);
     });
 
     // Live status updates from the Tests page (via localStorage `storage` event).
@@ -490,12 +517,10 @@
 
     function autoCacheDesign(row) {
       var designId = row.getAttribute('data-design-id');
-      var figmaUrlInp   = row.querySelector('[data-field="figmaUrl"]');
-      var figmaTokenInp = row.querySelector('[data-field="figmaToken"]');
-      if (!designId || !figmaUrlInp || !figmaTokenInp) return Promise.resolve();
-      var figmaUrl   = figmaUrlInp.value.trim();
-      var figmaToken = figmaTokenInp.value.trim();
-      if (!figmaUrl || !figmaToken) return Promise.resolve();
+      var figmaUrlInp = row.querySelector('[data-field="figmaUrl"]');
+      if (!designId || !figmaUrlInp) return Promise.resolve();
+      var figmaUrl = figmaUrlInp.value.trim();
+      if (!figmaUrl) return Promise.resolve();
 
       var fileKey = extractFigmaFileKey(figmaUrl);
 
@@ -512,7 +537,7 @@
       return fetch(qaproof.restBase + '/figma-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
-        body: JSON.stringify({ figmaUrl: figmaUrl, figmaToken: figmaToken }),
+        body: JSON.stringify({ figmaUrl: figmaUrl }),
       })
       .then(function (res) { return res.json(); })
       .then(function (json) {
@@ -552,7 +577,7 @@
           // fails (rate-limited, etc.), the API will NOT fall back to AI vision;
           // we'd rather keep the design uncached and retry later than save
           // inaccurate overlays.
-          body: JSON.stringify({ figmaUrl: figmaUrl, figmaToken: figmaToken, pixelPerfectOnly: true }),
+          body: JSON.stringify({ figmaUrl: figmaUrl, pixelPerfectOnly: true }),
         })
         .then(function (res) { return res.json(); })
         .then(function (json) {
@@ -624,10 +649,9 @@
           console.info('[QAProof] Auto-cache skipped for ' + designId + ' (recent attempt within cooldown)');
           return;
         }
-        var figmaUrlInp   = row.querySelector('[data-field="figmaUrl"]');
-        var figmaTokenInp = row.querySelector('[data-field="figmaToken"]');
-        if (!figmaUrlInp || !figmaTokenInp) return;
-        if (!figmaUrlInp.value.trim() || !figmaTokenInp.value.trim()) return;
+        var figmaUrlInp = row.querySelector('[data-field="figmaUrl"]');
+        if (!figmaUrlInp) return;
+        if (!figmaUrlInp.value.trim()) return;
         if (designId) markAttempt(designId);
         queue.push(row);
       });
@@ -1723,5 +1747,361 @@
         },
       });
     }
+  })();
+
+  // ============================
+  // Settings page: Figma onboard helpers
+  // (Copy service email, Verify access per saved design, Share guide modal)
+  // ============================
+  (function () {
+    if (!window.qaproof || !qaproof.restBase) return;
+
+    // Step-by-step "Share your file with figma@qaproof.io" modal.
+    // Triggered manually from the "Show me how →" button in Settings, and
+    // auto-opened after the verify-access REST call returns FIGMA_NOT_SHARED
+    // (with figmaUrl + onRetry so users can jump to the file and retry from
+    // inside the modal). Reuses the .qaproof-modal infrastructure but uses
+    // .qaproof-modal-wide for the larger content body.
+    //
+    // opts: { figmaUrl?: string, onRetry?: () => void }
+    function openFigmaShareGuide(opts) {
+      opts = opts || {};
+      var i18n = (window.qaproof && qaproof.i18n) || {};
+      var email = i18n.figmaServiceEmail || 'figma@qaproof.io';
+      var figmaUrl = typeof opts.figmaUrl === 'string' ? opts.figmaUrl.trim() : '';
+      var onRetry = typeof opts.onRetry === 'function' ? opts.onRetry : null;
+
+      // Mount root: prefer #qaproof-app so dark-mode + scoped vars cascade.
+      var root = document.getElementById('qaproof-modal-root');
+      if (!root) {
+        root = document.createElement('div');
+        root.id = 'qaproof-modal-root';
+        (document.getElementById('qaproof-app') || document.body).appendChild(root);
+      }
+      // If a previous instance is still mounted (e.g. user clicked twice),
+      // close it so we don't stack overlays and trap focus weirdly.
+      var prev = root.querySelector('.qaproof-modal-overlay[data-qaproof-figma-guide]');
+      if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+
+      var overlay = document.createElement('div');
+      overlay.className = 'qaproof-modal-overlay';
+      overlay.setAttribute('data-qaproof-figma-guide', '1');
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+
+      var modal = document.createElement('div');
+      modal.className = 'qaproof-modal qaproof-modal-wide';
+      overlay.appendChild(modal);
+
+      var title = document.createElement('h2');
+      title.className = 'qaproof-modal-title';
+      title.textContent = i18n.figmaGuideTitle || 'Share your Figma file with QAProof';
+      modal.appendChild(title);
+
+      var lead = document.createElement('p');
+      lead.className = 'qaproof-figma-guide-lead';
+      lead.textContent = i18n.figmaGuideLead ||
+        'QAProof reads designs through a service account. Add it as a viewer on each file you want to test — you only do this once per file.';
+      modal.appendChild(lead);
+
+      // Service email row (reuses .qaproof-copy-email-btn so the existing
+      // clipboard handler at the bottom of this IIFE picks it up).
+      var emailRow = document.createElement('div');
+      emailRow.className = 'qaproof-figma-guide-email';
+      var emailLbl = document.createElement('span');
+      emailLbl.className = 'qaproof-figma-guide-email-label';
+      emailLbl.textContent = i18n.figmaGuideServiceEmail || 'Service email';
+      emailRow.appendChild(emailLbl);
+      var emailVal = document.createElement('code');
+      emailVal.className = 'qaproof-figma-guide-email-value';
+      emailVal.textContent = email;
+      emailRow.appendChild(emailVal);
+      var copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'button qaproof-copy-email-btn';
+      copyBtn.setAttribute('data-copy', email);
+      copyBtn.textContent = i18n.figmaGuideCopy || 'Copy';
+      emailRow.appendChild(copyBtn);
+      modal.appendChild(emailRow);
+
+      // Steps
+      var steps = document.createElement('ol');
+      steps.className = 'qaproof-figma-guide-steps';
+      var stepsText = [
+        i18n.figmaGuideStep1 || 'In Figma, open the file and click the blue "Share" button in the top-right corner.',
+        i18n.figmaGuideStep2 || 'Paste figma@qaproof.io into the invite field. Set the permission to "Can view".',
+        i18n.figmaGuideStep3 || 'Click "Send invite". The optional message field can stay empty.',
+        i18n.figmaGuideStep4 || 'Come back here and click "Verify access" — QAProof will confirm the file is reachable.',
+      ];
+      stepsText.forEach(function (s) {
+        var li = document.createElement('li');
+        li.textContent = s;
+        steps.appendChild(li);
+      });
+      modal.appendChild(steps);
+
+      // Tip
+      var tip = document.createElement('p');
+      tip.className = 'qaproof-figma-guide-tip';
+      tip.textContent = i18n.figmaGuideTip ||
+        'Tip: sharing only works if the file lives in a team you own (or your drafts). Files owned by another account need that owner to share with the address above.';
+      modal.appendChild(tip);
+
+      // Actions
+      var actions = document.createElement('div');
+      actions.className = 'qaproof-figma-guide-actions';
+
+      if (figmaUrl) {
+        var openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.className = 'qaproof-modal-btn qaproof-figma-guide-btn-open';
+        openBtn.textContent = i18n.figmaGuideOpenFile || 'Open file in Figma →';
+        openBtn.addEventListener('click', function () {
+          try { window.open(figmaUrl, '_blank', 'noopener,noreferrer'); } catch (_) {}
+        });
+        actions.appendChild(openBtn);
+      }
+
+      if (onRetry) {
+        var retryBtn = document.createElement('button');
+        retryBtn.type = 'button';
+        retryBtn.className = 'qaproof-modal-btn qaproof-modal-btn-primary';
+        retryBtn.textContent = i18n.figmaGuideRetry || 'I shared it — verify again';
+        retryBtn.addEventListener('click', function () {
+          close();
+          try { onRetry(); } catch (_) {}
+        });
+        actions.appendChild(retryBtn);
+      }
+
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'qaproof-modal-btn qaproof-modal-cancel';
+      closeBtn.textContent = i18n.figmaGuideClose || 'Close';
+      closeBtn.addEventListener('click', function () { close(); });
+      actions.appendChild(closeBtn);
+
+      modal.appendChild(actions);
+
+      function close() {
+        overlay.classList.remove('qaproof-modal-visible');
+        document.removeEventListener('keydown', onKey);
+        overlay.removeEventListener('click', onBackdrop);
+        // Wait for fade-out (matches the 0.18s opacity transition on .qaproof-modal-overlay).
+        setTimeout(function () {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        }, 200);
+      }
+      function onKey(ev) { if (ev.key === 'Escape') close(); }
+      function onBackdrop(ev) { if (ev.target === overlay) close(); }
+
+      root.appendChild(overlay);
+      // Force reflow so the opacity transition actually animates in
+      // (without this the overlay would render at opacity:1 instantly
+      // because the visible class is added in the same frame as mount).
+      void overlay.offsetWidth;
+      overlay.classList.add('qaproof-modal-visible');
+      document.addEventListener('keydown', onKey);
+      overlay.addEventListener('click', onBackdrop);
+
+      // Focus the primary action so keyboard users can immediately confirm.
+      var focusTarget = modal.querySelector('.qaproof-modal-btn-primary') ||
+                        modal.querySelector('.qaproof-modal-btn');
+      if (focusTarget) { try { focusTarget.focus({ preventScroll: true }); } catch (_) { focusTarget.focus(); } }
+
+      return { close: close };
+    }
+
+    // Expose for use from other modules (e.g. form.js when a fidelity test
+    // would have failed on FIGMA_NOT_SHARED).
+    if (!window.QAProof) window.QAProof = {};
+    window.QAProof.showFigmaShareGuide = openFigmaShareGuide;
+
+    // Settings "Show me how →" button next to the service email Copy button.
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.qaproof-figma-guide-open');
+      if (!btn) return;
+      e.preventDefault();
+      openFigmaShareGuide({});
+    });
+
+    // Copy "figma@qaproof.io" to clipboard.
+    // We show ✓ only when copy actually succeeded; on hard failure show ✗ so
+    // the user knows to copy the email manually (it's visible in the card).
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.qaproof-copy-email-btn');
+      if (!btn) return;
+      e.preventDefault();
+      var email = btn.getAttribute('data-copy') || '';
+      if (!email) return;
+
+      var original = btn.textContent;
+      var flash = function (text, ms) {
+        btn.textContent = text;
+        setTimeout(function () { btn.textContent = original; }, ms || 1500);
+      };
+
+      var legacyCopy = function () {
+        var ta = document.createElement('textarea');
+        ta.value = email;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(
+          function () { flash('✓'); },
+          function () {
+            // Fallback for older browsers / clipboard permission denied
+            if (legacyCopy()) flash('✓');
+            else flash('✗', 2500);
+          }
+        );
+      } else if (legacyCopy()) {
+        flash('✓');
+      } else {
+        flash('✗', 2500);
+      }
+    });
+
+    // Verify access: calls /designs/verify-access with the row's figmaUrl.
+    //
+    // Button label stays compact at all times — long error messages go into a
+    // sibling .qaproof-design-verify-msg slot below the row instead of being
+    // jammed into the button's textContent (which would balloon the layout).
+    function setVerifyMsg(row, kind, text) {
+      if (!row) return;
+      var slot = row.querySelector('.qaproof-design-verify-msg');
+      if (!slot) return;
+      slot.classList.remove('qaproof-verify-msg-error', 'qaproof-verify-msg-success');
+      if (!text) {
+        slot.hidden = true;
+        slot.textContent = '';
+        return;
+      }
+      if (kind === 'error') slot.classList.add('qaproof-verify-msg-error');
+      else if (kind === 'success') slot.classList.add('qaproof-verify-msg-success');
+      slot.textContent = text;
+      slot.hidden = false;
+    }
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.qaproof-design-verify-btn');
+      if (!btn) return;
+      e.preventDefault();
+
+      var row = btn.closest('.qaproof-design-row');
+      if (!row) return;
+      var urlInp = row.querySelector('[data-field="figmaUrl"]');
+      var url = urlInp ? urlInp.value.trim() : '';
+      var labelDefault = qaproof.i18n.verifyAccessLabel || 'Verify access';
+
+      if (!url) {
+        btn.classList.add('qaproof-verify-error');
+        btn.textContent = '✗ ' + labelDefault;
+        setVerifyMsg(row, 'error', qaproof.i18n.verifyNoUrl || 'Add the Figma URL first.');
+        // Revert button so user can retry; leave the message slot in place
+        // until the user does something (clicks Verify again or edits the URL).
+        setTimeout(function () {
+          if (!btn.isConnected) return;
+          btn.classList.remove('qaproof-verify-error');
+          btn.textContent = labelDefault;
+        }, 3500);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.remove('qaproof-verify-ok', 'qaproof-verify-error');
+      btn.textContent = qaproof.i18n.verifyChecking || 'Checking…';
+      setVerifyMsg(row, null, '');
+
+      fetch(qaproof.restBase + '/designs/verify-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+        body: JSON.stringify({ figmaUrl: url }),
+      })
+        .then(function (res) { return res.json().then(function (j) { return { ok: res.ok, body: j }; }); })
+        .then(function (r) {
+          btn.disabled = false;
+          if (r.ok && r.body && r.body.success) {
+            btn.classList.add('qaproof-verify-ok');
+            btn.textContent = '✓ ' + (qaproof.i18n.verifyAccessOk || 'Access OK');
+            // Surface the user we authenticated as, when the backend tells us
+            // (only present on OAuth-mode response). Brief, optional context.
+            var who = r.body.data && (r.body.data.figmaUserEmail || r.body.data.figmaUserHandle);
+            var fileName = r.body.data && r.body.data.name;
+            var okMsg = (qaproof.i18n.verifyAccessOk || 'Access OK');
+            if (fileName) okMsg += ' — ' + fileName;
+            if (who) okMsg += ' (via ' + who + ')';
+            setVerifyMsg(row, 'success', okMsg);
+            // Revert button quickly so it's clickable again; keep the success
+            // text visible so the user has confirmation of which account + file.
+            setTimeout(function () {
+              if (!btn.isConnected) return;
+              btn.classList.remove('qaproof-verify-ok');
+              btn.textContent = labelDefault;
+            }, 4000);
+          } else {
+            var code = r.body && r.body.error && r.body.error.code ? r.body.error.code : '';
+            var msg;
+            if (code === 'FIGMA_NOT_SHARED') {
+              // Prefer backend's message — it's auth-source-aware (OAuth mode
+              // returns a different recovery hint than the service-PAT mode).
+              msg = (r.body && r.body.error && r.body.error.message) ||
+                    qaproof.i18n.figmaNotShared ||
+                    'Share this file with figma@qaproof.io';
+              // Auto-open the share guide so users see actionable instructions
+              // instead of just an inline red message. Skip when OAuth is
+              // connected — the modal teaches the wrong recovery path then.
+              var oauthOn = window.QAProof && typeof window.QAProof.isFigmaOAuthConnected === 'function'
+                && window.QAProof.isFigmaOAuthConnected();
+              if (!oauthOn) {
+                setTimeout(function () {
+                  if (!btn.isConnected) return;
+                  openFigmaShareGuide({
+                    figmaUrl: url,
+                    onRetry: function () {
+                      if (btn.isConnected && !btn.disabled) btn.click();
+                    },
+                  });
+                }, 350);
+              }
+            } else if (code === 'FIGMA_FILE_NOT_FOUND') {
+              msg = qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.';
+            } else {
+              msg = (r.body && r.body.error && r.body.error.message) || 'Verification failed.';
+            }
+            btn.classList.add('qaproof-verify-error');
+            btn.textContent = '✗ ' + (qaproof.i18n.verifyFailedShort || 'Failed');
+            setVerifyMsg(row, 'error', msg);
+            // Revert button so a retry click is possible; keep the error
+            // message visible. It's cleared on the next verify call (start
+            // of this handler) or when the user edits the URL.
+            setTimeout(function () {
+              if (!btn.isConnected) return; // row was removed mid-verify
+              btn.classList.remove('qaproof-verify-error');
+              btn.textContent = labelDefault;
+            }, 3500);
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          btn.classList.add('qaproof-verify-error');
+          btn.textContent = '✗ ' + labelDefault;
+          setVerifyMsg(row, 'error', qaproof.i18n.verifyNetworkError || 'Network error — try again.');
+          setTimeout(function () {
+            if (!btn.isConnected) return;
+            btn.classList.remove('qaproof-verify-error');
+            btn.textContent = labelDefault;
+          }, 3500);
+        });
+    });
   })();
 })();

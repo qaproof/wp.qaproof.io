@@ -47,11 +47,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Test Type Selector -->
     <div class="qaproof-card">
         <div class="qaproof-test-type-selector">
-            <button type="button" class="qaproof-test-type-btn" data-type="fidelity">
+            <button type="button" class="qaproof-test-type-btn active" data-type="fidelity">
                 <span class="dashicons dashicons-art"></span>
                 <?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?>
             </button>
-            <button type="button" class="qaproof-test-type-btn active" data-type="responsive">
+            <button type="button" class="qaproof-test-type-btn" data-type="responsive">
                 <span class="dashicons dashicons-smartphone"></span>
                 <?php esc_html_e( 'Responsive Test', 'qaproof' ); ?>
             </button>
@@ -150,7 +150,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                             <!-- Empty state -->
                             <div class="qaproof-preview-empty" id="qaproof-preview-empty">
                                 <span class="dashicons dashicons-format-image"></span>
-                                <p><?php esc_html_e( 'Enter your Figma Token and URL to preview the design before testing.', 'qaproof' ); ?></p>
+                                <p><?php esc_html_e( 'Select a saved design or upload an image to preview it before testing.', 'qaproof' ); ?></p>
                             </div>
                             <!-- Loading state -->
                             <div class="qaproof-preview-loading hidden" id="qaproof-preview-loading">
