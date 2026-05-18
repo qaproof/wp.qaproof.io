@@ -25,6 +25,12 @@ class QAProof_Settings {
         // mid-request (settings save, programmatic update_option calls).
         add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
         add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
+        // qaproof_saved_designs can grow to several MB (it stores cached
+        // design preview images as base64 alongside each entry). Disable
+        // autoload so it isn't loaded into memory on every front-end page
+        // view — only when an admin actually needs it.
+        add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11, 0 );
+        add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11, 0 );
     }
 
     /**
@@ -42,6 +48,25 @@ class QAProof_Settings {
             [ 'option_name' => 'qaproof_api_key' ]
         );
         wp_cache_delete( 'qaproof_api_key', 'options' );
+        wp_cache_delete( 'alloptions', 'options' );
+    }
+
+    /**
+     * Flip qaproof_saved_designs to autoload=no after every write. The option
+     * grows substantially (cached design preview images stored as base64),
+     * and WP's default is autoload=yes — without this, every front-end page
+     * view would load several MB into memory just to render a marketing page.
+     */
+    public static function ensure_saved_designs_not_autoloaded() {
+        global $wpdb;
+        remove_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11 );
+        remove_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11 );
+        $wpdb->update(
+            $wpdb->options,
+            [ 'autoload' => 'no' ],
+            [ 'option_name' => 'qaproof_saved_designs' ]
+        );
+        wp_cache_delete( 'qaproof_saved_designs', 'options' );
         wp_cache_delete( 'alloptions', 'options' );
     }
 
