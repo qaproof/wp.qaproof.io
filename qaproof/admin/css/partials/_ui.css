@@ -1,4 +1,24 @@
 /* ============================
+   History row — score (plain number, no pill)
+   ============================ */
+#qaproof-app .qaproof-history-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  margin-right: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--qp-text-muted);
+  flex-shrink: 0;
+}
+#qaproof-app .qaproof-history-score.score-high { color: var(--qp-accent); }
+#qaproof-app .qaproof-history-score.score-medium { color: #f59e0b; }
+#qaproof-app .qaproof-history-score.score-low { color: #ef4444; }
+#qaproof-app.qaproof-dark .qaproof-history-score.score-medium { color: #fbbf24; }
+#qaproof-app.qaproof-dark .qaproof-history-score.score-low { color: #f87171; }
+
+/* ============================
    Parse Warning Banner
    ============================ */
 .qaproof-parse-warning {
@@ -953,16 +973,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-#qaproof-app .qaproof-history-score {
-  font-size: 16px;
-  font-weight: 700;
-  text-align: center;
-}
-
-#qaproof-app .qaproof-history-score.score-high { color: var(--qp-score-high); }
-#qaproof-app .qaproof-history-score.score-medium { color: var(--qp-score-medium); }
-#qaproof-app .qaproof-history-score.score-low { color: var(--qp-score-low); }
 
 /* Action buttons — dark theme */
 #qaproof-app .qaproof-history-actions {

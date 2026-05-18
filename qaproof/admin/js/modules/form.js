@@ -4,6 +4,10 @@
   var Q = window.QAProof;
   var S = Q.state;
 
+  // Hoisted so the test-type handler can re-position the source slider
+  // after figmaFields becomes visible (getBoundingClientRect returns 0,0 when hidden).
+  var moveSourceSlider = null;
+
   // ============================
   // Test Type Selector
   // ============================
@@ -47,6 +51,15 @@
 
       if (S.figmaFields) {
         S.figmaFields.classList.toggle('hidden', S.testType !== 'fidelity');
+      }
+      // Re-position the source-toggle slider now that figmaFields is visible.
+      // When hidden, getBoundingClientRect() returns 0,0 so the initial
+      // positioning is wrong — fix it on the first frame after reveal.
+      if (S.testType === 'fidelity' && moveSourceSlider && S.sourceToggle) {
+        requestAnimationFrame(function () {
+          var activeSrcBtn = S.sourceToggle.querySelector('.qaproof-source-btn.active');
+          if (activeSrcBtn) moveSourceSlider(activeSrcBtn);
+        });
       }
       updateFigmaPreviewVisibility();
       updateSavedDesignVisibility();
@@ -195,13 +208,13 @@
     srcSlider.className = 'qaproof-source-toggle-slider';
     S.sourceToggle.appendChild(srcSlider);
 
-    function moveSourceSlider(btn) {
+    moveSourceSlider = function (btn) {
       var navRect = S.sourceToggle.getBoundingClientRect();
       var btnRect = btn.getBoundingClientRect();
       srcSlider.style.width = btnRect.width + 'px';
       srcSlider.style.height = btnRect.height + 'px';
       srcSlider.style.transform = 'translateX(' + (btnRect.left - navRect.left - S.sourceToggle.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - S.sourceToggle.clientTop) + 'px)';
-    }
+    };
 
     // Initial position without transition
     requestAnimationFrame(function () {

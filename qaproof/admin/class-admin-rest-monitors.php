@@ -337,14 +337,26 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Create a new baseline from the current page state
+        // Create a new baseline from the current page state.
+        // If the capture is rejected due to too many image load failures
+        // (CAPTURE_UNSTABLE), retry automatically with forceCapture=true so
+        // sites with CDN-gated or bot-protected images can still be monitored.
         $baseline_result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
 
         if ( is_wp_error( $baseline_result ) ) {
-            return new WP_REST_Response( [
-                'success' => false,
-                'error'   => [ 'message' => $baseline_result->get_error_message() ],
-            ], 502 );
+            $error_data  = $baseline_result->get_error_data( 'qaproof_api_error' );
+            $is_unstable = isset( $error_data['error_code'] ) && $error_data['error_code'] === 'CAPTURE_UNSTABLE';
+
+            if ( $is_unstable ) {
+                $baseline_result = QAProof_API_Client::create_baseline( $monitor['page_url'], true );
+            }
+
+            if ( is_wp_error( $baseline_result ) ) {
+                return new WP_REST_Response( [
+                    'success' => false,
+                    'error'   => [ 'message' => $baseline_result->get_error_message() ],
+                ], 502 );
+            }
         }
 
         // Update monitor with new baseline
