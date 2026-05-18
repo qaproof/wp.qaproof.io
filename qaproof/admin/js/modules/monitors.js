@@ -1102,7 +1102,7 @@
       loadMonitors(true);
       return;
     }
-    // Ping wp-cron from browser every 3rd attempt to unblock Docker-internal cron
+    // Ping wp-cron from browser every 3rd attempt so the queued monitor run fires reliably
     if (attempts % 3 === 0) {
       try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
     }
@@ -1144,7 +1144,7 @@
       loadMonitors(true);
       return;
     }
-    // Ping wp-cron from browser every 3rd attempt to unblock Docker-internal cron
+    // Ping wp-cron from browser every 3rd attempt so the queued monitor run fires reliably
     if (attempts % 3 === 0) {
       try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
     }
@@ -1294,8 +1294,8 @@
       return;
     }
 
-    // Ping wp-cron from the browser every 3 attempts (~15s) so the job runs
-    // even when Docker's internal cron HTTP request fails to fire.
+    // Ping wp-cron from the browser every 3 attempts (~15s) so the queued
+    // monitor run fires reliably even when WP's own cron tick is delayed.
     if (monitorPollCount % 3 === 1) {
       try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
     }
@@ -1343,8 +1343,8 @@
       return;
     }
 
-    // Ping wp-cron from the browser every 3 attempts (~15s) so the job runs
-    // even when Docker's internal cron HTTP request fails to fire.
+    // Ping wp-cron from the browser every 3 attempts (~15s) so the queued
+    // monitor run fires reliably even when WP's own cron tick is delayed.
     if (monitorPollCount % 3 === 1) {
       try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
     }

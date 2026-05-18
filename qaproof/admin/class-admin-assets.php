@@ -135,9 +135,9 @@ class QAProof_Admin_Assets {
             // Origin of the QAProof SaaS API. Used by figma-oauth.js to
             // validate event.origin on the OAuth-callback postMessage (the
             // popup lives on the API host, not the WP host). Derived from
-            // the configured api_endpoint setting; empty when endpoint
-            // can't be parsed (legacy http://api:3000 docker setups), in
-            // which case the JS falls back to source-discriminator-only.
+            // the configured api_endpoint setting; empty when the endpoint
+            // can't be parsed, in which case the JS falls back to the
+            // payload-source-discriminator check only.
             'apiOrigin'         => self::derive_api_origin(),
             // Usage is now per-fileKey. `byFile` carries each file's own
             // counters and rateLimit (retryAt). Aggregate total/byType are

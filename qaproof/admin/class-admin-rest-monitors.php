@@ -243,12 +243,10 @@ class QAProof_Admin_REST_Monitors {
         }
 
         // Schedule the monitor run as a WP-Cron single event and return 200
-        // immediately — this frees the PHP-FPM worker right away.
-        //
-        // The browser JS pings /wp-cron.php from outside Docker on the FIRST
-        // poll tick, which reliably fires the event (internal spawn_cron() HTTP
-        // requests often fail in Docker because localhost resolves to the
-        // container, not the host's exposed port).
+        // immediately — this frees the PHP-FPM worker right away. The browser
+        // JS pings /wp-cron.php on the first poll tick to guarantee the event
+        // is dispatched, since WP's internal spawn_cron() loopback isn't
+        // reliable on every host.
         wp_schedule_single_event( time() - 1, 'qaproof_run_monitor', [ $id ] );
 
         // Mark this monitor as "a run is in progress" using a WP transient.

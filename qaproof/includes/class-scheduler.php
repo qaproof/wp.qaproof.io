@@ -26,31 +26,26 @@ class QAProof_Scheduler {
         // Reschedule crons whenever the preferred hour option is saved.
         add_action( 'update_option_qaproof_cron_hour', array( __CLASS__, 'reschedule_events' ) );
 
-        // Fix WP-Cron for Docker: site_url() uses host:port (e.g. localhost:8080)
-        // which is the Docker host mapping, unreachable from inside the container.
-        // Strip the port so wp-cron.php is requested on port 80 (Apache's internal port).
-        add_filter( 'cron_request', array( __CLASS__, 'fix_cron_url_for_docker' ) );
+        // Normalize cron request URL for localhost setups where site_url() includes
+        // a non-standard port that's only reachable from the outside (loopback).
+        add_filter( 'cron_request', array( __CLASS__, 'normalize_cron_url' ) );
     }
 
     /**
-     * When running inside Docker, the site URL may include the host-mapped port
-     * (e.g. localhost:8080) which is unreachable from within the container.
-     * This filter rewrites the cron request URL to use port 80 so spawn_cron()
-     * can reach wp-cron.php via the container's internal Apache listener.
-     *
-     * Only applies when the host is 'localhost' and a non-80/443 port is present.
+     * Drop a non-standard port from a localhost cron URL so spawn_cron() can
+     * reach wp-cron.php via the regular loopback. Production URLs are left alone.
      *
      * @param array $cron_request {url, key, args}
      * @return array
      */
-    public static function fix_cron_url_for_docker( $cron_request ) {
+    public static function normalize_cron_url( $cron_request ) {
         $url    = isset( $cron_request['url'] ) ? $cron_request['url'] : '';
         $parsed = wp_parse_url( $url );
 
         $host = isset( $parsed['host'] ) ? $parsed['host'] : '';
         $port = isset( $parsed['port'] ) ? (int) $parsed['port'] : 0;
 
-        // Only touch localhost with a non-standard port — leave production URLs alone.
+        // Only touch localhost loopback URLs — leave production URLs alone.
         if ( 'localhost' === $host && $port > 0 && $port !== 80 && $port !== 443 ) {
             // Rebuild URL without the port (defaults to port 80 for http).
             $cron_request['url'] = str_replace(
