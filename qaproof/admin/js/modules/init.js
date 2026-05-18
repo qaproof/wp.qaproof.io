@@ -365,9 +365,20 @@
     removeBtn.appendChild(icon);
     row.appendChild(removeBtn);
 
-    // Wire input/remove listeners
+    // Wire input/remove listeners. Editing the URL invalidates any previous
+    // verify result — clear the message slot so a stale "no access" doesn't
+    // linger under a freshly pasted URL.
     row.querySelectorAll('input').forEach(function (inp) {
       inp.addEventListener('input', syncDesignsToHidden);
+      if (inp.getAttribute('data-field') === 'figmaUrl') {
+        inp.addEventListener('input', function () {
+          if (!verifyMsg.hidden) {
+            verifyMsg.hidden = true;
+            verifyMsg.textContent = '';
+            verifyMsg.classList.remove('qaproof-verify-msg-error', 'qaproof-verify-msg-success');
+          }
+        });
+      }
     });
     removeBtn.addEventListener('click', function () {
       row.remove();
@@ -1996,11 +2007,12 @@
         btn.classList.add('qaproof-verify-error');
         btn.textContent = '✗ ' + labelDefault;
         setVerifyMsg(row, 'error', qaproof.i18n.verifyNoUrl || 'Add the Figma URL first.');
+        // Revert button so user can retry; leave the message slot in place
+        // until the user does something (clicks Verify again or edits the URL).
         setTimeout(function () {
           if (!btn.isConnected) return;
           btn.classList.remove('qaproof-verify-error');
           btn.textContent = labelDefault;
-          setVerifyMsg(row, null, '');
         }, 3500);
         return;
       }
@@ -2029,12 +2041,13 @@
             if (fileName) okMsg += ' — ' + fileName;
             if (who) okMsg += ' (via ' + who + ')';
             setVerifyMsg(row, 'success', okMsg);
+            // Revert button quickly so it's clickable again; keep the success
+            // text visible so the user has confirmation of which account + file.
             setTimeout(function () {
               if (!btn.isConnected) return;
               btn.classList.remove('qaproof-verify-ok');
               btn.textContent = labelDefault;
-              setVerifyMsg(row, null, '');
-            }, 6000);
+            }, 4000);
           } else {
             var code = r.body && r.body.error && r.body.error.code ? r.body.error.code : '';
             var msg;
@@ -2068,12 +2081,14 @@
             btn.classList.add('qaproof-verify-error');
             btn.textContent = '✗ ' + (qaproof.i18n.verifyFailedShort || 'Failed');
             setVerifyMsg(row, 'error', msg);
+            // Revert button so a retry click is possible; keep the error
+            // message visible. It's cleared on the next verify call (start
+            // of this handler) or when the user edits the URL.
             setTimeout(function () {
               if (!btn.isConnected) return; // row was removed mid-verify
               btn.classList.remove('qaproof-verify-error');
               btn.textContent = labelDefault;
-              setVerifyMsg(row, null, '');
-            }, 10000);
+            }, 3500);
           }
         })
         .catch(function () {
@@ -2085,8 +2100,7 @@
             if (!btn.isConnected) return;
             btn.classList.remove('qaproof-verify-error');
             btn.textContent = labelDefault;
-            setVerifyMsg(row, null, '');
-          }, 4000);
+          }, 3500);
         });
     });
   })();
