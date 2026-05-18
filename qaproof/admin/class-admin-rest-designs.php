@@ -6,7 +6,9 @@ class QAProof_Admin_REST_Designs {
     public static function handle_figma_preview( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 
-        $figma_url     = isset( $params['figmaUrl'] ) ? sanitize_url( $params['figmaUrl'] ) : '';
+        // sanitize_figma_url rejects any host outside figma.com — empty
+        // string here means either missing OR pointed at a non-Figma host.
+        $figma_url     = isset( $params['figmaUrl'] ) ? QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] ) : '';
         $force_refresh = ! empty( $params['forceRefresh'] );
 
         if ( empty( $figma_url ) ) {
@@ -244,7 +246,7 @@ class QAProof_Admin_REST_Designs {
         $api_params = array();
 
         // Figma — only the URL is needed; access is handled by the API's service account.
-        if ( ! empty( $params['figmaUrl'] ) )         $api_params['figmaUrl']         = sanitize_url( $params['figmaUrl'] );
+        if ( ! empty( $params['figmaUrl'] ) )         $api_params['figmaUrl']         = QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] );
         if ( ! empty( $params['figmaImageBase64'] ) ) $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
 
         // Sketch
@@ -347,7 +349,7 @@ class QAProof_Admin_REST_Designs {
      */
     public static function handle_verify_access( WP_REST_Request $request ) {
         $params    = $request->get_json_params();
-        $figma_url = isset( $params['figmaUrl'] ) ? sanitize_url( $params['figmaUrl'] ) : '';
+        $figma_url = isset( $params['figmaUrl'] ) ? QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] ) : '';
 
         if ( empty( $figma_url ) ) {
             return new WP_REST_Response( [

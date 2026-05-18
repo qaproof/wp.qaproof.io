@@ -57,7 +57,7 @@ class QAProof_Admin {
             self::CAPABILITY,
             self::MENU_SLUG,
             [ __CLASS__, 'render_dashboard_page' ],
-            'data:image/svg+xml;base64,' . base64_encode( file_get_contents( plugin_dir_path( __FILE__ ) . 'images/icon.svg' ) ),
+            self::menu_icon_svg(),
             80
         );
 
@@ -107,6 +107,27 @@ class QAProof_Admin {
         );
     }
 
+    /**
+     * Build a data: URI for the admin menu icon. Reads images/icon.svg with
+     * a defensive is_file/file_get_contents pair so a missing or unreadable
+     * icon does NOT throw a PHP warning during menu registration (which
+     * would surface to admins as a debug.log spam or — with display_errors
+     * on — break the menu render entirely).
+     *
+     * Falls back to the WordPress 'dashicons-chart-bar' name when the SVG
+     * can't be loaded for any reason. WP renders the dashicon natively.
+     */
+    private static function menu_icon_svg() {
+        $path = plugin_dir_path( __FILE__ ) . 'images/icon.svg';
+        if ( is_file( $path ) && is_readable( $path ) ) {
+            $svg = file_get_contents( $path );
+            if ( is_string( $svg ) && $svg !== '' ) {
+                return 'data:image/svg+xml;base64,' . base64_encode( $svg );
+            }
+        }
+        return 'dashicons-chart-bar';
+    }
+
     // ============================
     // REST API Routes
     // ============================
@@ -154,7 +175,7 @@ class QAProof_Admin {
             ],
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[\w-]+)', [
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[a-fA-F0-9-]{8,64})', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_get_monitor' ],
@@ -172,13 +193,13 @@ class QAProof_Admin {
             ],
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[\w-]+)/run', [
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[a-fA-F0-9-]{8,64})/run', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_run_monitor' ],
             'permission_callback' => $permission,
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[\w-]+)/results', [
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[a-fA-F0-9-]{8,64})/results', [
             'methods'             => 'GET',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_get_results' ],
             'permission_callback' => $permission,

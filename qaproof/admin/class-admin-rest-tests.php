@@ -37,7 +37,11 @@ class QAProof_Admin_REST_Tests {
 
         if ( $test_type === 'fidelity' ) {
             if ( ! empty( $params['figmaUrl'] ) ) {
-                $api_params['figmaUrl'] = sanitize_url( $params['figmaUrl'] );
+                // Host-restricted to figma.com (see sanitize_figma_url). A
+                // mistyped or attacker-supplied non-Figma host yields ''
+                // and the API call below will fail validation cleanly
+                // instead of round-tripping through our SaaS.
+                $api_params['figmaUrl'] = QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] );
             }
             if ( ! empty( $params['figmaImageBase64'] ) ) {
                 $api_params['figmaImageBase64'] = $params['figmaImageBase64'];

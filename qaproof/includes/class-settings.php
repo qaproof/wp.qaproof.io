@@ -15,6 +15,30 @@ class QAProof_Settings {
 
     public static function init() {
         add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
+        // Make sure the API key option is NEVER autoloaded — register_setting
+        // doesn't expose an autoload flag, so we enforce it on every save.
+        // Without this, the API key would be loaded into memory on every
+        // front-end request (slow + unnecessary attack surface).
+        add_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
+        add_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
+    }
+
+    /**
+     * Re-save the option with autoload=false. WP's register_setting() lacks
+     * an autoload flag (it defaults to 'yes'), so we flip it explicitly.
+     */
+    public static function ensure_api_key_not_autoloaded() {
+        global $wpdb;
+        // Suppress side-effect hooks to avoid recursing into this callback.
+        remove_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10 );
+        remove_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10 );
+        $wpdb->update(
+            $wpdb->options,
+            [ 'autoload' => 'no' ],
+            [ 'option_name' => 'qaproof_api_key' ]
+        );
+        wp_cache_delete( 'qaproof_api_key', 'options' );
+        wp_cache_delete( 'alloptions', 'options' );
     }
 
     public static function register_settings() {
@@ -22,6 +46,7 @@ class QAProof_Settings {
             'type'              => 'string',
             'sanitize_callback' => [ __CLASS__, 'sanitize_api_key' ],
             'default'           => '',
+            'show_in_rest'      => false,
         ]);
 
         // General tab — API Configuration
@@ -589,7 +614,7 @@ class QAProof_Settings {
                 'id'       => isset( $d['id'] ) ? sanitize_text_field( $d['id'] ) : bin2hex( random_bytes( 4 ) ),
                 'name'     => sanitize_text_field( $d['name'] ),
                 'pageUrl'  => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
-                'figmaUrl' => isset( $d['figmaUrl'] ) ? sanitize_url( $d['figmaUrl'] ) : '',
+                'figmaUrl' => isset( $d['figmaUrl'] ) ? self::sanitize_figma_url( $d['figmaUrl'] ) : '',
             ];
             // Preserve cached image + detected elements (not submitted through settings form)
             if ( ! empty( $d['imageBase64'] ) ) {
@@ -1105,10 +1130,51 @@ class QAProof_Settings {
     }
 
     /**
+     * Defensive sanitizer for Figma URLs. WP's sanitize_url is permissive —
+     * it accepts any well-formed URL. Combine with a host-allowlist so we
+     * never round-trip a user-pasted URL pointing to attacker.com through
+     * our API (the API does its own SSRF block, but rejecting here keeps
+     * error messages clean and avoids wasted server round-trips).
+     *
+     * @param mixed $raw  Untrusted input.
+     * @return string     Sanitized URL when host matches figma.com / figma-gov.com,
+     *                    or empty string otherwise.
+     */
+    public static function sanitize_figma_url( $raw ) {
+        if ( ! is_string( $raw ) ) return '';
+        $url = sanitize_url( $raw );
+        if ( $url === '' ) return '';
+        $host = wp_parse_url( $url, PHP_URL_HOST );
+        if ( ! is_string( $host ) ) return '';
+        $host = strtolower( $host );
+        // Allow figma.com, www.figma.com, figma-gov.com, www.figma-gov.com.
+        if ( $host === 'figma.com' || $host === 'www.figma.com' ||
+             $host === 'figma-gov.com' || $host === 'www.figma-gov.com' ) {
+            return $url;
+        }
+        return '';
+    }
+
+    /**
      * Get the configured API endpoint (no trailing slash).
+     *
+     * Production endpoint is hardcoded as https://api.qaproof.io. Site
+     * operators can override it ONLY by defining the QAPROOF_API_ENDPOINT
+     * constant in wp-config.php (NOT by setting an OS env var). This keeps
+     * the override path explicit + auditable and prevents a server-level
+     * env injection from silently redirecting API traffic to a third party.
+     *
+     * The override is also validated to look like an https://… URL — a
+     * malformed value silently falls back to the default so a typo in
+     * wp-config.php can't break the integration.
      */
     public static function get_api_endpoint() {
-        $env = getenv( 'QAPROOF_API_ENDPOINT' );
-        return $env ? rtrim( $env, '/' ) : 'https://api.qaproof.io';
+        if ( defined( 'QAPROOF_API_ENDPOINT' ) ) {
+            $override = (string) QAPROOF_API_ENDPOINT;
+            if ( preg_match( '#^https?://[^\s]+#i', $override ) ) {
+                return rtrim( $override, '/' );
+            }
+        }
+        return 'https://api.qaproof.io';
     }
 }
