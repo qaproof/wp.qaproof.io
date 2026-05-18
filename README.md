@@ -26,11 +26,9 @@ wp.qaproof.io/
 │   │   └── partials/         PHP template partials
 │   ├── languages/            Translation template (.pot)
 │   └── THIRD-PARTY-NOTICES.txt
-├── scripts/
-│   └── build-plugin-zip.sh   Release tool. Creates a clean ZIP of qaproof/
-│                             with secret-scan + dev-file stripping.
-├── apache-timeout.conf       Apache config tweak for local Docker dev
-└── uploads.ini               PHP limits for local Docker dev
+└── scripts/
+    └── build-plugin-zip.sh   Release tool. Creates a clean ZIP of qaproof/
+                              with secret-scan + dev-file stripping.
 ```
 
 ## Install

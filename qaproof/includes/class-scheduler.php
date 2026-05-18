@@ -192,13 +192,13 @@ class QAProof_Scheduler {
      * @param string $monitor_id UUID string (from the SaaS API).
      */
     public static function run_single_monitor( $monitor_id ) {
-        // Extend PHP execution limit so polling loop (up to 12 min) and
-        // baseline creation (60–90 s screenshot) don't hit max_execution_time.
-        // 900s lines up with Apache Timeout (apache-timeout.conf) + php.ini
-        // (uploads.ini) so neither layer kills us mid-iteration. Some shared
-        // hosts disable set_time_limit; the function_exists + disable_functions
-        // probe handles that gracefully instead of emitting a PHP warning
-        // (replaces the previous @-suppression which masked legitimate errors).
+        // Extend PHP execution limit so the polling loop (up to ~12 min) and
+        // baseline screenshot capture (60–90 s) don't hit max_execution_time.
+        // Some shared hosts disable set_time_limit; the function_exists +
+        // disable_functions probe handles that gracefully instead of
+        // emitting a PHP warning. (If the host's web-server timeout is
+        // shorter than 900 s, the request still gets killed by the server —
+        // monitors then resume from the API-side job state on the next tick.)
         if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
             set_time_limit( 900 );
         }
