@@ -13,6 +13,13 @@
  * Requires at least: 6.0
  * Tested up to:      6.7
  * Requires PHP:      8.0
+ *
+ * Update URI:        https://api.qaproof.io/api/wordpress/qaproof
+ *
+ * The Update URI header (WP 5.8+) routes update checks to our own server
+ * instead of wordpress.org. Once approved on wordpress.org, change this
+ * to https://wordpress.org/plugins/qaproof/ so WP takes over auto-updates
+ * canonically. See includes/class-updater.php for the filter hook.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -48,6 +55,7 @@ require_once QAPROOF_PLUGIN_DIR . 'includes/class-test-history.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-scheduler.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-notifications.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-privacy.php';
+require_once QAPROOF_PLUGIN_DIR . 'includes/class-updater.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-assets.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-ajax.php';
@@ -65,6 +73,7 @@ add_action( 'plugins_loaded', function() {
     QAProof_Scheduler::init();
     QAProof_Notifications::init();
     QAProof_Privacy::init();
+    QAProof_Updater::init();
 
     // Auto-upgrade DB schema if plugin was updated without deactivation
     QAProof_Database::maybe_upgrade();
