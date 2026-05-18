@@ -1,58 +1,22 @@
 /* ============================
-   History row — score badge
-   Shared across Tests, Accessibility, and any other page that renders
-   qaproof-history-row via history.js. Uses same pill style as monitor
-   result rows so score-high (100) shows teal instead of invisible white.
+   History row — score (plain number, no pill)
    ============================ */
 #qaproof-app .qaproof-history-score {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  padding: 2px 9px;
-  border-radius: var(--qp-radius-pill);
-  font-size: 12px;
-  font-weight: 800;
-  background: var(--qp-bg-surface);
+  min-width: 32px;
+  margin-right: 10px;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--qp-text-muted);
-  border: 1.5px solid var(--qp-border);
   flex-shrink: 0;
 }
-#qaproof-app .qaproof-history-score.score-high {
-  background: rgba(0, 173, 181, 0.08);
-  border-color: var(--qp-accent);
-  color: var(--qp-accent);
-}
-#qaproof-app .qaproof-history-score.score-medium {
-  background: rgba(240, 180, 41, 0.08);
-  border-color: #f59e0b;
-  color: #b45309;
-}
-#qaproof-app .qaproof-history-score.score-low {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: #ef4444;
-  color: #dc2626;
-}
-#qaproof-app.qaproof-dark .qaproof-history-score {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #6b7280;
-}
-#qaproof-app.qaproof-dark .qaproof-history-score.score-high {
-  background: rgba(0, 173, 181, 0.1);
-  border-color: var(--qp-accent);
-  color: var(--qp-accent);
-}
-#qaproof-app.qaproof-dark .qaproof-history-score.score-medium {
-  background: rgba(240, 180, 41, 0.1);
-  border-color: #f59e0b;
-  color: #fbbf24;
-}
-#qaproof-app.qaproof-dark .qaproof-history-score.score-low {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-  color: #f87171;
-}
+#qaproof-app .qaproof-history-score.score-high { color: var(--qp-accent); }
+#qaproof-app .qaproof-history-score.score-medium { color: #f59e0b; }
+#qaproof-app .qaproof-history-score.score-low { color: #ef4444; }
+#qaproof-app.qaproof-dark .qaproof-history-score.score-medium { color: #fbbf24; }
+#qaproof-app.qaproof-dark .qaproof-history-score.score-low { color: #f87171; }
 
 /* ============================
    Parse Warning Banner
@@ -1009,16 +973,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-#qaproof-app .qaproof-history-score {
-  font-size: 16px;
-  font-weight: 700;
-  text-align: center;
-}
-
-#qaproof-app .qaproof-history-score.score-high { color: var(--qp-score-high); }
-#qaproof-app .qaproof-history-score.score-medium { color: var(--qp-score-medium); }
-#qaproof-app .qaproof-history-score.score-low { color: var(--qp-score-low); }
 
 /* Action buttons — dark theme */
 #qaproof-app .qaproof-history-actions {
