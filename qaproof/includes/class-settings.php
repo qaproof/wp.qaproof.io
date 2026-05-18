@@ -21,6 +21,10 @@ class QAProof_Settings {
         // front-end request (slow + unnecessary attack surface).
         add_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
         add_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
+        // Bust the request-level saved-designs cache when the option changes
+        // mid-request (settings save, programmatic update_option calls).
+        add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
+        add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
     }
 
     /**
@@ -631,10 +635,30 @@ class QAProof_Settings {
         return wp_json_encode( $clean );
     }
 
+    /**
+     * Request-level cache for get_saved_designs(). Saved designs are read
+     * many times per page load (init.js, settings form, REST endpoints,
+     * asset localization); memoizing the decoded array avoids repeated
+     * get_option() + json_decode() round-trips.
+     *
+     * null = not yet loaded. Reset via flush_saved_designs_cache() — done
+     * automatically on the option update/add hooks (see init()).
+     */
+    private static $saved_designs_cache = null;
+
     public static function get_saved_designs() {
-        $raw = get_option( 'qaproof_saved_designs', '[]' );
+        if ( self::$saved_designs_cache !== null ) {
+            return self::$saved_designs_cache;
+        }
+        $raw     = get_option( 'qaproof_saved_designs', '[]' );
         $designs = json_decode( $raw, true );
-        return is_array( $designs ) ? $designs : [];
+        self::$saved_designs_cache = is_array( $designs ) ? $designs : [];
+        return self::$saved_designs_cache;
+    }
+
+    /** Clear the in-memory get_saved_designs() cache. */
+    public static function flush_saved_designs_cache() {
+        self::$saved_designs_cache = null;
     }
 
     /**
@@ -1171,8 +1195,34 @@ class QAProof_Settings {
     public static function get_api_endpoint() {
         if ( defined( 'QAPROOF_API_ENDPOINT' ) ) {
             $override = (string) QAPROOF_API_ENDPOINT;
-            if ( preg_match( '#^https?://[^\s]+#i', $override ) ) {
-                return rtrim( $override, '/' );
+            // Stricter validation than a regex: parse_url() must yield a
+            // scheme of http(s) AND a non-empty host. Reject anything with
+            // a path component (`.../api` is fine, `.../../foo` is not —
+            // we strip on return), reject userinfo, and reject internal IPs.
+            $parts = wp_parse_url( $override );
+            if ( is_array( $parts )
+                && isset( $parts['scheme'], $parts['host'] )
+                && in_array( strtolower( $parts['scheme'] ), [ 'http', 'https' ], true )
+                && $parts['host'] !== ''
+                && empty( $parts['user'] )
+                && empty( $parts['pass'] )
+            ) {
+                $rebuilt = $parts['scheme'] . '://' . $parts['host'];
+                if ( ! empty( $parts['port'] ) ) {
+                    $rebuilt .= ':' . (int) $parts['port'];
+                }
+                if ( ! empty( $parts['path'] ) ) {
+                    // Reject path-traversal sequences outright.
+                    if ( strpos( $parts['path'], '..' ) === false ) {
+                        $rebuilt .= rtrim( $parts['path'], '/' );
+                    }
+                }
+                return $rebuilt;
+            }
+            // Override was malformed — log so the site operator can debug,
+            // then fall through to the canonical default.
+            if ( function_exists( 'qaproof_debug_log' ) ) {
+                qaproof_debug_log( '[QAProof] QAPROOF_API_ENDPOINT override rejected (malformed URL): ' . $override );
             }
         }
         return 'https://api.qaproof.io';

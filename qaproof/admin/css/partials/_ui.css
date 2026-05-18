@@ -1067,10 +1067,7 @@
   border-top-color: var(--qp-accent);
   border-radius: 50%;
   animation: qaproof-spin 0.7s linear infinite;
-}
-
-@keyframes qaproof-spin {
-  to { transform: rotate(360deg); }
+  /* qaproof-spin @keyframes defined once near the top of this file. */
 }
 
 /* Load more button */
@@ -1853,10 +1850,6 @@
   opacity: 1;
 }
 
-@keyframes qaproof-spin {
-  to { transform: rotate(360deg); }
-}
-
 /* ============================
    Saved Designs — per-row status badge (Settings page)
    ============================ */
@@ -1957,11 +1950,6 @@
 
 #qaproof-app .qaproof-refresh-figma-btn.spinning .dashicons {
   animation: qaproof-spin 1s linear infinite;
-}
-
-@keyframes qaproof-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 #qaproof-app .qaproof-preview-body {

@@ -7,6 +7,39 @@ class QAProof_API_Client {
     const BASELINE_TIMEOUT = 300; // Baseline creation: Playwright scroll-and-stitch can take 60-180 s on complex pages (Shopify etc.)
 
     /**
+     * Identify ourselves on every outbound HTTP request to the QAProof API
+     * so the server can attribute requests to this plugin version + the
+     * underlying WordPress + PHP versions (useful for rate-limit accounting,
+     * deprecation warnings, and support ticket forensics).
+     *
+     * Hooks `http_request_args` which fires for ALL wp_remote_* calls —
+     * we only mutate the args when the URL targets api.qaproof.io, so other
+     * plugins' requests are untouched.
+     */
+    public static function register_user_agent_filter() {
+        add_filter( 'http_request_args', [ __CLASS__, 'inject_user_agent' ], 10, 2 );
+    }
+
+    public static function inject_user_agent( $args, $url ) {
+        $api_origin = wp_parse_url( QAProof_Settings::get_api_endpoint(), PHP_URL_HOST );
+        $req_origin = wp_parse_url( (string) $url, PHP_URL_HOST );
+        if ( ! $api_origin || ! $req_origin || $api_origin !== $req_origin ) {
+            return $args;
+        }
+        $ua = sprintf(
+            'QAProof-WordPress/%s (WordPress/%s; PHP/%s)',
+            QAPROOF_VERSION,
+            get_bloginfo( 'version' ),
+            PHP_VERSION
+        );
+        if ( empty( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
+            $args['headers'] = [];
+        }
+        $args['headers']['User-Agent'] = $ua;
+        return $args;
+    }
+
+    /**
      * Submit a test job to the SaaS API (async — returns jobId).
      *
      * The API creates a background job and returns immediately with a jobId.
@@ -660,10 +693,17 @@ class QAProof_API_Client {
             $r['run_date'] = $r['run_at'];
         }
 
-        // Expand result JSONB → separate _json columns
+        // Expand result JSONB → separate _json columns. The is_string()
+        // guard prevents PHP 8 "json_decode(): Argument #1 must be of type
+        // string" warnings if the API ever returns null / numeric result.
         $result_data = [];
         if ( ! empty( $r['result'] ) ) {
-            $result_data = is_array( $r['result'] ) ? $r['result'] : json_decode( $r['result'], true );
+            if ( is_array( $r['result'] ) ) {
+                $result_data = $r['result'];
+            } elseif ( is_string( $r['result'] ) ) {
+                $decoded     = json_decode( $r['result'], true );
+                $result_data = is_array( $decoded ) ? $decoded : [];
+            }
         }
 
         if ( ! isset( $r['categories_json'] ) ) {
@@ -699,9 +739,15 @@ class QAProof_API_Client {
      * @return array
      */
     private static function normalize_history( $h ) {
+        // See normalize_result() for the is_string() / is_array() rationale.
         $result_data = [];
         if ( ! empty( $h['result'] ) ) {
-            $result_data = is_array( $h['result'] ) ? $h['result'] : json_decode( $h['result'], true );
+            if ( is_array( $h['result'] ) ) {
+                $result_data = $h['result'];
+            } elseif ( is_string( $h['result'] ) ) {
+                $decoded     = json_decode( $h['result'], true );
+                $result_data = is_array( $decoded ) ? $decoded : [];
+            }
         }
 
         if ( ! isset( $h['categories_json'] ) ) {

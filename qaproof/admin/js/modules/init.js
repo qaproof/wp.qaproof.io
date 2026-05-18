@@ -449,7 +449,7 @@
     });
 
     // Expose for same-tab updates (e.g. if Tests and Settings are rendered in the same admin page in future)
-    window.qaproofUpdateDesignStatus = updateDesignStatus;
+    window.QAProof.updateDesignStatus = updateDesignStatus;
 
     // ------------------------------------------------------------------
     // Auto-cache saved designs on the Settings page
@@ -1021,8 +1021,8 @@
         wcagLevel: wcagLevel,
       };
 
-      var _a11yPendingRetries = window.__qaproofPendingRetries || 0;
-      window.__qaproofPendingRetries = 0;
+      var _a11yPendingRetries = window.QAProof.__pendingRetries || 0;
+      window.QAProof.__pendingRetries = 0;
       Q.saveActiveJob(null, 'accessibility', pageUrl, 'accessibility', 'submitting', _a11yPendingRetries, wcagLevel);
 
       fetch(qaproof.restUrl, {
@@ -1500,7 +1500,7 @@
       var pendingRetries = retryCount + 1;
       Q.clearActiveJob(currentPage);
 
-      window.__qaproofPendingRetries = pendingRetries;
+      window.QAProof.__pendingRetries = pendingRetries;
 
       if (currentPage === 'tests') {
         var urlInput = document.getElementById('qaproof-page-url');

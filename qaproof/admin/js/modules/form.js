@@ -8,6 +8,19 @@
   // after figmaFields becomes visible (getBoundingClientRect returns 0,0 when hidden).
   var moveSourceSlider = null;
 
+  // Single source of truth for the submit-button label per test type.
+  // Used by both the test-type click handler and the initial-state setter
+  // below; previously duplicated in two slightly-different inline literals.
+  function submitBtnLabelFor(testType) {
+    var labels = {
+      fidelity:       (qaproof.i18n.btnAnalyzeFidelity   || 'Analyze Design Fidelity'),
+      responsive:     (qaproof.i18n.btnTestResponsive    || 'Test Responsive'),
+      accessibility:  (qaproof.i18n.btnRunAccessibility  || 'Run Accessibility Audit'),
+      'design-audit': (qaproof.i18n.btnRunDesignAudit    || 'Run Design Audit'),
+    };
+    return labels[testType] || (qaproof.i18n.btnRunTest || 'Run Test');
+  }
+
   // ============================
   // Test Type Selector
   // ============================
@@ -70,13 +83,7 @@
       }
 
       if (S.submitBtn) {
-        var btnLabels = {
-          fidelity: (qaproof.i18n.btnAnalyzeFidelity || 'Analyze Design Fidelity'),
-          responsive: (qaproof.i18n.btnTestResponsive || 'Test Responsive'),
-          accessibility: (qaproof.i18n.btnRunAccessibility || 'Run Accessibility Audit'),
-          'design-audit': (qaproof.i18n.btnRunDesignAudit || 'Run Design Audit'),
-        };
-        S.submitBtn.textContent = btnLabels[S.testType] || (qaproof.i18n.btnRunTest || 'Run Test');
+        S.submitBtn.textContent = submitBtnLabelFor(S.testType);
       }
     });
   }
@@ -91,8 +98,7 @@
       defaultBtn.classList.add('active');
       if (S.figmaFields) S.figmaFields.classList.toggle('hidden', S.testType !== 'fidelity');
       if (S.submitBtn) {
-        var initLabels = { fidelity: (qaproof.i18n.btnAnalyzeFidelity || 'Analyze Design Fidelity'), responsive: (qaproof.i18n.btnTestResponsive || 'Test Responsive'), accessibility: (qaproof.i18n.btnRunAccessibility || 'Run Accessibility Audit') };
-        S.submitBtn.textContent = initLabels[S.testType] || (qaproof.i18n.btnRunTest || 'Run Test');
+        S.submitBtn.textContent = submitBtnLabelFor(S.testType);
       }
       // Move slider to default tab
       requestAnimationFrame(function () {
@@ -133,8 +139,8 @@
 
   if (savedDesignSelect) {
     savedDesignSelect.addEventListener('change', function () {
-      if (typeof window.qaproofUpdateDetectBtnLabel === 'function') {
-        window.qaproofUpdateDetectBtnLabel();
+      if (typeof window.QAProof.updateDetectBtnLabel === 'function') {
+        window.QAProof.updateDetectBtnLabel();
       }
       var designId = savedDesignSelect.value;
       if (!designId) {
@@ -622,8 +628,8 @@
         // state repeats (localStorage only dispatches when the value changes).
         localStorage.setItem('qaproof:design:' + designId, JSON.stringify(payload));
       } catch (err) { /* storage may be disabled; ignore */ }
-      if (typeof window.qaproofUpdateDesignStatus === 'function') {
-        window.qaproofUpdateDesignStatus(designId, state, count, source);
+      if (typeof window.QAProof.updateDesignStatus === 'function') {
+        window.QAProof.updateDesignStatus(designId, state, count, source);
       }
     }
 
@@ -658,8 +664,8 @@
                 break;
               }
             }
-            if (typeof window.qaproofUpdateDetectBtnLabel === 'function') {
-              window.qaproofUpdateDetectBtnLabel();
+            if (typeof window.QAProof.updateDetectBtnLabel === 'function') {
+              window.QAProof.updateDetectBtnLabel();
             }
           }
           return saveJson;
@@ -852,7 +858,7 @@
     }
   }
   // Make it reachable from other handlers (e.g. after saveElementsToDesign).
-  window.qaproofUpdateDetectBtnLabel = updateDetectBtnLabel;
+  window.QAProof.updateDetectBtnLabel = updateDetectBtnLabel;
   updateDetectBtnLabel();
   var overlaysContainer = document.getElementById('qaproof-element-overlays');
   var detectingDiv = document.getElementById('qaproof-element-detecting');
@@ -1355,8 +1361,8 @@
                   break;
                 }
               }
-              if (typeof window.qaproofUpdateDetectBtnLabel === 'function') {
-                window.qaproofUpdateDetectBtnLabel();
+              if (typeof window.QAProof.updateDetectBtnLabel === 'function') {
+                window.QAProof.updateDetectBtnLabel();
               }
             }
           })
@@ -1667,8 +1673,8 @@
       }, step.time);
     });
 
-    var _pendingRetries = window.__qaproofPendingRetries || 0;
-    window.__qaproofPendingRetries = 0;
+    var _pendingRetries = window.QAProof.__pendingRetries || 0;
+    window.QAProof.__pendingRetries = 0;
     Q.saveActiveJob(null, body.testType, body.pageUrl, 'tests', 'submitting', _pendingRetries, body.wcagLevel);
 
     // Submit test via WP proxy

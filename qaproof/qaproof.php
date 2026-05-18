@@ -74,6 +74,7 @@ add_action( 'plugins_loaded', function() {
     QAProof_Notifications::init();
     QAProof_Privacy::init();
     QAProof_Updater::init();
+    QAProof_API_Client::register_user_agent_filter();
 
     // Auto-upgrade DB schema if plugin was updated without deactivation
     QAProof_Database::maybe_upgrade();

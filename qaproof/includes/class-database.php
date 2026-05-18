@@ -10,6 +10,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 class QAProof_Database {
 
     /**
+     * Check whether a column exists in a table. Result is cached per
+     * (table, column) pair for the request lifetime so multiple lookups
+     * during one page load don't issue repeated SHOW COLUMNS queries.
+     *
+     * Used by service classes during read-path queries to gracefully
+     * support pre-migration schemas (table missing a newer column → use
+     * defaults instead of crashing the SELECT).
+     *
+     * @param string $table  Full table name (already $wpdb->prefix-qualified).
+     * @param string $column Column to probe.
+     * @return bool
+     */
+    public static function column_exists( $table, $column ) {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if ( isset( $cache[ $key ] ) ) {
+            return $cache[ $key ];
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $result = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) );
+        return $cache[ $key ] = ! empty( $result );
+    }
+
+    /**
      * Create or update plugin database tables.
      * Called on plugin activation.
      */

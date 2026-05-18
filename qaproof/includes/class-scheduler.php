@@ -81,10 +81,13 @@ class QAProof_Scheduler {
 
             return $target->getTimestamp(); // UTC
         } catch ( Exception $e ) {
-            // Fallback: round up to next whole hour boundary.
-            $now_ts = time();
-            $secs_past_hour = $now_ts % HOUR_IN_SECONDS;
-            return $now_ts - $secs_past_hour + HOUR_IN_SECONDS + $hour * 3600;
+            // Fallback when DateTime construction fails for any reason (corrupt
+            // timezone identifier, locale issues). Compute "next $hour:00:00
+            // today, else tomorrow" purely in UTC seconds.
+            $now_ts          = time();
+            $today_midnight  = $now_ts - ( $now_ts % DAY_IN_SECONDS );
+            $today_at_hour   = $today_midnight + ( $hour * HOUR_IN_SECONDS );
+            return $today_at_hour > $now_ts ? $today_at_hour : $today_at_hour + DAY_IN_SECONDS;
         }
     }
 

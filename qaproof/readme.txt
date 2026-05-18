@@ -58,7 +58,7 @@ Not at the moment. The plugin is open-source under GPL-2.0+, but the API server 
 
 = Does the plugin work on a Multisite network? =
 
-Yes. Each site in the network uses its own API key and Figma connection. Network-activation is supported.
+Yes, with per-site configuration. The plugin can be network-activated, but each site in the network configures its own QAProof API key and Figma connection independently via that site's **QAProof → Settings**. Test results, monitors, and history are also scoped per-site. The plugin does not currently support a single shared API key at the network level.
 
 = How long does a test take? =
 
@@ -139,7 +139,7 @@ No tracking pixels, analytics, or third-party scripts run on the front-end of yo
 * Figma OAuth 2.0 connection (alternative to per-file sharing with figma@qaproof.io).
 * PDF report export.
 * Email notifications + admin badge for regressions.
-* Multisite-aware.
+* Multisite-compatible (per-site configuration).
 * Self-hosted assets (no external CDN dependencies).
 
 == Upgrade Notice ==

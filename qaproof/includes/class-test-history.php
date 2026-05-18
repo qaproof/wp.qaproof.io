@@ -60,20 +60,11 @@ class QAProof_Test_History {
     }
 
     /**
-     * Check if a column exists in the test_history table.
-     * Result is cached in a static variable to avoid repeated SHOW COLUMNS queries.
+     * Check if a column exists in the test_history table (delegates to the
+     * shared, request-cached helper in QAProof_Database).
      */
     private static function column_exists( $column ) {
-        static $cache = [];
-        if ( isset( $cache[ $column ] ) ) {
-            return $cache[ $column ];
-        }
-        global $wpdb;
-        $table  = self::table_name();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $result = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) );
-        $cache[ $column ] = ! empty( $result );
-        return $cache[ $column ];
+        return QAProof_Database::column_exists( self::table_name(), $column );
     }
 
     public static function get_all( $args = [] ) {

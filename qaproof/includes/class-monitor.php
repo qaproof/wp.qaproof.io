@@ -54,19 +54,12 @@ class QAProof_Monitor {
     }
 
     /**
-     * Check if a column exists in the monitors table (cached per request).
+     * Check if a column exists in the monitors table (delegates to the
+     * shared, request-cached helper in QAProof_Database).
      */
     private static function column_exists( $column ) {
-        static $cache = [];
-        if ( isset( $cache[ $column ] ) ) {
-            return $cache[ $column ];
-        }
         global $wpdb;
-        $table = $wpdb->prefix . 'qaproof_monitors';
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $result = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) );
-        $cache[ $column ] = ! empty( $result );
-        return $cache[ $column ];
+        return QAProof_Database::column_exists( $wpdb->prefix . 'qaproof_monitors', $column );
     }
 
     /**
