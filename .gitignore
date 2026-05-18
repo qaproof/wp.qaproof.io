@@ -11,8 +11,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Composer (if used)
-vendor/
+# Composer (if used) — top-level only. Our qaproof/admin/js/vendor/ holds
+# the pinned third-party JS libraries (Chart.js, jsPDF, jsPDF-AutoTable)
+# we bundle to satisfy WP.org's "no external CDN" requirement, so it
+# MUST ship with the plugin distribution.
+/vendor/
 composer.lock
 
 # Build / dist

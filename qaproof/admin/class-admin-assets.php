@@ -33,17 +33,18 @@ class QAProof_Admin_Assets {
             return QAPROOF_VERSION;
         };
 
-        wp_enqueue_style(
-            'qaproof-google-fonts',
-            'https://fonts.googleapis.com/css2?family=Kodchasan:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap',
-            [],
-            null
-        );
+        // Fonts are bundled locally (Kodchasan, Montserrat — both OFL,
+        // GPL-compatible). No external CDN, no Google-Fonts call, no
+        // referrer leak to googleapis.com. The font files live under
+        // admin/fonts/ and the @font-face declarations are in
+        // admin/css/partials/_fonts.css.
 
         // Enqueue each partial individually so cache-busting via filemtime
         // actually works. (admin.css used to @import them, but @import URLs
         // don't get a ?ver= query, so browsers cached them indefinitely.)
+        // _fonts loads first so every other partial inherits Kodchasan.
         $css_partials = [
+            '_fonts',
             '_variables',
             '_base',
             '_forms',
@@ -57,42 +58,40 @@ class QAProof_Admin_Assets {
             '_dark-mode',
             '_monitors',
         ];
-        $prev_handle = 'qaproof-google-fonts';
+        $prev_handle = '';
         foreach ( $css_partials as $partial ) {
             $handle  = 'qaproof-' . ltrim( $partial, '_' );
             $rel     = 'admin/css/partials/' . $partial . '.css';
             wp_enqueue_style(
                 $handle,
                 QAPROOF_PLUGIN_URL . $rel,
-                [ $prev_handle ],
+                $prev_handle === '' ? [] : [ $prev_handle ],
                 $asset_ver( $rel )
             );
             $prev_handle = $handle;
         }
 
-        wp_enqueue_script(
-            'chartjs',
-            'https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js',
+        // Third-party JS libraries bundled locally under admin/js/vendor/.
+        // All three are MIT-licensed (GPL-compatible) and version-pinned in
+        // the filename. Loading from our own origin satisfies WP.org's
+        // "no external CDN" expectation and removes the cross-origin risk
+        // of a compromised CDN serving us malicious code.
+        $vendor_base = QAPROOF_PLUGIN_URL . 'admin/js/vendor/';
+        wp_enqueue_script( 'chartjs',
+            $vendor_base . 'chart.umd.min.js',
             [],
             '4.4.6',
-            true
-        );
-
-        wp_enqueue_script(
-            'jspdf',
-            'https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js',
+            true );
+        wp_enqueue_script( 'jspdf',
+            $vendor_base . 'jspdf.umd.min.js',
             [],
             '3.0.3',
-            true
-        );
-
-        wp_enqueue_script(
-            'jspdf-autotable',
-            'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.2/jspdf.plugin.autotable.min.js',
+            true );
+        wp_enqueue_script( 'jspdf-autotable',
+            $vendor_base . 'jspdf.plugin.autotable.min.js',
             [ 'jspdf' ],
             '5.0.2',
-            true
-        );
+            true );
 
         // JS Modules (load order matters — dependency chain)
         $js_base = QAPROOF_PLUGIN_URL . 'admin/js/modules/';
