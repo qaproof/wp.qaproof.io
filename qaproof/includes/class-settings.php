@@ -196,10 +196,57 @@ class QAProof_Settings {
             function () {
                 echo '<p>' . esc_html__( 'Settings for design fidelity comparisons (Figma vs live page).', 'qaproof' ) . '</p>';
 
-                echo '<div class="qaproof-figma-plan-notice" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 12px 0 20px; border-radius: 4px;">';
-                echo '<strong>' . esc_html__( 'Figma API Limits', 'qaproof' ) . '</strong><br>';
-                echo esc_html__( 'Each saved design makes up to 2 Figma API calls on first setup: 1 to fetch the design image (cached in WordPress) and 1 to fetch the node tree for pixel-perfect element detection. After that, both are reused for all future tests (zero API calls). Figma throttles requests per team/workspace rather than per account or per single file, so designs from the same workspace share one quota. Exact limits are not published by Figma — free and Starter plans are very restrictive (typically only a handful of requests before throttling), while Professional and higher plans have much larger allowances. If your token hits a rate limit on one workspace, designs from other workspaces keep working normally. If you want to avoid Figma API calls entirely, use the Upload Image option on the Tests page instead.', 'qaproof' );
-                echo '</div>';
+                $service_email = 'figma@qaproof.io';
+                ?>
+                <?php
+                // ── OAuth connection card (primary path) ─────────────────────
+                // Initial state is rendered as "Loading…" so the page paints
+                // without a layout flash. init.js calls /figma-oauth/status
+                // immediately on mount and swaps the content in. Subsequent
+                // postMessage from the OAuth popup also triggers a re-render.
+                ?>
+                <div class="qaproof-figma-conn-card" id="qaproof-figma-conn-card" data-state="loading">
+                    <div class="qaproof-figma-conn-header">
+                        <h3 class="qaproof-figma-conn-title"><?php esc_html_e( 'Figma connection', 'qaproof' ); ?></h3>
+                        <span class="qaproof-figma-conn-badge" data-conn-badge></span>
+                    </div>
+                    <div class="qaproof-figma-conn-body" data-conn-body>
+                        <p class="qaproof-figma-conn-loading"><?php esc_html_e( 'Checking connection…', 'qaproof' ); ?></p>
+                    </div>
+                </div>
+
+                <?php
+                // ── Service-account card (fallback / manual sharing) ─────────
+                // Stays visible as the alternative path. JS adds a
+                // .qaproof-figma-access-card--alt class to dim it when OAuth
+                // is connected, so it's clearly the second-choice flow.
+                ?>
+                <details class="qaproof-figma-access-card qaproof-figma-access-card--alt" id="qaproof-figma-access-fallback">
+                    <summary class="qaproof-figma-access-summary">
+                        <?php esc_html_e( 'Alternative: share files manually with our service account', 'qaproof' ); ?>
+                    </summary>
+                    <p class="qaproof-figma-access-lead"><?php esc_html_e( 'Prefer not to connect an account? Share each file you want to test with the address below. Works on any Figma plan.', 'qaproof' ); ?></p>
+                    <div class="qaproof-figma-access-email">
+                        <label class="qaproof-figma-access-email-label"><?php esc_html_e( 'Service email', 'qaproof' ); ?></label>
+                        <code class="qaproof-figma-access-email-value"><?php echo esc_html( $service_email ); ?></code>
+                        <button type="button" class="button qaproof-copy-email-btn" data-copy="<?php echo esc_attr( $service_email ); ?>">
+                            <?php esc_html_e( 'Copy', 'qaproof' ); ?>
+                        </button>
+                        <button type="button" class="button qaproof-figma-guide-open">
+                            <?php esc_html_e( 'Show me how →', 'qaproof' ); ?>
+                        </button>
+                    </div>
+                    <ol class="qaproof-figma-access-steps">
+                        <li><?php esc_html_e( 'Open your Figma file and click Share in the top-right corner.', 'qaproof' ); ?></li>
+                        <li><?php
+                            // translators: %s is the service email address (figma@qaproof.io).
+                            printf( esc_html__( 'Paste %s into the invite field and set the permission to Can view.', 'qaproof' ), '<code>' . esc_html( $service_email ) . '</code>' );
+                        ?></li>
+                        <li><?php esc_html_e( 'Send the invite, then paste the file URL into a saved design below.', 'qaproof' ); ?></li>
+                        <li><?php esc_html_e( 'Click Verify access to confirm the link works.', 'qaproof' ); ?></li>
+                    </ol>
+                </details>
+                <?php
             },
             'qaproof-settings-tests-fidelity'
         );
@@ -539,11 +586,10 @@ class QAProof_Settings {
         foreach ( $designs as $d ) {
             if ( empty( $d['name'] ) ) continue;
             $entry = [
-                'id'         => isset( $d['id'] ) ? sanitize_text_field( $d['id'] ) : bin2hex( random_bytes( 4 ) ),
-                'name'       => sanitize_text_field( $d['name'] ),
-                'pageUrl'    => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
-                'figmaToken' => isset( $d['figmaToken'] ) ? sanitize_text_field( $d['figmaToken'] ) : '',
-                'figmaUrl'   => isset( $d['figmaUrl'] ) ? sanitize_url( $d['figmaUrl'] ) : '',
+                'id'       => isset( $d['id'] ) ? sanitize_text_field( $d['id'] ) : bin2hex( random_bytes( 4 ) ),
+                'name'     => sanitize_text_field( $d['name'] ),
+                'pageUrl'  => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
+                'figmaUrl' => isset( $d['figmaUrl'] ) ? sanitize_url( $d['figmaUrl'] ) : '',
             ];
             // Preserve cached image + detected elements (not submitted through settings form)
             if ( ! empty( $d['imageBase64'] ) ) {
@@ -858,7 +904,7 @@ class QAProof_Settings {
                     // Stale ai-vision cache upgrade path: if the design has a
                     // Figma URL, force re-detection so we get pixel-perfect
                     // Figma-API overlays instead of approximate AI vision ones.
-                    $has_figma_source = ! empty( $d['figmaUrl'] ) && ! empty( $d['figmaToken'] );
+                    $has_figma_source = ! empty( $d['figmaUrl'] );
                     $is_stale_ai      = ( $source === 'ai-vision' ) && $has_figma_source;
                     if ( $has_image && $has_elements && ! $is_stale_ai ) {
                         $status       = 'ready';
@@ -876,14 +922,9 @@ class QAProof_Settings {
                     <div class="qaproof-design-row-fields">
                         <input type="text" placeholder="<?php esc_attr_e( 'Design Name', 'qaproof' ); ?>" value="<?php echo esc_attr( $d['name'] ); ?>" data-field="name" class="regular-text" />
                         <input type="url" placeholder="<?php esc_attr_e( 'Figma URL', 'qaproof' ); ?>" value="<?php echo esc_url( $d['figmaUrl'] ); ?>" data-field="figmaUrl" class="regular-text" />
-                        <div class="qaproof-token-field-wrap">
-                            <input type="password" placeholder="<?php esc_attr_e( 'Figma Token (figd_...)', 'qaproof' ); ?>" value="<?php echo esc_attr( $d['figmaToken'] ); ?>" data-field="figmaToken" class="regular-text" autocomplete="off" />
-                            <button type="button" class="qaproof-token-toggle" title="<?php esc_attr_e( 'Show / Hide token', 'qaproof' ); ?>">
-                                <svg class="qaproof-eye-icon qaproof-eye-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                <svg class="qaproof-eye-icon qaproof-eye-on" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </button>
-                            <span class="qaproof-token-fade"></span>
-                        </div>
+                        <button type="button" class="button qaproof-design-verify-btn" data-design-id="<?php echo esc_attr( $d['id'] ); ?>" title="<?php esc_attr_e( 'Check that QAProof can read this file', 'qaproof' ); ?>">
+                            <?php esc_html_e( 'Verify access', 'qaproof' ); ?>
+                        </button>
                         <input type="hidden" value="<?php echo esc_attr( $d['id'] ); ?>" data-field="id" />
                     </div>
                     <div class="qaproof-design-status qaproof-status-<?php echo esc_attr( $status ); ?>" data-status="<?php echo esc_attr( $status ); ?>" title="<?php echo esc_attr( $status_label ); ?>">

@@ -629,56 +629,254 @@
   border-color: var(--qp-score-low) !important;
 }
 
-/* Token field with eye toggle (mirrors API Key eye toggle) */
-#qaproof-app .qaproof-token-field-wrap {
-  position: relative;
+/* Figma access onboard card on Settings → Tests → Design Fidelity */
+#qaproof-app .qaproof-figma-access-card {
+  background: var(--qp-card-bg, #f6f7f7);
+  border: 1px solid var(--qp-border, #dcdcde);
+  border-radius: var(--qp-radius, 12px);
+  padding: 18px 22px;
+  margin: 12px 0 24px;
+}
+#qaproof-app .qaproof-figma-access-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+#qaproof-app .qaproof-figma-access-lead {
+  margin: 0 0 14px;
+  color: var(--qp-text-muted, #50575e);
+}
+#qaproof-app .qaproof-figma-access-email {
   display: flex;
   align-items: center;
-  width: 100%;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
-#qaproof-app .qaproof-token-field-wrap input.regular-text {
-  padding-right: 52px !important;
-  box-sizing: border-box !important;
-  text-overflow: ellipsis !important;
-  overflow: hidden !important;
+#qaproof-app .qaproof-figma-access-email-label {
+  font-weight: 500;
+  color: var(--qp-text-muted, #50575e);
 }
-/* Fade gradient before the eye icon */
-#qaproof-app .qaproof-token-fade {
-  position: absolute;
-  right: 40px;
-  top: 2px;
-  bottom: 2px;
-  width: 36px;
-  pointer-events: none;
-  z-index: 1;
-  border-radius: 0 var(--qp-radius, 12px) var(--qp-radius, 12px) 0;
+#qaproof-app .qaproof-figma-access-email-value {
+  background: var(--qp-input-bg, #fff);
+  border: 1px solid var(--qp-border, #c3c4c7);
+  padding: 4px 10px;
+  border-radius: var(--qp-radius, 8px);
+  font-family: var(--qp-font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 13px;
 }
-#qaproof-app .qaproof-token-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none !important;
-  background: none !important;
+#qaproof-app .qaproof-figma-access-steps {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--qp-text-muted, #50575e);
+}
+#qaproof-app .qaproof-figma-access-steps li {
+  margin: 4px 0;
+}
+
+/* ============================
+   Figma OAuth connection card
+   Primary card at top of Design Fidelity settings — renders one of:
+     [loading]       skeleton
+     [disconnected]  big "Connect Figma" CTA + scope blurb
+     [connected]     "Connected as ..." + Disconnect button
+     [revoked]       warning + "Reconnect" CTA + previous email
+     [unavailable]   API key not workspace-scoped / OAuth not configured
+   States are driven by [data-state] on .qaproof-figma-conn-card and the
+   inner body is rebuilt by init.js after every status fetch.
+   ============================ */
+#qaproof-app .qaproof-figma-conn-card {
+  background: var(--qp-card-bg, #f6f7f7);
+  border: 1px solid var(--qp-border, #dcdcde);
+  border-radius: var(--qp-radius, 12px);
+  padding: 20px 22px;
+  margin: 12px 0 16px;
+}
+#qaproof-app .qaproof-figma-conn-card[data-state="connected"] {
+  border-color: rgba(0, 173, 181, 0.4);
+  background: linear-gradient(0deg, rgba(0,173,181,0.04), rgba(0,173,181,0.04)),
+              var(--qp-card-bg, #f6f7f7);
+}
+#qaproof-app .qaproof-figma-conn-card[data-state="revoked"] {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(0deg, rgba(239,68,68,0.04), rgba(239,68,68,0.04)),
+              var(--qp-card-bg, #f6f7f7);
+}
+#qaproof-app .qaproof-figma-conn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+#qaproof-app .qaproof-figma-conn-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+#qaproof-app .qaproof-figma-conn-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--qp-text-muted, #50575e);
+}
+#qaproof-app .qaproof-figma-conn-card[data-state="connected"] .qaproof-figma-conn-badge {
+  background: rgba(0, 173, 181, 0.15);
+  color: #00838a;
+}
+#qaproof-app .qaproof-figma-conn-card[data-state="revoked"] .qaproof-figma-conn-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
+}
+#qaproof-app .qaproof-figma-conn-loading {
+  margin: 0;
+  color: var(--qp-text-muted, #50575e);
+  font-style: italic;
+}
+#qaproof-app .qaproof-figma-conn-blurb {
+  margin: 0 0 14px;
+  color: var(--qp-text-muted, #50575e);
+  line-height: 1.55;
+}
+#qaproof-app .qaproof-figma-conn-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#qaproof-app .qaproof-figma-conn-actions .button-primary {
+  background: var(--qp-accent, #00ADB5);
+  border-color: var(--qp-accent, #00ADB5);
+  color: #fff;
+  border-radius: var(--qp-radius-pill, 999px);
+  padding: 8px 22px;
+  font-weight: 600;
+}
+#qaproof-app .qaproof-figma-conn-actions .button-primary:hover {
+  background: var(--qp-accent-hover, #009aa1);
+  border-color: var(--qp-accent-hover, #009aa1);
+  color: #fff;
+}
+#qaproof-app .qaproof-figma-conn-actions .qaproof-figma-conn-disconnect {
+  border-radius: var(--qp-radius-pill, 999px);
+  padding: 8px 18px;
+}
+#qaproof-app .qaproof-figma-conn-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+#qaproof-app .qaproof-figma-conn-meta dt {
+  color: var(--qp-text-muted, #50575e);
+  font-weight: 500;
+}
+#qaproof-app .qaproof-figma-conn-meta dd {
+  margin: 0;
+  word-break: break-all;
+}
+#qaproof-app .qaproof-figma-conn-meta code {
+  font-family: var(--qp-font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 12px;
+  background: var(--qp-input-bg, #fff);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+#qaproof-app .qaproof-figma-conn-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+#qaproof-app .qaproof-figma-conn-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--qp-text-muted, #6b7280);
+  background: rgba(15, 23, 42, 0.04);
+  border-left: 3px solid var(--qp-accent, #00ADB5);
+  padding: 8px 12px;
+  margin: 0 0 14px;
+  border-radius: 6px;
+}
+
+/* Fallback (service-account) card shown as <details>: keep visible but
+   visually de-emphasised when OAuth is the recommended path. */
+#qaproof-app .qaproof-figma-access-card--alt {
+  background: transparent;
+  border-style: dashed;
+  margin-top: 8px;
+}
+#qaproof-app .qaproof-figma-access-card--alt > .qaproof-figma-access-summary {
   cursor: pointer;
-  padding: 4px !important;
-  color: var(--qp-gray, var(--qp-text-placeholder)) !important;
-  font-size: 0 !important;
-  box-shadow: none !important;
-  min-height: 0 !important;
-  line-height: 1 !important;
-  z-index: 2;
-  transition: color 0.2s ease;
+  font-weight: 600;
+  color: var(--qp-text-muted, #50575e);
+  padding: 6px 0;
+  list-style: none;
 }
-#qaproof-app .qaproof-token-toggle:hover {
-  color: var(--qp-accent, var(--qp-accent)) !important;
+#qaproof-app .qaproof-figma-access-card--alt > .qaproof-figma-access-summary::-webkit-details-marker {
+  display: none;
 }
-#qaproof-app .qaproof-token-toggle:focus {
-  outline: none !important;
-  box-shadow: none !important;
+#qaproof-app .qaproof-figma-access-card--alt > .qaproof-figma-access-summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 0.15s ease;
 }
-#qaproof-app .qaproof-token-toggle .qaproof-eye-icon {
-  display: block;
+#qaproof-app .qaproof-figma-access-card--alt[open] > .qaproof-figma-access-summary::before {
+  transform: rotate(90deg);
+}
+
+/* Saved-design row: Verify access button + transient feedback states.
+   Button label stays SHORT in all states — never holds the full error
+   message; long text goes into the sibling .qaproof-design-verify-msg slot. */
+#qaproof-app .qaproof-design-verify-btn {
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+#qaproof-app .qaproof-design-verify-btn.qaproof-verify-ok {
+  background: var(--qp-success-bg, #d4edda) !important;
+  color: var(--qp-success-fg, #155724) !important;
+  border-color: var(--qp-success-fg, #155724) !important;
+}
+#qaproof-app .qaproof-design-verify-btn.qaproof-verify-error {
+  background: var(--qp-error-bg, #f8d7da) !important;
+  color: var(--qp-error-fg, #721c24) !important;
+  border-color: var(--qp-error-fg, #721c24) !important;
+}
+
+/* Verify result message — full-width slot below the field row. Shows the
+   backend's auth-aware error/success text without polluting the button.
+   flex-basis: 100% forces it onto a new flex line so the Name/URL/Verify
+   row above it doesn't get squeezed. */
+#qaproof-app .qaproof-design-verify-msg {
+  flex-basis: 100%;
+  order: 1;                    /* pin to last in flex order, regardless of DOM position */
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+  background: var(--qp-bg-surface, #f3f4f6);
+  border: 1px solid var(--qp-border, #e5e7eb);
+  color: var(--qp-text-secondary, #4b5563);
+}
+#qaproof-app .qaproof-design-verify-msg.qaproof-verify-msg-error {
+  background: var(--qp-error-bg, #fdecea);
+  border-color: var(--qp-error-fg, #dc2626);
+  color: var(--qp-error-fg, #b91c1c);
+}
+#qaproof-app .qaproof-design-verify-msg.qaproof-verify-msg-success {
+  background: rgba(0, 173, 181, 0.08);
+  border-color: rgba(0, 173, 181, 0.4);
+  color: #00838a;
 }
 
 #qaproof-app .button-small {

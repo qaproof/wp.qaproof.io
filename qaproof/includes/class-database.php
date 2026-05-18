@@ -86,7 +86,7 @@ class QAProof_Database {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        update_option( 'qaproof_db_version', '1.7.0' );
+        update_option( 'qaproof_db_version', '1.8.0' );
     }
 
     /**
@@ -95,16 +95,48 @@ class QAProof_Database {
      */
     public static function maybe_upgrade() {
         $current = get_option( 'qaproof_db_version', '0' );
-        if ( version_compare( $current, '1.7.0', '>=' ) ) {
+        if ( version_compare( $current, '1.8.0', '>=' ) ) {
             return;
         }
         // Re-run create_tables() — dbDelta() handles ADD COLUMN / ADD KEY safely.
         self::create_tables();
 
         // v1.7.0: One-time migration — copy monitors from WP MySQL → SaaS API.
-        // Monitors moved to PostgreSQL; any monitors created before this version
-        // are still in the local MySQL table and need to be pushed to the API.
-        self::migrate_monitors_to_api();
+        if ( version_compare( $current, '1.7.0', '<' ) ) {
+            self::migrate_monitors_to_api();
+        }
+
+        // v1.8.0: Strip legacy per-customer Figma PAT (figmaToken) from saved
+        // designs. The API now reads files via service-account; no customer
+        // token is sent or stored.
+        if ( version_compare( $current, '1.8.0', '<' ) ) {
+            self::strip_legacy_figma_tokens();
+        }
+
+        update_option( 'qaproof_db_version', '1.8.0' );
+    }
+
+    /**
+     * One-time cleanup: remove the figmaToken field from each saved design.
+     * Idempotent — re-running is a no-op.
+     */
+    private static function strip_legacy_figma_tokens() {
+        $designs = get_option( 'qaproof_saved_designs', array() );
+        if ( ! is_array( $designs ) || empty( $designs ) ) {
+            return;
+        }
+        $changed = false;
+        foreach ( $designs as &$d ) {
+            if ( isset( $d['figmaToken'] ) ) {
+                unset( $d['figmaToken'] );
+                $changed = true;
+            }
+        }
+        unset( $d );
+        if ( $changed ) {
+            update_option( 'qaproof_saved_designs', $designs );
+            error_log( '[QAProof] strip_legacy_figma_tokens: removed legacy figmaToken from ' . count( $designs ) . ' saved designs' );
+        }
     }
 
     /**

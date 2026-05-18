@@ -105,8 +105,9 @@ class QAProof_Admin_Assets {
         wp_enqueue_script( 'qaproof-pdf',      $js_base . 'pdf.js',      [ 'qaproof-helpers', 'jspdf', 'jspdf-autotable' ], $asset_ver( 'admin/js/modules/pdf.js' ), true );
         wp_enqueue_script( 'qaproof-monitors', $js_base . 'monitors.js', [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/monitors.js' ), true );
         wp_enqueue_script( 'qaproof-history',  $js_base . 'history.js',  [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/history.js' ), true );
-        wp_enqueue_script( 'qaproof-form',     $js_base . 'form.js',     [ 'qaproof-state', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/form.js' ), true );
-        wp_enqueue_script( 'qaproof-init',     $js_base . 'init.js',     [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/init.js' ), true );
+        wp_enqueue_script( 'qaproof-form',         $js_base . 'form.js',         [ 'qaproof-state', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/form.js' ), true );
+        wp_enqueue_script( 'qaproof-figma-oauth',  $js_base . 'figma-oauth.js',  [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/figma-oauth.js' ), true );
+        wp_enqueue_script( 'qaproof-init',         $js_base . 'init.js',         [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/init.js' ), true );
 
         wp_localize_script( 'qaproof-helpers', 'qaproof', [
             'pluginUrl'     => QAPROOF_PLUGIN_URL,
@@ -132,6 +133,13 @@ class QAProof_Admin_Assets {
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'adminEmail'        => wp_get_current_user()->user_email ?: get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
+            // Origin of the QAProof SaaS API. Used by figma-oauth.js to
+            // validate event.origin on the OAuth-callback postMessage (the
+            // popup lives on the API host, not the WP host). Derived from
+            // the configured api_endpoint setting; empty when endpoint
+            // can't be parsed (legacy http://api:3000 docker setups), in
+            // which case the JS falls back to source-discriminator-only.
+            'apiOrigin'         => self::derive_api_origin(),
             // Usage is now per-fileKey. `byFile` carries each file's own
             // counters and rateLimit (retryAt). Aggregate total/byType are
             // derived by the getter for quick glance views.
@@ -163,13 +171,68 @@ class QAProof_Admin_Assets {
                 'previewFileLabel'       => __( 'File: ', 'qaproof' ),
                 'previewNodeLabel'       => __( 'Node: ', 'qaproof' ),
                 // form.js — Figma error map
-                'figmaAuthFailed'        => __( 'Invalid or expired Figma token.', 'qaproof' ),
+                'figmaNotShared'         => __( 'QAProof can\'t access this Figma file yet. Share it with figma@qaproof.io (Can view) and try again.', 'qaproof' ),
                 'figmaFileNotFound'      => __( 'File not found. Check the URL.', 'qaproof' ),
-                'figmaRateLimited'       => __( 'Figma rate limit exceeded. This is often caused by Starter plan restrictions (very low API limits). Ensure your Figma file is in a Professional or higher workspace, or use "Upload Image" instead. Wait 1-2 minutes, then try again.', 'qaproof' ),
+                'figmaRateLimited'       => __( 'Figma temporarily throttled our requests. Try again in a minute.', 'qaproof' ),
                 'figmaRenderTimeout'     => __( 'Design too complex to preview.', 'qaproof' ),
                 'figmaExportFailed'      => __( 'Figma could not export this design.', 'qaproof' ),
                 'figmaNodeNotRenderable' => __( 'This node cannot be rendered. Try a different frame.', 'qaproof' ),
                 'figmaNoFramesFound'     => __( 'No frames found. Add a node-id to the URL.', 'qaproof' ),
+                // form.js — verify access
+                'figmaServiceEmail'      => 'figma@qaproof.io',
+                'verifyChecking'         => __( 'Checking...', 'qaproof' ),
+                'verifyAccessOk'         => __( 'Access OK', 'qaproof' ),
+                'verifyAccessLabel'      => __( 'Verify access', 'qaproof' ),
+                'verifyNoUrl'            => __( 'Add the Figma URL first.', 'qaproof' ),
+                // init.js — Figma share guide modal
+                'figmaGuideTitle'        => __( 'Share your Figma file with QAProof', 'qaproof' ),
+                'figmaGuideLead'         => __( 'QAProof reads designs through a service account. Add it as a viewer on each file you want to test — you only do this once per file.', 'qaproof' ),
+                'figmaGuideServiceEmail' => __( 'Service email', 'qaproof' ),
+                'figmaGuideCopy'         => __( 'Copy', 'qaproof' ),
+                'figmaGuideStep1'        => __( 'In Figma, open the file and click the blue "Share" button in the top-right corner.', 'qaproof' ),
+                'figmaGuideStep2'        => __( 'Paste figma@qaproof.io into the invite field. Set the permission to "Can view".', 'qaproof' ),
+                'figmaGuideStep3'        => __( 'Click "Send invite". The optional message field can stay empty.', 'qaproof' ),
+                'figmaGuideStep4'        => __( 'Come back here and click "Verify access" — QAProof will confirm the file is reachable.', 'qaproof' ),
+                'figmaGuideTip'          => __( 'Tip: sharing only works if the file lives in a team you own (or your drafts). Files owned by another account need that owner to share with the address above.', 'qaproof' ),
+                'figmaGuideOpenFile'     => __( 'Open file in Figma →', 'qaproof' ),
+                'figmaGuideRetry'        => __( 'I shared it — verify again', 'qaproof' ),
+                'figmaGuideClose'        => __( 'Close', 'qaproof' ),
+                // figma-oauth.js — connection card states
+                'figmaOAuthBadgeConnected'    => __( 'Connected', 'qaproof' ),
+                'figmaOAuthBadgeNotConnected' => __( 'Not connected', 'qaproof' ),
+                'figmaOAuthBadgeRevoked'      => __( 'Reconnect needed', 'qaproof' ),
+                'figmaOAuthBadgeError'        => __( 'Error', 'qaproof' ),
+                'figmaOAuthBadgeDisabled'     => __( 'Disabled', 'qaproof' ),
+                'figmaOAuthConnect'           => __( 'Connect Figma →', 'qaproof' ),
+                'figmaOAuthReconnect'         => __( 'Reconnect Figma →', 'qaproof' ),
+                'figmaOAuthDisconnect'        => __( 'Disconnect', 'qaproof' ),
+                'figmaOAuthDisconnecting'     => __( 'Disconnecting…', 'qaproof' ),
+                'figmaOAuthOpening'           => __( 'Opening Figma…', 'qaproof' ),
+                'figmaOAuthConnectedAs'       => __( 'Connected as', 'qaproof' ),
+                'figmaOAuthReadsOnDemand'     => __( 'QAProof reads files only when you run a test against them.', 'qaproof' ),
+                'figmaOAuthLinkSharingNote'   => __( 'Note: files shared via "Anyone with the link" don\'t work through Figma\'s API. To test them, the owner must invite this account directly, or the file must live in your account / team.', 'qaproof' ),
+                'figmaOAuthDisconnectedBlurb' => __( 'One-click connection. After you authorize QAProof in Figma, every file you can open is testable — no per-file sharing needed.', 'qaproof' ),
+                'figmaOAuthRevokedExplain'    => __( 'Your Figma connection is no longer valid (the app may have been removed in Figma settings). Reconnect to continue running fidelity tests.', 'qaproof' ),
+                'figmaOAuthPreviouslyConnectedAs' => __( 'Previously connected as', 'qaproof' ),
+                'figmaOAuthDisabledExplain'   => __( 'OAuth is not enabled on this QAProof server. Use the service account below to share files manually.', 'qaproof' ),
+                'figmaOAuthApiKeyMissing'     => __( 'Set your QAProof API key in Settings → API to use OAuth.', 'qaproof' ),
+                'figmaOAuthDisconnectConfirm' => __( 'Disconnect Figma? Fidelity tests will use the manual share-with figma@qaproof.io path until you reconnect.', 'qaproof' ),
+                'figmaOAuthMetaAccount'       => __( 'Account', 'qaproof' ),
+                'figmaOAuthMetaScopes'        => __( 'Scopes', 'qaproof' ),
+                'figmaOAuthMetaRefreshes'     => __( 'Token refreshes', 'qaproof' ),
+                'figmaOAuthMetaConnected'     => __( 'Connected', 'qaproof' ),
+                'figmaOAuthInDays'            => __( 'auto-renews in', 'qaproof' ),
+                'figmaOAuthInHours'           => __( 'auto-renews in', 'qaproof' ),
+                'figmaOAuthDays'              => __( 'days', 'qaproof' ),
+                'figmaOAuthHours'             => __( 'hours', 'qaproof' ),
+                'figmaOAuthSoon'              => __( 'on next test', 'qaproof' ),
+                'figmaOAuthUnknownUser'       => __( 'Figma user', 'qaproof' ),
+                'figmaOAuthLoadFailed'        => __( 'Could not load Figma connection status.', 'qaproof' ),
+                'figmaOAuthStartFailed'       => __( 'Could not start Figma OAuth.', 'qaproof' ),
+                'figmaOAuthMissingUrl'        => __( 'Server did not return an authorize URL.', 'qaproof' ),
+                'figmaOAuthPopupBlocked'      => __( 'Popup was blocked. Allow popups for this site and try again.', 'qaproof' ),
+                'figmaOAuthConnectFailed'     => __( 'Failed to connect Figma.', 'qaproof' ),
+                'figmaOAuthNetwork'           => __( 'Network error. Try again.', 'qaproof' ),
                 // form.js — save/detect states
                 'saveBtnSave'            => __( 'Save', 'qaproof' ),
                 'saveBtnSaving'          => __( 'Saving image...', 'qaproof' ),
@@ -423,6 +486,23 @@ class QAProof_Admin_Assets {
      * Get saved designs for JS localization — strips large imageBase64 data
      * and replaces with a boolean hasImage flag to keep page load fast.
      */
+    /**
+     * Parse the configured API endpoint and return its origin (scheme://host[:port]),
+     * or an empty string when the endpoint is missing or unparsable. Used to
+     * validate event.origin on OAuth-callback postMessages.
+     */
+    private static function derive_api_origin() {
+        $endpoint = QAProof_Settings::get_api_endpoint();
+        if ( empty( $endpoint ) ) return '';
+        $parts = wp_parse_url( $endpoint );
+        if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) return '';
+        $origin = $parts['scheme'] . '://' . $parts['host'];
+        if ( ! empty( $parts['port'] ) ) {
+            $origin .= ':' . $parts['port'];
+        }
+        return $origin;
+    }
+
     private static function get_saved_designs_for_js() {
         $designs = QAProof_Settings::get_saved_designs();
         if ( empty( $designs ) ) {
@@ -435,7 +515,6 @@ class QAProof_Admin_Assets {
                 'id'              => isset( $d['id'] )         ? $d['id']         : '',
                 'name'            => isset( $d['name'] )       ? $d['name']       : '',
                 'pageUrl'         => isset( $d['pageUrl'] )    ? $d['pageUrl']    : '',
-                'figmaToken'      => isset( $d['figmaToken'] ) ? $d['figmaToken'] : '',
                 'figmaUrl'        => $figma_url,
                 'fileKey'         => QAProof_Settings::extract_figma_file_key( $figma_url ),
                 'hasImage'        => ! empty( $d['imageBase64'] ),

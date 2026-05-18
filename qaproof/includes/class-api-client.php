@@ -308,14 +308,17 @@ class QAProof_API_Client {
     /**
      * Fetch a Figma design preview image.
      *
+     * The QAProof API now reads Figma files via its own service account
+     * (figma@qaproof.io). The customer just shares the file with that
+     * email — no per-customer Figma token is sent.
+     *
      * Timeout set to 120s to allow for Figma API rate-limit retries on the backend.
      *
      * @param string $figma_url    Figma design URL.
-     * @param string $figma_token  Figma Personal Access Token.
      * @param bool   $force_refresh Whether to bypass server-side cache.
      * @return array|WP_Error Preview data on success, WP_Error on failure.
      */
-    public static function preview_figma( $figma_url, $figma_token, $force_refresh = false ) {
+    public static function preview_figma( $figma_url, $force_refresh = false ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/figma-preview';
         $api_key  = QAProof_Settings::get_api_key();
 
@@ -333,7 +336,6 @@ class QAProof_API_Client {
             ),
             'body'      => wp_json_encode( array_filter( array(
                 'figmaUrl'     => $figma_url,
-                'figmaToken'   => $figma_token,
                 'forceRefresh' => $force_refresh ? true : null,
             ) ) ),
             'timeout'   => 120,
@@ -381,11 +383,69 @@ class QAProof_API_Client {
     }
 
     /**
+     * Verify QAProof's service account can read a Figma file.
+     *
+     * Makes one lightweight Figma `/v1/files/{key}/meta` call on the API side
+     * and returns either { accessible: true, name, lastModified } or a
+     * WP_Error with error_code FIGMA_NOT_SHARED / FIGMA_FILE_NOT_FOUND / etc.
+     *
+     * @param string $figma_url Figma design URL.
+     * @return array|WP_Error
+     */
+    public static function verify_figma_access( $figma_url ) {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/figma/verify-access';
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'qaproof_no_api_key',
+                __( 'API key not configured. Go to Settings to add your API key.', 'qaproof' )
+            );
+        }
+
+        $response = wp_remote_post( $endpoint, array(
+            'headers'   => array(
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ),
+            'body'      => wp_json_encode( array( 'figmaUrl' => $figma_url ) ),
+            'timeout'   => 30,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'qaproof_api_network_error',
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null ) {
+            return new WP_Error(
+                'qaproof_api_invalid_json',
+                sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
+            );
+        }
+
+        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+            $error_msg  = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            $error_code = isset( $decoded['error']['code'] )    ? $decoded['error']['code']    : 'API_ERROR';
+            return new WP_Error( 'qaproof_figma_verify_error', $error_msg, array(
+                'status'     => $status_code,
+                'error_code' => $error_code,
+            ) );
+        }
+
+        return $decoded['data'];
+    }
+
+    /**
      * Detect UI elements/sections in a design image.
      *
-     * @param string      $figma_url   Figma design URL.
-     * @param string      $figma_token Figma Personal Access Token.
-     * @param string|null $image_base64 Direct base64 image (alternative to Figma URL).
+     * @param array $params Pass-through fields: figmaUrl, figmaImageBase64, sketchFileBase64, pixelPerfectOnly.
      * @return array|WP_Error Detection results or error.
      */
     public static function detect_elements( $params = array() ) {
@@ -402,7 +462,7 @@ class QAProof_API_Client {
         // Pass through all supported fields
         $body = array();
         $allowed_keys = array(
-            'figmaUrl', 'figmaToken', 'figmaImageBase64',
+            'figmaUrl', 'figmaImageBase64',
             'sketchFileBase64',
         );
         foreach ( $allowed_keys as $key ) {
@@ -1023,5 +1083,48 @@ class QAProof_API_Client {
      */
     public static function send_report_email( $params ) {
         return self::api_request( 'POST', '/api/send-report-email', $params, 60 );
+    }
+
+    // ============================================================
+    // Figma OAuth — proxy to api.qaproof.io
+    // ============================================================
+
+    /**
+     * Start the OAuth flow: returns the Figma authorize URL the WP plugin
+     * should open in a popup. The backend creates a signed state token that
+     * carries the workspace id through the redirect.
+     *
+     * 60s timeout (vs default 30) because the start handler hits Figma's
+     * authorize endpoint server-side under rate-limit pressure during peak
+     * usage; 30s was tight enough that one stalled DNS resolve aborted the
+     * call before the popup user even saw a consent screen.
+     *
+     * @return array|WP_Error { authorizeUrl }
+     */
+    public static function figma_oauth_start() {
+        return self::api_request( 'POST', '/api/figma-oauth/start', array(), 60 );
+    }
+
+    /**
+     * Get the workspace's Figma OAuth connection status. Used by Settings
+     * to render the "Connect Figma" vs "Connected as ..." card state.
+     *
+     * @return array|WP_Error {
+     *   connected, revoked, figmaUserEmail, figmaUserHandle, expiresAt,
+     *   scope, connectedAt, oauthEnabled, serviceFallbackAvailable
+     * }
+     */
+    public static function figma_oauth_status() {
+        return self::api_request( 'GET', '/api/figma-oauth/status' );
+    }
+
+    /**
+     * Drop the workspace's Figma OAuth connection. Next test falls back to
+     * the service-account PAT (if configured) or fails with a clear error.
+     *
+     * @return array|WP_Error { deleted: bool }
+     */
+    public static function figma_oauth_disconnect() {
+        return self::api_request( 'POST', '/api/figma-oauth/disconnect', array() );
     }
 }
