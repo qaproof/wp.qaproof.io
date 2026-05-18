@@ -1,0 +1,82 @@
+QAProof — Third-Party Notices
+================================
+
+The QAProof WordPress plugin bundles the following third-party software.
+All bundled assets are GPL-compatible and redistributable under the
+terms below.
+
+--------------------------------------------------------------------------
+1. Chart.js (admin/js/vendor/chart.umd.min.js)
+--------------------------------------------------------------------------
+Version:    4.4.6
+Source:     https://github.com/chartjs/Chart.js
+License:    MIT License
+Copyright:  Copyright (c) 2014-2024 Chart.js Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------------------------------------
+2. jsPDF (admin/js/vendor/jspdf.umd.min.js)
+--------------------------------------------------------------------------
+Version:    3.0.3
+Source:     https://github.com/parallax/jsPDF
+License:    MIT License
+Copyright:  Copyright (c) 2010-2025 jsPDF Contributors
+
+[Same MIT license text as above.]
+
+--------------------------------------------------------------------------
+3. jsPDF-AutoTable (admin/js/vendor/jspdf.plugin.autotable.min.js)
+--------------------------------------------------------------------------
+Version:    5.0.2
+Source:     https://github.com/simonbengtsson/jsPDF-AutoTable
+License:    MIT License
+Copyright:  Copyright (c) 2025 Simon Bengtsson
+
+[Same MIT license text as above.]
+
+--------------------------------------------------------------------------
+4. Kodchasan font family (admin/fonts/kodchasan-*.woff2)
+--------------------------------------------------------------------------
+Source:     https://fonts.google.com/specimen/Kodchasan
+License:    SIL Open Font License 1.1 (OFL-1.1)
+Copyright:  Copyright (c) 2018 Cadson Demak (https://www.cadsondemak.com)
+
+This Font Software is licensed under the SIL Open Font License, Version
+1.1. The full license text is available at:
+https://openfontlicense.org
+
+--------------------------------------------------------------------------
+5. Montserrat font family (admin/fonts/montserrat-*.woff2)
+--------------------------------------------------------------------------
+Source:     https://fonts.google.com/specimen/Montserrat
+License:    SIL Open Font License 1.1 (OFL-1.1)
+Copyright:  Copyright (c) 2011-2024 The Montserrat Project Authors
+            (https://github.com/JulietaUla/Montserrat)
+
+This Font Software is licensed under the SIL Open Font License, Version
+1.1. The full license text is available at:
+https://openfontlicense.org
+
+--------------------------------------------------------------------------
+QAProof itself
+--------------------------------------------------------------------------
+The QAProof plugin code (everything outside admin/js/vendor/ and
+admin/fonts/) is licensed under GPL-2.0-or-later. See the LICENSE file
+or https://www.gnu.org/licenses/gpl-2.0.html
