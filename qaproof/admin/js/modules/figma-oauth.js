@@ -30,6 +30,17 @@
   // postMessage handlers. Closed via the postMessage callback or by user.
   var openPopup = null;
   var popupPoll = null;
+  // Tracks the last-rendered connected state so dimFallback only toggles
+  // the <details> on actual state TRANSITIONS — without this, every render
+  // (e.g. status refresh polling) re-imposes our preferred open/closed
+  // state and silently undoes the user's manual toggle.
+  var prevConnectedState = null;
+  // Best-effort origin check for postMessage from the OAuth popup. Derived
+  // from the WP-side API endpoint setting localized into qaproof.apiOrigin.
+  // When set, we additionally validate event.origin matches; when blank
+  // (e.g. local dev with mixed origins), we fall back to source-discriminator
+  // only.
+  var expectedOAuthOrigin = (qaproof.apiOrigin || '').replace(/\/+$/, '');
 
   // ----------------------------------------------------------------
   // Status fetch + render
@@ -67,10 +78,14 @@
     if (state.error) {
       card.setAttribute('data-state', 'error');
       setBadge(i18n.figmaOAuthBadgeError || 'Error');
-      var errMsg = state.code === 'AUTHENTICATION_ERROR' || state.code === 'INVALID_API_KEY'
+      // Note: backend returns 'AUTH_ERROR' (errors.js AuthenticationError),
+      // not 'AUTHENTICATION_ERROR'. Match both for forward-compat in case
+      // the backend code ever switches.
+      var errMsg = state.code === 'AUTH_ERROR' || state.code === 'AUTHENTICATION_ERROR' || state.code === 'INVALID_API_KEY'
         ? (i18n.figmaOAuthApiKeyMissing || 'Set your QAProof API key in Settings → API to use OAuth.')
         : (state.message || i18n.figmaOAuthLoadFailed || 'Could not load Figma connection status.');
       bodyEl.appendChild(makeError(errMsg));
+      maybeToggleFallbackOnTransition(false);
       return;
     }
 
@@ -82,20 +97,8 @@
         i18n.figmaOAuthDisabledExplain ||
         'OAuth is not enabled on this QAProof server. Use the service account below to share files manually.'
       ));
-      dimFallback(false); // fallback becomes primary
+      maybeToggleFallbackOnTransition(false);
       return;
-    }
-
-    // ── Workspace not detected (legacy env-var API key, no workspace) ─
-    if (state.connected === false && state.revoked === false && state.expiresAt === null
-        && !state.figmaUserEmail && state.serviceFallbackAvailable !== undefined
-        && !state.scope && state.connectedAt === null
-        && state.oauthEnabled && card.dataset.workspaceless === '1') {
-      // The status endpoint returns "connected:false" for both "no workspace"
-      // and "workspace has no connection yet". We can't distinguish from the
-      // payload alone, so this branch is conservative: only treat as
-      // workspace-less if we've previously seen the workspaceless error on
-      // /figma-oauth/start. Otherwise fall through to the disconnected state.
     }
 
     // ── Revoked (token died on Figma side) ────────────────────────────
@@ -110,7 +113,7 @@
       bodyEl.appendChild(makeActions([
         button('button-primary', i18n.figmaOAuthReconnect || 'Reconnect Figma →', onConnectClick),
       ]));
-      dimFallback(false);
+      maybeToggleFallbackOnTransition(false);
       return;
     }
 
@@ -135,7 +138,7 @@
       bodyEl.appendChild(makeActions([
         button('qaproof-figma-conn-disconnect', i18n.figmaOAuthDisconnect || 'Disconnect', onDisconnectClick),
       ]));
-      dimFallback(true);
+      maybeToggleFallbackOnTransition(true);
       return;
     }
 
@@ -149,23 +152,27 @@
     bodyEl.appendChild(makeActions([
       button('button-primary', i18n.figmaOAuthConnect || 'Connect Figma →', onConnectClick),
     ]));
-    dimFallback(false);
+    maybeToggleFallbackOnTransition(false);
   }
 
   function setBadge(text) {
     if (badgeEl) badgeEl.textContent = text || '';
   }
 
-  function dimFallback(dim) {
-    // When OAuth is connected we collapse the service-account fallback into
-    // a <details> closed state. When OAuth is NOT connected (and especially
-    // when it's revoked/unavailable) we open it so the user can fall back.
+  // Auto-toggle the service-account fallback <details> ONLY on actual
+  // state transitions. Without the transition guard, every status refresh
+  // would re-impose our preferred open/closed state and silently undo any
+  // manual toggle the user did between renders.
+  function maybeToggleFallbackOnTransition(shouldDim) {
     if (!fallbackCard) return;
-    if (dim) {
+    var connected = !!shouldDim;
+    if (prevConnectedState === connected) return; // no transition, leave user's toggle alone
+    if (connected) {
       fallbackCard.removeAttribute('open');
     } else {
       fallbackCard.setAttribute('open', '');
     }
+    prevConnectedState = connected;
   }
 
   function makeBlurb(text) {
@@ -284,7 +291,9 @@
         if (!r.ok || !r.body || !r.body.success) {
           var msg = (r.body && r.body.error && r.body.error.message) || (i18n.figmaOAuthStartFailed || 'Could not start Figma OAuth.');
           var code = r.body && r.body.error && r.body.error.code;
-          if (code === 'AUTHENTICATION_ERROR' || code === 'INVALID_API_KEY') {
+          // Backend AuthenticationError uses code 'AUTH_ERROR' (errors.js).
+          // Accept both for forward-compat.
+          if (code === 'AUTH_ERROR' || code === 'AUTHENTICATION_ERROR' || code === 'INVALID_API_KEY') {
             msg = i18n.figmaOAuthApiKeyMissing || 'Set your QAProof API key in Settings → API to use OAuth.';
           }
           try { popup.close(); } catch (_) {}
@@ -303,11 +312,16 @@
           renderError(i18n.figmaOAuthMissingUrl || 'Server did not return an authorize URL.');
           return;
         }
-        try { popup.location.href = url; } catch (err) {
-          // Popup was closed between open() and setting location — abort.
+        try {
+          popup.location.href = url;
+        } catch (err) {
+          // Popup was closed between open() and setting location — abort
+          // without starting the watcher (would just fire onClosed once
+          // and call fetchStatus, which is harmless but wasted work).
           openPopup = null;
           btn.disabled = false;
           btn.textContent = originalText;
+          return;
         }
         // Watch the popup. Two roles:
         //   1. If user closes it without finishing — restore the button so
@@ -368,11 +382,22 @@
   // ----------------------------------------------------------------
   window.addEventListener('message', function (event) {
     var data = event && event.data;
-    // We validate the payload's source discriminator rather than event.origin
-    // because the callback is on api.qaproof.io while the WP admin is on a
-    // customer-owned domain — origins legitimately differ. The data itself
-    // contains no tokens / secrets, so source-based filtering is sufficient.
+    // Two-stage validation:
+    //   1. source discriminator must match — cheap filter for unrelated
+    //      postMessage traffic from other tabs/iframes/scripts.
+    //   2. event.origin must match the API origin we expect the callback
+    //      to come from. When qaproof.apiOrigin is set (PHP-localized from
+    //      the configured API endpoint), we enforce strict equality. When
+    //      it's blank (e.g. local dev where API origin is unknown to PHP),
+    //      we fall back to source-discriminator-only so dev still works.
+    //      The payload never carries tokens, so the worst a forged message
+    //      can do is flip the UI to a wrong state until next status fetch.
     if (!data || typeof data !== 'object' || data.source !== 'qaproof-figma-oauth') return;
+    if (expectedOAuthOrigin && event.origin !== expectedOAuthOrigin) {
+      // Forged message from a different origin. Log + ignore.
+      try { console.warn('[QAProof] OAuth postMessage from unexpected origin', event.origin); } catch (_) {}
+      return;
+    }
 
     // Close the popup if it's still hanging around.
     if (openPopup) {

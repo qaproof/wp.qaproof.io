@@ -133,6 +133,13 @@ class QAProof_Admin_Assets {
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'adminEmail'        => wp_get_current_user()->user_email ?: get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
+            // Origin of the QAProof SaaS API. Used by figma-oauth.js to
+            // validate event.origin on the OAuth-callback postMessage (the
+            // popup lives on the API host, not the WP host). Derived from
+            // the configured api_endpoint setting; empty when endpoint
+            // can't be parsed (legacy http://api:3000 docker setups), in
+            // which case the JS falls back to source-discriminator-only.
+            'apiOrigin'         => self::derive_api_origin(),
             // Usage is now per-fileKey. `byFile` carries each file's own
             // counters and rateLimit (retryAt). Aggregate total/byType are
             // derived by the getter for quick glance views.
@@ -479,6 +486,23 @@ class QAProof_Admin_Assets {
      * Get saved designs for JS localization — strips large imageBase64 data
      * and replaces with a boolean hasImage flag to keep page load fast.
      */
+    /**
+     * Parse the configured API endpoint and return its origin (scheme://host[:port]),
+     * or an empty string when the endpoint is missing or unparsable. Used to
+     * validate event.origin on OAuth-callback postMessages.
+     */
+    private static function derive_api_origin() {
+        $endpoint = QAProof_Settings::get_api_endpoint();
+        if ( empty( $endpoint ) ) return '';
+        $parts = wp_parse_url( $endpoint );
+        if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) return '';
+        $origin = $parts['scheme'] . '://' . $parts['host'];
+        if ( ! empty( $parts['port'] ) ) {
+            $origin .= ':' . $parts['port'];
+        }
+        return $origin;
+    }
+
     private static function get_saved_designs_for_js() {
         $designs = QAProof_Settings::get_saved_designs();
         if ( empty( $designs ) ) {
