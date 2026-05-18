@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       QAProof
- * Plugin URI:        https://qaproof.io
+ * Plugin URI:        https://github.com/qaproof/wp.qaproof.io
  * Description:       Automated design QA — compare live pages against Figma designs, analyze responsive behavior, audit accessibility, detect visual regressions. Powered by AI vision.
  * Version:           1.0.0
  * Author:            QAProof
