@@ -148,8 +148,16 @@ class QAProof_API_Client {
             );
         }
 
-        // Screenshots response is large (multi-MB base64) — use longer timeout + more memory
-        @ini_set( 'memory_limit', '256M' );
+        // Screenshots response is large (multi-MB base64) — bump memory if
+        // the host allows it. Use function_exists/ini_get to detect when
+        // ini_set is disabled (some shared hosts disable_functions=ini_set)
+        // and skip cleanly instead of suppressing PHP warnings with @.
+        if ( function_exists( 'ini_set' ) && ! in_array( 'ini_set', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
+            $current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
+            if ( $current && $current > 0 && $current < 256 * MB_IN_BYTES ) {
+                ini_set( 'memory_limit', '256M' );
+            }
+        }
 
         $response = wp_remote_get( $endpoint, [
             'headers' => [

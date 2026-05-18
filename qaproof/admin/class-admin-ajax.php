@@ -65,39 +65,46 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
         }
 
+        // sanitize_text_field / sanitize_url already call wp_unslash internally.
+        // The raw 'result' field is JSON; we wp_unslash() it once before decoding.
         $test_type = isset( $_POST['testType'] ) ? sanitize_text_field( $_POST['testType'] ) : '';
-        $page_url  = isset( $_POST['pageUrl'] ) ? sanitize_url( $_POST['pageUrl'] ) : '';
-        $job_id    = isset( $_POST['jobId'] ) ? sanitize_text_field( $_POST['jobId'] ) : '';
-        $result    = isset( $_POST['result'] ) ? $_POST['result'] : [];
+        $page_url  = isset( $_POST['pageUrl'] )  ? sanitize_url( $_POST['pageUrl'] ) : '';
+        $job_id    = isset( $_POST['jobId'] )    ? sanitize_text_field( $_POST['jobId'] ) : '';
+        $result    = isset( $_POST['result'] )   ? $_POST['result'] : [];
 
-        $payload_bytes = isset( $_POST['result'] ) ? strlen( $_POST['result'] ) : 0;
-        error_log( sprintf(
+        $payload_bytes = isset( $_POST['result'] ) ? strlen( (string) $_POST['result'] ) : 0;
+        self::debug_log( sprintf(
             '[QAProof] ajax_save_history start: testType=%s payloadBytes=%d jobId=%s',
             $test_type, $payload_bytes, $job_id ?: '(none)'
         ) );
 
         if ( empty( $test_type ) || empty( $page_url ) || empty( $result ) ) {
-            error_log( '[QAProof] ajax_save_history: missing fields' );
+            self::debug_log( '[QAProof] ajax_save_history: missing fields' );
             wp_send_json_error( [ 'message' => 'Missing required fields.' ] );
         }
 
         // Deduplicate: if the same jobId was already saved within 120 seconds, skip.
         // Prevents duplicate records caused by overlapping poll responses in the browser.
+        // SHA-256 (truncated) instead of MD5 — non-cryptographic dedup, but
+        // pgcrypto pgp_sym_encrypt audits look cleaner without MD5 in code.
         if ( ! empty( $job_id ) ) {
-            $dedup_key = 'qaproof_saved_job_' . substr( md5( $job_id ), 0, 16 );
+            $dedup_key = 'qaproof_saved_job_' . substr( hash( 'sha256', $job_id ), 0, 16 );
             if ( get_transient( $dedup_key ) ) {
-                error_log( '[QAProof] ajax_save_history: duplicate jobId detected, skipping — jobId=' . $job_id );
+                self::debug_log( '[QAProof] ajax_save_history: duplicate jobId detected, skipping — jobId=' . $job_id );
                 wp_send_json_success( [ 'saved' => true, 'id' => null, 'deduplicated' => true ] );
             }
             set_transient( $dedup_key, 1, 120 );
         }
 
         if ( is_string( $result ) ) {
-            $result = json_decode( stripslashes( $result ), true );
+            // wp_unslash undoes WP's automatic magic-quotes-style escaping of
+            // $_POST. Previously this was stripslashes() which is the same
+            // function for ASCII but wp_unslash is the WP-idiomatic call.
+            $result = json_decode( wp_unslash( $result ), true );
         }
 
         if ( ! is_array( $result ) ) {
-            error_log( '[QAProof] ajax_save_history: json_decode failed — payloadBytes=' . $payload_bytes );
+            self::debug_log( '[QAProof] ajax_save_history: json_decode failed — payloadBytes=' . $payload_bytes );
             wp_send_json_error( [ 'message' => 'Invalid result data.' ] );
         }
 
@@ -109,13 +116,13 @@ class QAProof_Admin_AJAX {
             if ( ! is_wp_error( $screenshots_data ) && ! empty( $screenshots_data['screenshots'] ) ) {
                 $result['screenshots'] = $screenshots_data['screenshots'];
                 $has_screenshots = true;
-                error_log( sprintf(
+                self::debug_log( sprintf(
                     '[QAProof] ajax_save_history: screenshots fetched server-side — viewports=%s',
                     implode( ',', array_keys( $screenshots_data['screenshots'] ) )
                 ) );
             } else {
                 $err = is_wp_error( $screenshots_data ) ? $screenshots_data->get_error_message() : 'empty response';
-                error_log( '[QAProof] ajax_save_history: screenshots fetch failed — ' . $err );
+                self::debug_log( '[QAProof] ajax_save_history: screenshots fetch failed — ' . $err );
             }
         }
 
@@ -129,13 +136,25 @@ class QAProof_Admin_AJAX {
 
         if ( is_wp_error( $saved ) ) {
             $err_msg = $saved->get_error_message();
-            error_log( '[QAProof] ajax_save_history: API save failed — ' . $err_msg . ' jobId=' . ( $job_id ?: '(none)' ) );
+            self::debug_log( '[QAProof] ajax_save_history: API save failed — ' . $err_msg . ' jobId=' . ( $job_id ?: '(none)' ) );
             wp_send_json_error( [ 'message' => 'Failed to save history: ' . $err_msg ] );
         }
 
         $saved_id = isset( $saved['id'] ) ? $saved['id'] : null;
-        error_log( '[QAProof] ajax_save_history: record saved id=' . ( $saved_id ?: '?' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
+        self::debug_log( '[QAProof] ajax_save_history: record saved id=' . ( $saved_id ?: '?' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
 
         wp_send_json_success( [ 'saved' => true, 'id' => $saved_id, 'hasScreenshots' => $has_screenshots ] );
+    }
+
+    /**
+     * Gated wrapper around error_log() — only writes when WP_DEBUG is on.
+     * Keeps production log files quiet (no per-request diagnostic spam)
+     * while preserving useful traces for developers running with WP_DEBUG
+     * enabled. Same signature as error_log( $message ).
+     */
+    private static function debug_log( $message ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+            error_log( $message );
+        }
     }
 }

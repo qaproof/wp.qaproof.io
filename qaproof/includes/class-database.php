@@ -135,7 +135,7 @@ class QAProof_Database {
         unset( $d );
         if ( $changed ) {
             update_option( 'qaproof_saved_designs', $designs );
-            error_log( '[QAProof] strip_legacy_figma_tokens: removed legacy figmaToken from ' . count( $designs ) . ' saved designs' );
+            qaproof_debug_log( '[QAProof] strip_legacy_figma_tokens: removed legacy figmaToken from ' . count( $designs ) . ' saved designs' );
         }
     }
 
@@ -183,7 +183,7 @@ class QAProof_Database {
 
             if ( is_wp_error( $result ) ) {
                 $failed++;
-                error_log( '[QAProof] migrate_monitors_to_api: failed to create monitor for ' . $m['page_url'] . ' — ' . $result->get_error_message() );
+                qaproof_debug_log( '[QAProof] migrate_monitors_to_api: failed to create monitor for ' . $m['page_url'] . ' — ' . $result->get_error_message() );
                 continue;
             }
 
@@ -198,7 +198,7 @@ class QAProof_Database {
             }
         }
 
-        error_log( sprintf(
+        qaproof_debug_log( sprintf(
             '[QAProof] migrate_monitors_to_api: migrated %d/%d monitors to SaaS API (%d failed)',
             $migrated, count( $monitors ), $failed
         ) );

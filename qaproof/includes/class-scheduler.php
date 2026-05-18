@@ -170,7 +170,7 @@ class QAProof_Scheduler {
         $monitors = QAProof_API_Client::monitors_list_due( $schedule );
 
         if ( is_wp_error( $monitors ) ) {
-            error_log( '[QAProof] dispatch_monitors failed: ' . $monitors->get_error_message() );
+            qaproof_debug_log( '[QAProof] dispatch_monitors failed: ' . $monitors->get_error_message() );
             return;
         }
 
@@ -197,8 +197,13 @@ class QAProof_Scheduler {
         // Extend PHP execution limit so polling loop (up to 12 min) and
         // baseline creation (60–90 s screenshot) don't hit max_execution_time.
         // 900s lines up with Apache Timeout (apache-timeout.conf) + php.ini
-        // (uploads.ini) so neither layer kills us mid-iteration.
-        @set_time_limit( 900 );
+        // (uploads.ini) so neither layer kills us mid-iteration. Some shared
+        // hosts disable set_time_limit; the function_exists + disable_functions
+        // probe handles that gracefully instead of emitting a PHP warning
+        // (replaces the previous @-suppression which masked legitimate errors).
+        if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
+            set_time_limit( 900 );
+        }
 
         $monitor = QAProof_API_Client::monitors_get( (string) $monitor_id );
         if ( is_wp_error( $monitor ) || ! $monitor['is_enabled'] ) {
@@ -245,7 +250,7 @@ class QAProof_Scheduler {
                 sleep( 2 );
             }
         }
-        error_log( '[QAProof] monitors_save_result failed after ' . $attempts . ' attempts for monitor ' . $monitor_id . ': ' . $last_error->get_error_message() );
+        qaproof_debug_log( '[QAProof] monitors_save_result failed after ' . $attempts . ' attempts for monitor ' . $monitor_id . ': ' . $last_error->get_error_message() );
         return $last_error;
     }
 

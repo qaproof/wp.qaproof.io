@@ -49,10 +49,10 @@ class QAProof_Test_History {
         if ( $result === false ) {
             // Error code 1062 = duplicate key — expected when same job_id is saved twice.
             if ( ! empty( $job_id ) && strpos( $wpdb->last_error, '1062' ) !== false ) {
-                error_log( '[QAProof] test_history: duplicate job_id blocked by DB constraint — jobId=' . $job_id );
+                qaproof_debug_log( '[QAProof] test_history: duplicate job_id blocked by DB constraint — jobId=' . $job_id );
                 return 0;
             }
-            error_log( '[QAProof] test_history insert failed: ' . $wpdb->last_error );
+            qaproof_debug_log( '[QAProof] test_history insert failed: ' . $wpdb->last_error );
             return 0;
         }
 
