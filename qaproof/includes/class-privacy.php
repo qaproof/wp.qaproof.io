@@ -1,20 +1,8 @@
 <?php
 /**
- * GDPR / Personal data hooks.
- *
- * Registers:
- *   - wp_add_privacy_policy_content (suggested policy text for admins to
- *     paste into their site privacy page).
- *   - wp_privacy_personal_data_exporters (right-of-access: produces a
- *     JSON dump of any personal data stored by this plugin for a given
- *     user email).
- *   - wp_privacy_personal_data_erasers (right-of-erasure: removes any
- *     personal data the plugin holds for a given user email).
- *
- * Scope: this plugin only stores ONE field that maps to a user — the
- * configured notification recipient email (qaproof_notify_email). Test
- * history, monitors, results, and API tokens are workspace-scoped and
- * live on the SaaS backend, not on the WP site.
+ * GDPR hooks: suggested privacy-policy text, personal-data exporter and eraser
+ * for the notification recipient email (the only user-identifying value the
+ * plugin stores on the WP site).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,10 +17,6 @@ class QAProof_Privacy {
         add_filter( 'wp_privacy_personal_data_erasers',      [ __CLASS__, 'register_eraser' ] );
     }
 
-    /**
-     * Suggested privacy policy text. Appears under Settings → Privacy
-     * → Policy guide. Admins copy it into their public privacy page.
-     */
     public static function register_policy_content() {
         if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
             return;
@@ -51,9 +35,6 @@ class QAProof_Privacy {
         wp_add_privacy_policy_content( 'QAProof', $content );
     }
 
-    /**
-     * Register the personal-data exporter.
-     */
     public static function register_exporter( $exporters ) {
         $exporters['qaproof'] = [
             'exporter_friendly_name' => __( 'QAProof', 'qaproof' ),
@@ -62,16 +43,9 @@ class QAProof_Privacy {
         return $exporters;
     }
 
-    /**
-     * Return any plugin-stored personal data tied to the given email.
-     */
     public static function export_personal_data( $email_address, $page = 1 ) {
         $data = [];
 
-        // The only direct PII the plugin stores on this WordPress site is
-        // the regression notification recipient email. If that matches the
-        // request, surface it. Test history rows reference workspace IDs,
-        // not user identities, so they're outside the scope of this export.
         $notify = (string) get_option( 'qaproof_notify_email', '' );
         if ( $notify !== '' && strcasecmp( $notify, (string) $email_address ) === 0 ) {
             $data[] = [
@@ -93,9 +67,6 @@ class QAProof_Privacy {
         ];
     }
 
-    /**
-     * Register the personal-data eraser.
-     */
     public static function register_eraser( $erasers ) {
         $erasers['qaproof'] = [
             'eraser_friendly_name' => __( 'QAProof', 'qaproof' ),
@@ -104,9 +75,6 @@ class QAProof_Privacy {
         return $erasers;
     }
 
-    /**
-     * Remove plugin-stored personal data tied to the given email.
-     */
     public static function erase_personal_data( $email_address, $page = 1 ) {
         $removed = 0;
         $notify  = (string) get_option( 'qaproof_notify_email', '' );

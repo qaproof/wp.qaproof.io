@@ -53,10 +53,6 @@ class QAProof_Monitor {
         return $wpdb->get_results( $sql, ARRAY_A );
     }
 
-    /**
-     * Check if a column exists in the monitors table (delegates to the
-     * shared, request-cached helper in QAProof_Database).
-     */
     private static function column_exists( $column ) {
         global $wpdb;
         return QAProof_Database::column_exists( $wpdb->prefix . 'qaproof_monitors', $column );

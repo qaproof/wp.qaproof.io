@@ -12,20 +12,10 @@ class QAProof_Notifications {
 
     const BADGE_TRANSIENT = 'qaproof_alert_count';
 
-    /**
-     * Initialize notification hooks.
-     */
     public static function init() {
-        // Add badge count to admin menu
         add_action( 'admin_menu', array( __CLASS__, 'add_menu_badge' ), 999 );
     }
 
-    /**
-     * Send notifications for a monitor that scored below threshold.
-     *
-     * @param array $monitor Monitor data.
-     * @param array $result  Test result data from the API.
-     */
     public static function notify( $monitor, $result ) {
         if ( ! empty( $monitor['notify_email'] ) ) {
             self::send_email( $monitor, $result );
@@ -36,12 +26,6 @@ class QAProof_Notifications {
         }
     }
 
-    /**
-     * Send an email alert about visual regression.
-     *
-     * @param array $monitor
-     * @param array $result
-     */
     private static function send_email( $monitor, $result ) {
         $admin_email = get_option( 'qaproof_notify_email', get_option( 'admin_email' ) );
         $score = isset( $result['score'] ) ? $result['score'] : 'N/A';
@@ -76,38 +60,20 @@ class QAProof_Notifications {
         wp_mail( $admin_email, $subject, $body );
     }
 
-    /**
-     * Increment the admin badge counter.
-     */
     public static function increment_badge() {
         $count = (int) get_transient( self::BADGE_TRANSIENT );
         set_transient( self::BADGE_TRANSIENT, $count + 1, 30 * DAY_IN_SECONDS );
     }
 
-    /**
-     * Get the current badge count.
-     *
-     * @return int
-     */
     public static function get_badge_count() {
         return (int) get_transient( self::BADGE_TRANSIENT );
     }
 
-    /**
-     * Clear the badge counter.
-     */
     public static function clear_badge() {
         delete_transient( self::BADGE_TRANSIENT );
     }
 
-    /**
-     * Add badge count to the Monitors submenu item.
-     *
-     * The badge counts regression alerts (monitor scored below threshold), so
-     * the most relevant place to surface it is right next to the "Монітори"
-     * submenu entry — not on the parent "QAProof" item, which would suggest
-     * the alerts apply to the whole plugin.
-     */
+    /** Add the regression-count badge to the Monitors submenu item. */
     public static function add_menu_badge() {
         global $submenu;
 
@@ -126,7 +92,6 @@ class QAProof_Notifications {
         }
 
         foreach ( $submenu['qaproof'] as $key => $item ) {
-            // $item[2] is the page slug; match the Monitors slug exactly.
             if ( isset( $item[2] ) && $item[2] === 'qaproof-monitors' ) {
                 $submenu['qaproof'][ $key ][0] .= $badge;
                 break;

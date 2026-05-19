@@ -4,7 +4,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class QAProof_Admin_Assets {
 
     public static function enqueue_assets( $hook ) {
-        // Only load on our plugin pages
         $our_pages = [
             QAProof_Admin::MENU_SLUG,
             QAProof_Admin::TESTS_SLUG,
@@ -23,8 +22,7 @@ class QAProof_Admin_Assets {
             return;
         }
 
-        // Cache-busting version: append file mtime so every edit invalidates
-        // the browser cache automatically (no manual hard-reload needed).
+        // Cache-bust on file mtime.
         $asset_ver = function ( $rel_path ) {
             $full = QAPROOF_PLUGIN_DIR . $rel_path;
             if ( file_exists( $full ) ) {
@@ -33,16 +31,8 @@ class QAProof_Admin_Assets {
             return QAPROOF_VERSION;
         };
 
-        // Fonts are bundled locally (Kodchasan, Montserrat — both OFL,
-        // GPL-compatible). No external CDN, no Google-Fonts call, no
-        // referrer leak to googleapis.com. The font files live under
-        // admin/fonts/ and the @font-face declarations are in
-        // admin/css/partials/_fonts.css.
-
-        // Enqueue each partial individually so cache-busting via filemtime
-        // actually works. (admin.css used to @import them, but @import URLs
-        // don't get a ?ver= query, so browsers cached them indefinitely.)
-        // _fonts loads first so every other partial inherits Kodchasan.
+        // Each partial enqueued individually — @import URLs don't get the ?ver=
+        // query, so browsers would cache them indefinitely. _fonts goes first.
         $css_partials = [
             '_fonts',
             '_variables',
@@ -71,11 +61,7 @@ class QAProof_Admin_Assets {
             $prev_handle = $handle;
         }
 
-        // Third-party JS libraries bundled locally under admin/js/vendor/.
-        // All three are MIT-licensed (GPL-compatible) and version-pinned in
-        // the filename. Loading from our own origin satisfies WP.org's
-        // "no external CDN" expectation and removes the cross-origin risk
-        // of a compromised CDN serving us malicious code.
+        // Locally bundled vendor libs (MIT). See THIRD-PARTY-NOTICES.txt.
         $vendor_base = QAPROOF_PLUGIN_URL . 'admin/js/vendor/';
         wp_enqueue_script( 'chartjs',
             $vendor_base . 'chart.umd.min.js',
@@ -93,7 +79,7 @@ class QAProof_Admin_Assets {
             '5.0.2',
             true );
 
-        // JS Modules (load order matters — dependency chain)
+        // JS modules — load order matters (dependency chain).
         $js_base = QAPROOF_PLUGIN_URL . 'admin/js/modules/';
 
         wp_enqueue_script( 'qaproof-helpers',  $js_base . 'helpers.js',  [],                   $asset_ver( 'admin/js/modules/helpers.js' ), true );
@@ -117,8 +103,7 @@ class QAProof_Admin_Assets {
             'ajaxNonce'     => wp_create_nonce( 'qaproof_ajax' ),
             'siteUrl'       => home_url( '/' ),
             'hasApiKey'     => ! empty( QAProof_Settings::get_api_key() ),
-            // Short fingerprint of the current API key (first 8 chars of md5).
-            // JS uses this to detect key changes and discard stale active jobs.
+            // Fingerprint used by JS to discard stale active jobs when the key changes.
             'apiKeyFp'      => substr( md5( QAProof_Settings::get_api_key() ), 0, 8 ),
             'dashboardUrl'  => admin_url( 'admin.php?page=' . QAProof_Admin::MENU_SLUG ),
             'testsUrl'      => admin_url( 'admin.php?page=' . QAProof_Admin::TESTS_SLUG ),
@@ -132,22 +117,11 @@ class QAProof_Admin_Assets {
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'adminEmail'        => wp_get_current_user()->user_email ?: get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
             'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
-            // Origin of the QAProof SaaS API. Used by figma-oauth.js to
-            // validate event.origin on the OAuth-callback postMessage (the
-            // popup lives on the API host, not the WP host). Derived from
-            // the configured api_endpoint setting; empty when the endpoint
-            // can't be parsed, in which case the JS falls back to the
-            // payload-source-discriminator check only.
+            // Used by figma-oauth.js to validate event.origin on OAuth popup postMessages.
             'apiOrigin'         => self::derive_api_origin(),
-            // Usage is now per-fileKey. `byFile` carries each file's own
-            // counters and rateLimit (retryAt). Aggregate total/byType are
-            // derived by the getter for quick glance views.
             'figmaApiUsage'     => QAProof_Settings::get_figma_api_usage(),
             'figmaApiCap'       => 6,
-            // apiEndpoint and apiKey removed — browser no longer calls API directly
-            // All requests go through WP proxy (job queue pattern)
             'i18n' => [
-                // HTTP errors (helpers.js)
                 'errHttp'            => __( 'Server returned HTTP ', 'qaproof' ),
                 'err404'             => __( 'REST API endpoint not found (404). Check that the plugin is activated and permalinks are flushed (Settings → Permalinks → Save).', 'qaproof' ),
                 'err403'             => __( 'Access denied (403). Your login session may have expired — try refreshing the page.', 'qaproof' ),
@@ -481,15 +455,7 @@ class QAProof_Admin_Assets {
         ]);
     }
 
-    /**
-     * Get saved designs for JS localization — strips large imageBase64 data
-     * and replaces with a boolean hasImage flag to keep page load fast.
-     */
-    /**
-     * Parse the configured API endpoint and return its origin (scheme://host[:port]),
-     * or an empty string when the endpoint is missing or unparsable. Used to
-     * validate event.origin on OAuth-callback postMessages.
-     */
+    /** Origin (scheme://host[:port]) of the configured API endpoint, or ''. */
     private static function derive_api_origin() {
         $endpoint = QAProof_Settings::get_api_endpoint();
         if ( empty( $endpoint ) ) return '';
@@ -502,6 +468,10 @@ class QAProof_Admin_Assets {
         return $origin;
     }
 
+    /**
+     * Saved designs trimmed for JS localization — strips imageBase64
+     * (browser fetches it lazily via REST) and adds a hasImage flag.
+     */
     private static function get_saved_designs_for_js() {
         $designs = QAProof_Settings::get_saved_designs();
         if ( empty( $designs ) ) {

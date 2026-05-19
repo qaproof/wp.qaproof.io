@@ -6,8 +6,6 @@ class QAProof_Admin_REST_Designs {
     public static function handle_figma_preview( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 
-        // sanitize_figma_url rejects any host outside figma.com — empty
-        // string here means either missing OR pointed at a non-Figma host.
         $figma_url     = isset( $params['figmaUrl'] ) ? QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] ) : '';
         $force_refresh = ! empty( $params['forceRefresh'] );
 
@@ -18,9 +16,7 @@ class QAProof_Admin_REST_Designs {
             ], 400 );
         }
 
-        // Per-file rate-limit gate: Figma's 429 Retry-After applies to the
-        // workspace/file, so we only block THIS file. Other designs can still
-        // make calls if they live in a different Figma workspace.
+        // Figma's 429 Retry-After applies per workspace/file, so the gate is per-file.
         $file_key = QAProof_Settings::extract_figma_file_key( $figma_url );
         if ( ! $force_refresh && $file_key !== '' ) {
             $blocked_until = QAProof_Settings::figma_rate_limit_active_until( $file_key );
@@ -48,12 +44,7 @@ class QAProof_Admin_REST_Designs {
 
             $error_code = is_array( $data ) && isset( $data['error_code'] ) ? $data['error_code'] : 'API_ERROR';
 
-            // Track the (failed) Figma API call — but only when we are confident
-            // the Figma API was actually hit. Figma-originated errors are
-            // prefixed with FIGMA_; ignore pre-API validation errors (token or
-            // URL missing/invalid) and non-Figma backend errors (network,
-            // timeout, internal) — those never reach Figma so they don't
-            // consume quota.
+            // Only count when the call actually reached Figma (errors prefixed FIGMA_).
             $figma_hit_error_codes = [
                 'FIGMA_RATE_LIMITED',
                 'FIGMA_NOT_SHARED',
@@ -73,8 +64,7 @@ class QAProof_Admin_REST_Designs {
                 QAProof_Settings::track_figma_api_call( $file_key, 'image', false );
             }
 
-            // When Figma told us WHEN quota resets, persist it — this is the
-            // only real, non-estimated signal we get from Figma about limits.
+            // Persist Figma's real Retry-After timestamp.
             if ( $error_code === 'FIGMA_RATE_LIMITED' && is_array( $data ) && ! empty( $data['retry_at'] ) && $file_key !== '' ) {
                 QAProof_Settings::record_figma_rate_limit( $file_key, $data['retry_at'] );
             }
@@ -90,8 +80,7 @@ class QAProof_Admin_REST_Designs {
             ], $status );
         }
 
-        // Track successful Figma API call. Only count if the image was freshly
-        // fetched; cached hits set `fromCache: true` in the API response.
+        // Don't count cached hits (API marks them with fromCache: true).
         $from_cache = is_array( $result ) && ! empty( $result['fromCache'] );
         if ( ! $from_cache && $file_key !== '' ) {
             QAProof_Settings::track_figma_api_call( $file_key, 'image', true );
@@ -100,10 +89,7 @@ class QAProof_Admin_REST_Designs {
         return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );
     }
 
-    /**
-     * Save a fetched Figma image to a saved design entry.
-     * This allows reusing the image without re-calling the Figma API.
-     */
+    /** Cache a fetched Figma image on a saved design so later runs skip the API. */
     public static function handle_save_design_image( WP_REST_Request $request ) {
         $params    = $request->get_json_params();
         $design_id = isset( $params['designId'] )   ? sanitize_text_field( $params['designId'] )   : '';
@@ -123,7 +109,6 @@ class QAProof_Admin_REST_Designs {
             ], 400 );
         }
 
-        // Validate it looks like a data URL
         if ( strpos( $image_b64, 'data:image/' ) !== 0 ) {
             return new WP_REST_Response( [
                 'success' => false,
@@ -143,9 +128,6 @@ class QAProof_Admin_REST_Designs {
         return new WP_REST_Response( [ 'success' => true ], 200 );
     }
 
-    /**
-     * Get a saved design's cached image.
-     */
     public static function handle_get_design_image( WP_REST_Request $request ) {
         $design_id = sanitize_text_field( $request['id'] );
         $designs   = QAProof_Settings::get_saved_designs();
@@ -171,9 +153,6 @@ class QAProof_Admin_REST_Designs {
         ], 404 );
     }
 
-    /**
-     * Save detected elements for a saved design.
-     */
     public static function handle_save_design_elements( WP_REST_Request $request ) {
         $params    = $request->get_json_params();
         $design_id = isset( $params['designId'] ) ? sanitize_text_field( $params['designId'] ) : '';
@@ -206,9 +185,6 @@ class QAProof_Admin_REST_Designs {
         return new WP_REST_Response( [ 'success' => true ], 200 );
     }
 
-    /**
-     * Get cached detected elements for a saved design.
-     */
     public static function handle_get_design_elements( WP_REST_Request $request ) {
         $design_id = sanitize_text_field( $request['id'] );
         $designs   = QAProof_Settings::get_saved_designs();
@@ -236,26 +212,15 @@ class QAProof_Admin_REST_Designs {
         ], 404 );
     }
 
-    /**
-     * Handle detect-elements REST request.
-     */
     public static function handle_detect_elements( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 
-        // Extract all supported design source params
         $api_params = array();
-
-        // Figma — only the URL is needed; access is handled by the API's service account.
         if ( ! empty( $params['figmaUrl'] ) )         $api_params['figmaUrl']         = QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] );
         if ( ! empty( $params['figmaImageBase64'] ) ) $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
-
-        // Sketch
         if ( ! empty( $params['sketchFileBase64'] ) ) $api_params['sketchFileBase64'] = $params['sketchFileBase64'];
-
-        // Pixel-perfect flag — disables AI vision fallback on the API side.
         if ( ! empty( $params['pixelPerfectOnly'] ) ) $api_params['pixelPerfectOnly'] = true;
 
-        // Validate: at least one source
         $has_source = ! empty( $api_params['figmaUrl'] )
             || ! empty( $api_params['figmaImageBase64'] )
             || ! empty( $api_params['sketchFileBase64'] );
@@ -267,8 +232,7 @@ class QAProof_Admin_REST_Designs {
             ], 400 );
         }
 
-        // Per-file rate-limit gate: only block if we're about to call Figma
-        // for a specific file that we know is rate-limited.
+        // Only gate when this call would actually hit Figma's API.
         $will_hit_figma = ! empty( $api_params['figmaUrl'] )
             && empty( $api_params['figmaImageBase64'] )
             && empty( $api_params['sketchFileBase64'] );
@@ -291,10 +255,8 @@ class QAProof_Admin_REST_Designs {
 
         $result = QAProof_API_Client::detect_elements( $api_params );
 
-        // detect-elements calls Figma's `/v1/files/{key}/nodes` endpoint when
-        // a figmaUrl is provided. This counts as a SEPARATE Figma API call on
-        // top of the image export — track it regardless of success (Figma
-        // counts failed/rate-limited calls against the monthly quota).
+        // /v1/files/{key}/nodes counts separately from image export and is
+        // billed regardless of outcome.
         $hit_figma = ! empty( $api_params['figmaUrl'] )
             && empty( $api_params['figmaImageBase64'] )
             && empty( $api_params['sketchFileBase64'] );
@@ -310,7 +272,6 @@ class QAProof_Admin_REST_Designs {
                 QAProof_Settings::track_figma_api_call( $file_key, 'nodes', false );
             }
 
-            // Persist Figma's real Retry-After timestamp if present.
             $err_code = is_array( $data ) && isset( $data['error_code'] ) ? $data['error_code'] : '';
             if ( $err_code === 'FIGMA_RATE_LIMITED' && is_array( $data ) && ! empty( $data['retry_at'] ) && $file_key !== '' ) {
                 QAProof_Settings::record_figma_rate_limit( $file_key, $data['retry_at'] );
@@ -327,7 +288,7 @@ class QAProof_Admin_REST_Designs {
             ], $status );
         }
 
-        // Success — count only when the actual Figma API was hit (source=figma-api).
+        // Count only when the API actually hit Figma (source=figma-api).
         $source = is_array( $result ) && isset( $result['source'] ) ? $result['source'] : '';
         if ( $hit_figma && $source === 'figma-api' && $file_key !== '' ) {
             QAProof_Settings::track_figma_api_call( $file_key, 'nodes', true );
@@ -337,15 +298,8 @@ class QAProof_Admin_REST_Designs {
     }
 
     /**
-     * POST /qaproof/v1/designs/verify-access
-     *
-     * Confirms that QAProof's service account can read the given Figma file.
-     * Used by the Saved Designs settings page so the user gets immediate
-     * feedback after sharing the file with figma@qaproof.io.
-     *
-     * Body: { figmaUrl }
-     * 200: { success: true, data: { accessible: true, name, lastModified } }
-     * 4xx: { success: false, error: { message, code } }
+     * POST /qaproof/v1/designs/verify-access — confirm the service account
+     * can read a Figma file. Body: { figmaUrl }.
      */
     public static function handle_verify_access( WP_REST_Request $request ) {
         $params    = $request->get_json_params();

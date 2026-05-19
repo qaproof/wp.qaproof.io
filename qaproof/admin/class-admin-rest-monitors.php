@@ -2,41 +2,29 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * WP REST handlers for visual regression monitors.
- * All data lives in the SaaS API (PostgreSQL) — this class is a pure proxy.
- *
- * READ endpoints use short-lived WP transient cache (9s TTL) so that the
- * browser's 10s polling loop hits local WordPress MySQL instead of making
- * a remote HTTP request to the SaaS API on every tick.
- * WRITE endpoints (create/update/delete/run/approve) always bypass the cache
- * and call the API directly, then flush affected cache keys.
+ * Thin REST proxy for monitor data on api.qaproof.io. Read endpoints use a
+ * 9s WP transient cache so the JS poll loop (10s interval) hits local MySQL
+ * instead of the remote API on every tick; writes bypass the cache and
+ * flush affected keys.
  */
 class QAProof_Admin_REST_Monitors {
 
-    /** Cache TTL in seconds — just under the JS poll interval (10s). */
     const CACHE_TTL = 9;
-
-    // ── Cache helpers ──────────────────────────────────────────────────────────
 
     private static function cache_key_list()         { return 'qaproof_mon_list'; }
     private static function cache_key_monitor( $id ) { return 'qaproof_mon_' . md5( $id ); }
     private static function cache_key_results( $id ) { return 'qaproof_mon_res_' . md5( $id ); }
-    /** Transient key for "a run was queued for this monitor" (server-side run state). */
-    public static function run_queued_key( $id )     { return 'qaproof_run_q_' . md5( $id ); }
+    public  static function run_queued_key( $id )    { return 'qaproof_run_q_' . md5( $id ); }
 
-    /** Flush all transient cache entries for a specific monitor (and the list). */
     private static function flush_monitor_cache( $id ) {
         delete_transient( self::cache_key_list() );
         delete_transient( self::cache_key_monitor( $id ) );
         delete_transient( self::cache_key_results( $id ) );
     }
 
-    /** Flush only the list cache (e.g. after create). */
     private static function flush_list_cache() {
         delete_transient( self::cache_key_list() );
     }
-
-    // ── Read handlers (cached) ─────────────────────────────────────────────────
 
     public static function handle_list_monitors() {
         $cached = get_transient( self::cache_key_list() );
@@ -55,8 +43,7 @@ class QAProof_Admin_REST_Monitors {
             ], $http );
         }
 
-        // Augment each monitor with the next WP-Cron timestamp for its schedule.
-        // Cron schedule data only exists on this WP install, so we enrich here.
+        // Cron schedule data only lives on this WP install — enrich here.
         $cron_next = [
             'daily'   => wp_next_scheduled( QAProof_Scheduler::DAILY_HOOK ),
             'weekly'  => wp_next_scheduled( QAProof_Scheduler::WEEKLY_HOOK ),
@@ -72,8 +59,7 @@ class QAProof_Admin_REST_Monitors {
         set_transient( self::cache_key_list(), $monitors, self::CACHE_TTL );
         $cached = $monitors;
 
-        // Always inject run_queued_at fresh from WP transients — never cache this
-        // flag so that the client always sees the live "is a run in progress?" state.
+        // Inject run_queued_at fresh on every read — never cached.
         foreach ( $cached as &$m ) {
             $run_ts = get_transient( self::run_queued_key( $m['id'] ) );
             $m['run_queued_at'] = $run_ts ? gmdate( 'c', (int) $run_ts ) : null;
@@ -102,7 +88,6 @@ class QAProof_Admin_REST_Monitors {
             $cached = $monitor;
         }
 
-        // Always inject run_queued_at fresh — see handle_list_monitors comment above.
         $run_ts = get_transient( self::run_queued_key( $id ) );
         $cached['run_queued_at'] = $run_ts ? gmdate( 'c', (int) $run_ts ) : null;
 
@@ -148,7 +133,6 @@ class QAProof_Admin_REST_Monitors {
         $monitor = QAProof_API_Client::monitors_create( $create_data );
 
         if ( is_wp_error( $monitor ) ) {
-            // (error handled below)
             $data = $monitor->get_error_data();
             $http = 500;
             $code = '';
@@ -204,7 +188,6 @@ class QAProof_Admin_REST_Monitors {
         if ( is_wp_error( $monitor ) ) {
             $data = $monitor->get_error_data();
             $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
-            // Return 404 only when the API actually said 404; propagate real status otherwise.
             return new WP_REST_Response( [
                 'success' => false,
                 'error'   => [ 'message' => $http === 404
@@ -213,7 +196,6 @@ class QAProof_Admin_REST_Monitors {
             ], $http );
         }
 
-        // Delete baseline from API storage if one exists
         if ( ! empty( $monitor['baseline_key'] ) ) {
             QAProof_API_Client::delete_baseline( $monitor['baseline_key'] );
         }
@@ -242,23 +224,12 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Schedule the monitor run as a WP-Cron single event and return 200
-        // immediately — this frees the PHP-FPM worker right away. The browser
-        // JS pings /wp-cron.php on the first poll tick to guarantee the event
-        // is dispatched, since WP's internal spawn_cron() loopback isn't
-        // reliable on every host.
+        // Dispatch via WP-Cron single event so the request can return immediately;
+        // the JS poll loop pings /wp-cron.php once to guarantee dispatch.
         wp_schedule_single_event( time() - 1, 'qaproof_run_monitor', [ $id ] );
 
-        // Mark this monitor as "a run is in progress" using a WP transient.
-        // The scheduler deletes this transient when the job completes or fails.
-        // JS reads it via the GET /monitors/:id response and uses it as the
-        // authoritative "is a run in progress?" signal — robust across page
-        // reloads, new tabs, and any sessionStorage loss.
-        // TTL = 25 min (longer than the scheduler's 8-min poll + WP PHP timeout).
+        // 25-min TTL covers the scheduler's 8-min poll + PHP timeout headroom.
         set_transient( self::run_queued_key( $id ), time(), 25 * MINUTE_IN_SECONDS );
-
-        // Flush all caches for this monitor so the next GET immediately returns
-        // fresh data (including the new run_queued_at flag).
         self::flush_monitor_cache( $id );
 
         return new WP_REST_Response( [
@@ -275,8 +246,7 @@ class QAProof_Admin_REST_Monitors {
         $limit  = $request->get_param( 'limit' )  ? (int) $request->get_param( 'limit' )  : 20;
         $offset = $request->get_param( 'offset' ) ? (int) $request->get_param( 'offset' ) : 0;
 
-        // Only cache the default first-page fetch (limit=1 or 20, offset=0) that
-        // the polling loop uses. Paginated requests bypass cache to stay fresh.
+        // Cache only the first-page fetches used by the polling loop.
         $use_cache = ( $offset === 0 && $limit <= 20 );
         if ( $use_cache ) {
             $cache_key = self::cache_key_results( $id ) . '_' . $limit;
@@ -318,7 +288,7 @@ class QAProof_Admin_REST_Monitors {
         $monitor_id = sanitize_text_field( $request->get_param( 'monitorId' ) );
 
         if ( empty( $monitor_id ) ) {
-            // monitorId not supplied — just flip the status, skip baseline re-creation
+            // Without monitorId we can only flip status, not recreate the baseline.
             $approved = QAProof_API_Client::monitors_approve_result( $result_id );
             if ( is_wp_error( $approved ) ) {
                 return new WP_REST_Response( [
@@ -337,10 +307,7 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Create a new baseline from the current page state.
-        // If the capture is rejected due to too many image load failures
-        // (CAPTURE_UNSTABLE), retry automatically with forceCapture=true so
-        // sites with CDN-gated or bot-protected images can still be monitored.
+        // Retry once on CAPTURE_UNSTABLE — same rationale as the scheduler.
         $baseline_result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
 
         if ( is_wp_error( $baseline_result ) ) {
@@ -359,13 +326,11 @@ class QAProof_Admin_REST_Monitors {
             }
         }
 
-        // Update monitor with new baseline
         QAProof_API_Client::monitors_update( $monitor_id, [
             'baseline_key' => $baseline_result['key'],
             'has_baseline' => 1,
         ] );
 
-        // Mark result as approved
         QAProof_API_Client::monitors_approve_result( $result_id );
 
         self::flush_monitor_cache( $monitor_id );

@@ -15,31 +15,19 @@ class QAProof_Settings {
 
     public static function init() {
         add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
-        // Make sure the API key option is NEVER autoloaded — register_setting
-        // doesn't expose an autoload flag, so we enforce it on every save.
-        // Without this, the API key would be loaded into memory on every
-        // front-end request (slow + unnecessary attack surface).
+        // register_setting() has no autoload flag — keep these options out of
+        // alloptions on every save (API key for attack surface, saved designs
+        // for size: the latter holds base64-cached preview images).
         add_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
         add_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
-        // Bust the request-level saved-designs cache when the option changes
-        // mid-request (settings save, programmatic update_option calls).
         add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
         add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
-        // qaproof_saved_designs can grow to several MB (it stores cached
-        // design preview images as base64 alongside each entry). Disable
-        // autoload so it isn't loaded into memory on every front-end page
-        // view — only when an admin actually needs it.
         add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11, 0 );
         add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11, 0 );
     }
 
-    /**
-     * Re-save the option with autoload=false. WP's register_setting() lacks
-     * an autoload flag (it defaults to 'yes'), so we flip it explicitly.
-     */
     public static function ensure_api_key_not_autoloaded() {
         global $wpdb;
-        // Suppress side-effect hooks to avoid recursing into this callback.
         remove_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10 );
         remove_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10 );
         $wpdb->update(
@@ -51,12 +39,6 @@ class QAProof_Settings {
         wp_cache_delete( 'alloptions', 'options' );
     }
 
-    /**
-     * Flip qaproof_saved_designs to autoload=no after every write. The option
-     * grows substantially (cached design preview images stored as base64),
-     * and WP's default is autoload=yes — without this, every front-end page
-     * view would load several MB into memory just to render a marketing page.
-     */
     public static function ensure_saved_designs_not_autoloaded() {
         global $wpdb;
         remove_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11 );
@@ -78,7 +60,6 @@ class QAProof_Settings {
             'show_in_rest'      => false,
         ]);
 
-        // General tab — API Configuration
         add_settings_section(
             'qaproof_general_section',
             __( 'API Configuration', 'qaproof' ),
@@ -94,7 +75,6 @@ class QAProof_Settings {
             'qaproof_general_section'
         );
 
-        // Monitors tab — Monitoring defaults
         register_setting( self::GROUP_MONITORS, 'qaproof_notify_email', [
             'type'              => 'string',
             'sanitize_callback' => 'sanitize_email',
@@ -175,9 +155,6 @@ class QAProof_Settings {
             'qaproof_monitoring_section'
         );
 
-        // ============================
-        // Tests tab — General
-        // ============================
         register_setting( self::GROUP_TESTS_GENERAL, 'qaproof_default_test_type', [
             'type'              => 'string',
             'sanitize_callback' => 'sanitize_text_field',
@@ -229,9 +206,6 @@ class QAProof_Settings {
             'qaproof_tests_general_section'
         );
 
-        // ============================
-        // Tests tab — Design Fidelity
-        // ============================
         register_setting( self::GROUP_TESTS_FIDELITY, 'qaproof_saved_designs', [
             'type'              => 'string',
             'sanitize_callback' => [ __CLASS__, 'sanitize_saved_designs' ],
@@ -252,13 +226,6 @@ class QAProof_Settings {
 
                 $service_email = 'figma@qaproof.io';
                 ?>
-                <?php
-                // ── OAuth connection card (primary path) ─────────────────────
-                // Initial state is rendered as "Loading…" so the page paints
-                // without a layout flash. init.js calls /figma-oauth/status
-                // immediately on mount and swaps the content in. Subsequent
-                // postMessage from the OAuth popup also triggers a re-render.
-                ?>
                 <div class="qaproof-figma-conn-card" id="qaproof-figma-conn-card" data-state="loading">
                     <div class="qaproof-figma-conn-header">
                         <h3 class="qaproof-figma-conn-title"><?php esc_html_e( 'Figma connection', 'qaproof' ); ?></h3>
@@ -269,12 +236,6 @@ class QAProof_Settings {
                     </div>
                 </div>
 
-                <?php
-                // ── Service-account card (fallback / manual sharing) ─────────
-                // Stays visible as the alternative path. JS adds a
-                // .qaproof-figma-access-card--alt class to dim it when OAuth
-                // is connected, so it's clearly the second-choice flow.
-                ?>
                 <details class="qaproof-figma-access-card qaproof-figma-access-card--alt" id="qaproof-figma-access-fallback">
                     <summary class="qaproof-figma-access-summary">
                         <?php esc_html_e( 'Alternative: share files manually with our service account', 'qaproof' ); ?>
@@ -321,9 +282,6 @@ class QAProof_Settings {
             'qaproof_tests_fidelity_section'
         );
 
-        // ============================
-        // Tests tab — Responsive
-        // ============================
         register_setting( self::GROUP_TESTS_RESPONSIVE, 'qaproof_viewport_desktop', [
             'type'              => 'integer',
             'sanitize_callback' => 'absint',
@@ -385,9 +343,6 @@ class QAProof_Settings {
             'qaproof_tests_accessibility_section'
         );
 
-        // ============================
-        // Data Cleanup tab — Uninstall preferences
-        // ============================
         register_setting( self::GROUP_UNINSTALL, 'qaproof_uninstall_delete_api_key', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
@@ -483,7 +438,6 @@ class QAProof_Settings {
         echo '</div>';
         echo '<p class="qaproof-api-key-error" style="display:none;"></p>';
 
-        // Account info panel — populated via JS after key is validated
         echo '<div id="qaproof-account-info" class="qaproof-account-info" style="display:none;">';
         echo '  <div class="qaproof-account-info__loading" id="qaproof-account-info-loading">';
         echo '    <span class="qaproof-account-info__spinner"></span>';
@@ -498,7 +452,6 @@ class QAProof_Settings {
         echo '      <span id="qaproof-account-plan-badge" class="qaproof-plan-badge"></span>';
         echo '    </div>';
 
-        // AI Generations row
         echo '    <div class="qaproof-account-info__stat">';
         echo '      <div class="qaproof-account-info__stat-header">';
         echo '        <span class="qaproof-account-info__stat-label">' . esc_html__( 'AI Generations', 'qaproof' ) . '</span>';
@@ -510,7 +463,6 @@ class QAProof_Settings {
         echo '      <div class="qaproof-account-info__stat-sub" id="qaproof-account-gen-remaining"></div>';
         echo '    </div>';
 
-        // Monitors + History row
         echo '    <div class="qaproof-account-info__row qaproof-account-info__meta">';
         echo '      <div class="qaproof-account-info__meta-item">';
         echo '        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
@@ -601,9 +553,6 @@ class QAProof_Settings {
         <?php
     }
 
-    // ============================
-    // Tests — General Fields
-    // ============================
     public static function render_default_test_type_field() {
         $value = get_option( 'qaproof_default_test_type', 'fidelity' );
         ?>
@@ -628,9 +577,6 @@ class QAProof_Settings {
         echo '<p class="description">' . esc_html__( 'Maximum number of test results to keep. Oldest results are pruned automatically.', 'qaproof' ) . '</p>';
     }
 
-    // ============================
-    // Tests — Fidelity Fields
-    // ============================
     public static function sanitize_saved_designs( $input ) {
         if ( empty( $input ) ) return '[]';
         $designs = json_decode( stripslashes( $input ), true );
@@ -645,7 +591,7 @@ class QAProof_Settings {
                 'pageUrl'  => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
                 'figmaUrl' => isset( $d['figmaUrl'] ) ? self::sanitize_figma_url( $d['figmaUrl'] ) : '',
             ];
-            // Preserve cached image + detected elements (not submitted through settings form)
+            // Preserve cached image + detected elements (not posted by the settings form).
             if ( ! empty( $d['imageBase64'] ) ) {
                 $entry['imageBase64'] = $d['imageBase64'];
             }
@@ -660,15 +606,7 @@ class QAProof_Settings {
         return wp_json_encode( $clean );
     }
 
-    /**
-     * Request-level cache for get_saved_designs(). Saved designs are read
-     * many times per page load (init.js, settings form, REST endpoints,
-     * asset localization); memoizing the decoded array avoids repeated
-     * get_option() + json_decode() round-trips.
-     *
-     * null = not yet loaded. Reset via flush_saved_designs_cache() — done
-     * automatically on the option update/add hooks (see init()).
-     */
+    /** Request-level cache. null = not yet loaded. Reset via flush_saved_designs_cache(). */
     private static $saved_designs_cache = null;
 
     public static function get_saved_designs() {
@@ -681,31 +619,15 @@ class QAProof_Settings {
         return self::$saved_designs_cache;
     }
 
-    /** Clear the in-memory get_saved_designs() cache. */
     public static function flush_saved_designs_cache() {
         self::$saved_designs_cache = null;
     }
 
-    /**
-     * Figma API usage tracking — counts every Figma-hitting request proxied
-     * through this plugin (figma-preview, detect-elements with figmaUrl).
-     * Reset implicitly at the start of each calendar month.
-     *
-     * Stored shape:
-     *   {
-     *     month:       'YYYY-MM',
-     *     total:       12,
-     *     byType:      { 'image': 7, 'nodes': 5 },
-     *     lastCallAt:  1776171684,
-     *     recent:      [ { t: 'image', ts: 177..., ok: true }, ... up to 20 ]
-     *   }
-     */
+    /** Per-month Figma API usage counter — stored as JSON in wp_options. */
     const FIGMA_USAGE_OPTION = 'qaproof_figma_api_usage';
 
     /**
-     * Extract the Figma fileKey from a Figma URL.
-     * Supports /design/{key}/, /file/{key}/, /proto/{key}/, /board/{key}/.
-     * Returns '' when no key can be parsed.
+     * Extract the Figma fileKey from a /design|file|proto|board/{key}/ URL.
      */
     public static function extract_figma_file_key( $figma_url ) {
         if ( ! is_string( $figma_url ) || $figma_url === '' ) return '';
@@ -729,7 +651,6 @@ class QAProof_Settings {
         if ( ! isset( $data['byFile'] ) || ! is_array( $data['byFile'] ) ) {
             $data['byFile'] = [];
         }
-        // Derive aggregate totals for callers that want a single-glance view.
         $total = 0;
         $byType = [];
         foreach ( $data['byFile'] as $file_entry ) {
@@ -748,12 +669,11 @@ class QAProof_Settings {
     }
 
     /**
-     * Increment the Figma API call counter for a specific file.
-     * Figma rate limits apply per workspace/file, so we bucket counts per fileKey.
+     * Bucket Figma API call counters per fileKey (rate limits apply per workspace/file).
      *
-     * @param string $file_key  Figma file identifier (from figma URL). Empty = ignore.
-     * @param string $type      'image' (figma-preview / image export) or 'nodes' (detect-elements tree fetch).
-     * @param bool   $ok        Whether the call succeeded (still counts either way).
+     * @param  string $file_key Figma file identifier; empty = ignore.
+     * @param  string $type     'image'|'nodes'.
+     * @param  bool   $ok       Whether the call succeeded.
      */
     public static function track_figma_api_call( $file_key, $type = 'image', $ok = true ) {
         $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
@@ -786,15 +706,12 @@ class QAProof_Settings {
 
     public static function reset_figma_api_usage() {
         delete_option( self::FIGMA_USAGE_OPTION );
-        delete_option( self::FIGMA_RATE_LIMIT_OPTION ); // legacy global rate-limit blob
+        delete_option( self::FIGMA_RATE_LIMIT_OPTION );
     }
 
-    const FIGMA_RATE_LIMIT_OPTION = 'qaproof_figma_rate_limit'; // legacy, cleaned on reset
+    /** Legacy global rate-limit option — cleaned out on reset. */
+    const FIGMA_RATE_LIMIT_OPTION = 'qaproof_figma_rate_limit';
 
-    /**
-     * Get rate-limit state for a specific Figma file.
-     * Figma's 429 Retry-After applies per workspace/file, so we key it per fileKey.
-     */
     public static function get_figma_rate_limit( $file_key = '' ) {
         $empty = [ 'retryAt' => 0, 'observedAt' => 0, 'rawRetryAfter' => '' ];
         $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
@@ -846,8 +763,7 @@ class QAProof_Settings {
     }
 
     /**
-     * Per-file rate-limit gate. Returns retryAt (ms) when this specific Figma
-     * file is currently under a known 429 Retry-After window, else 0.
+     * Returns retryAt (ms) when this file is under a known 429 window, else 0.
      */
     public static function figma_rate_limit_active_until( $file_key = '' ) {
         $file_key = is_string( $file_key ) ? trim( $file_key ) : '';
@@ -863,13 +779,6 @@ class QAProof_Settings {
         return 0;
     }
 
-    /**
-     * Update the cached image for a specific saved design.
-     *
-     * @param string $design_id  The design's unique ID.
-     * @param string $image_b64  The full data-URL (data:image/png;base64,...).
-     * @return bool True if updated, false if design not found.
-     */
     public static function update_saved_design_image( $design_id, $image_b64 ) {
         $designs = self::get_saved_designs();
         $found   = false;
@@ -886,12 +795,6 @@ class QAProof_Settings {
         return true;
     }
 
-    /**
-     * Clear the cached image for a specific saved design.
-     *
-     * @param string $design_id  The design's unique ID.
-     * @return bool True if cleared, false if design not found.
-     */
     public static function clear_saved_design_image( $design_id ) {
         $designs = self::get_saved_designs();
         $found   = false;
@@ -908,14 +811,6 @@ class QAProof_Settings {
         return true;
     }
 
-    /**
-     * Store cached element detection data for a saved design.
-     *
-     * @param string $design_id  The design's unique ID.
-     * @param array  $elements   Array of detected elements (from detect-elements API).
-     * @param string $source     Detection source ('figma-api' or 'ai-vision').
-     * @return bool True if saved, false if design not found.
-     */
     public static function update_saved_design_elements( $design_id, $elements, $source = '' ) {
         $designs = self::get_saved_designs();
         $found   = false;
@@ -933,12 +828,6 @@ class QAProof_Settings {
         return true;
     }
 
-    /**
-     * Clear cached element detection data for a saved design.
-     *
-     * @param string $design_id  The design's unique ID.
-     * @return bool True if cleared, false if design not found.
-     */
     public static function clear_saved_design_elements( $design_id ) {
         $designs = self::get_saved_designs();
         $found   = false;
@@ -975,9 +864,8 @@ class QAProof_Settings {
                         }
                     }
                     $source = ! empty( $d['elementsSource'] ) ? $d['elementsSource'] : '';
-                    // Stale ai-vision cache upgrade path: if the design has a
-                    // Figma URL, force re-detection so we get pixel-perfect
-                    // Figma-API overlays instead of approximate AI vision ones.
+                    // Force re-detection on Figma-sourced designs cached with ai-vision —
+                    // we'd rather get pixel-perfect Figma-API overlays.
                     $has_figma_source = ! empty( $d['figmaUrl'] );
                     $is_stale_ai      = ( $source === 'ai-vision' ) && $has_figma_source;
                     if ( $has_image && $has_elements && ! $is_stale_ai ) {
@@ -1036,9 +924,6 @@ class QAProof_Settings {
         echo '<p class="description">' . esc_html__( 'When enabled, AI analysis focuses on layout, colors, and spacing rather than text accuracy.', 'qaproof' ) . '</p>';
     }
 
-    // ============================
-    // Tests — Responsive Fields
-    // ============================
     public static function render_viewports_field() {
         $desktop = get_option( 'qaproof_viewport_desktop', 1920 );
         $tablet  = get_option( 'qaproof_viewport_tablet', 768 );
@@ -1062,9 +947,6 @@ class QAProof_Settings {
         <?php
     }
 
-    // ============================
-    // Tests — Accessibility Fields
-    // ============================
     public static function render_wcag_level_field() {
         $value = get_option( 'qaproof_wcag_level', 'AA' );
         ?>
@@ -1119,20 +1001,14 @@ class QAProof_Settings {
         echo esc_html__( 'Delete all monitors and their regression results', 'qaproof' ) . '</label>';
     }
 
-    /**
-     * Sanitize and validate the API key on save.
-     */
     public static function sanitize_api_key( $value ) {
         $value = sanitize_text_field( $value );
 
-        // Allow empty value (clearing the key).
         if ( '' === $value ) {
             return $value;
         }
 
-        // Accept both key formats:
-        //  Legacy : qap_<64 hex chars>
-        //  Current: qap_live_sk_<48 hex chars>  |  qap_test_sk_<48 hex chars>
+        // Legacy: qap_<64 hex>. Current: qap_(live|test)_sk_<48 hex>.
         $legacy  = '/^qap_[0-9a-f]{64}$/i';
         $current = '/^qap_(?:live|test)_sk_[0-9a-f]{48}$/i';
         if ( ! preg_match( $legacy, $value ) && ! preg_match( $current, $value ) ) {
@@ -1149,11 +1025,8 @@ class QAProof_Settings {
     }
 
     /**
-     * Return a short hash of the given API key (or the currently saved one).
-     * Used to scope monitors and test history per account without storing the key itself.
-     *
-     * @param string|null $key  Key to hash, or null to use the saved option.
-     * @return string  16-char hex string, or '' if no key.
+     * 16-char hash of the API key. Used to scope local rows per-account
+     * without storing the key itself.
      */
     public static function get_api_key_hash( $key = null ) {
         $key = ( $key !== null ) ? $key : self::get_api_key();
@@ -1163,31 +1036,18 @@ class QAProof_Settings {
         return substr( hash( 'sha256', $key ), 0, 16 );
     }
 
-    /**
-     * Sanitize max history — clamp between 5 and 30.
-     */
     public static function sanitize_max_history( $value ) {
         $value = absint( $value );
         return max( 5, min( 30, $value ) );
     }
 
-    /**
-     * Get the configured API key.
-     */
     public static function get_api_key() {
         return get_option( 'qaproof_api_key', '' );
     }
 
     /**
-     * Defensive sanitizer for Figma URLs. WP's sanitize_url is permissive —
-     * it accepts any well-formed URL. Combine with a host-allowlist so we
-     * never round-trip a user-pasted URL pointing to attacker.com through
-     * our API (the API does its own SSRF block, but rejecting here keeps
-     * error messages clean and avoids wasted server round-trips).
-     *
-     * @param mixed $raw  Untrusted input.
-     * @return string     Sanitized URL when host matches figma.com / figma-gov.com,
-     *                    or empty string otherwise.
+     * Sanitize a Figma URL with a host-allowlist (figma.com / figma-gov.com).
+     * Returns the URL on match, '' otherwise.
      */
     public static function sanitize_figma_url( $raw ) {
         if ( ! is_string( $raw ) ) return '';
@@ -1196,7 +1056,6 @@ class QAProof_Settings {
         $host = wp_parse_url( $url, PHP_URL_HOST );
         if ( ! is_string( $host ) ) return '';
         $host = strtolower( $host );
-        // Allow figma.com, www.figma.com, figma-gov.com, www.figma-gov.com.
         if ( $host === 'figma.com' || $host === 'www.figma.com' ||
              $host === 'figma-gov.com' || $host === 'www.figma-gov.com' ) {
             return $url;
@@ -1205,25 +1064,14 @@ class QAProof_Settings {
     }
 
     /**
-     * Get the configured API endpoint (no trailing slash).
-     *
-     * Production endpoint is hardcoded as https://api.qaproof.io. Site
-     * operators can override it ONLY by defining the QAPROOF_API_ENDPOINT
-     * constant in wp-config.php (NOT by setting an OS env var). This keeps
-     * the override path explicit + auditable and prevents a server-level
-     * env injection from silently redirecting API traffic to a third party.
-     *
-     * The override is also validated to look like an https://… URL — a
-     * malformed value silently falls back to the default so a typo in
-     * wp-config.php can't break the integration.
+     * Get the API endpoint (no trailing slash). Defaults to api.qaproof.io;
+     * site operators can override via the QAPROOF_API_ENDPOINT constant in
+     * wp-config.php (env vars are intentionally NOT honored). Malformed
+     * overrides fall back to the default.
      */
     public static function get_api_endpoint() {
         if ( defined( 'QAPROOF_API_ENDPOINT' ) ) {
             $override = (string) QAPROOF_API_ENDPOINT;
-            // Stricter validation than a regex: parse_url() must yield a
-            // scheme of http(s) AND a non-empty host. Reject anything with
-            // a path component (`.../api` is fine, `.../../foo` is not —
-            // we strip on return), reject userinfo, and reject internal IPs.
             $parts = wp_parse_url( $override );
             if ( is_array( $parts )
                 && isset( $parts['scheme'], $parts['host'] )
@@ -1236,16 +1084,11 @@ class QAProof_Settings {
                 if ( ! empty( $parts['port'] ) ) {
                     $rebuilt .= ':' . (int) $parts['port'];
                 }
-                if ( ! empty( $parts['path'] ) ) {
-                    // Reject path-traversal sequences outright.
-                    if ( strpos( $parts['path'], '..' ) === false ) {
-                        $rebuilt .= rtrim( $parts['path'], '/' );
-                    }
+                if ( ! empty( $parts['path'] ) && strpos( $parts['path'], '..' ) === false ) {
+                    $rebuilt .= rtrim( $parts['path'], '/' );
                 }
                 return $rebuilt;
             }
-            // Override was malformed — log so the site operator can debug,
-            // then fall through to the canonical default.
             if ( function_exists( 'qaproof_debug_log' ) ) {
                 qaproof_debug_log( '[QAProof] QAPROOF_API_ENDPOINT override rejected (malformed URL): ' . $override );
             }

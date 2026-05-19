@@ -18,16 +18,13 @@ class QAProof_Admin {
         add_action( 'wp_ajax_qaproof_health_check',       [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
         add_action( 'wp_ajax_qaproof_save_history',       [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
         add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
-        // Hook at priority -999 so we run first and can remove all subsequent notice callbacks
+        // Priority -999 runs before any other notice callbacks so we can remove them.
         add_action( 'admin_notices',         [ __CLASS__, 'suppress_third_party_notices' ], -999 );
         add_action( 'all_admin_notices',     [ __CLASS__, 'suppress_third_party_notices' ], -999 );
         add_action( 'network_admin_notices', [ __CLASS__, 'suppress_third_party_notices' ], -999 );
     }
 
-    /**
-     * Remove all third-party admin notices on QAProof pages.
-     * Runs at priority -999 so it fires before any other notice callbacks.
-     */
+    /** Remove third-party admin notices on QAProof pages only. */
     public static function suppress_third_party_notices() {
         $screen = get_current_screen();
         if ( ! $screen ) return;
@@ -47,9 +44,6 @@ class QAProof_Admin {
         }
     }
 
-    // ============================
-    // Menu
-    // ============================
     public static function register_menu() {
         add_menu_page(
             __( 'QAProof', 'qaproof' ),
@@ -107,16 +101,7 @@ class QAProof_Admin {
         );
     }
 
-    /**
-     * Build a data: URI for the admin menu icon. Reads images/icon.svg with
-     * a defensive is_file/file_get_contents pair so a missing or unreadable
-     * icon does NOT throw a PHP warning during menu registration (which
-     * would surface to admins as a debug.log spam or — with display_errors
-     * on — break the menu render entirely).
-     *
-     * Falls back to the WordPress 'dashicons-chart-bar' name when the SVG
-     * can't be loaded for any reason. WP renders the dashicon natively.
-     */
+    /** Data-URI menu icon; falls back to 'dashicons-chart-bar' if SVG can't load. */
     private static function menu_icon_svg() {
         $path = plugin_dir_path( __FILE__ ) . 'images/icon.svg';
         if ( is_file( $path ) && is_readable( $path ) ) {
@@ -128,15 +113,11 @@ class QAProof_Admin {
         return 'dashicons-chart-bar';
     }
 
-    // ============================
-    // REST API Routes
-    // ============================
     public static function register_rest_routes() {
         $permission = function() {
             return current_user_can( self::CAPABILITY );
         };
 
-        // Tests
         register_rest_route( self::REST_NAMESPACE, '/run-test', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_run_test' ],
@@ -161,7 +142,6 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
-        // Monitors
         register_rest_route( self::REST_NAMESPACE, '/monitors', [
             [
                 'methods'             => 'GET',
@@ -217,7 +197,6 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
-        // Designs / Figma
         register_rest_route( self::REST_NAMESPACE, '/figma-preview', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_figma_preview' ],
@@ -230,7 +209,6 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
-        // ── Figma OAuth — connection lifecycle ────────────────────────────
         register_rest_route( self::REST_NAMESPACE, '/figma-oauth/start', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Figma_OAuth', 'handle_start' ],
@@ -280,9 +258,6 @@ class QAProof_Admin {
         register_rest_route( self::REST_NAMESPACE, '/figma-api-usage', [
             'methods'             => 'GET',
             'callback'            => function () {
-                // Usage is now per-fileKey; byFile map carries each file's
-                // own rateLimit. Aggregate total/byType are derived for
-                // glance views.
                 return new WP_REST_Response( [
                     'success' => true,
                     'data'    => QAProof_Settings::get_figma_api_usage(),
@@ -303,14 +278,12 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
-        // Send Report via Email (PDF attachment)
         register_rest_route( self::REST_NAMESPACE, '/send-report-email', [
             'methods'             => 'POST',
             'callback'            => [ __CLASS__, 'handle_send_report_email' ],
             'permission_callback' => $permission,
         ]);
 
-        // Feedback (GET = list, POST = submit)
         register_rest_route( self::REST_NAMESPACE, '/feedback', [
             [
                 'methods'             => 'GET',
@@ -324,7 +297,6 @@ class QAProof_Admin {
             ],
         ]);
 
-        // Test History
         register_rest_route( self::REST_NAMESPACE, '/test-history', [
             'methods'             => 'GET',
             'callback'            => [ 'QAProof_Admin_REST_History', 'handle_list_test_history' ],
@@ -346,9 +318,6 @@ class QAProof_Admin {
 
     }
 
-    // ============================
-    // Email Report Handler
-    // ============================
     public static function handle_send_report_email( WP_REST_Request $request ) {
         $pdf_base64 = $request->get_param( 'pdfBase64' );
         $file_name  = sanitize_file_name( $request->get_param( 'fileName' ) ?: 'qaproof-report.pdf' );
@@ -360,13 +329,11 @@ class QAProof_Admin {
             return new WP_REST_Response( [ 'success' => false, 'error' => 'No PDF data provided.' ], 400 );
         }
 
-        // Resolve recipient — current logged-in user's email
         $current_user = wp_get_current_user();
         $to = ( $current_user->ID && $current_user->user_email )
             ? $current_user->user_email
             : get_option( 'qaproof_notify_email', get_option( 'admin_email' ) );
 
-        // Delegate to SaaS API — sends via AWS SES with PDF attachment
         $result = QAProof_API_Client::send_report_email( [
             'pdfBase64' => $pdf_base64,
             'to'        => $to,
@@ -383,9 +350,6 @@ class QAProof_Admin {
         return new WP_REST_Response( [ 'success' => true, 'sentTo' => $to ], 200 );
     }
 
-    // ============================
-    // Feedback Handlers
-    // ============================
     public static function handle_submit_feedback( WP_REST_Request $request ) {
         $rating   = intval( $request->get_param( 'rating' ) );
         $comment  = sanitize_textarea_field( $request->get_param( 'comment' ) ?: '' );
@@ -408,7 +372,7 @@ class QAProof_Admin {
             'createdAt' => current_time( 'mysql' ),
         ];
 
-        // Store in wp_options (keep last 200 entries)
+        // Keep last 200 entries.
         $feedback = get_option( 'qaproof_feedback_log', [] );
         array_unshift( $feedback, $entry );
         if ( count( $feedback ) > 200 ) {
@@ -424,9 +388,6 @@ class QAProof_Admin {
         return new WP_REST_Response( [ 'success' => true, 'data' => $feedback, 'total' => count( $feedback ) ], 200 );
     }
 
-    // ============================
-    // Page Renderers
-    // ============================
     private static function render_theme_toggle() {
         include QAPROOF_PLUGIN_DIR . 'admin/partials/partial-theme-toggle.php';
     }
@@ -449,7 +410,6 @@ class QAProof_Admin {
     public static function render_dashboard_page() {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
 
-        // Fetch monitors + history stats from the SaaS API
         $monitors        = [];
         $total_monitors  = 0;
         $active_monitors = 0;
@@ -472,10 +432,9 @@ class QAProof_Admin {
         }
         $has_api_key       = ! empty( QAProof_Settings::get_api_key() );
 
-        // Fetch live account data from API (AI generations + plan + monitor limit)
         $ai_used       = 0;
         $ai_limit      = 20;
-        $monitor_limit = 1; // free-plan default
+        $monitor_limit = 1;
         $account_plan  = 'free';
         $reset_label   = '';
 
@@ -491,7 +450,6 @@ class QAProof_Admin {
         }
 
         $ai_pct      = $ai_limit > 0 ? round( $ai_used / $ai_limit * 100 ) : 0;
-        // Reset label: first day of next month
         $reset_ts    = mktime( 0, 0, 0, (int) date('n') + 1, 1 );
         $reset_label = 'Resets on ' . date( 'M j, Y', $reset_ts );
 

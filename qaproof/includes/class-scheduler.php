@@ -14,29 +14,19 @@ class QAProof_Scheduler {
     const MONTHLY_HOOK = 'qaproof_cron_monthly';
     const RUN_HOOK     = 'qaproof_run_monitor';
 
-    /**
-     * Initialize cron hooks.
-     */
     public static function init() {
-        add_action( self::DAILY_HOOK, array( __CLASS__, 'run_daily' ) );
-        add_action( self::WEEKLY_HOOK, array( __CLASS__, 'run_weekly' ) );
+        add_action( self::DAILY_HOOK,   array( __CLASS__, 'run_daily' ) );
+        add_action( self::WEEKLY_HOOK,  array( __CLASS__, 'run_weekly' ) );
         add_action( self::MONTHLY_HOOK, array( __CLASS__, 'run_monthly' ) );
-        add_action( self::RUN_HOOK, array( __CLASS__, 'run_single_monitor' ), 10, 1 );
+        add_action( self::RUN_HOOK,     array( __CLASS__, 'run_single_monitor' ), 10, 1 );
 
-        // Reschedule crons whenever the preferred hour option is saved.
         add_action( 'update_option_qaproof_cron_hour', array( __CLASS__, 'reschedule_events' ) );
-
-        // Normalize cron request URL for localhost setups where site_url() includes
-        // a non-standard port that's only reachable from the outside (loopback).
         add_filter( 'cron_request', array( __CLASS__, 'normalize_cron_url' ) );
     }
 
     /**
      * Drop a non-standard port from a localhost cron URL so spawn_cron() can
-     * reach wp-cron.php via the regular loopback. Production URLs are left alone.
-     *
-     * @param array $cron_request {url, key, args}
-     * @return array
+     * reach wp-cron.php on the loopback. Production URLs are untouched.
      */
     public static function normalize_cron_url( $cron_request ) {
         $url    = isset( $cron_request['url'] ) ? $cron_request['url'] : '';
@@ -45,56 +35,37 @@ class QAProof_Scheduler {
         $host = isset( $parsed['host'] ) ? $parsed['host'] : '';
         $port = isset( $parsed['port'] ) ? (int) $parsed['port'] : 0;
 
-        // Only touch localhost loopback URLs — leave production URLs alone.
         if ( 'localhost' === $host && $port > 0 && $port !== 80 && $port !== 443 ) {
-            // Rebuild URL without the port (defaults to port 80 for http).
-            $cron_request['url'] = str_replace(
-                $host . ':' . $port,
-                $host,
-                $url
-            );
+            $cron_request['url'] = str_replace( $host . ':' . $port, $host, $url );
         }
 
         return $cron_request;
     }
 
     /**
-     * Returns the UTC timestamp of the next occurrence of $hour (0-23)
-     * in the site's configured timezone.
-     *
-     * @param int $hour 0–23
-     * @return int UTC timestamp
+     * UTC timestamp for the next occurrence of $hour (0–23) in the site timezone.
      */
     private static function next_occurrence_of_hour( $hour ) {
         $hour = max( 0, min( 23, (int) $hour ) );
 
         try {
-            $tz         = wp_timezone();
-            $now        = new DateTime( 'now', $tz );
-            $target     = clone $now;
+            $tz     = wp_timezone();
+            $now    = new DateTime( 'now', $tz );
+            $target = clone $now;
             $target->setTime( $hour, 0, 0 );
-
-            // If the target time has already passed today, schedule for tomorrow.
             if ( $target <= $now ) {
                 $target->modify( '+1 day' );
             }
-
-            return $target->getTimestamp(); // UTC
+            return $target->getTimestamp();
         } catch ( Exception $e ) {
-            // Fallback when DateTime construction fails for any reason (corrupt
-            // timezone identifier, locale issues). Compute "next $hour:00:00
-            // today, else tomorrow" purely in UTC seconds.
-            $now_ts          = time();
-            $today_midnight  = $now_ts - ( $now_ts % DAY_IN_SECONDS );
-            $today_at_hour   = $today_midnight + ( $hour * HOUR_IN_SECONDS );
+            // Fallback for corrupt timezone identifiers.
+            $now_ts         = time();
+            $today_midnight = $now_ts - ( $now_ts % DAY_IN_SECONDS );
+            $today_at_hour  = $today_midnight + ( $hour * HOUR_IN_SECONDS );
             return $today_at_hour > $now_ts ? $today_at_hour : $today_at_hour + DAY_IN_SECONDS;
         }
     }
 
-    /**
-     * Schedule recurring cron events at the user-configured hour.
-     * Called on plugin activation and when the cron hour setting changes.
-     */
     public static function schedule_events() {
         $hour      = (int) get_option( 'qaproof_cron_hour', 8 );
         $first_run = self::next_occurrence_of_hour( $hour );
@@ -110,10 +81,6 @@ class QAProof_Scheduler {
         }
     }
 
-    /**
-     * Reschedule all recurring cron events at the new preferred hour.
-     * Called automatically when qaproof_cron_hour option is updated.
-     */
     public static function reschedule_events() {
         $hour      = (int) get_option( 'qaproof_cron_hour', 8 );
         $first_run = self::next_occurrence_of_hour( $hour );
@@ -127,10 +94,6 @@ class QAProof_Scheduler {
         wp_schedule_event( $first_run, 'monthly', self::MONTHLY_HOOK );
     }
 
-    /**
-     * Remove all scheduled events.
-     * Called on plugin deactivation.
-     */
     public static function unschedule_events() {
         wp_clear_scheduled_hook( self::DAILY_HOOK );
         wp_clear_scheduled_hook( self::WEEKLY_HOOK );
@@ -138,31 +101,13 @@ class QAProof_Scheduler {
         wp_clear_scheduled_hook( self::RUN_HOOK );
     }
 
-    /**
-     * Run all daily monitors.
-     */
-    public static function run_daily() {
-        self::dispatch_monitors( 'daily' );
-    }
+    public static function run_daily()   { self::dispatch_monitors( 'daily' ); }
+    public static function run_weekly()  { self::dispatch_monitors( 'weekly' ); }
+    public static function run_monthly() { self::dispatch_monitors( 'monthly' ); }
 
     /**
-     * Run all weekly monitors.
-     */
-    public static function run_weekly() {
-        self::dispatch_monitors( 'weekly' );
-    }
-
-    /**
-     * Run all monthly monitors.
-     */
-    public static function run_monthly() {
-        self::dispatch_monitors( 'monthly' );
-    }
-
-    /**
-     * Dispatch each monitor as a separate single event to prevent timeouts.
-     *
-     * @param string $schedule 'daily', 'weekly', or 'monthly'.
+     * Dispatch each due monitor as its own single event so one slow run
+     * can't block the rest. Each event is staggered by 120 s.
      */
     private static function dispatch_monitors( $schedule ) {
         $monitors = QAProof_API_Client::monitors_list_due( $schedule );
@@ -172,33 +117,19 @@ class QAProof_Scheduler {
             return;
         }
 
-        // Stagger events by 120 seconds each so they run sequentially.
-        // Each regression test takes ~60 s; 120 s gap ensures the previous
-        // job finishes and the doing_cron lock is released before the next fires.
         $delay = 5;
         foreach ( $monitors as $monitor ) {
             wp_schedule_single_event(
                 time() + $delay,
                 self::RUN_HOOK,
-                array( (string) $monitor['id'] )  // UUID string
+                array( (string) $monitor['id'] )
             );
             $delay += 120;
         }
     }
 
-    /**
-     * Execute a single monitor: create baseline or run regression test.
-     *
-     * @param string $monitor_id UUID string (from the SaaS API).
-     */
     public static function run_single_monitor( $monitor_id ) {
-        // Extend PHP execution limit so the polling loop (up to ~12 min) and
-        // baseline screenshot capture (60–90 s) don't hit max_execution_time.
-        // Some shared hosts disable set_time_limit; the function_exists +
-        // disable_functions probe handles that gracefully instead of
-        // emitting a PHP warning. (If the host's web-server timeout is
-        // shorter than 900 s, the request still gets killed by the server —
-        // monitors then resume from the API-side job state on the next tick.)
+        // Polling can take 8–12 min; raise the limit when the host permits it.
         if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
             set_time_limit( 900 );
         }
@@ -208,33 +139,21 @@ class QAProof_Scheduler {
             return;
         }
 
-        // First run: create baseline
         if ( ! $monitor['has_baseline'] ) {
             self::create_baseline_for_monitor( $monitor );
         } else {
-            // Subsequent runs: regression test
             self::run_regression_for_monitor( $monitor );
         }
 
-        // Clear the server-side "run in progress" marker so the next GET
-        // /monitors/:id response no longer shows run_queued_at.
-        // Also bust the monitor transient cache so fresh data is served immediately.
-        $run_queued_key = 'qaproof_run_q_' . md5( (string) $monitor_id );
-        delete_transient( $run_queued_key );
-        $mon_cache_key  = 'qaproof_mon_' . md5( (string) $monitor_id );
-        delete_transient( $mon_cache_key );
+        // Clear the run-in-progress marker + monitor transient caches.
+        delete_transient( 'qaproof_run_q_' . md5( (string) $monitor_id ) );
+        delete_transient( 'qaproof_mon_'   . md5( (string) $monitor_id ) );
         delete_transient( 'qaproof_mon_list' );
     }
 
     /**
-     * Save a monitor result with up to $attempts retries (2 s gap between each).
-     * Transient HTTP errors (rate limits, timeouts, 5xx) can silently swallow results
-     * without retry, leaving the monitor stuck in "Running" indefinitely.
-     *
-     * @param string $monitor_id UUID string.
-     * @param array  $data       Result payload for monitors_save_result.
-     * @param int    $attempts   Max attempts (default 3).
-     * @return array|WP_Error Last response (success or final error).
+     * Save a monitor result with retries. Transient 5xx/timeouts otherwise
+     * leave the monitor stuck in "Running" indefinitely.
      */
     private static function save_result_with_retry( $monitor_id, $data, $attempts = 3 ) {
         $last_error = null;
@@ -252,20 +171,11 @@ class QAProof_Scheduler {
         return $last_error;
     }
 
-    /**
-     * Create a baseline for a monitor via the API.
-     *
-     * @param array $monitor Normalised monitor row.
-     */
     private static function create_baseline_for_monitor( $monitor ) {
         $result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
 
-        // If the capture was rejected because too many images failed to load
-        // (CAPTURE_UNSTABLE), retry once with forceCapture=true. This handles
-        // sites like Steam or heavily CDN-gated pages where some images
-        // structurally fail to load in a headless browser — if the same images
-        // always fail, regression runs will also see the same blank spots, so
-        // there will be no false diffs. We log the warning so it's visible.
+        // Retry once on CAPTURE_UNSTABLE — structural image-load failures will
+        // recur on every regression run anyway, so they won't produce false diffs.
         if ( is_wp_error( $result ) ) {
             $error_data = $result->get_error_data( 'qaproof_api_error' );
             $is_unstable = isset( $error_data['error_code'] ) && $error_data['error_code'] === 'CAPTURE_UNSTABLE';
@@ -290,13 +200,7 @@ class QAProof_Scheduler {
         ) );
     }
 
-    /**
-     * Run a regression test for a monitor via the API.
-     *
-     * @param array $monitor Normalised monitor row.
-     */
     private static function run_regression_for_monitor( $monitor ) {
-        // Step 1: Submit test job (returns jobId immediately)
         $job_response = QAProof_API_Client::run_test( array(
             'pageUrl'  => $monitor['page_url'],
             'testType' => 'regression',
@@ -325,11 +229,7 @@ class QAProof_Scheduler {
             return;
         }
 
-        // Step 2: Poll for results — max 8 minutes (48 attempts × 10s).
-        // Typical regression tests finish in 30–120s, but heavy sites (large SPAs,
-        // novaposhta.ua, streifeneder.de) can take 4–6 min for screenshot + AI analysis.
-        // The API's own regression job timeout is 5 min, so 8 min gives a safe 3 min buffer.
-        // PHP max_execution_time is already extended to 900s via set_time_limit() above.
+        // Max 8 min (48 × 10s). The API's job timeout is 5 min; this gives a 3 min buffer.
         $max_attempts = 48;
         $result = null;
 
@@ -339,13 +239,13 @@ class QAProof_Scheduler {
             $poll = QAProof_API_Client::poll_job( $job_id );
 
             if ( is_wp_error( $poll ) ) {
-                continue; // Transient error — retry
+                continue;
             }
 
             if ( isset( $poll['status'] ) && $poll['status'] === 'done' && isset( $poll['result'] ) ) {
                 $result = $poll['result'];
 
-                // Fetch screenshots separately — the poll endpoint strips them to keep responses small.
+                // poll strips screenshots to keep payload small; fetch separately.
                 $screenshots_response = QAProof_API_Client::get_job_screenshots( $job_id );
                 if ( ! is_wp_error( $screenshots_response ) && ! empty( $screenshots_response['screenshots'] ) ) {
                     $result['screenshots'] = $screenshots_response['screenshots'];
@@ -380,7 +280,6 @@ class QAProof_Scheduler {
         $score       = isset( $result['score'] )      ? (int) $result['score']   : null;
         $has_changes = ! empty( $result['hasChanges'] );
 
-        // Store the result in the SaaS API (with retry — the most important call)
         self::save_result_with_retry( $monitor['id'], array(
             'score'           => $score,
             'has_changes'     => $has_changes ? 1 : 0,
@@ -397,9 +296,6 @@ class QAProof_Scheduler {
             'last_score'  => $score,
         ) );
 
-        // Send notifications based on the monitor's notify_on setting:
-        //   'failures' (default) — only when score drops below threshold
-        //   'all'               — after every completed run
         $notify_on       = isset( $monitor['notify_on'] ) ? $monitor['notify_on'] : 'failures';
         $below_threshold = $score !== null && $score < (int) $monitor['threshold_score'];
 

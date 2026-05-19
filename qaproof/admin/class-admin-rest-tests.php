@@ -26,7 +26,6 @@ class QAProof_Admin_REST_Tests {
             'testType' => $test_type,
         ];
 
-        // Pass WCAG level for accessibility tests
         if ( $test_type === 'accessibility' && ! empty( $params['wcagLevel'] ) ) {
             $allowed_levels = [ 'A', 'AA', 'AAA' ];
             $level = strtoupper( sanitize_text_field( $params['wcagLevel'] ) );
@@ -37,20 +36,14 @@ class QAProof_Admin_REST_Tests {
 
         if ( $test_type === 'fidelity' ) {
             if ( ! empty( $params['figmaUrl'] ) ) {
-                // Host-restricted to figma.com (see sanitize_figma_url). A
-                // mistyped or attacker-supplied non-Figma host yields ''
-                // and the API call below will fail validation cleanly
-                // instead of round-tripping through our SaaS.
                 $api_params['figmaUrl'] = QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] );
             }
             if ( ! empty( $params['figmaImageBase64'] ) ) {
                 $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
             }
-            // Pass ignoreText setting
             if ( isset( $params['ignoreText'] ) ) {
                 $api_params['ignoreText'] = rest_sanitize_boolean( $params['ignoreText'] );
             }
-            // Element-level fidelity: pass region coordinates
             if ( ! empty( $params['elementRegion'] ) && is_array( $params['elementRegion'] ) ) {
                 $region = [
                     'top'    => max( 0, (float) ( $params['elementRegion']['top'] ?? 0 ) ),
@@ -64,7 +57,6 @@ class QAProof_Admin_REST_Tests {
             }
         }
 
-        // API now returns { jobId, status: 'pending' } immediately
         $result = QAProof_API_Client::run_test( $api_params );
 
         if ( is_wp_error( $result ) ) {
@@ -80,17 +72,12 @@ class QAProof_Admin_REST_Tests {
             ], $status );
         }
 
-        // Return jobId to browser — it will poll for results
         return new WP_REST_Response( [
             'success' => true,
             'data'    => $result,
         ], 200 );
     }
 
-    /**
-     * Poll a background job for status and results.
-     * When job is done, auto-saves result to test history.
-     */
     public static function handle_poll_job( WP_REST_Request $request ) {
         $job_id = sanitize_text_field( $request->get_param( 'jobId' ) );
 
@@ -119,11 +106,7 @@ class QAProof_Admin_REST_Tests {
         ], 200 );
     }
 
-    /**
-     * Fetch screenshots for a completed job.
-     * Called separately from polling to avoid multi-MB JSON responses timing out
-     * through the WP proxy.
-     */
+    /** Separate from poll() so the multi-MB JSON doesn't time out through the WP proxy. */
     public static function handle_job_screenshots( WP_REST_Request $request ) {
         $job_id = sanitize_text_field( $request->get_param( 'jobId' ) );
 
@@ -149,10 +132,6 @@ class QAProof_Admin_REST_Tests {
         ], 200 );
     }
 
-    /**
-     * Save a test result to history.
-     * Proxied to the SaaS API — data is stored in PostgreSQL, not local MySQL.
-     */
     public static function handle_save_test_result( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 

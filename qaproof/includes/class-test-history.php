@@ -26,12 +26,10 @@ class QAProof_Test_History {
             'extracted_data_json'  => self::build_extracted_data( $data ),
         ];
 
-        // Only include job_id if the column exists (safe during DB migration).
         if ( $has_job_id_col && $job_id ) {
             $row = array_merge( [ 'job_id' => $job_id ], $row );
         }
 
-        // Tag with current account hash when the column exists.
         if ( self::column_exists( 'api_key_hash' ) ) {
             $row['api_key_hash'] = QAProof_Settings::get_api_key_hash();
         }
@@ -47,7 +45,7 @@ class QAProof_Test_History {
         $result = $wpdb->insert( self::table_name(), $row, $formats );
 
         if ( $result === false ) {
-            // Error code 1062 = duplicate key — expected when same job_id is saved twice.
+            // 1062 = duplicate key — same job_id saved twice.
             if ( ! empty( $job_id ) && strpos( $wpdb->last_error, '1062' ) !== false ) {
                 qaproof_debug_log( '[QAProof] test_history: duplicate job_id blocked by DB constraint — jobId=' . $job_id );
                 return 0;
@@ -59,10 +57,6 @@ class QAProof_Test_History {
         return $wpdb->insert_id;
     }
 
-    /**
-     * Check if a column exists in the test_history table (delegates to the
-     * shared, request-cached helper in QAProof_Database).
-     */
     private static function column_exists( $column ) {
         return QAProof_Database::column_exists( self::table_name(), $column );
     }
@@ -73,11 +67,9 @@ class QAProof_Test_History {
         $defaults = [ 'limit' => 50, 'offset' => 0, 'test_type' => '', 'exclude_type' => '' ];
         $args     = wp_parse_args( $args, $defaults );
 
-        // Build WHERE conditions.
         $where  = [ '1=1' ];
         $values = [];
 
-        // Scope to current account when the column exists.
         if ( self::column_exists( 'api_key_hash' ) ) {
             $hash = QAProof_Settings::get_api_key_hash();
             if ( $hash !== '' ) {
@@ -129,7 +121,6 @@ class QAProof_Test_History {
         $where  = [ '1=1' ];
         $values = [];
 
-        // Scope to current account.
         if ( self::column_exists( 'api_key_hash' ) ) {
             $hash = QAProof_Settings::get_api_key_hash();
             if ( $hash !== '' ) {
@@ -187,13 +178,6 @@ class QAProof_Test_History {
         ];
     }
 
-    /**
-     * Build extracted_data_json from a result data array.
-     * Captures designSystem, components, and designDebtScore for design-audit history.
-     *
-     * @param array $data Raw result data.
-     * @return string|null JSON string or null.
-     */
     private static function build_extracted_data( $data ) {
         $extracted = [];
 
@@ -206,8 +190,6 @@ class QAProof_Test_History {
         if ( isset( $data['designDebtScore'] ) ) {
             $extracted['designDebtScore'] = $data['designDebtScore'];
         }
-        // Persist the user-selected WCAG conformance level (A/AA/AAA) so PDF
-        // reports loaded from history always show the correct target level.
         if ( isset( $data['targetWcagLevel'] ) && in_array( $data['targetWcagLevel'], [ 'A', 'AA', 'AAA' ], true ) ) {
             $extracted['wcagLevel'] = sanitize_text_field( $data['targetWcagLevel'] );
         }
@@ -215,14 +197,6 @@ class QAProof_Test_History {
         return ! empty( $extracted ) ? wp_json_encode( $extracted ) : null;
     }
 
-    /**
-     * Update the screenshots_json column for an existing history record.
-     * Called after a server-side screenshots fetch to store full-quality images.
-     *
-     * @param int    $id              History record ID.
-     * @param string $screenshots_json JSON-encoded screenshots map.
-     * @return bool True on success.
-     */
     public static function update_screenshots( $id, $screenshots_json ) {
         global $wpdb;
         return (bool) $wpdb->update(

@@ -111,7 +111,6 @@ class QAProof_Result {
 
         $result = $wpdb->insert( $table, $insert, $format );
         if ( $result ) {
-            // Purge old results to keep the table manageable
             self::purge_old( (int) $data['monitor_id'] );
             return $wpdb->insert_id;
         }

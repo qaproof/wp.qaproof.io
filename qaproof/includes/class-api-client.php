@@ -3,18 +3,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class QAProof_API_Client {
 
-    const TIMEOUT          = 30;  // Short timeout — API now returns jobId immediately
-    const BASELINE_TIMEOUT = 300; // Baseline creation: Playwright scroll-and-stitch can take 60-180 s on complex pages (Shopify etc.)
+    const TIMEOUT          = 30;
+    const BASELINE_TIMEOUT = 300; // Baseline capture is synchronous and can run 60–180s on complex pages.
 
     /**
-     * Identify ourselves on every outbound HTTP request to the QAProof API
-     * so the server can attribute requests to this plugin version + the
-     * underlying WordPress + PHP versions (useful for rate-limit accounting,
-     * deprecation warnings, and support ticket forensics).
-     *
-     * Hooks `http_request_args` which fires for ALL wp_remote_* calls —
-     * we only mutate the args when the URL targets api.qaproof.io, so other
-     * plugins' requests are untouched.
+     * Hook http_request_args to add a plugin-identifying User-Agent on outbound
+     * requests targeting api.qaproof.io (other hosts are untouched).
      */
     public static function register_user_agent_filter() {
         add_filter( 'http_request_args', [ __CLASS__, 'inject_user_agent' ], 10, 2 );
@@ -40,13 +34,10 @@ class QAProof_API_Client {
     }
 
     /**
-     * Submit a test job to the SaaS API (async — returns jobId).
+     * Submit a test job. Async — returns { jobId, status }; use poll_job() to fetch results.
      *
-     * The API creates a background job and returns immediately with a jobId.
-     * Use poll_job() to check status and retrieve results.
-     *
-     * @param array $params Test parameters (pageUrl, testType, etc.)
-     * @return array|WP_Error { jobId, status } on success, WP_Error on failure.
+     * @param  array $params Test parameters (pageUrl, testType, etc.)
+     * @return array|WP_Error
      */
     public static function run_test( $params ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/compare';
@@ -109,10 +100,10 @@ class QAProof_API_Client {
     }
 
     /**
-     * Poll a job for status and results.
+     * Poll a job. Returns { id, status, result?, error?, elapsed? }.
      *
-     * @param string $job_id The job ID returned by run_test().
-     * @return array|WP_Error Job data { id, status, result?, error?, elapsed? }
+     * @param  string $job_id
+     * @return array|WP_Error
      */
     public static function poll_job( $job_id ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/jobs/' . sanitize_text_field( $job_id );
@@ -165,10 +156,11 @@ class QAProof_API_Client {
     }
 
     /**
-     * Fetch screenshots for a completed job (separate from poll to avoid large responses).
+     * Fetch screenshots for a completed job. Separate from poll() to keep the
+     * poll payload small.
      *
-     * @param string $job_id The job ID.
-     * @return array|WP_Error Screenshots data { id, screenshots: { desktop, tablet, mobile, ... } }
+     * @param  string $job_id
+     * @return array|WP_Error
      */
     public static function get_job_screenshots( $job_id ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/jobs/' . sanitize_text_field( $job_id ) . '/screenshots';
@@ -181,10 +173,7 @@ class QAProof_API_Client {
             );
         }
 
-        // Screenshots response is large (multi-MB base64) — bump memory if
-        // the host allows it. Use function_exists/ini_get to detect when
-        // ini_set is disabled (some shared hosts disable_functions=ini_set)
-        // and skip cleanly instead of suppressing PHP warnings with @.
+        // Screenshots are multi-MB base64; raise memory_limit when the host allows it.
         if ( function_exists( 'ini_set' ) && ! in_array( 'ini_set', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
             $current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
             if ( $current && $current > 0 && $current < 256 * MB_IN_BYTES ) {
@@ -228,13 +217,11 @@ class QAProof_API_Client {
     }
 
     /**
-     * Create a baseline screenshot via the SaaS API.
+     * Create a baseline screenshot. Synchronous on the API side; uses BASELINE_TIMEOUT.
      *
-     * Uses a longer timeout (300 s) because the API captures a full-page
-     * Playwright screenshot synchronously before responding (complex pages like Shopify can take 2-3 min).
-     *
-     * @param string $page_url URL to capture as baseline.
-     * @return array|WP_Error Baseline data on success, WP_Error on failure.
+     * @param  string $page_url
+     * @param  bool   $force_capture
+     * @return array|WP_Error
      */
     public static function create_baseline( $page_url, $force_capture = false ) {
         $body = array( 'pageUrl' => $page_url );
@@ -244,42 +231,23 @@ class QAProof_API_Client {
         return self::api_request( 'POST', '/api/baselines', $body, self::BASELINE_TIMEOUT );
     }
 
-    /**
-     * Get a baseline by key.
-     *
-     * @param string $key Baseline key.
-     * @return array|WP_Error
-     */
     public static function get_baseline( $key ) {
         return self::api_request( 'GET', '/api/baselines/' . $key );
     }
 
-    /**
-     * Delete a baseline by key.
-     *
-     * @param string $key Baseline key.
-     * @return array|WP_Error
-     */
     public static function delete_baseline( $key ) {
         return self::api_request( 'DELETE', '/api/baselines/' . $key );
     }
 
-    /**
-     * List all baselines.
-     *
-     * @return array|WP_Error
-     */
     public static function list_baselines() {
         return self::api_request( 'GET', '/api/baselines' );
     }
 
     /**
-     * Generic API request helper.
-     *
-     * @param string     $method   HTTP method (GET, POST, DELETE).
-     * @param string     $path     API path (e.g. '/api/baselines').
-     * @param array|null $body     Request body for POST requests.
-     * @param int        $timeout  cURL timeout in seconds (default: TIMEOUT = 30).
+     * @param  string     $method  HTTP method.
+     * @param  string     $path    API path.
+     * @param  array|null $body    Optional request body.
+     * @param  int        $timeout Seconds.
      * @return array|WP_Error
      */
     private static function api_request( $method, $path, $body = null, $timeout = self::TIMEOUT ) {
@@ -325,7 +293,6 @@ class QAProof_API_Client {
             );
         }
 
-        // Accept both 200 (OK) and 201 (Created) as success codes
         $is_success_code = ( $status_code === 200 || $status_code === 201 );
 
         if ( ! $is_success_code || empty( $decoded['success'] ) ) {
@@ -347,17 +314,12 @@ class QAProof_API_Client {
     }
 
     /**
-     * Fetch a Figma design preview image.
+     * Fetch a Figma design preview image via the API. 120s timeout to absorb
+     * Figma rate-limit retries on the backend.
      *
-     * The QAProof API now reads Figma files via its own service account
-     * (figma@qaproof.io). The customer just shares the file with that
-     * email — no per-customer Figma token is sent.
-     *
-     * Timeout set to 120s to allow for Figma API rate-limit retries on the backend.
-     *
-     * @param string $figma_url    Figma design URL.
-     * @param bool   $force_refresh Whether to bypass server-side cache.
-     * @return array|WP_Error Preview data on success, WP_Error on failure.
+     * @param  string $figma_url
+     * @param  bool   $force_refresh Bypass server-side cache.
+     * @return array|WP_Error
      */
     public static function preview_figma( $figma_url, $force_refresh = false ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/figma-preview';
@@ -412,7 +374,6 @@ class QAProof_API_Client {
                 'status'     => $status_code,
                 'error_code' => $error_code,
             );
-            // Propagate real Figma Retry-After timestamp (ms) when present.
             if ( isset( $decoded['error']['retryAt'] ) ) {
                 $err_data['retry_at'] = (int) $decoded['error']['retryAt'];
             }
@@ -424,13 +385,11 @@ class QAProof_API_Client {
     }
 
     /**
-     * Verify QAProof's service account can read a Figma file.
+     * Verify the API can read a Figma file. Returns
+     * { accessible: true, name, lastModified } or a WP_Error with one of
+     * FIGMA_NOT_SHARED / FIGMA_FILE_NOT_FOUND / etc.
      *
-     * Makes one lightweight Figma `/v1/files/{key}/meta` call on the API side
-     * and returns either { accessible: true, name, lastModified } or a
-     * WP_Error with error_code FIGMA_NOT_SHARED / FIGMA_FILE_NOT_FOUND / etc.
-     *
-     * @param string $figma_url Figma design URL.
+     * @param  string $figma_url
      * @return array|WP_Error
      */
     public static function verify_figma_access( $figma_url ) {
@@ -486,8 +445,8 @@ class QAProof_API_Client {
     /**
      * Detect UI elements/sections in a design image.
      *
-     * @param array $params Pass-through fields: figmaUrl, figmaImageBase64, sketchFileBase64, pixelPerfectOnly.
-     * @return array|WP_Error Detection results or error.
+     * @param  array $params figmaUrl|figmaImageBase64|sketchFileBase64|pixelPerfectOnly.
+     * @return array|WP_Error
      */
     public static function detect_elements( $params = array() ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/detect-elements';
@@ -500,19 +459,14 @@ class QAProof_API_Client {
             );
         }
 
-        // Pass through all supported fields
         $body = array();
-        $allowed_keys = array(
-            'figmaUrl', 'figmaImageBase64',
-            'sketchFileBase64',
-        );
+        $allowed_keys = array( 'figmaUrl', 'figmaImageBase64', 'sketchFileBase64' );
         foreach ( $allowed_keys as $key ) {
             if ( ! empty( $params[ $key ] ) ) {
                 $body[ $key ] = $params[ $key ];
             }
         }
-        // Pixel-perfect flag: when true, the API will NOT fall back to AI vision
-        // if Figma API fails (e.g. rate-limited). Used by Settings auto-cache.
+        // pixelPerfectOnly disables the AI-vision fallback when Figma API fails.
         if ( ! empty( $params['pixelPerfectOnly'] ) ) {
             $body['pixelPerfectOnly'] = true;
         }
@@ -562,11 +516,10 @@ class QAProof_API_Client {
     }
 
     /**
-     * Fetch account info for the currently configured API key.
-     * Calls GET /api/me (Bearer token auth) — returns user + plan + limits.
+     * GET /api/me — returns user + plan + limits for the configured API key.
      *
-     * @param string|null $api_key Optional key override (e.g. unsaved input value). Falls back to saved option.
-     * @return array|WP_Error Account data or error.
+     * @param  string|null $api_key Optional key override; falls back to saved option.
+     * @return array|WP_Error
      */
     public static function get_account_info( $api_key = null ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/me';
@@ -619,11 +572,6 @@ class QAProof_API_Client {
         return $decoded['data'];
     }
 
-    /**
-     * Check API health.
-     *
-     * @return array|WP_Error Health check response or error.
-     */
     public static function health_check() {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/health';
 
@@ -655,47 +603,29 @@ class QAProof_API_Client {
         return $decoded;
     }
 
-    // =========================================================================
-    // Monitors (remote API)
-    // =========================================================================
+    // ── Monitors ──────────────────────────────────────────────────────────────
 
     /**
-     * Normalize a monitor row returned by the SaaS API into the shape the
-     * WP plugin frontend and scheduler expect (integer booleans, snake_case fields).
-     *
-     * @param array $m Raw monitor row from the API.
-     * @return array
+     * Normalize a monitor row from the API. Defaults missing booleans to off
+     * so a malformed row never silently enables notifications.
      */
     private static function normalize_monitor( $m ) {
-        $m['is_enabled']  = isset( $m['is_enabled'] )  ? (int) $m['is_enabled']  : 1;
+        $m['is_enabled']   = isset( $m['is_enabled'] )   ? (int) $m['is_enabled']   : 1;
         $m['has_baseline'] = isset( $m['has_baseline'] ) ? (int) $m['has_baseline'] : 0;
-
-        // Map notify_email_enabled / notify_admin_enabled → notify_email / notify_admin
-        // so existing PHP + JS code that reads these fields keeps working unchanged.
-        // Fallback to 0 (off) when the key is absent — safer than silently enabling notifications.
         $m['notify_email'] = isset( $m['notify_email_enabled'] ) ? (int) $m['notify_email_enabled'] : 0;
         $m['notify_admin'] = isset( $m['notify_admin_enabled'] ) ? (int) $m['notify_admin_enabled'] : 0;
-
         return $m;
     }
 
     /**
-     * Normalize a monitor result row from the API.
-     * Expands the result JSONB column into the separate _json fields that the
-     * WP frontend expects.
-     *
-     * @param array $r Raw result row from the API.
-     * @return array
+     * Normalize a monitor result row, expanding the result JSONB column into
+     * the *_json fields the WP frontend reads.
      */
     private static function normalize_result( $r ) {
-        // Map run_at → run_date
         if ( isset( $r['run_at'] ) && ! isset( $r['run_date'] ) ) {
             $r['run_date'] = $r['run_at'];
         }
 
-        // Expand result JSONB → separate _json columns. The is_string()
-        // guard prevents PHP 8 "json_decode(): Argument #1 must be of type
-        // string" warnings if the API ever returns null / numeric result.
         $result_data = [];
         if ( ! empty( $r['result'] ) ) {
             if ( is_array( $r['result'] ) ) {
@@ -719,7 +649,6 @@ class QAProof_API_Client {
             $r['recommendations_json'] = $recs !== null ? wp_json_encode( $recs ) : null;
         }
 
-        // Screenshots are stored as a separate JSONB column on the API
         if ( ! isset( $r['screenshots_json'] ) ) {
             $ss = isset( $r['screenshots'] ) ? $r['screenshots'] : null;
             $r['screenshots_json'] = $ss !== null
@@ -732,14 +661,7 @@ class QAProof_API_Client {
         return $r;
     }
 
-    /**
-     * Normalize a test-history row from the API.
-     *
-     * @param array $h Raw history row from the API.
-     * @return array
-     */
     private static function normalize_history( $h ) {
-        // See normalize_result() for the is_string() / is_array() rationale.
         $result_data = [];
         if ( ! empty( $h['result'] ) ) {
             if ( is_array( $h['result'] ) ) {
@@ -763,7 +685,6 @@ class QAProof_API_Client {
             $h['recommendations_json'] = $recs !== null ? wp_json_encode( $recs ) : null;
         }
 
-        // Screenshots
         if ( ! isset( $h['screenshots_json'] ) ) {
             $ss = isset( $h['screenshots'] ) ? $h['screenshots'] : null;
             $h['screenshots_json'] = $ss !== null
@@ -771,7 +692,6 @@ class QAProof_API_Client {
                 : null;
         }
 
-        // extracted_data_json: design-audit / wcag fields live inside result.extractedData
         if ( ! isset( $h['extracted_data_json'] ) ) {
             $extracted = isset( $result_data['extractedData'] ) ? $result_data['extractedData'] : null;
             $h['extracted_data_json'] = $extracted !== null ? wp_json_encode( $extracted ) : null;
@@ -780,25 +700,13 @@ class QAProof_API_Client {
         return $h;
     }
 
-    // ── Monitor CRUD ──────────────────────────────────────────────────────────
-
-    /**
-     * List all monitors for the current workspace.
-     *
-     * @return array[]|WP_Error
-     */
     public static function monitors_list() {
         $result = self::api_request( 'GET', '/api/monitors' );
         if ( is_wp_error( $result ) ) return $result;
         return array_map( [ __CLASS__, 'normalize_monitor' ], (array) $result );
     }
 
-    /**
-     * List monitors due for a given schedule (enabled + scheduled_at <= now).
-     *
-     * @param string $schedule 'daily'|'weekly'|'monthly'
-     * @return array[]|WP_Error
-     */
+    /** @param string $schedule 'daily'|'weekly'|'monthly' */
     public static function monitors_list_due( $schedule ) {
         $path   = '/api/monitors?schedule=' . rawurlencode( $schedule ) . '&due=1';
         $result = self::api_request( 'GET', $path );
@@ -806,26 +714,13 @@ class QAProof_API_Client {
         return array_map( [ __CLASS__, 'normalize_monitor' ], (array) $result );
     }
 
-    /**
-     * Get a single monitor.
-     *
-     * @param string $id UUID.
-     * @return array|WP_Error
-     */
     public static function monitors_get( $id ) {
         $result = self::api_request( 'GET', '/api/monitors/' . rawurlencode( $id ) );
         if ( is_wp_error( $result ) ) return $result;
         return self::normalize_monitor( $result );
     }
 
-    /**
-     * Create a monitor.
-     *
-     * @param array $data { page_url, schedule, notify_email, notify_admin, notify_on, threshold_score, ... }
-     * @return array|WP_Error
-     */
     public static function monitors_create( $data ) {
-        // WP plugin uses notify_email/notify_admin (bool int) → map to API field names
         $payload = array(
             'page_url'              => isset( $data['page_url'] )        ? $data['page_url']        : '',
             'schedule'              => isset( $data['schedule'] )        ? $data['schedule']        : 'daily',
@@ -844,13 +739,6 @@ class QAProof_API_Client {
         return self::normalize_monitor( $result );
     }
 
-    /**
-     * Update fields on a monitor.
-     *
-     * @param string $id   UUID.
-     * @param array  $data Fields to update (WP field names — will be mapped).
-     * @return array|WP_Error
-     */
     public static function monitors_update( $id, $data ) {
         $payload = array();
 
@@ -864,7 +752,6 @@ class QAProof_API_Client {
             }
         }
 
-        // Booleans: WP int (0/1) → PHP bool → JSON true/false
         if ( array_key_exists( 'is_enabled', $data ) ) {
             $payload['is_enabled'] = (bool) $data['is_enabled'];
         }
@@ -887,27 +774,12 @@ class QAProof_API_Client {
         return self::normalize_monitor( $result );
     }
 
-    /**
-     * Delete a monitor (cascades to results).
-     *
-     * @param string $id UUID.
-     * @return true|WP_Error
-     */
     public static function monitors_delete( $id ) {
         $result = self::api_request( 'DELETE', '/api/monitors/' . rawurlencode( $id ) );
         if ( is_wp_error( $result ) ) return $result;
         return true;
     }
 
-    // ── Monitor Results ───────────────────────────────────────────────────────
-
-    /**
-     * Get results for a monitor.
-     *
-     * @param string $id     Monitor UUID.
-     * @param array  $args   { limit, offset }
-     * @return array { data: array[], total: int }|WP_Error
-     */
     public static function monitors_get_results( $id, $args = array() ) {
         $limit  = isset( $args['limit'] )  ? (int) $args['limit']  : 20;
         $offset = isset( $args['offset'] ) ? (int) $args['offset'] : 0;
@@ -946,13 +818,6 @@ class QAProof_API_Client {
         return array( 'data' => $rows, 'total' => isset( $decoded['total'] ) ? (int) $decoded['total'] : count( $rows ) );
     }
 
-    /**
-     * Save a result for a monitor.
-     *
-     * @param string $monitor_id Monitor UUID.
-     * @param array  $data       Result data.
-     * @return array|WP_Error
-     */
     public static function monitors_save_result( $monitor_id, $data ) {
         $payload = array(
             'score'         => isset( $data['score'] )         ? (int) $data['score']         : null,
@@ -962,7 +827,6 @@ class QAProof_API_Client {
             'error_message' => isset( $data['error_message'] ) ? $data['error_message']        : null,
         );
 
-        // Pack separate _json columns back into result JSONB + screenshots
         $result_obj = array();
         if ( isset( $data['categories'] ) )      { $result_obj['categories']      = $data['categories']; }
         if ( isset( $data['differences'] ) )     { $result_obj['differences']     = $data['differences']; }
@@ -975,7 +839,7 @@ class QAProof_API_Client {
             $payload['screenshots'] = $data['screenshots'];
         }
 
-        // Use a longer timeout: result payloads can include full-quality screenshots (2–5 MB).
+        // Result payload can include 2–5 MB of base64 screenshots.
         $result = self::api_request(
             'POST',
             '/api/monitors/' . rawurlencode( $monitor_id ) . '/results',
@@ -986,12 +850,6 @@ class QAProof_API_Client {
         return self::normalize_result( $result );
     }
 
-    /**
-     * Approve a monitor result (mark as approved in the API).
-     *
-     * @param string $result_id Result UUID.
-     * @return true|WP_Error
-     */
     public static function monitors_approve_result( $result_id ) {
         $result = self::api_request( 'PUT', '/api/results/' . rawurlencode( $result_id ) . '/approve' );
         if ( is_wp_error( $result ) ) return $result;
@@ -1000,12 +858,6 @@ class QAProof_API_Client {
 
     // ── Test History ──────────────────────────────────────────────────────────
 
-    /**
-     * List test history.
-     *
-     * @param array $args { test_type, exclude_type, limit, offset }
-     * @return array { data: array[], total: int }|WP_Error
-     */
     public static function history_list( $args = array() ) {
         $params = array();
         if ( ! empty( $args['test_type'] ) )    { $params[] = 'test_type='    . rawurlencode( $args['test_type'] ); }
@@ -1049,33 +901,18 @@ class QAProof_API_Client {
         return array( 'data' => $rows, 'total' => isset( $decoded['total'] ) ? (int) $decoded['total'] : count( $rows ) );
     }
 
-    /**
-     * Get a single history item.
-     *
-     * @param string $id UUID.
-     * @return array|WP_Error
-     */
     public static function history_get( $id ) {
         $result = self::api_request( 'GET', '/api/history/' . rawurlencode( $id ) );
         if ( is_wp_error( $result ) ) return $result;
         return self::normalize_history( $result );
     }
 
-    /**
-     * Save a test result to history.
-     *
-     * @param array $data { test_type, page_url, score, summary, categories, differences,
-     *                      recommendations, screenshots, extractedData, job_id }
-     * @return array|WP_Error
-     */
     public static function history_save( $data ) {
-        // Pack separate fields into the result JSONB
         $result_obj = array();
         $copy_keys  = array( 'categories', 'differences', 'recommendations' );
         foreach ( $copy_keys as $key ) {
             if ( isset( $data[ $key ] ) ) { $result_obj[ $key ] = $data[ $key ]; }
         }
-        // Design audit / WCAG extracted data
         if ( isset( $data['designSystem'] ) )    { $result_obj['extractedData']['designSystem']    = $data['designSystem']; }
         if ( isset( $data['components'] ) )      { $result_obj['extractedData']['components']      = $data['components']; }
         if ( isset( $data['designDebtScore'] ) ) { $result_obj['extractedData']['designDebtScore'] = $data['designDebtScore']; }
@@ -1091,30 +928,18 @@ class QAProof_API_Client {
         if ( ! empty( $result_obj ) ) { $payload['result'] = $result_obj; }
         if ( ! empty( $data['screenshots'] ) ) { $payload['screenshots'] = $data['screenshots']; }
 
-        // Use a longer timeout: history payloads can include full-quality screenshots (2–5 MB).
+        // History payload can include 2–5 MB of base64 screenshots.
         $result = self::api_request( 'POST', '/api/history', $payload, self::BASELINE_TIMEOUT );
         if ( is_wp_error( $result ) ) return $result;
         return self::normalize_history( $result );
     }
 
-    /**
-     * Delete a history item.
-     *
-     * @param string $id UUID.
-     * @return true|WP_Error
-     */
     public static function history_delete( $id ) {
         $result = self::api_request( 'DELETE', '/api/history/' . rawurlencode( $id ) );
         if ( is_wp_error( $result ) ) return $result;
         return true;
     }
 
-    /**
-     * Get aggregated history stats for the dashboard.
-     *
-     * @param int $threshold Score below which a test is considered failing. Default 70.
-     * @return array { total, avg_score, below_threshold, by_type }|WP_Error
-     */
     public static function history_stats( $threshold = 70 ) {
         $path   = '/api/history/stats?threshold=' . (int) $threshold;
         $result = self::api_request( 'GET', $path );
@@ -1123,61 +948,28 @@ class QAProof_API_Client {
     }
 
     /**
-     * Send a PDF report via email using the SaaS API (AWS SES).
+     * Send a PDF report via the SaaS API (SES).
      *
-     * @param array $params {
-     *   pdfBase64 string  jsPDF datauristring
-     *   to        string  Recipient email
-     *   fileName  string  Attachment filename
-     *   testType  string  e.g. 'accessibility'
-     *   pageUrl   string
-     *   score     int
-     * }
-     * @return array|WP_Error { success, sentTo } or WP_Error
+     * @param  array $params { pdfBase64, to, fileName, testType, pageUrl, score }
+     * @return array|WP_Error
      */
     public static function send_report_email( $params ) {
         return self::api_request( 'POST', '/api/send-report-email', $params, 60 );
     }
 
-    // ============================================================
-    // Figma OAuth — proxy to api.qaproof.io
-    // ============================================================
+    // ── Figma OAuth ───────────────────────────────────────────────────────────
 
-    /**
-     * Start the OAuth flow: returns the Figma authorize URL the WP plugin
-     * should open in a popup. The backend creates a signed state token that
-     * carries the workspace id through the redirect.
-     *
-     * 60s timeout (vs default 30) because the start handler hits Figma's
-     * authorize endpoint server-side under rate-limit pressure during peak
-     * usage; 30s was tight enough that one stalled DNS resolve aborted the
-     * call before the popup user even saw a consent screen.
-     *
-     * @return array|WP_Error { authorizeUrl }
-     */
+    /** @return array|WP_Error { authorizeUrl } */
     public static function figma_oauth_start() {
         return self::api_request( 'POST', '/api/figma-oauth/start', array(), 60 );
     }
 
-    /**
-     * Get the workspace's Figma OAuth connection status. Used by Settings
-     * to render the "Connect Figma" vs "Connected as ..." card state.
-     *
-     * @return array|WP_Error {
-     *   connected, revoked, figmaUserEmail, figmaUserHandle, expiresAt,
-     *   scope, connectedAt, oauthEnabled, serviceFallbackAvailable
-     * }
-     */
+    /** @return array|WP_Error { connected, revoked, figmaUserEmail, ... } */
     public static function figma_oauth_status() {
         return self::api_request( 'GET', '/api/figma-oauth/status' );
     }
 
-    /**
-     * Drop the workspace's Figma OAuth connection. Next test falls back to
-     * the service-account PAT (if configured) or fails with a clear error.
-     *
-     * @return array|WP_Error { deleted: bool }
-     */
+    /** @return array|WP_Error { deleted: bool } */
     public static function figma_oauth_disconnect() {
         return self::api_request( 'POST', '/api/figma-oauth/disconnect', array() );
     }

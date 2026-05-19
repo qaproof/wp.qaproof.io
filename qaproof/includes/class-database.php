@@ -10,16 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class QAProof_Database {
 
     /**
-     * Check whether a column exists in a table. Result is cached per
-     * (table, column) pair for the request lifetime so multiple lookups
-     * during one page load don't issue repeated SHOW COLUMNS queries.
+     * Check whether a column exists in a table. Request-scoped cache.
      *
-     * Used by service classes during read-path queries to gracefully
-     * support pre-migration schemas (table missing a newer column → use
-     * defaults instead of crashing the SELECT).
-     *
-     * @param string $table  Full table name (already $wpdb->prefix-qualified).
-     * @param string $column Column to probe.
+     * @param  string $table  Full table name (already $wpdb->prefix-qualified).
+     * @param  string $column Column to probe.
      * @return bool
      */
     public static function column_exists( $table, $column ) {
@@ -34,10 +28,6 @@ class QAProof_Database {
         return $cache[ $key ] = ! empty( $result );
     }
 
-    /**
-     * Create or update plugin database tables.
-     * Called on plugin activation.
-     */
     public static function create_tables() {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
@@ -114,26 +104,16 @@ class QAProof_Database {
         update_option( 'qaproof_db_version', '1.8.0' );
     }
 
-    /**
-     * Run incremental DB migrations.
-     * Safe to call on every plugin load — checks version before acting.
-     */
     public static function maybe_upgrade() {
         $current = get_option( 'qaproof_db_version', '0' );
         if ( version_compare( $current, '1.8.0', '>=' ) ) {
             return;
         }
-        // Re-run create_tables() — dbDelta() handles ADD COLUMN / ADD KEY safely.
         self::create_tables();
 
-        // v1.7.0: One-time migration — copy monitors from WP MySQL → SaaS API.
         if ( version_compare( $current, '1.7.0', '<' ) ) {
             self::migrate_monitors_to_api();
         }
-
-        // v1.8.0: Strip legacy per-customer Figma PAT (figmaToken) from saved
-        // designs. The API now reads files via service-account; no customer
-        // token is sent or stored.
         if ( version_compare( $current, '1.8.0', '<' ) ) {
             self::strip_legacy_figma_tokens();
         }
@@ -141,10 +121,6 @@ class QAProof_Database {
         update_option( 'qaproof_db_version', '1.8.0' );
     }
 
-    /**
-     * One-time cleanup: remove the figmaToken field from each saved design.
-     * Idempotent — re-running is a no-op.
-     */
     private static function strip_legacy_figma_tokens() {
         $designs = get_option( 'qaproof_saved_designs', array() );
         if ( ! is_array( $designs ) || empty( $designs ) ) {
@@ -164,10 +140,7 @@ class QAProof_Database {
         }
     }
 
-    /**
-     * Copy monitors from the legacy WP MySQL table to the SaaS API (one-time).
-     * Guarded by a WP option so it never runs more than once.
-     */
+    /** One-time copy of monitors from the legacy MySQL table to the SaaS API. */
     private static function migrate_monitors_to_api() {
         global $wpdb;
 
@@ -175,12 +148,11 @@ class QAProof_Database {
             return;
         }
 
-        // Mark as done immediately — prevents re-runs even if individual creates fail.
+        // Mark done up-front so a partial failure doesn't trigger a re-migration.
         update_option( 'qaproof_monitors_api_migrated', 1 );
 
         $table = $wpdb->prefix . 'qaproof_monitors';
 
-        // Table may not exist on fresh installs — skip silently.
         if ( ! $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) ) {
             return;
         }
@@ -214,7 +186,6 @@ class QAProof_Database {
 
             $migrated++;
 
-            // Restore baseline_key + has_baseline if the monitor had a baseline.
             if ( ! empty( $m['baseline_key'] ) && ! empty( $m['has_baseline'] ) ) {
                 QAProof_API_Client::monitors_update( $result['id'], array(
                     'baseline_key' => $m['baseline_key'],
@@ -229,10 +200,6 @@ class QAProof_Database {
         ) );
     }
 
-    /**
-     * Drop plugin tables.
-     * Called on plugin uninstall.
-     */
     public static function drop_tables() {
         global $wpdb;
         $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_test_history" );
