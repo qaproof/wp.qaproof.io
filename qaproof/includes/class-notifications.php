@@ -40,8 +40,8 @@ class QAProof_Notifications {
 
         $results_url = admin_url( 'admin.php?page=qaproof-monitors&monitor_id=' . $monitor['id'] );
 
-        /* translators: 1: page URL, 2: score, 3: threshold, 4: summary text, 5: results URL */
         $body = sprintf(
+            /* translators: 1: page URL, 2: score, 3: threshold, 4: summary text, 5: results URL */
             __( 'QAProof has detected visual changes on a monitored page.
 
 Page: %1$s

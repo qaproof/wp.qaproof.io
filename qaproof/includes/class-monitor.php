@@ -176,14 +176,11 @@ class QAProof_Monitor {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_monitors';
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         return $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$table} WHERE is_enabled = 1 AND schedule = %s AND (scheduled_at IS NULL OR scheduled_at <= %s)",
-                $schedule,
-                current_time( 'mysql' )
-            ),
+            $wpdb->prepare( "SELECT * FROM {$table} WHERE is_enabled = 1 AND schedule = %s AND (scheduled_at IS NULL OR scheduled_at <= %s)", $schedule, current_time( 'mysql' ) ),
             ARRAY_A
         );
+        // phpcs:enable
     }
 }
