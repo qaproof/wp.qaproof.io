@@ -62,11 +62,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <span class="dashicons dashicons-warning"></span>
                 <div>
                     <strong><?php esc_html_e( 'Setup Required', 'qaproof' ); ?></strong>
-                    <p><?php printf(
-                        esc_html__( 'Add your API key in %sSettings%s to start testing.', 'qaproof' ),
-                        '<a href="' . esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ) . '">',
-                        '</a>'
-                    ); ?></p>
+                    <p><?php
+                        echo wp_kses_post( sprintf(
+                            /* translators: %1$s: opening anchor tag, %2$s: closing anchor tag */
+                            __( 'Add your API key in %1$sSettings%2$s to start testing.', 'qaproof' ),
+                            '<a href="' . esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ) . '">',
+                            '</a>'
+                        ) );
+                    ?></p>
                 </div>
             </div>
         <?php elseif ( $total_monitors === 0 ) : ?>
@@ -74,11 +77,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <span class="dashicons dashicons-info-outline"></span>
                 <div>
                     <strong><?php esc_html_e( 'Get Started with Monitoring', 'qaproof' ); ?></strong>
-                    <p><?php printf(
-                        esc_html__( 'Create your first %smonitor%s to track visual changes automatically.', 'qaproof' ),
-                        '<a href="' . esc_url( admin_url( 'admin.php?page=' . $monitors_slug ) ) . '">',
-                        '</a>'
-                    ); ?></p>
+                    <p><?php
+                        echo wp_kses_post( sprintf(
+                            /* translators: %1$s: opening anchor tag, %2$s: closing anchor tag */
+                            __( 'Create your first %1$smonitor%2$s to track visual changes automatically.', 'qaproof' ),
+                            '<a href="' . esc_url( admin_url( 'admin.php?page=' . $monitors_slug ) ) . '">',
+                            '</a>'
+                        ) );
+                    ?></p>
                 </div>
             </div>
         <?php endif; ?>

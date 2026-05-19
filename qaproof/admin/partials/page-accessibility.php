@@ -35,11 +35,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <?php if ( empty( QAProof_Settings::get_api_key() ) ) : ?>
         <div class="notice notice-warning inline">
             <p>
-                <?php printf(
-                    esc_html__( 'API key not configured. %sGo to Settings%s to add your key.', 'qaproof' ),
+                <?php
+                    echo wp_kses_post( sprintf(
+                    /* translators: %1$s: opening anchor tag, %2$s: closing anchor tag */
+                    __( 'API key not configured. %1$sGo to Settings%2$s to add your key.', 'qaproof' ),
                     '<a href="' . esc_url( $settings_url ) . '">',
                     '</a>'
-                ); ?>
+                ) );
+                ?>
             </p>
         </div>
     <?php endif; ?>
@@ -67,19 +70,19 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         <label for="qaproof-a11y-wcag-level"><?php esc_html_e( 'WCAG Level', 'qaproof' ); ?></label>
                     </th>
                     <td>
-                        <?php $wcag_level = get_option( 'qaproof_wcag_level', 'AA' ); ?>
+                        <?php $qaproof_wcag_level = get_option( 'qaproof_wcag_level', 'AA' ); ?>
                         <select id="qaproof-a11y-wcag-level" name="wcagLevel">
-                            <option value="A" <?php selected( $wcag_level, 'A' ); ?>>Level A (minimum)<?php if ( 'A' === $wcag_level ) echo ' — default'; ?></option>
-                            <option value="AA" <?php selected( $wcag_level, 'AA' ); ?>>Level AA (recommended)<?php if ( 'AA' === $wcag_level ) echo ' — default'; ?></option>
-                            <option value="AAA" <?php selected( $wcag_level, 'AAA' ); ?>>Level AAA (enhanced)<?php if ( 'AAA' === $wcag_level ) echo ' — default'; ?></option>
+                            <option value="A" <?php selected( $qaproof_wcag_level, 'A' ); ?>>Level A (minimum)<?php if ( 'A' === $qaproof_wcag_level ) echo ' — default'; ?></option>
+                            <option value="AA" <?php selected( $qaproof_wcag_level, 'AA' ); ?>>Level AA (recommended)<?php if ( 'AA' === $qaproof_wcag_level ) echo ' — default'; ?></option>
+                            <option value="AAA" <?php selected( $qaproof_wcag_level, 'AAA' ); ?>>Level AAA (enhanced)<?php if ( 'AAA' === $qaproof_wcag_level ) echo ' — default'; ?></option>
                         </select>
                         <p class="description">
                             <?php
-                                printf(
+                                echo wp_kses_post( sprintf(
                                     /* translators: %s: link to Settings page */
-                                    esc_html__( 'WCAG 2.1 conformance level to test against. Default level can be changed in %s.', 'qaproof' ),
+                                    __( 'WCAG 2.1 conformance level to test against. Default level can be changed in %s.', 'qaproof' ),
                                     '<a href="' . esc_url( admin_url( 'admin.php?page=qaproof-settings&tab=tests&subtab=accessibility' ) ) . '">' . esc_html__( 'Settings', 'qaproof' ) . '</a>'
-                                );
+                                ) );
                             ?>
                         </p>
                     </td>
@@ -122,9 +125,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Tab: History -->
     <div class="qaproof-tab-panel" id="qaproof-tab-a11y-history" data-tab-panel="a11y-history">
         <?php
-        $prefix  = 'a11y';
-        $filters = [];
-        $inline  = true;
+        $qaproof_prefix  = 'a11y';
+        $qaproof_filters = [];
+        $qaproof_inline  = true;
         include __DIR__ . '/partial-test-history.php';
         ?>
     </div><!-- /.qaproof-tab-panel #qaproof-tab-a11y-history -->

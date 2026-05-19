@@ -534,7 +534,7 @@ class QAProof_Settings {
                         <button type="button"
                                 class="qaproof-hour-btn<?php echo esc_attr( $value === $h ? ' active' : '' ); ?>"
                                 data-hour="<?php echo (int) $h; ?>">
-                            <?php echo sprintf( '%02d', $h ); ?>
+                            <?php echo esc_html( sprintf( '%02d', $h ) ); ?>
                         </button>
                     <?php endfor; ?>
                 </div>
@@ -544,12 +544,12 @@ class QAProof_Settings {
         <input type="hidden" name="qaproof_cron_hour" id="qaproof_cron_hour" value="<?php echo esc_attr( $value ); ?>">
         <p class="description" style="margin-top: 10px;">
             <?php
-            printf(
+            echo wp_kses_post( sprintf(
                 /* translators: 1: selected hour, 2: timezone string */
-                esc_html__( 'Monitors run at %s:00 (%s). Changes apply from the next scheduled run.', 'qaproof' ),
-                '<strong id="qaproof-hour-display">' . sprintf( '%02d', $value ) . '</strong>',
+                __( 'Monitors run at %1$s:00 (%2$s). Changes apply from the next scheduled run.', 'qaproof' ),
+                '<strong id="qaproof-hour-display">' . esc_html( sprintf( '%02d', $value ) ) . '</strong>',
                 '<strong>' . esc_html( $site_tz ) . '</strong>'
-            );
+            ) );
             ?>
         </p>
         <?php
@@ -872,8 +872,9 @@ class QAProof_Settings {
                     $is_stale_ai      = ( $source === 'ai-vision' ) && $has_figma_source;
                     if ( $has_image && $has_elements && ! $is_stale_ai ) {
                         $status       = 'ready';
+                        /* translators: %d: element count */
                         $status_label = sprintf( __( 'Ready · %d elements', 'qaproof' ), $elements_count );
-                        if ( $source ) $status_label .= ' (' . esc_html( $source ) . ')';
+                        if ( $source ) $status_label .= ' (' . $source . ')';
                     } elseif ( $has_image ) {
                         $status       = 'partial';
                         $status_label = __( 'Image cached · elements missing', 'qaproof' );
@@ -909,11 +910,11 @@ class QAProof_Settings {
         </div>
         <p class="description">
             <?php
-                printf(
+                echo wp_kses_post( sprintf(
                     /* translators: %s: link to Tests page */
-                    esc_html__( 'Save your designs here, then select them by name on the %s page.', 'qaproof' ),
+                    __( 'Save your designs here, then select them by name on the %s page.', 'qaproof' ),
                     '<a href="' . esc_url( admin_url( 'admin.php?page=qaproof-tests' ) ) . '">' . esc_html__( 'Design Fidelity Test', 'qaproof' ) . '</a>'
-                );
+                ) );
             ?>
         </p>
         <?php

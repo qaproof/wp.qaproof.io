@@ -1,6 +1,6 @@
 === QAProof ===
 Contributors: qaproof
-Tags: design qa, figma, responsive, accessibility, visual regression
+Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0

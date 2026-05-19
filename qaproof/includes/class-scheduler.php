@@ -144,6 +144,7 @@ class QAProof_Scheduler {
     public static function run_single_monitor( $monitor_id ) {
         // Polling can take 8–12 min; raise the limit when the host permits it.
         if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
+            // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- intentional, gated on availability.
             set_time_limit( 900 );
         }
 
@@ -177,6 +178,7 @@ class QAProof_Scheduler {
             }
             $last_error = $result;
             if ( $i < $attempts - 1 ) {
+                // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPressVIPMinimum.Functions.RestrictedFunctions.sleep_sleep -- short retry backoff inside isolated wp-cron worker.
                 sleep( 2 );
             }
         }
@@ -247,6 +249,7 @@ class QAProof_Scheduler {
         $result = null;
 
         for ( $i = 0; $i < $max_attempts; $i++ ) {
+            // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions, WordPressVIPMinimum.Functions.RestrictedFunctions.sleep_sleep -- isolated wp-cron worker, no user request blocked.
             sleep( 10 );
 
             $poll = QAProof_API_Client::poll_job( $job_id );

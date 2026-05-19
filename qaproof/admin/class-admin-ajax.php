@@ -7,7 +7,7 @@ class QAProof_Admin_AJAX {
         check_ajax_referer( 'qaproof_ajax', 'nonce' );
 
         if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) {
-            wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'qaproof' ) ], 403 );
         }
 
         $result = QAProof_API_Client::health_check();
@@ -27,7 +27,7 @@ class QAProof_Admin_AJAX {
         check_ajax_referer( 'qaproof_ajax', 'nonce' );
 
         if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) {
-            wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'qaproof' ) ], 403 );
         }
 
         $posted_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
@@ -55,17 +55,17 @@ class QAProof_Admin_AJAX {
         check_ajax_referer( 'qaproof_ajax', 'nonce' );
 
         if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) {
-            wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'qaproof' ) ], 403 );
         }
 
         $test_type = isset( $_POST['testType'] ) ? sanitize_text_field( wp_unslash( $_POST['testType'] ) ) : '';
         $page_url  = isset( $_POST['pageUrl'] )  ? sanitize_url( wp_unslash( $_POST['pageUrl'] ) ) : '';
         $job_id    = isset( $_POST['jobId'] )    ? sanitize_text_field( wp_unslash( $_POST['jobId'] ) ) : '';
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- JSON payload, decoded + validated below.
-        $result    = isset( $_POST['result'] )   ? $_POST['result'] : [];
-
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- length only, never echoed.
-        $payload_bytes = isset( $_POST['result'] ) ? strlen( (string) $_POST['result'] ) : 0;
+        // JSON payload — unslash before decode; sanitization happens after json_decode validates structure.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $result_raw    = isset( $_POST['result'] ) ? wp_unslash( $_POST['result'] ) : '';
+        $payload_bytes = is_string( $result_raw ) ? strlen( $result_raw ) : 0;
+        $result        = $result_raw;
         qaproof_debug_log( sprintf(
             '[QAProof] ajax_save_history start: testType=%s payloadBytes=%d jobId=%s',
             $test_type, $payload_bytes, $job_id ?: '(none)'
@@ -73,7 +73,7 @@ class QAProof_Admin_AJAX {
 
         if ( empty( $test_type ) || empty( $page_url ) || empty( $result ) ) {
             qaproof_debug_log( '[QAProof] ajax_save_history: missing fields' );
-            wp_send_json_error( [ 'message' => 'Missing required fields.' ] );
+            wp_send_json_error( [ 'message' => __( 'Missing required fields.', 'qaproof' ) ] );
         }
 
         // Dedup overlapping poll responses on the same jobId within 120s.
@@ -87,12 +87,12 @@ class QAProof_Admin_AJAX {
         }
 
         if ( is_string( $result ) ) {
-            $result = json_decode( wp_unslash( $result ), true );
+            $result = json_decode( $result, true );
         }
 
         if ( ! is_array( $result ) ) {
             qaproof_debug_log( '[QAProof] ajax_save_history: json_decode failed — payloadBytes=' . $payload_bytes );
-            wp_send_json_error( [ 'message' => 'Invalid result data.' ] );
+            wp_send_json_error( [ 'message' => __( 'Invalid result data.', 'qaproof' ) ] );
         }
 
         $has_screenshots = false;
@@ -121,7 +121,8 @@ class QAProof_Admin_AJAX {
         if ( is_wp_error( $saved ) ) {
             $err_msg = $saved->get_error_message();
             qaproof_debug_log( '[QAProof] ajax_save_history: API save failed — ' . $err_msg . ' jobId=' . ( $job_id ?: '(none)' ) );
-            wp_send_json_error( [ 'message' => 'Failed to save history: ' . $err_msg ] );
+            /* translators: %s: error message from the API */
+            wp_send_json_error( [ 'message' => sprintf( __( 'Failed to save history: %s', 'qaproof' ), $err_msg ) ] );
         }
 
         $saved_id = isset( $saved['id'] ) ? $saved['id'] : null;

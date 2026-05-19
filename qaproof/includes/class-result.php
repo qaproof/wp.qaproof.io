@@ -33,13 +33,15 @@ class QAProof_Result {
             $values[] = $args['status'];
         }
 
-        $sql = $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE " . implode( ' AND ', $where )
-            . " ORDER BY run_date DESC LIMIT %d OFFSET %d",
-            array_merge( $values, array( $limit, $offset ) )
+        $values = array_merge( $values, array( $limit, $offset ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE " . implode( ' AND ', $where ) . " ORDER BY run_date DESC LIMIT %d OFFSET %d",
+                ...$values
+            ),
+            ARRAY_A
         );
-
-        return $wpdb->get_results( $sql, ARRAY_A );
     }
 
     /**
@@ -51,6 +53,7 @@ class QAProof_Result {
     public static function get( $id ) {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_results';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
     }
 
@@ -63,6 +66,7 @@ class QAProof_Result {
     public static function get_latest( $monitor_id ) {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_results';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         return $wpdb->get_row(
             $wpdb->prepare(
                 "SELECT * FROM {$table} WHERE monitor_id = %d ORDER BY run_date DESC LIMIT 1",
@@ -109,6 +113,7 @@ class QAProof_Result {
 
         $format = array( '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $result = $wpdb->insert( $table, $insert, $format );
         if ( $result ) {
             self::purge_old( (int) $data['monitor_id'] );
@@ -128,6 +133,7 @@ class QAProof_Result {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_results';
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return (bool) $wpdb->update(
             $table,
             array( 'status' => $status ),
@@ -146,6 +152,7 @@ class QAProof_Result {
     public static function count( $monitor_id ) {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_results';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return (int) $wpdb->get_var(
             $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE monitor_id = %d", $monitor_id )
         );
@@ -166,6 +173,7 @@ class QAProof_Result {
         }
 
         $to_delete = $count - self::MAX_RESULTS_PER_MONITOR;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$table} WHERE monitor_id = %d ORDER BY run_date ASC LIMIT %d",

@@ -42,7 +42,15 @@ class QAProof_Notifications {
 
         /* translators: 1: page URL, 2: score, 3: threshold, 4: summary text, 5: results URL */
         $body = sprintf(
-            __( "QAProof has detected visual changes on a monitored page.\n\nPage: %1\$s\nScore: %2\$s / 100 (threshold: %3\$s)\nSummary: %4\$s\n\nView full results: %5\$s\n\nIf the changes are intentional, click \"Approve Changes\" in the plugin to update the baseline.", 'qaproof' ),
+            __( 'QAProof has detected visual changes on a monitored page.
+
+Page: %1$s
+Score: %2$s / 100 (threshold: %3$s)
+Summary: %4$s
+
+View full results: %5$s
+
+If the changes are intentional, click "Approve Changes" in the plugin to update the baseline.', 'qaproof' ),
             $monitor['page_url'],
             $score,
             $monitor['threshold_score'],

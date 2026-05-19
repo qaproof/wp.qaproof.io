@@ -18,30 +18,6 @@ class QAProof_Admin {
         add_action( 'wp_ajax_qaproof_health_check',       [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
         add_action( 'wp_ajax_qaproof_save_history',       [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
         add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
-        // Priority -999 runs before any other notice callbacks so we can remove them.
-        add_action( 'admin_notices',         [ __CLASS__, 'suppress_third_party_notices' ], -999 );
-        add_action( 'all_admin_notices',     [ __CLASS__, 'suppress_third_party_notices' ], -999 );
-        add_action( 'network_admin_notices', [ __CLASS__, 'suppress_third_party_notices' ], -999 );
-    }
-
-    /** Remove third-party admin notices on QAProof pages only. */
-    public static function suppress_third_party_notices() {
-        $screen = get_current_screen();
-        if ( ! $screen ) return;
-
-        $qaproof_pages = [
-            'toplevel_page_qaproof',
-            'qaproof_page_qaproof-tests',
-            'qaproof_page_qaproof-accessibility',
-            'qaproof_page_qaproof-monitors',
-            'qaproof_page_qaproof-settings',
-        ];
-
-        if ( in_array( $screen->id, $qaproof_pages, true ) ) {
-            remove_all_actions( 'admin_notices' );
-            remove_all_actions( 'all_admin_notices' );
-            remove_all_actions( 'network_admin_notices' );
-        }
     }
 
     public static function register_menu() {
@@ -454,8 +430,9 @@ class QAProof_Admin {
         }
 
         $ai_pct      = $ai_limit > 0 ? round( $ai_used / $ai_limit * 100 ) : 0;
-        $reset_ts    = mktime( 0, 0, 0, (int) date('n') + 1, 1 );
-        $reset_label = 'Resets on ' . date( 'M j, Y', $reset_ts );
+        $reset_ts    = mktime( 0, 0, 0, (int) gmdate( 'n' ) + 1, 1 );
+        /* translators: %s: reset date (e.g. "Jun 1, 2026") */
+        $reset_label = sprintf( __( 'Resets on %s', 'qaproof' ), wp_date( 'M j, Y', $reset_ts ) );
 
         $ring_radius    = 44;
         $circumference  = 2 * 3.14159 * $ring_radius;
@@ -491,7 +468,7 @@ class QAProof_Admin {
         include QAPROOF_PLUGIN_DIR . 'admin/partials/page-accessibility.php';
     }
 
-    private static function render_test_history_section( $prefix, $filters = [], $inline = false ) {
+    private static function render_test_history_section( $qaproof_prefix, $qaproof_filters = [], $qaproof_inline = false ) {
         include QAPROOF_PLUGIN_DIR . 'admin/partials/partial-test-history.php';
     }
 }

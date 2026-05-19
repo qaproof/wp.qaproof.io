@@ -27,6 +27,7 @@ define( 'QAPROOF_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 if ( ! function_exists( 'qaproof_debug_log' ) ) {
     function qaproof_debug_log( $message ) {
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- gated on WP_DEBUG + WP_DEBUG_LOG.
             error_log( is_string( $message ) ? $message : wp_json_encode( $message ) );
         }
     }
@@ -51,7 +52,6 @@ require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-figma-oauth.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-history.php';
 
 add_action( 'plugins_loaded', function() {
-    load_plugin_textdomain( 'qaproof', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     QAProof_Settings::init();
     QAProof_Admin::init();
     QAProof_Scheduler::init();

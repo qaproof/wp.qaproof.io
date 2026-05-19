@@ -87,9 +87,9 @@ function qaproof_uninstall_blog_cleanup() {
 }
 
 if ( is_multisite() ) {
-	$blog_ids = get_sites( [ 'fields' => 'ids', 'number' => 0 ] );
-	foreach ( $blog_ids as $blog_id ) {
-		switch_to_blog( $blog_id );
+	$qaproof_blog_ids = get_sites( [ 'fields' => 'ids', 'number' => 0 ] );
+	foreach ( $qaproof_blog_ids as $qaproof_blog_id ) {
+		switch_to_blog( $qaproof_blog_id );
 		qaproof_uninstall_blog_cleanup();
 		restore_current_blog();
 	}

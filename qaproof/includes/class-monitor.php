@@ -46,11 +46,12 @@ class QAProof_Monitor {
 
         $sql = "SELECT * FROM {$table} WHERE " . implode( ' AND ', $where ) . " ORDER BY {$orderby} {$order}";
 
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         if ( ! empty( $values ) ) {
-            $sql = $wpdb->prepare( $sql, ...$values );
+            return $wpdb->get_results( $wpdb->prepare( $sql, ...$values ), ARRAY_A );
         }
-
         return $wpdb->get_results( $sql, ARRAY_A );
+        // phpcs:enable
     }
 
     private static function column_exists( $column ) {
@@ -67,6 +68,7 @@ class QAProof_Monitor {
     public static function get( $id ) {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_monitors';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
     }
 
@@ -109,6 +111,7 @@ class QAProof_Monitor {
             $formats[] = '%s';
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $result = $wpdb->insert( $table, $insert, $formats );
         return $result ? $wpdb->insert_id : false;
     }
@@ -147,19 +150,14 @@ class QAProof_Monitor {
             return false;
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return (bool) $wpdb->update( $table, $update, array( 'id' => $id ), $format, array( '%d' ) );
     }
 
-    /**
-     * Delete a monitor and its results.
-     *
-     * @param int $id
-     * @return bool
-     */
     public static function delete( $id ) {
         global $wpdb;
 
-        // Delete associated results first
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->delete(
             $wpdb->prefix . 'qaproof_results',
             array( 'monitor_id' => $id ),
@@ -171,18 +169,14 @@ class QAProof_Monitor {
             array( 'id' => $id ),
             array( '%d' )
         );
+        // phpcs:enable
     }
 
-    /**
-     * Get monitors due to run based on schedule.
-     *
-     * @param string $schedule 'daily', 'weekly', or 'monthly'.
-     * @return array
-     */
     public static function get_due( $schedule ) {
         global $wpdb;
         $table = $wpdb->prefix . 'qaproof_monitors';
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
         return $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$table} WHERE is_enabled = 1 AND schedule = %s AND (scheduled_at IS NULL OR scheduled_at <= %s)",

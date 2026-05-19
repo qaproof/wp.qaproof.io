@@ -65,6 +65,7 @@ class QAProof_API_Client {
             return new WP_Error(
                 'qaproof_api_network_error',
                 sprintf(
+                    /* translators: %s: error message */
                     __( 'Could not reach the API: %s', 'qaproof' ),
                     $response->get_error_message()
                 )
@@ -77,6 +78,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -84,6 +86,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
             $error_code = isset( $decoded['error']['code'] )
@@ -127,6 +130,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -136,6 +140,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -147,6 +152,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
             return new WP_Error( 'qaproof_api_error', $error_msg );
@@ -177,6 +183,7 @@ class QAProof_API_Client {
         if ( function_exists( 'ini_set' ) && ! in_array( 'ini_set', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
             $current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
             if ( $current && $current > 0 && $current < 256 * MB_IN_BYTES ) {
+                // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged, WordPress.PHP.IniSet.memory_limit_Blacklisted -- needed for multi-MB screenshot payloads; gated on availability.
                 ini_set( 'memory_limit', '256M' );
             }
         }
@@ -192,6 +199,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not fetch screenshots: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -201,6 +209,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'Screenshots response invalid (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -208,6 +217,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
             return new WP_Error( 'qaproof_api_error', $error_msg );
@@ -280,6 +290,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -289,6 +300,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -298,6 +310,7 @@ class QAProof_API_Client {
         if ( ! $is_success_code || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
             $err_data = array( 'status' => $status_code );
@@ -348,6 +361,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -357,6 +371,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -364,6 +379,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
             $error_code = isset( $decoded['error']['code'] )
@@ -416,6 +432,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -426,11 +443,13 @@ class QAProof_API_Client {
         if ( $decoded === null ) {
             return new WP_Error(
                 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
 
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+            /* translators: %d: HTTP status code */
             $error_msg  = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
             $error_code = isset( $decoded['error']['code'] )    ? $decoded['error']['code']    : 'API_ERROR';
             return new WP_Error( 'qaproof_figma_verify_error', $error_msg, array(
@@ -484,6 +503,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -493,6 +513,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -500,6 +521,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
 
             $err_data = array( 'status' => $status_code );
@@ -543,6 +565,7 @@ class QAProof_API_Client {
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
                 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -552,6 +575,7 @@ class QAProof_API_Client {
 
         if ( $decoded === null ) {
             return new WP_Error( 'qaproof_api_invalid_json',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned invalid response (HTTP %d)', 'qaproof' ), $status_code )
             );
         }
@@ -565,6 +589,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
             return new WP_Error( 'qaproof_api_error', $error_msg );
         }
@@ -587,6 +612,7 @@ class QAProof_API_Client {
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( $status_code !== 200 ) {
             return new WP_Error( 'qaproof_health_error',
+                /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code )
             );
         }
@@ -800,6 +826,7 @@ class QAProof_API_Client {
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -810,6 +837,7 @@ class QAProof_API_Client {
         if ( $decoded === null || $status_code !== 200 || empty( $decoded['success'] ) ) {
             $msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
             return new WP_Error( 'qaproof_api_error', $msg );
         }
@@ -883,6 +911,7 @@ class QAProof_API_Client {
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -893,6 +922,7 @@ class QAProof_API_Client {
         if ( $decoded === null || $status_code !== 200 || empty( $decoded['success'] ) ) {
             $msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
                 : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
             return new WP_Error( 'qaproof_api_error', $msg );
         }

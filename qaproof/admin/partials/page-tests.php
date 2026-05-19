@@ -32,11 +32,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <?php if ( empty( QAProof_Settings::get_api_key() ) ) : ?>
         <div class="notice notice-warning inline">
             <p>
-                <?php printf(
-                    esc_html__( 'API key not configured. %sGo to Settings%s to add your key.', 'qaproof' ),
+                <?php
+                    echo wp_kses_post( sprintf(
+                    /* translators: %1$s: opening anchor tag, %2$s: closing anchor tag */
+                    __( 'API key not configured. %1$sGo to Settings%2$s to add your key.', 'qaproof' ),
                     '<a href="' . esc_url( $settings_url ) . '">',
                     '</a>'
-                ); ?>
+                ) );
+                ?>
             </p>
         </div>
     <?php endif; ?>

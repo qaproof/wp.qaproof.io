@@ -255,13 +255,14 @@ class QAProof_Admin_Assets {
                 'loadingDefaultSub'      => __( 'This may take 15-30 seconds', 'qaproof' ),
                 // form.js — validation & errors
                 'errTestRunning'         => __( 'A test is already running. Please wait for it to finish.', 'qaproof' ),
+                /* translators: %s: value */
                 'errNoApiKey'            => __( 'API key not configured. <a href="%s">Go to Settings</a> to add your key.', 'qaproof' ),
                 'errNoDesign'            => __( 'Please upload a design image or select a saved design.', 'qaproof' ),
                 'errNoConnection'        => __( 'Could not reach the server. Check your connection. Reload the page to retry.', 'qaproof' ),
                 'errInvalidImage'        => __( 'Invalid image data. Please re-upload the design file.', 'qaproof' ),
                 'errUploadType'          => __( 'Please upload an image file (PNG, JPEG, WebP).', 'qaproof' ),
-                'errUploadSize'          => __( ' MB). Maximum size: 5MB.', 'qaproof' ),
-                'errUploadSizePrefix'    => __( 'File too large (', 'qaproof' ),
+                /* translators: %s: file size in MB */
+                'errUploadSize'          => __( 'File too large (%s MB). Maximum size: 5MB.', 'qaproof' ),
                 // form.js — loading steps (design-audit)
                 'stepCaptureScreenshot'  => __( 'Capturing page screenshot', 'qaproof' ),
                 'stepExtractTokens'      => __( 'Extracting design tokens from DOM', 'qaproof' ),
@@ -404,6 +405,7 @@ class QAProof_Admin_Assets {
                 'pdfLabelDefault'        => __( 'QA Analysis Report', 'qaproof' ),
                 'pdfDescFidelity'        => __( 'Pixel-level comparison of design mockup against live implementation', 'qaproof' ),
                 'pdfDescResponsive'      => __( 'Cross-viewport layout and usability analysis across breakpoints', 'qaproof' ),
+                /* translators: %s: value */
                 'pdfDescAccessibility'   => sprintf( __( 'WCAG 2.1 Level %s compliance evaluation and remediation guidance', 'qaproof' ), get_option( 'qaproof_wcag_level', 'AA' ) ),
                 'pdfDescRegression'      => __( 'Visual change detection against previously established baseline', 'qaproof' ),
                 'pdfDescDesignAudit'     => __( 'Automated design system discovery, consistency audit, and design debt analysis', 'qaproof' ),
