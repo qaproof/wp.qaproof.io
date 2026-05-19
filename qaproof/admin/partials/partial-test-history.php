@@ -14,7 +14,7 @@ $id = function ( $suffix ) use ( $prefix ) {
     return 'qaproof-' . $prefix . '-history-' . $suffix;
 };
 ?>
-<div id="<?php echo esc_attr( $id( 'section' ) ); ?>" class="qaproof-history-section<?php echo $inline ? ' qaproof-history-inline' : ' is-collapsed'; ?>">
+<div id="<?php echo esc_attr( $id( 'section' ) ); ?>" class="qaproof-history-section<?php echo esc_attr( $inline ? ' qaproof-history-inline' : ' is-collapsed' ); ?>">
     <?php if ( ! $inline ) : ?>
     <div class="qaproof-history-header">
         <h2>

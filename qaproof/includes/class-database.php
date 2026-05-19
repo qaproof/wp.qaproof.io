@@ -23,7 +23,7 @@ class QAProof_Database {
             return $cache[ $key ];
         }
         global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $result = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) );
         return $cache[ $key ] = ! empty( $result );
     }
@@ -157,6 +157,7 @@ class QAProof_Database {
             return;
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- one-time migration, table name is plugin-controlled.
         $monitors = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id ASC", ARRAY_A );
         if ( empty( $monitors ) ) {
             return;
@@ -202,9 +203,11 @@ class QAProof_Database {
 
     public static function drop_tables() {
         global $wpdb;
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_test_history" );
         $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_results" );
         $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}qaproof_monitors" );
+        // phpcs:enable
         delete_option( 'qaproof_db_version' );
     }
 }

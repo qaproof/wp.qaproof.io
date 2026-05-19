@@ -17,19 +17,19 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Settings Tabs -->
     <div class="qaproof-settings-tabs">
         <a href="<?php echo esc_url( $base_url . '&tab=general' ); ?>"
-           class="qaproof-settings-tab <?php echo $active_tab === 'general' ? 'active' : ''; ?>">
+           class="qaproof-settings-tab <?php echo esc_attr( $active_tab === 'general' ? 'active' : '' ); ?>">
             <?php esc_html_e( 'General', 'qaproof' ); ?>
         </a>
         <a href="<?php echo esc_url( $base_url . '&tab=tests' ); ?>"
-           class="qaproof-settings-tab <?php echo $active_tab === 'tests' ? 'active' : ''; ?>">
+           class="qaproof-settings-tab <?php echo esc_attr( $active_tab === 'tests' ? 'active' : '' ); ?>">
             <?php esc_html_e( 'Tests', 'qaproof' ); ?>
         </a>
         <a href="<?php echo esc_url( $base_url . '&tab=monitors' ); ?>"
-           class="qaproof-settings-tab <?php echo $active_tab === 'monitors' ? 'active' : ''; ?>">
+           class="qaproof-settings-tab <?php echo esc_attr( $active_tab === 'monitors' ? 'active' : '' ); ?>">
             <?php esc_html_e( 'Monitors', 'qaproof' ); ?>
         </a>
         <a href="<?php echo esc_url( $base_url . '&tab=uninstall' ); ?>"
-           class="qaproof-settings-tab <?php echo $active_tab === 'uninstall' ? 'active' : ''; ?>">
+           class="qaproof-settings-tab <?php echo esc_attr( $active_tab === 'uninstall' ? 'active' : '' ); ?>">
             <?php esc_html_e( 'Data Cleanup', 'qaproof' ); ?>
         </a>
     </div>
@@ -39,19 +39,19 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <!-- Test Subtabs -->
             <div class="qaproof-settings-subtabs">
                 <a href="<?php echo esc_url( $base_url . '&tab=tests&subtab=general' ); ?>"
-                   class="qaproof-settings-subtab <?php echo $active_subtab === 'general' ? 'active' : ''; ?>">
+                   class="qaproof-settings-subtab <?php echo esc_attr( $active_subtab === 'general' ? 'active' : '' ); ?>">
                     <?php esc_html_e( 'General', 'qaproof' ); ?>
                 </a>
                 <a href="<?php echo esc_url( $base_url . '&tab=tests&subtab=fidelity' ); ?>"
-                   class="qaproof-settings-subtab <?php echo $active_subtab === 'fidelity' ? 'active' : ''; ?>">
+                   class="qaproof-settings-subtab <?php echo esc_attr( $active_subtab === 'fidelity' ? 'active' : '' ); ?>">
                     <?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?>
                 </a>
                 <a href="<?php echo esc_url( $base_url . '&tab=tests&subtab=responsive' ); ?>"
-                   class="qaproof-settings-subtab <?php echo $active_subtab === 'responsive' ? 'active' : ''; ?>">
+                   class="qaproof-settings-subtab <?php echo esc_attr( $active_subtab === 'responsive' ? 'active' : '' ); ?>">
                     <?php esc_html_e( 'Responsive', 'qaproof' ); ?>
                 </a>
                 <a href="<?php echo esc_url( $base_url . '&tab=tests&subtab=accessibility' ); ?>"
-                   class="qaproof-settings-subtab <?php echo $active_subtab === 'accessibility' ? 'active' : ''; ?>">
+                   class="qaproof-settings-subtab <?php echo esc_attr( $active_subtab === 'accessibility' ? 'active' : '' ); ?>">
                     <?php esc_html_e( 'Accessibility', 'qaproof' ); ?>
                 </a>
             </div>

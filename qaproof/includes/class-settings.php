@@ -30,6 +30,7 @@ class QAProof_Settings {
         global $wpdb;
         remove_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10 );
         remove_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10 );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- toggling autoload flag on wp_options row that register_setting() doesn't expose.
         $wpdb->update(
             $wpdb->options,
             [ 'autoload' => 'no' ],
@@ -43,6 +44,7 @@ class QAProof_Settings {
         global $wpdb;
         remove_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11 );
         remove_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11 );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- toggling autoload flag on wp_options row that register_setting() doesn't expose.
         $wpdb->update(
             $wpdb->options,
             [ 'autoload' => 'no' ],
@@ -530,8 +532,8 @@ class QAProof_Settings {
                 <div class="qaproof-hour-section-pills">
                     <?php for ( $h = $section['start']; $h <= $section['end']; $h++ ) : ?>
                         <button type="button"
-                                class="qaproof-hour-btn<?php echo $value === $h ? ' active' : ''; ?>"
-                                data-hour="<?php echo $h; ?>">
+                                class="qaproof-hour-btn<?php echo esc_attr( $value === $h ? ' active' : '' ); ?>"
+                                data-hour="<?php echo (int) $h; ?>">
                             <?php echo sprintf( '%02d', $h ); ?>
                         </button>
                     <?php endfor; ?>
@@ -880,7 +882,7 @@ class QAProof_Settings {
                         $status_label = __( 'Not cached — open Tests page and click Save', 'qaproof' );
                     }
                 ?>
-                <div class="qaproof-design-row" data-index="<?php echo $i; ?>" data-design-id="<?php echo esc_attr( $d['id'] ); ?>">
+                <div class="qaproof-design-row" data-index="<?php echo (int) $i; ?>" data-design-id="<?php echo esc_attr( $d['id'] ); ?>">
                     <div class="qaproof-design-row-fields">
                         <input type="text" placeholder="<?php esc_attr_e( 'Design Name', 'qaproof' ); ?>" value="<?php echo esc_attr( $d['name'] ); ?>" data-field="name" class="regular-text" />
                         <input type="url" placeholder="<?php esc_attr_e( 'Figma URL', 'qaproof' ); ?>" value="<?php echo esc_url( $d['figmaUrl'] ); ?>" data-field="figmaUrl" class="regular-text" />

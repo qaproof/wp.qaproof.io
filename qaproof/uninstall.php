@@ -47,18 +47,22 @@ function qaproof_uninstall_blog_cleanup() {
 	}
 
 	if ( get_option( 'qaproof_uninstall_delete_test_history', false ) ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall, plugin-controlled table.
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}qaproof_test_history`" );
 	}
 
 	if ( get_option( 'qaproof_uninstall_delete_monitors', false ) ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall, plugin-controlled table.
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}qaproof_results`" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall, plugin-controlled table.
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}qaproof_monitor_results`" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall, plugin-controlled table.
 		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}qaproof_monitors`" );
 	}
 
 	delete_transient( 'qaproof_alert_count' );
 
-	// Sweep any qaproof_* transients (jobId dedup keys, badge counters, etc).
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- transient sweep on uninstall.
 	$wpdb->query( $wpdb->prepare(
 		"DELETE FROM `{$wpdb->options}` WHERE option_name LIKE %s OR option_name LIKE %s",
 		$wpdb->esc_like( '_transient_qaproof_' ) . '%',

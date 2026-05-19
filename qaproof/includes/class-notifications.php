@@ -40,16 +40,9 @@ class QAProof_Notifications {
 
         $results_url = admin_url( 'admin.php?page=qaproof-monitors&monitor_id=' . $monitor['id'] );
 
+        /* translators: 1: page URL, 2: score, 3: threshold, 4: summary text, 5: results URL */
         $body = sprintf(
-            __(
-                "QAProof has detected visual changes on a monitored page.\n\n" .
-                "Page: %1\$s\n" .
-                "Score: %2\$s / 100 (threshold: %3\$s)\n" .
-                "Summary: %4\$s\n\n" .
-                "View full results: %5\$s\n\n" .
-                "If the changes are intentional, click \"Approve Changes\" in the plugin to update the baseline.",
-                'qaproof'
-            ),
+            __( "QAProof has detected visual changes on a monitored page.\n\nPage: %1\$s\nScore: %2\$s / 100 (threshold: %3\$s)\nSummary: %4\$s\n\nView full results: %5\$s\n\nIf the changes are intentional, click \"Approve Changes\" in the plugin to update the baseline.", 'qaproof' ),
             $monitor['page_url'],
             $score,
             $monitor['threshold_score'],

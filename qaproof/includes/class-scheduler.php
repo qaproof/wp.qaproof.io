@@ -15,6 +15,8 @@ class QAProof_Scheduler {
     const RUN_HOOK     = 'qaproof_run_monitor';
 
     public static function init() {
+        add_filter( 'cron_schedules', array( __CLASS__, 'register_schedules' ) );
+
         add_action( self::DAILY_HOOK,   array( __CLASS__, 'run_daily' ) );
         add_action( self::WEEKLY_HOOK,  array( __CLASS__, 'run_weekly' ) );
         add_action( self::MONTHLY_HOOK, array( __CLASS__, 'run_monthly' ) );
@@ -22,6 +24,17 @@ class QAProof_Scheduler {
 
         add_action( 'update_option_qaproof_cron_hour', array( __CLASS__, 'reschedule_events' ) );
         add_filter( 'cron_request', array( __CLASS__, 'normalize_cron_url' ) );
+    }
+
+    /** Register the `monthly` interval (WP ships daily + weekly only). */
+    public static function register_schedules( $schedules ) {
+        if ( ! isset( $schedules['monthly'] ) ) {
+            $schedules['monthly'] = array(
+                'interval' => 30 * DAY_IN_SECONDS,
+                'display'  => __( 'Once Monthly', 'qaproof' ),
+            );
+        }
+        return $schedules;
     }
 
     /**

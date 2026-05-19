@@ -564,21 +564,14 @@
       var schedText = Q.capitalize(m.schedule);
       var schedIcon = m.schedule === 'daily' ? '↻' : (m.schedule === 'weekly' ? '◷' : '◑');
 
-      // Favicon URL (Google favicon service)
-      var faviconUrl = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=32';
-      // Domain initial as fallback
       var domainInitial = domain ? domain.charAt(0).toUpperCase() : '?';
 
       html += '<div class="qaproof-monitor-card ' + cardVariant + '" data-id="' + m.id + '">';
 
-      // ── Card body: favicon + info left │ score right ──
       html += '<div class="qaproof-mc-body">';
 
-      // Left: favicon + URL info
       html += '<div class="qaproof-mc-left">';
-      html += '<div class="qaproof-mc-favicon" data-initial="' + Q.escapeHtml(domainInitial) + '">';
-      html += '<img src="' + Q.escapeHtml(faviconUrl) + '" alt="" width="18" height="18" onerror="this.style.display=\'none\'" />';
-      html += '</div>';
+      html += '<div class="qaproof-mc-favicon" data-initial="' + Q.escapeHtml(domainInitial) + '"></div>';
       html += '<div class="qaproof-mc-url-info">';
       // Top row: domain + badge
       html += '<div class="qaproof-mc-top-row">';

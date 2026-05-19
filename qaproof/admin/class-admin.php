@@ -105,8 +105,10 @@ class QAProof_Admin {
     private static function menu_icon_svg() {
         $path = plugin_dir_path( __FILE__ ) . 'images/icon.svg';
         if ( is_file( $path ) && is_readable( $path ) ) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_get_contents -- plugin-local SVG asset.
             $svg = file_get_contents( $path );
             if ( is_string( $svg ) && $svg !== '' ) {
+                // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- encoding own SVG for data URI.
                 return 'data:image/svg+xml;base64,' . base64_encode( $svg );
             }
         }
@@ -394,8 +396,10 @@ class QAProof_Admin {
 
     public static function render_settings_page() {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
-        $active_tab    = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
-        $active_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'general';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab nav.
+        $active_tab    = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab nav.
+        $active_subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : 'general';
         $base_url      = admin_url( 'admin.php?page=' . self::SETTINGS_SLUG );
         include QAPROOF_PLUGIN_DIR . 'admin/partials/page-settings.php';
     }

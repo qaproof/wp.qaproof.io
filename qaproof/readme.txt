@@ -1,14 +1,14 @@
-=== QAProof — Design Fidelity, Responsive & Accessibility Testing ===
+=== QAProof ===
 Contributors: qaproof
 Tags: design qa, figma, responsive, accessibility, visual regression
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 8.0
 Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Automated design quality assurance for WordPress. Compare live pages against Figma designs, audit accessibility, detect visual regressions, and analyze responsive behavior — all powered by AI vision.
+Compare live pages against Figma, audit accessibility (WCAG 2.1), detect visual regressions, and analyze responsive behavior — powered by AI vision.
 
 == Description ==
 
@@ -103,6 +103,10 @@ If you connect your Figma account via OAuth, the QAProof API reads the specific 
 
 * Figma Terms of Service: https://www.figma.com/legal/tos/
 * Figma Privacy Policy: https://www.figma.com/legal/privacy/
+
+**Trademarks**
+
+QAProof is an independent product. It is not affiliated with, endorsed by, or sponsored by Figma, Inc., Anthropic PBC, or Automattic Inc. "Figma" is a trademark of Figma, Inc. "Claude" is a trademark of Anthropic PBC. "WordPress" is a trademark of the WordPress Foundation.
 
 == Privacy ==
 

@@ -58,11 +58,13 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
         }
 
-        $test_type = isset( $_POST['testType'] ) ? sanitize_text_field( $_POST['testType'] ) : '';
-        $page_url  = isset( $_POST['pageUrl'] )  ? sanitize_url( $_POST['pageUrl'] ) : '';
-        $job_id    = isset( $_POST['jobId'] )    ? sanitize_text_field( $_POST['jobId'] ) : '';
+        $test_type = isset( $_POST['testType'] ) ? sanitize_text_field( wp_unslash( $_POST['testType'] ) ) : '';
+        $page_url  = isset( $_POST['pageUrl'] )  ? sanitize_url( wp_unslash( $_POST['pageUrl'] ) ) : '';
+        $job_id    = isset( $_POST['jobId'] )    ? sanitize_text_field( wp_unslash( $_POST['jobId'] ) ) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- JSON payload, decoded + validated below.
         $result    = isset( $_POST['result'] )   ? $_POST['result'] : [];
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- length only, never echoed.
         $payload_bytes = isset( $_POST['result'] ) ? strlen( (string) $_POST['result'] ) : 0;
         qaproof_debug_log( sprintf(
             '[QAProof] ajax_save_history start: testType=%s payloadBytes=%d jobId=%s',

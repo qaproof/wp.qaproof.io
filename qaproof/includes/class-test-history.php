@@ -90,7 +90,7 @@ class QAProof_Test_History {
         $values[] = (int) $args['offset'];
 
         $where_sql = implode( ' AND ', $where );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d",
@@ -103,7 +103,7 @@ class QAProof_Test_History {
     public static function get( $id ) {
         global $wpdb;
         $table = self::table_name();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return $wpdb->get_row(
             $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ),
             ARRAY_A
@@ -139,10 +139,10 @@ class QAProof_Test_History {
 
         $where_sql = implode( ' AND ', $where );
         if ( ! empty( $values ) ) {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", ...$values ) );
         }
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
     }
 
@@ -150,20 +150,20 @@ class QAProof_Test_History {
         global $wpdb;
         $table = self::table_name();
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $totals = $wpdb->get_row(
             "SELECT COUNT(*) AS total, AVG(score) AS avg_score FROM {$table} WHERE score IS NOT NULL",
             ARRAY_A
         );
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $by_type = $wpdb->get_results(
             "SELECT test_type, COUNT(*) AS cnt, AVG(score) AS avg FROM {$table} WHERE score IS NOT NULL GROUP BY test_type ORDER BY cnt DESC",
             ARRAY_A
         );
 
         $below = (int) $wpdb->get_var(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->prepare(
                 "SELECT COUNT(*) FROM {$table} WHERE score IS NOT NULL AND score < %d",
                 $threshold
@@ -215,7 +215,7 @@ class QAProof_Test_History {
         if ( $count <= $keep ) return 0;
         $delete_count = $count - $keep;
         return $wpdb->query(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->prepare(
                 "DELETE FROM {$table} ORDER BY created_at ASC LIMIT %d",
                 $delete_count
