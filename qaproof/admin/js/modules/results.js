@@ -104,6 +104,37 @@
    * This helps users understand why they see 0 issues / 0% pass rate.
    */
   /**
+   * Per-section pixel-diff breakdown. Renders an inline mini-table next to
+   * the comparison viewport so the user sees which sections actually diverge
+   * (vs the aggregate %). Sorted by % descending — biggest problem first.
+   */
+  function buildPixelDiffBreakdownHtml(data) {
+    var pd = data.pixelDiff;
+    if (!pd || !Array.isArray(pd.bySection) || pd.bySection.length === 0) return '';
+    var rows = pd.bySection.slice().sort(function (a, b) { return (b.percentDiff || 0) - (a.percentDiff || 0); });
+    var html = '<div class="qaproof-pixeldiff-breakdown" style="margin:14px 0;padding:12px 14px;border:1px solid var(--qp-border-light);border-radius:8px;background:var(--qp-bg-surface);">';
+    html += '<div style="font-weight:600;margin-bottom:8px;font-size:13px;">Pixel-diff by section</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var pct = Number.isFinite(r.percentDiff) ? r.percentDiff : 0;
+      var barWidth = Math.min(100, Math.max(2, pct));
+      var barColor = pct >= 25 ? '#EF4444' : pct >= 10 ? '#F59E0B' : '#10B981';
+      html += '<tr>';
+      html += '<td style="padding:3px 8px 3px 0;white-space:nowrap;">' + Q.escapeHtml(r.label || '?') + '</td>';
+      html += '<td style="width:99%;padding:3px 8px;">';
+      html += '  <div style="height:6px;background:#eee;border-radius:3px;overflow:hidden;">';
+      html += '    <div style="height:100%;width:' + barWidth + '%;background:' + barColor + ';"></div>';
+      html += '  </div>';
+      html += '</td>';
+      html += '<td style="padding:3px 0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;">' + pct + '%</td>';
+      html += '</tr>';
+    }
+    html += '</table></div>';
+    return html;
+  }
+
+  /**
    * Small badges shown under the fidelity summary: captured viewport, design
    * source, pixel-diff strategy. Visible at a glance so customers don't ask
    * "why was the screenshot taken at 375px?".
@@ -843,6 +874,9 @@
       html += '    </div>';
       html += '  </div>';
       html += '</div>';
+
+      // Per-section pixel-diff breakdown (only when section-aligned mode ran)
+      html += buildPixelDiffBreakdownHtml(data);
     }
 
     // Differences + Recommendations — two-column grid
