@@ -103,13 +103,52 @@
    * Show a warning banner when AI analysis data is empty or parsing failed.
    * This helps users understand why they see 0 issues / 0% pass rate.
    */
+  /**
+   * Small badges shown under the fidelity summary: captured viewport, design
+   * source, pixel-diff strategy. Visible at a glance so customers don't ask
+   * "why was the screenshot taken at 375px?".
+   */
+  function buildFidelityMetaBadgesHtml(data) {
+    var badges = [];
+    var vp = data.viewport;
+    if (vp && Number.isFinite(vp.width)) {
+      var src = vp.source || 'default';
+      var label = src === 'figma-frame' ? 'auto (Figma frame)'
+                : src === 'preset'      ? 'preset'
+                : src === 'explicit'    ? 'custom'
+                : 'default';
+      badges.push('<span class="qaproof-meta-badge" title="Live page captured at this viewport width">' +
+        '<span class="dashicons dashicons-desktop"></span> ' +
+        Q.escapeHtml(String(vp.width)) + 'px · ' + Q.escapeHtml(label) +
+        '</span>');
+    }
+    if (data.designSource) {
+      var ds = data.designSource === 'figma-url' ? 'Figma URL' : 'Uploaded image';
+      badges.push('<span class="qaproof-meta-badge"><span class="dashicons dashicons-art"></span> ' + Q.escapeHtml(ds) + '</span>');
+    }
+    var pd = data.pixelDiff;
+    if (pd && pd.strategy) {
+      var strat = pd.strategy === 'section-aligned' ? 'aligned by section' : 'top-aligned';
+      badges.push('<span class="qaproof-meta-badge" title="Pixel-diff alignment strategy">' +
+        '<span class="dashicons dashicons-image-flip-vertical"></span> ' +
+        'Pixel diff ' + Q.escapeHtml(String(pd.percentDiff)) + '% · ' + Q.escapeHtml(strat) +
+        '</span>');
+    }
+    if (data.sectionsAvailable === false) {
+      badges.push('<span class="qaproof-meta-badge qaproof-meta-badge-warn" title="Section detection produced no sections; differences grouped under \\"Page\\".">' +
+        '<span class="dashicons dashicons-info-outline"></span> Sections unavailable</span>');
+    }
+    if (badges.length === 0) return '';
+    return '<div class="qaproof-meta-badges" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px;">' + badges.join('') + '</div>';
+  }
+
   function buildParseWarningHtml(data) {
     var categories = data.categories || {};
     var catCount = Object.keys(categories).length;
     var hasDiffs = (data.differences || []).length > 0;
 
-    // Explicit parse failure from backend
-    if (data._parseFailed) {
+    // Explicit parse failure from backend (legacy `_parseFailed` and new `parseFailed`)
+    if (data._parseFailed || data.parseFailed) {
       return '<div class="qaproof-parse-warning">' +
         '<span class="dashicons dashicons-warning"></span> ' +
         '<strong>Analysis incomplete:</strong> The AI response could not be fully parsed. ' +
@@ -722,6 +761,7 @@
     html += '    </div>';
     html += '    <div class="qaproof-report-hero-info">';
     html += '      <div class="qaproof-summary">' + Q.escapeHtml(data.summary || '') + '</div>';
+    html += buildFidelityMetaBadgesHtml(data);
     html += '      <div class="qaproof-report-hero-actions">';
     html += '        <button type="button" id="qaproof-pdf-btn" class="qaproof-btn qaproof-pdf-btn"><span class="dashicons dashicons-pdf"></span> Download PDF Report</button>';
     html += '        <button type="button" id="qaproof-email-btn" class="qaproof-btn qaproof-email-btn"><span class="dashicons dashicons-email-alt"></span> Send to Email</button>';

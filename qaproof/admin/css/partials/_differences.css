@@ -594,6 +594,29 @@
 #qaproof-app .qaproof-badge-device { background: var(--qp-accent-dim); color: #0E7490; }
 #qaproof-app .qaproof-badge-section { background: rgba(124, 58, 237, 0.12); color: #7C3AED; font-weight: 600; }
 
+/* Fidelity report meta badges (viewport, design source, pixel diff strategy) */
+#qaproof-app .qaproof-meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--qp-bg-surface);
+    color: var(--qp-text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 500;
+}
+#qaproof-app .qaproof-meta-badge .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+#qaproof-app .qaproof-meta-badge-warn {
+    background: rgba(245, 158, 11, 0.12);
+    color: #B45309;
+}
+
 /* ============================
    Recommendations
    ============================ */
