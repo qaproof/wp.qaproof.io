@@ -44,6 +44,15 @@ class QAProof_Admin_REST_Tests {
             if ( isset( $params['ignoreText'] ) ) {
                 $api_params['ignoreText'] = rest_sanitize_boolean( $params['ignoreText'] );
             }
+            if ( ! empty( $params['viewportPreset'] ) && in_array( $params['viewportPreset'], [ 'mobile', 'tablet', 'desktop' ], true ) ) {
+                $api_params['viewportPreset'] = sanitize_text_field( $params['viewportPreset'] );
+            }
+            if ( isset( $params['viewportWidth'] ) ) {
+                $w = (int) $params['viewportWidth'];
+                if ( $w >= 320 && $w <= 2560 ) {
+                    $api_params['viewportWidth'] = $w;
+                }
+            }
             if ( ! empty( $params['elementRegion'] ) && is_array( $params['elementRegion'] ) ) {
                 $region = [
                     'top'    => max( 0, (float) ( $params['elementRegion']['top'] ?? 0 ) ),

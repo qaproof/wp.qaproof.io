@@ -1613,6 +1613,12 @@
       if (S.selectedElement && S.selectedElement.region) {
         body.elementRegion = S.selectedElement.region;
       }
+
+      // Optional viewport selector — empty value means "auto from Figma frame".
+      var vpSelect = document.getElementById('qaproof-viewport-preset');
+      if (vpSelect && vpSelect.value) {
+        body.viewportPreset = vpSelect.value;
+      }
     }
 
     // Step-based loading status

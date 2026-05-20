@@ -103,6 +103,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                 <p class="description"><?php esc_html_e( 'The live page URL to test.', 'qaproof' ); ?></p>
                             </td>
                         </tr>
+                        <tr id="qaproof-fidelity-viewport-row">
+                            <th scope="row">
+                                <label for="qaproof-viewport-preset"><?php esc_html_e( 'Viewport', 'qaproof' ); ?></label>
+                            </th>
+                            <td>
+                                <select id="qaproof-viewport-preset" name="viewportPreset" class="regular-text">
+                                    <option value=""><?php esc_html_e( 'Auto — match Figma frame width', 'qaproof' ); ?></option>
+                                    <option value="desktop"><?php esc_html_e( 'Desktop (1440)', 'qaproof' ); ?></option>
+                                    <option value="tablet"><?php esc_html_e( 'Tablet (768)', 'qaproof' ); ?></option>
+                                    <option value="mobile"><?php esc_html_e( 'Mobile (375)', 'qaproof' ); ?></option>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'Render the live page at this width. Auto reads the width of the linked Figma frame so the comparison is apples-to-apples.', 'qaproof' ); ?></p>
+                            </td>
+                        </tr>
                     </table>
 
                     <p class="submit">

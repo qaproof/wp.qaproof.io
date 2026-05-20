@@ -740,13 +740,30 @@
     // Categories
     html += '<div class="qaproof-categories" id="qaproof-categories"></div>';
 
-    // Comparison Viewport
+    // Comparison Viewport. In element-mode we show the cropped design region
+    // (figmaCropped) so the user sees the exact piece the AI was asked to
+    // match. The live screenshot stays full-page; the matched region (if any)
+    // is highlighted via an overlay box.
     if (data.screenshots) {
+      var isElement = !!data.elementTest;
+      var designSrc = isElement && data.screenshots.figmaCropped
+        ? data.screenshots.figmaCropped
+        : (data.screenshots.figma || '');
+      var designLabel = isElement ? 'Design — selected element' : 'Design (Figma)';
+      var matched = data.matchedRegion || null;
+      var matchedStyle = '';
+      if (matched && Number.isFinite(matched.top) && Number.isFinite(matched.left) && Number.isFinite(matched.width) && Number.isFinite(matched.height)) {
+        matchedStyle =
+          'position:absolute;top:' + matched.top + '%;left:' + matched.left + '%;' +
+          'width:' + matched.width + '%;height:' + matched.height + '%;' +
+          'border:2px solid #00ADB5;background:rgba(0,173,181,0.08);pointer-events:none;';
+      }
+
       html += '<div class="qaproof-screenshot-section">';
       html += '  <div class="qaproof-screenshot-chrome">';
       html += '    <div class="qaproof-chrome-bar">';
       html += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
-      html += '      <div class="qaproof-chrome-title">Visual Comparison</div>';
+      html += '      <div class="qaproof-chrome-title">Visual Comparison' + (isElement ? ' — element match' : '') + '</div>';
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
       html += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sync Scroll</button>';
@@ -754,19 +771,22 @@
       html += '    </div>';
       html += '    <div class="qaproof-comparison-viewport">';
       html += '      <div class="qaproof-screenshot-col">';
-      html += '        <div class="qaproof-screenshot-label">Design (Figma)</div>';
+      html += '        <div class="qaproof-screenshot-label">' + Q.escapeHtml(designLabel) + '</div>';
       html += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-figma">';
       html += '          <div class="qaproof-screenshot-inner">';
-      html += '            <img id="qaproof-screenshot-figma" src="' + Q.escapeAttr(data.screenshots.figma || '') + '" alt="Figma" />';
+      html += '            <img id="qaproof-screenshot-figma" src="' + Q.escapeAttr(designSrc) + '" alt="Figma" />';
       html += '            <div class="qaproof-markers-layer" id="qaproof-markers-figma"></div>';
       html += '          </div>';
       html += '        </div>';
       html += '      </div>';
       html += '      <div class="qaproof-screenshot-col">';
-      html += '        <div class="qaproof-screenshot-label">Live Page</div>';
+      html += '        <div class="qaproof-screenshot-label">Live Page' + (isElement && matched ? ' — AI-located region' : '') + '</div>';
       html += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-live">';
-      html += '          <div class="qaproof-screenshot-inner">';
+      html += '          <div class="qaproof-screenshot-inner" style="position:relative;">';
       html += '            <img id="qaproof-screenshot-live" src="' + Q.escapeAttr(data.screenshots.live || '') + '" alt="Live" />';
+      if (matchedStyle) {
+        html += '            <div class="qaproof-matched-region" style="' + Q.escapeAttr(matchedStyle) + '"></div>';
+      }
       html += '            <div class="qaproof-markers-layer" id="qaproof-markers-live"></div>';
       html += '          </div>';
       html += '        </div>';
