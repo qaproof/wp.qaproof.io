@@ -701,6 +701,13 @@
     S.allDifferences = data.differences || [];
     S.activeDevice = 'desktop';
 
+    // Mismatch short-circuit — the AI determined the design and live page are
+    // different websites (no comparable score / categories / differences).
+    if (data && data.mismatch) {
+      renderFidelityMismatch(data);
+      return;
+    }
+
     var score = data.score;
     var scoreClass = Q.getScoreClass(score);
 
@@ -3244,6 +3251,53 @@
         }
       }
     });
+  }
+
+  /**
+   * Render the mismatch state for a fidelity result — design and live page
+   * appear to belong to different websites. No score / categories /
+   * differences are available; show the two screenshots side-by-side and
+   * the AI's explanation so the user can fix the input URLs.
+   */
+  function renderFidelityMismatch(data) {
+    var resultsContainer = document.getElementById('qaproof-results');
+    if (!resultsContainer) return;
+
+    var figmaSrc = data.screenshots && data.screenshots.figma ? data.screenshots.figma : '';
+    var liveSrc  = data.screenshots && data.screenshots.live  ? data.screenshots.live  : '';
+    var summary  = data.summary || 'The design and live page appear to be different websites.';
+
+    var html = buildBackButtonHtml();
+    html += '<div class="qaproof-report-hero qaproof-fidelity-mismatch">';
+    html += '  <div class="qaproof-report-hero-top">';
+    html += '    <div class="qaproof-report-hero-info">';
+    html += '      <h2 style="margin:0 0 10px 0;">⚠ Design and live page don\'t match</h2>';
+    html += '      <div class="qaproof-summary">' + Q.escapeHtml(summary) + '</div>';
+    html += '      <ul style="margin-top:14px;font-size:13px;line-height:1.7;">';
+    if (data.designSite) html += '<li><strong>Design shows:</strong> ' + Q.escapeHtml(data.designSite) + '</li>';
+    if (data.liveSite)   html += '<li><strong>Live page shows:</strong> ' + Q.escapeHtml(data.liveSite) + '</li>';
+    html += '      </ul>';
+    html += '      <p style="margin-top:16px;color:#666;">Check that the Figma URL and the page URL refer to the same project, then run the test again.</p>';
+    html += '    </div>';
+    html += '  </div>';
+    html += '</div>';
+
+    if (figmaSrc || liveSrc) {
+      html += '<div class="qaproof-screenshots-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;">';
+      if (figmaSrc) {
+        html += '<div><div style="font-weight:600;margin-bottom:6px;">Figma design</div>';
+        html += '<img src="' + Q.escapeAttr(figmaSrc) + '" alt="Figma design" style="width:100%;border:1px solid #ddd;border-radius:6px;" /></div>';
+      }
+      if (liveSrc) {
+        html += '<div><div style="font-weight:600;margin-bottom:6px;">Live page</div>';
+        html += '<img src="' + Q.escapeAttr(liveSrc) + '" alt="Live page" style="width:100%;border:1px solid #ddd;border-radius:6px;" /></div>';
+      }
+      html += '</div>';
+    }
+
+    resultsContainer.innerHTML = html;
+    resultsContainer.classList.remove('hidden');
+    Q.scrollToResults && Q.scrollToResults();
   }
 
   // ============================

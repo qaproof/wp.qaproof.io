@@ -74,38 +74,16 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         <table class="form-table">
                             <tr>
                                 <th scope="row">
-                                    <label><?php esc_html_e( 'Design Source', 'qaproof' ); ?></label>
+                                    <label for="qaproof-saved-design"><?php esc_html_e( 'Design', 'qaproof' ); ?></label>
                                 </th>
                                 <td>
-                                    <div class="qaproof-source-toggle" id="qaproof-source-toggle">
-                                        <button type="button" class="qaproof-source-btn active" data-source="saved">
-                                            <?php esc_html_e( 'Saved Design', 'qaproof' ); ?>
-                                        </button>
-                                        <button type="button" class="qaproof-source-btn" data-source="upload">
-                                            <?php esc_html_e( 'Upload Image', 'qaproof' ); ?>
-                                        </button>
-                                    </div>
-                                    <!-- Saved design source -->
-                                    <div id="qaproof-source-saved" style="margin-top: 16px;">
+                                    <div id="qaproof-source-saved">
                                         <select id="qaproof-saved-design" class="regular-text">
-                                            <option value=""><?php esc_html_e( '-- Select Design --', 'qaproof' ); ?></option>
+                                            <option value=""><?php esc_html_e( '-- Select a saved design --', 'qaproof' ); ?></option>
                                         </select>
                                         <p class="description" style="margin-top: 6px;">
-                                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=qaproof-settings&tab=tests&subtab=fidelity' ) ); ?>"><?php esc_html_e( 'Manage designs in Settings', 'qaproof' ); ?></a>
+                                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=qaproof-settings&tab=tests&subtab=fidelity' ) ); ?>"><?php esc_html_e( 'Manage designs in Settings', 'qaproof' ); ?> →</a>
                                         </p>
-                                    </div>
-                                    <!-- Upload image source -->
-                                    <div id="qaproof-source-upload" class="hidden" style="margin-top: 10px;">
-                                        <input type="file" id="qaproof-figma-file"
-                                               accept="image/png,image/jpeg,image/webp" />
-                                        <div id="qaproof-upload-preview" class="hidden" style="margin-top: 10px;">
-                                            <img id="qaproof-upload-preview-img" alt="Preview"
-                                                 style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;" />
-                                            <br />
-                                            <button type="button" id="qaproof-upload-clear" class="button button-link-delete" style="margin-top: 5px;">
-                                                <?php esc_html_e( 'Remove', 'qaproof' ); ?>
-                                            </button>
-                                        </div>
                                     </div>
                                 </td>
                             </tr>

@@ -116,7 +116,7 @@ class QAProof_Admin_Assets {
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'adminEmail'        => wp_get_current_user()->user_email ?: get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
-            'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', true ),
+            'fidelityIgnoreText' => (bool) get_option( 'qaproof_fidelity_ignore_text', false ),
             // Used by figma-oauth.js to validate event.origin on OAuth popup postMessages.
             'apiOrigin'         => self::derive_api_origin(),
             'figmaApiUsage'     => QAProof_Settings::get_figma_api_usage(),
