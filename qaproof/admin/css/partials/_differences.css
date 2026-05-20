@@ -592,6 +592,7 @@
 #qaproof-app .qaproof-badge-low { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
 #qaproof-app .qaproof-badge-category { background: var(--qp-bg-surface); color: var(--qp-text-muted); }
 #qaproof-app .qaproof-badge-device { background: var(--qp-accent-dim); color: #0E7490; }
+#qaproof-app .qaproof-badge-section { background: rgba(124, 58, 237, 0.12); color: #7C3AED; font-weight: 600; }
 
 /* ============================
    Recommendations

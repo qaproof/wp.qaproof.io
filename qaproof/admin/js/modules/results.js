@@ -767,6 +767,11 @@
       html += '      <div class="qaproof-chrome-actions">';
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
       html += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sync Scroll</button>';
+      if (data.pixelDiff && data.pixelDiff.imageBase64) {
+        html += '        <button type="button" id="qaproof-toggle-pixeldiff" class="qaproof-chrome-btn" title="Toggle pixel-diff overlay">' +
+          '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h12M8 2v12" stroke="currentColor" stroke-width="1.5"/></svg> ' +
+          'Pixel diff (' + (data.pixelDiff.percentDiff != null ? data.pixelDiff.percentDiff : '?') + '%)</button>';
+      }
       html += '      </div>';
       html += '    </div>';
       html += '    <div class="qaproof-comparison-viewport">';
@@ -784,6 +789,10 @@
       html += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-live">';
       html += '          <div class="qaproof-screenshot-inner" style="position:relative;">';
       html += '            <img id="qaproof-screenshot-live" src="' + Q.escapeAttr(data.screenshots.live || '') + '" alt="Live" />';
+      if (data.pixelDiff && data.pixelDiff.imageBase64) {
+        html += '            <img id="qaproof-pixeldiff-overlay" src="' + Q.escapeAttr(data.pixelDiff.imageBase64) + '" alt="Pixel diff" ' +
+          'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;opacity:0;pointer-events:none;transition:opacity 0.2s;" />';
+      }
       if (matchedStyle) {
         html += '            <div class="qaproof-matched-region" style="' + Q.escapeAttr(matchedStyle) + '"></div>';
       }
@@ -2597,12 +2606,16 @@
         var deviceBadge = showDevice && diff.device
           ? '<span class="qaproof-badge qaproof-badge-device">' + Q.escapeHtml(deviceLabelMap[diff.device] || diff.device) + '</span>'
           : '';
+        var sectionBadge = diff.sectionLabel
+          ? '<span class="qaproof-badge qaproof-badge-section" title="Page section detected by AI">' + Q.escapeHtml(diff.sectionLabel) + '</span>'
+          : '';
 
         var el = document.createElement('div');
         el.className = 'qaproof-difference';
         el.dataset.index = diff._origIndex;
         el.dataset.severity = severity;
         if (diff.device) el.dataset.device = diff.device;
+        if (diff.sectionLabel) el.dataset.section = diff.sectionLabel;
 
         el.innerHTML =
           '<div class="qaproof-diff-indicator qaproof-diff-indicator-' + severity + '">' +
@@ -2611,6 +2624,7 @@
           '<div class="qaproof-diff-body">' +
           '  <div class="qaproof-diff-header">' +
           '    <span class="qaproof-severity-tag qaproof-severity-tag-' + severity + '">' + severityIcon(severity) + ' ' + Q.escapeHtml(Q.capitalize(severity)) + '</span>' +
+          '    ' + sectionBadge +
           '    ' + deviceBadge +
           '  </div>' +
           '  <div class="qaproof-diff-description">' + Q.escapeHtml(diff.description || '') + '</div>' +
@@ -3172,6 +3186,17 @@
       S.syncScrollEnabled = !S.syncScrollEnabled;
       toggleSyncBtn.classList.toggle('active', S.syncScrollEnabled);
     });
+
+    // Optional pixel-diff overlay toggle. Only present when the API returned
+    // a pixel-diff image alongside the AI result.
+    var pxBtn = document.getElementById('qaproof-toggle-pixeldiff');
+    var pxImg = document.getElementById('qaproof-pixeldiff-overlay');
+    if (pxBtn && pxImg) {
+      pxBtn.addEventListener('click', function () {
+        var on = pxBtn.classList.toggle('active');
+        pxImg.style.opacity = on ? '0.85' : '0';
+      });
+    }
   }
 
   // ============================
