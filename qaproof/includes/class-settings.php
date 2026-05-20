@@ -581,7 +581,7 @@ class QAProof_Settings {
 
     public static function sanitize_saved_designs( $input ) {
         if ( empty( $input ) ) return '[]';
-        $designs = json_decode( stripslashes( $input ), true );
+        $designs = json_decode( wp_unslash( $input ), true );
         if ( ! is_array( $designs ) ) return '[]';
 
         $clean = [];
@@ -593,12 +593,19 @@ class QAProof_Settings {
                 'pageUrl'  => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
                 'figmaUrl' => isset( $d['figmaUrl'] ) ? self::sanitize_figma_url( $d['figmaUrl'] ) : '',
             ];
-            // Preserve cached image + detected elements (not posted by the settings form).
-            if ( ! empty( $d['imageBase64'] ) ) {
-                $entry['imageBase64'] = $d['imageBase64'];
+            // Cached preview image — accept only well-formed data:image URIs up to 8 MB.
+            if ( ! empty( $d['imageBase64'] ) && is_string( $d['imageBase64'] ) ) {
+                $img = $d['imageBase64'];
+                if ( preg_match( '#^data:image/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$#', $img ) && strlen( $img ) <= 8 * 1024 * 1024 ) {
+                    $entry['imageBase64'] = $img;
+                }
             }
-            if ( ! empty( $d['elementsJson'] ) ) {
-                $entry['elementsJson'] = $d['elementsJson'];
+            // Detected elements — decode, validate shape, re-encode.
+            if ( ! empty( $d['elementsJson'] ) && is_string( $d['elementsJson'] ) ) {
+                $decoded = json_decode( $d['elementsJson'], true );
+                if ( is_array( $decoded ) ) {
+                    $entry['elementsJson'] = wp_json_encode( self::sanitize_elements_tree( $decoded ) );
+                }
             }
             if ( ! empty( $d['elementsSource'] ) ) {
                 $entry['elementsSource'] = sanitize_text_field( $d['elementsSource'] );
@@ -606,6 +613,23 @@ class QAProof_Settings {
             $clean[] = $entry;
         }
         return wp_json_encode( $clean );
+    }
+
+    /** Recursively sanitize a decoded elements tree (strings, numbers, bools, null). */
+    private static function sanitize_elements_tree( $value ) {
+        if ( is_array( $value ) ) {
+            $out = [];
+            foreach ( $value as $k => $v ) {
+                $key = is_string( $k ) ? sanitize_key( $k ) : $k;
+                $out[ $key ] = self::sanitize_elements_tree( $v );
+            }
+            return $out;
+        }
+        if ( is_string( $value ) )   return sanitize_textarea_field( $value );
+        if ( is_int( $value ) || is_float( $value ) || is_bool( $value ) || $value === null ) {
+            return $value;
+        }
+        return null;
     }
 
     /** Request-level cache. null = not yet loaded. Reset via flush_saved_designs_cache(). */

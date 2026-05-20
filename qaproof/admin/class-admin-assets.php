@@ -66,7 +66,7 @@ class QAProof_Admin_Assets {
         wp_enqueue_script( 'chartjs',
             $vendor_base . 'chart.umd.min.js',
             [],
-            '4.4.6',
+            '4.5.1',
             true );
         wp_enqueue_script( 'jspdf',
             $vendor_base . 'jspdf.umd.min.js',

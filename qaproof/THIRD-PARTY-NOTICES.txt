@@ -8,10 +8,10 @@ terms below.
 --------------------------------------------------------------------------
 1. Chart.js (admin/js/vendor/chart.umd.min.js)
 --------------------------------------------------------------------------
-Version:    4.4.6
+Version:    4.5.1
 Source:     https://github.com/chartjs/Chart.js
 License:    MIT License
-Copyright:  Copyright (c) 2014-2024 Chart.js Contributors
+Copyright:  Copyright (c) 2014-2025 Chart.js Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),

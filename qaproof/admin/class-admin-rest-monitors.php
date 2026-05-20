@@ -249,7 +249,7 @@ class QAProof_Admin_REST_Monitors {
         // Cache only the first-page fetches used by the polling loop.
         $use_cache = ( $offset === 0 && $limit <= 20 );
         if ( $use_cache ) {
-            $cache_key = self::cache_key_results( $id ) . '_' . $limit;
+            $cache_key = self::cache_key_results( $id ) . 'lim' . $limit;
             $cached    = get_transient( $cache_key );
             if ( $cached !== false ) {
                 return new WP_REST_Response( [

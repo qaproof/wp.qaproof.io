@@ -95,6 +95,8 @@ class QAProof_Admin_AJAX {
             wp_send_json_error( [ 'message' => __( 'Invalid result data.', 'qaproof' ) ] );
         }
 
+        $result = self::sanitize_history_payload( $result );
+
         $has_screenshots = false;
         if ( ! empty( $job_id ) ) {
             $screenshots_data = QAProof_API_Client::get_job_screenshots( $job_id );
@@ -129,5 +131,45 @@ class QAProof_Admin_AJAX {
         qaproof_debug_log( '[QAProof] ajax_save_history: record saved id=' . ( $saved_id ?: '?' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
 
         wp_send_json_success( [ 'saved' => true, 'id' => $saved_id, 'hasScreenshots' => $has_screenshots ] );
+    }
+
+    /**
+     * Recursively sanitize a decoded history payload. Strings become text-safe;
+     * known `data:image/...` base64 fields are validated and passed through
+     * (raw bytes never appear in HTML); integers/floats/bools/null are kept.
+     */
+    private static function sanitize_history_payload( $value ) {
+        if ( is_array( $value ) ) {
+            $out = [];
+            foreach ( $value as $k => $v ) {
+                $key = is_string( $k ) ? sanitize_key( $k ) : $k;
+                $out[ $key ] = self::sanitize_history_payload( $v );
+            }
+            return $out;
+        }
+        if ( is_string( $value ) ) {
+            // Pass data-URI images through after a strict format + size check.
+            if ( strncmp( $value, 'data:image/', 11 ) === 0 ) {
+                return self::sanitize_data_uri_image( $value );
+            }
+            return sanitize_textarea_field( $value );
+        }
+        if ( is_int( $value ) || is_float( $value ) || is_bool( $value ) || $value === null ) {
+            return $value;
+        }
+        return null;
+    }
+
+    /**
+     * Accept only well-formed image data URIs up to 8 MB; otherwise drop.
+     */
+    private static function sanitize_data_uri_image( $value ) {
+        if ( ! preg_match( '#^data:image/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$#', $value ) ) {
+            return '';
+        }
+        if ( strlen( $value ) > 8 * 1024 * 1024 ) {
+            return '';
+        }
+        return $value;
     }
 }
