@@ -94,6 +94,14 @@ class QAProof_Admin_REST_Designs {
         $params    = $request->get_json_params();
         $design_id = isset( $params['designId'] )   ? sanitize_text_field( $params['designId'] )   : '';
         $image_b64 = isset( $params['imageBase64'] ) ? $params['imageBase64']                       : '';
+        // Figma `lastModified` accompanies the image — passed back to the
+        // backend on every test run for the version handshake. We strictly
+        // validate it as ISO-8601 before persisting so a compromised SaaS
+        // reply can't sneak arbitrary content into the wp_options row.
+        $last_modified = '';
+        if ( ! empty( $params['lastModified'] ) && is_string( $params['lastModified'] ) ) {
+            $last_modified = QAProof_Settings::validate_iso8601( $params['lastModified'] );
+        }
 
         if ( empty( $design_id ) ) {
             return new WP_REST_Response( [
@@ -116,7 +124,11 @@ class QAProof_Admin_REST_Designs {
             ], 400 );
         }
 
-        $updated = QAProof_Settings::update_saved_design_image( $design_id, $image_b64 );
+        $updated = QAProof_Settings::update_saved_design_image(
+            $design_id,
+            $image_b64,
+            $last_modified !== '' ? $last_modified : null
+        );
 
         if ( ! $updated ) {
             return new WP_REST_Response( [
@@ -136,8 +148,11 @@ class QAProof_Admin_REST_Designs {
             if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
                 if ( ! empty( $d['imageBase64'] ) ) {
                     return new WP_REST_Response( [
-                        'success'     => true,
-                        'imageBase64' => $d['imageBase64'],
+                        'success'           => true,
+                        'imageBase64'       => $d['imageBase64'],
+                        // Sent back to the browser so it can include the
+                        // token in the next fidelity test request.
+                        'figmaLastModified' => isset( $d['figmaLastModified'] ) ? (string) $d['figmaLastModified'] : '',
                     ], 200 );
                 }
                 return new WP_REST_Response( [

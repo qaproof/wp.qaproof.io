@@ -114,6 +114,15 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        // Cancel-job proxy. Fired by the WP UI on tab close / explicit cancel
+        // so the API can stop the pipeline and refund the quota slot. Mirrors
+        // the existing poll-job route's restriction to hex job IDs.
+        register_rest_route( self::REST_NAMESPACE, '/cancel-job/(?P<jobId>[a-f0-9]+)', [
+            'methods'             => 'DELETE',
+            'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_cancel_job' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/save-test-result', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_save_test_result' ],
@@ -330,7 +339,17 @@ class QAProof_Admin {
 
     public static function handle_submit_feedback( WP_REST_Request $request ) {
         $rating   = intval( $request->get_param( 'rating' ) );
-        $comment  = sanitize_textarea_field( $request->get_param( 'comment' ) ?: '' );
+        // Hard length cap BEFORE sanitize so a malicious admin can't blow up
+        // the wp_options row with a megabyte of text. 2000 chars is generous
+        // for a feedback comment and bounds the 200-entry ring buffer's
+        // worst-case footprint to ~400 KB.
+        $raw      = $request->get_param( 'comment' ) ?: '';
+        if ( is_string( $raw ) ) {
+            $raw = function_exists( 'mb_substr' ) ? mb_substr( $raw, 0, 2000 ) : substr( $raw, 0, 2000 );
+        } else {
+            $raw = '';
+        }
+        $comment  = sanitize_textarea_field( $raw );
         $test_type = sanitize_text_field( $request->get_param( 'testType' ) ?: '' );
         $page_url  = esc_url_raw( $request->get_param( 'pageUrl' ) ?: '' );
         $score     = intval( $request->get_param( 'score' ) ?: 0 );
@@ -350,8 +369,26 @@ class QAProof_Admin {
             'createdAt' => current_time( 'mysql' ),
         ];
 
-        // Keep last 200 entries.
+        // Retention: keep at most 200 entries AND drop entries older than
+        // 180 days. The age cap matters for GDPR — a low-activity site
+        // would otherwise hold ratings + free-text comments + userId for
+        // years without ever hitting the count cap. 180 days is enough
+        // for the in-admin "see what you said last quarter" UX without
+        // becoming a permanent shadow log.
         $feedback = get_option( 'qaproof_feedback_log', [] );
+        if ( ! is_array( $feedback ) ) {
+            $feedback = [];
+        }
+        $cutoff = strtotime( '-180 days' );
+        if ( $cutoff !== false ) {
+            $feedback = array_values( array_filter( $feedback, function ( $row ) use ( $cutoff ) {
+                if ( ! is_array( $row ) || empty( $row['createdAt'] ) ) {
+                    return false;
+                }
+                $ts = strtotime( $row['createdAt'] );
+                return $ts !== false && $ts >= $cutoff;
+            } ) );
+        }
         array_unshift( $feedback, $entry );
         if ( count( $feedback ) > 200 ) {
             $feedback = array_slice( $feedback, 0, 200 );
@@ -371,12 +408,36 @@ class QAProof_Admin {
     }
 
     public static function render_settings_page() {
+        // Capability gate. WordPress's admin menu router already enforces this
+        // (the page wouldn't be reachable otherwise), but we re-check for
+        // defence-in-depth.
         if ( ! current_user_can( self::CAPABILITY ) ) return;
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab nav.
-        $active_tab    = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab nav.
-        $active_subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : 'general';
-        $base_url      = admin_url( 'admin.php?page=' . self::SETTINGS_SLUG );
+
+        // Read-only tab navigation. `tab` and `subtab` only pick which UI tab
+        // is displayed; they do NOT trigger writes, options updates, or any
+        // server-side action. A nonce on a navigation URL would break the
+        // back button, bookmarks, and admin-menu deep links — and would not
+        // add real security since (a) the capability check above already
+        // gates the entire handler and (b) sanitize_key() strips any payload
+        // a malicious URL could carry. We additionally clamp the values to a
+        // known allow-list below so an unexpected string can never reach the
+        // template include.
+        //
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab navigation; capability + allow-list guard above.
+        $tab_raw    = isset( $_GET['tab'] )    ? sanitize_key( wp_unslash( $_GET['tab'] ) )    : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab navigation; capability + allow-list guard above.
+        $subtab_raw = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : '';
+
+        // Allow-list for tabs/subtabs. Anything else collapses to the default
+        // landing tab so the template never sees an unrecognised key.
+        // Keep in sync with the tab/subtab anchors in admin/partials/page-settings.php.
+        $allowed_tabs    = [ 'general', 'tests', 'monitors', 'uninstall' ];
+        $allowed_subtabs = [ 'general', 'fidelity', 'responsive', 'accessibility' ];
+
+        $active_tab    = in_array( $tab_raw,    $allowed_tabs,    true ) ? $tab_raw    : 'general';
+        $active_subtab = in_array( $subtab_raw, $allowed_subtabs, true ) ? $subtab_raw : 'general';
+
+        $base_url = admin_url( 'admin.php?page=' . self::SETTINGS_SLUG );
         include QAPROOF_PLUGIN_DIR . 'admin/partials/page-settings.php';
     }
 
