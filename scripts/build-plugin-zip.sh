@@ -3,17 +3,23 @@
 # Build a clean, distributable ZIP of the QAProof WordPress plugin.
 #
 # Strips dev-only files (.git, .github, build scripts, OS junk) and produces
-# qaproof-<version>.zip with a top-level `qaproof/` folder — the structure
-# WordPress expects when an admin uploads a plugin manually OR when our
-# self-hosted updater pulls a new version.
+# qaproof.zip with a top-level `qaproof/` folder — the structure WordPress
+# expects when an admin uploads a plugin manually.
+#
+# IMPORTANT: the asset filename is `qaproof.zip` (no version suffix). The
+# qaproof.io frontend's "Download Plugin" button hard-codes:
+#   https://github.com/qaproof/wp.qaproof.io/releases/latest/download/qaproof.zip
+# GitHub's `/latest/download/<name>` resolver matches by EXACT filename, so a
+# versioned name (`qaproof-1.0.1.zip`) would break that link. Don't change
+# the asset name without also updating the frontend (src/layouts/AppLayout.astro).
+#
+# A copy of the same file is ALSO written next to the canonical one with the
+# version in its name (`qaproof-<version>.zip`) so locally you can still tell
+# builds apart at a glance.
 #
 # Usage:
 #   ./scripts/build-plugin-zip.sh                  # auto-detect version from header
 #   ./scripts/build-plugin-zip.sh --output /tmp    # custom output dir
-#
-# After building, attach the ZIP to a GitHub release whose tag matches
-# the version (e.g. v1.0.0). Our update manifest endpoint's download_url
-# points at GitHub release assets — see api/src/routes/wordpress-updates.js.
 #
 set -euo pipefail
 
@@ -38,10 +44,13 @@ if [[ -z "$VERSION" ]]; then
   exit 1
 fi
 
-ZIP_NAME="qaproof-${VERSION}.zip"
+# Canonical asset name (must stay versionless — see header comment).
+ZIP_NAME="qaproof.zip"
 ZIP_PATH="$OUTPUT_DIR/$ZIP_NAME"
+# Local-only versioned copy for "which build is this?" sanity.
+ZIP_VERSIONED_PATH="$OUTPUT_DIR/qaproof-${VERSION}.zip"
 
-echo "Building $ZIP_NAME from $PLUGIN_DIR ..."
+echo "Building $ZIP_NAME (v${VERSION}) from $PLUGIN_DIR ..."
 
 # Stage the plugin in a tmpdir so we can strip files without touching the repo.
 STAGE_DIR=$(mktemp -d -t qaproof-build-XXXXXX)
@@ -102,8 +111,10 @@ if [[ -n "$SCAN_HITS" ]]; then
 fi
 
 # Build ZIP. -X strips macOS extended attrs (those weird __MACOSX folders).
-rm -f "$ZIP_PATH"
+rm -f "$ZIP_PATH" "$ZIP_VERSIONED_PATH"
 (cd "$STAGE_DIR" && zip -rq -X "$ZIP_PATH" qaproof)
+# Same bytes, versioned name for local sanity.
+cp "$ZIP_PATH" "$ZIP_VERSIONED_PATH"
 
 # Final report.
 SIZE_BYTES=$(stat -f%z "$ZIP_PATH" 2>/dev/null || stat -c%s "$ZIP_PATH")
@@ -111,10 +122,11 @@ SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $SIZE_BYTES / 1024 / 1024}")
 FILE_COUNT=$(unzip -l "$ZIP_PATH" | tail -1 | awk '{print $2}')
 
 echo ""
-echo "✓ Built $ZIP_NAME"
-echo "  size:  ${SIZE_MB} MB"
-echo "  files: $FILE_COUNT"
-echo "  path:  $ZIP_PATH"
+echo "✓ Built v${VERSION}"
+echo "  size:        ${SIZE_MB} MB"
+echo "  files:       $FILE_COUNT"
+echo "  canonical:   $ZIP_PATH        (upload this — frontend hard-codes this name)"
+echo "  versioned:   $ZIP_VERSIONED_PATH  (local sanity copy)"
 echo ""
 echo "Next:"
 echo "  gh release create v${VERSION} \"$ZIP_PATH\" --title \"v${VERSION}\" --notes-from-tag --repo qaproof/wp.qaproof.io"
