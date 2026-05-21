@@ -24,6 +24,27 @@ class QAProof_Scheduler {
 
         add_action( 'update_option_qaproof_cron_hour', array( __CLASS__, 'reschedule_events' ) );
         add_filter( 'cron_request', array( __CLASS__, 'normalize_cron_url' ) );
+
+        // Surface DISABLE_WP_CRON as a visible admin notice on QAProof pages.
+        // When the constant is true, scheduled monitors silently never fire —
+        // users see nothing in the UI and assume the plugin is broken. The
+        // notice tells them to wire up a system cron OR turn the constant off.
+        add_action( 'admin_notices', array( __CLASS__, 'maybe_show_disable_wp_cron_notice' ) );
+    }
+
+    /**
+     * Render a dismissable warning when DISABLE_WP_CRON is true. Shown only
+     * on QAProof's own admin screens to avoid polluting the rest of wp-admin.
+     */
+    public static function maybe_show_disable_wp_cron_notice() {
+        if ( ! defined( 'DISABLE_WP_CRON' ) || ! DISABLE_WP_CRON ) return;
+        if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) return;
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        if ( ! $screen || strpos( $screen->id, 'qaproof' ) === false ) return;
+        echo '<div class="notice notice-warning"><p><strong>'
+           . esc_html__( 'QAProof:', 'qaproof' ) . '</strong> '
+           . esc_html__( 'WordPress Cron is disabled on this site (DISABLE_WP_CRON). Scheduled QAProof monitors will not fire automatically until you run wp-cron.php from a system cron or remove the DISABLE_WP_CRON constant.', 'qaproof' )
+           . '</p></div>';
     }
 
     /** Register the `monthly` interval (WP ships daily + weekly only). */
@@ -111,7 +132,19 @@ class QAProof_Scheduler {
         wp_clear_scheduled_hook( self::DAILY_HOOK );
         wp_clear_scheduled_hook( self::WEEKLY_HOOK );
         wp_clear_scheduled_hook( self::MONTHLY_HOOK );
-        wp_clear_scheduled_hook( self::RUN_HOOK );
+        // RUN_HOOK is fired by per-monitor `wp_schedule_single_event` with a
+        // unique argument (`monitor_id`). `wp_clear_scheduled_hook( $hook )`
+        // (no args) only matches events with no args — so the per-monitor
+        // queued runs would survive deactivation and fire on the next cron
+        // tick after the plugin code is already unloaded, producing fatals
+        // or silent dropped events. `wp_unschedule_hook( $hook )` matches
+        // every variant including those with arbitrary args.
+        if ( function_exists( 'wp_unschedule_hook' ) ) {
+            wp_unschedule_hook( self::RUN_HOOK );
+        } else {
+            // wp_unschedule_hook is WP 4.9+; fall back to legacy single-arg clear.
+            wp_clear_scheduled_hook( self::RUN_HOOK );
+        }
     }
 
     public static function run_daily()   { self::dispatch_monitors( 'daily' ); }
@@ -142,10 +175,32 @@ class QAProof_Scheduler {
     }
 
     public static function run_single_monitor( $monitor_id ) {
-        // Polling can take 8–12 min; raise the limit when the host permits it.
-        if ( function_exists( 'set_time_limit' ) && ! in_array( 'set_time_limit', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
-            // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- intentional, gated on availability.
-            set_time_limit( 900 );
+        // This is a WP-Cron event handler — NOT a user request. It runs in the
+        // background to poll the QAProof API for a regression test result, a
+        // process that legitimately takes 8–12 min on complex pages (Playwright
+        // capture + AI vision analysis). Without raising PHP's max_execution_time
+        // here, PHP's default 30 s kills the cron worker mid-poll, leaving the
+        // monitor row in an inconsistent "running but timed out" state.
+        //
+        // Scoped strictly to this handler. We do NOT modify max_execution_time
+        // on init, on activation, or anywhere a regular request can reach. The
+        // setting reverts to PHP-default the moment this function returns.
+        //
+        // SECURITY GATE: only raise the limit when we're actually inside a
+        // cron worker (`DOING_CRON`). Without this check, an attacker who
+        // can reach the `qaproof_run_monitor` action via some other path
+        // (`do_action('qaproof_run_monitor', $id)` injection through a
+        // future bug, etc.) would drag a regular PHP worker into a 15-min
+        // window — useful for resource-exhaustion against the host.
+        //
+        // Gated on availability so we never crash on hosts that disable
+        // set_time_limit() entirely (some shared providers do).
+        if ( defined( 'DOING_CRON' ) && DOING_CRON
+             && function_exists( 'set_time_limit' )
+             && ! in_array( 'set_time_limit', explode( ',', (string) ini_get( 'disable_functions' ) ), true )
+        ) {
+            // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged, WordPress.PHP.NoSilencedErrors.Discouraged -- intentional cron-handler scoping, gated on DOING_CRON + availability + disable_functions allow-list.
+            @set_time_limit( 900 );
         }
 
         $monitor = QAProof_API_Client::monitors_get( (string) $monitor_id );
