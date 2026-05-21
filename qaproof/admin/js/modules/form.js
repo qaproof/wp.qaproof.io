@@ -1323,19 +1323,46 @@
       return;
     }
 
+    // Build a content-addressable cache key.
+    //
+    // Previous implementation keyed by base64 byte length ('upload|123456' /
+    // 'saved|123456'), which collided for two different ≈1.8 MB designs that
+    // happen to encode to the same number of bytes — the in-memory element
+    // state from design A would silently render on design B. Now we hash
+    // a short content slice OR use a stable identifier when one is available.
+    function shortContentKey(prefix, dataUri) {
+      // Sample 256 bytes from three positions (head/mid/tail) — cheap
+      // collision-resistant fingerprint without needing crypto.
+      var len = dataUri.length;
+      if (len < 800) return prefix + '|' + dataUri.slice(-256);
+      return prefix + '|' + len + '|'
+        + dataUri.slice(0, 256)
+        + '|' + dataUri.slice(Math.floor(len / 2), Math.floor(len / 2) + 256)
+        + '|' + dataUri.slice(-256);
+    }
+
     // Saved design with Figma URL
     if (sd && sd.figmaUrl) {
-      cacheKey = sd.figmaUrl;
+      // Include figmaLastModified (when known) so a Figma edit invalidates
+      // the in-memory cache without waiting for page reload.
+      cacheKey = 'figmaUrl|' + sd.figmaUrl + '|' + (sd.figmaLastModified || '');
       requestBody = { figmaUrl: sd.figmaUrl };
     } else if (S.uploadedFileBase64) {
       var base64Parts = S.uploadedFileBase64.split(',');
       if (base64Parts.length < 2 || !base64Parts[1]) return;
-      cacheKey = 'upload|' + S.uploadedFileBase64.length;
+      cacheKey = shortContentKey('upload', S.uploadedFileBase64);
       requestBody = { figmaImageBase64: base64Parts[1] };
     } else if (S.savedDesignImageBase64) {
       var savedParts = S.savedDesignImageBase64.split(',');
       if (savedParts.length < 2 || !savedParts[1]) return;
-      cacheKey = 'saved|' + S.savedDesignImageBase64.length;
+      // Prefer the design id + lastModified — they're cheap, exact, and let
+      // the cache survive base64 round-trips without false-hits.
+      var savedDesignId = sd && sd.id ? sd.id : '';
+      var savedLastMod  = sd && sd.figmaLastModified ? sd.figmaLastModified
+                          : S.savedDesignFigmaLastModified || '';
+      cacheKey = savedDesignId
+        ? 'savedImg|' + savedDesignId + '|' + savedLastMod
+        : shortContentKey('savedImg', S.savedDesignImageBase64);
       requestBody = { figmaImageBase64: savedParts[1] };
     } else {
       return;
