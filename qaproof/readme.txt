@@ -2,9 +2,9 @@
 Contributors: qaproof
 Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,7 +50,7 @@ For each test, the plugin sends the page URL, the design source (Figma URL OR up
 
 = Where are test results stored? =
 
-In two places: (1) on the QAProof SaaS database, scoped to your workspace; (2) optionally in a local WordPress table (`{prefix}qaproof_test_history`) so the in-admin history page works offline.
+On the QAProof SaaS database, scoped to your workspace. The plugin does not create a local copy of test results on fresh installs. See the "Privacy" section below for the full list of locally-stored data (configuration only — API key, notification email, saved-design configuration, feedback log).
 
 = Can I self-host the backend? =
 
@@ -70,57 +70,117 @@ The plugin renders a clear error in the test UI. No test is run, nothing is sent
 
 == External Services ==
 
-QAProof is a SaaS-backed plugin. All test execution happens on the QAProof API, which in turn calls Anthropic's Claude Vision API for image analysis. The plugin itself does NOT call Anthropic directly.
+QAProof is a SaaS-backed plugin. All test execution happens on the QAProof API server, which in turn calls Anthropic's Claude Vision API and (optionally) Figma's REST API. The WordPress plugin itself contacts ONE external service: the QAProof API at api.qaproof.io. It never contacts Anthropic or Figma directly.
 
-**Service: QAProof API (https://api.qaproof.io)**
+= Service: QAProof API =
 
-When you click "Run test", the plugin sends:
+The plugin sends HTTPS requests to api.qaproof.io (default endpoint, configurable to a self-hosted host via the `QAPROOF_API_ENDPOINT` PHP constant). This is required for the plugin to function — without it, no test can run.
 
-* The **page URL** you are testing (so the API can render it in a headless browser).
-* The **design source** — either a Figma URL or the uploaded image bytes (base64).
-* **Test options** — viewport sizes, WCAG conformance level, whether to ignore text differences.
-* Your **API key** (in the `Authorization: Bearer ...` header) so the API can authenticate the request.
+**Test execution & polling**
 
-The API responds with a structured JSON report containing: test score, category breakdown, identified differences, recommended fixes, and screenshot URLs / base64-encoded thumbnails.
+* `POST   https://api.qaproof.io/api/compare` — start a new test (when the user clicks "Run test" or when a scheduled monitor fires). Sends: page URL, test type, design source (Figma URL or uploaded image bytes as base64), viewport size, WCAG conformance level, ignore-text flag.
+* `GET    https://api.qaproof.io/api/jobs/{jobId}` — poll the status of an in-flight test (every 5 seconds while running). Sends: nothing in the body, just the job ID in the URL.
+* `DELETE https://api.qaproof.io/api/jobs/{jobId}` — cancel an in-flight test when the user closes the browser tab. Sends: nothing.
+* `GET    https://api.qaproof.io/api/jobs/{jobId}/screenshots` — fetch the completed test's screenshots after the test finishes. Sends: nothing.
 
-When you click "Connect Figma" the plugin starts an OAuth 2.0 flow with the QAProof API; the API exchanges the authorization code with Figma and stores the resulting access tokens server-side, scoped to your workspace. The plugin never sees the tokens themselves.
+**Figma integration (optional)**
 
-Scheduled monitors fire WordPress cron events that call the same API endpoints on the schedule you configure (daily / weekly / monthly).
+* `POST   https://api.qaproof.io/api/figma-preview` — fetch a Figma frame as a PNG for the in-admin preview pane (only when the user selects a Figma URL). Sends: the Figma file URL.
+* `POST   https://api.qaproof.io/api/figma/verify-access` — verify the plugin can access a Figma file before sending a full test. Sends: the Figma file URL.
+* `POST   https://api.qaproof.io/api/detect-elements` — extract individual UI elements from an uploaded design image. Sends: image bytes.
+* `POST   https://api.qaproof.io/api/figma-oauth/start` — begin the Figma OAuth connection. Sends: nothing.
+* `GET    https://api.qaproof.io/api/figma-oauth/status` — check the current Figma connection state. Sends: nothing.
+* `POST   https://api.qaproof.io/api/figma-oauth/disconnect` — disconnect the workspace's Figma OAuth tokens. Sends: nothing.
 
-* QAProof Terms of Service: https://qaproof.io/terms
-* QAProof Privacy Policy: https://qaproof.io/privacy
+**Account, plan & health**
 
-**Service: Anthropic Claude (https://www.anthropic.com)**
+* `GET    https://api.qaproof.io/api/me` — fetch the QAProof account's plan and remaining quota, displayed in Settings → API. Sends: nothing.
+* `GET    https://api.qaproof.io/api/health` — connection health check from Settings → API. Sends: nothing.
 
-The QAProof API calls Anthropic Claude Vision to analyze rendered screenshots. The plugin does NOT contact Anthropic directly — all calls go through the QAProof API. Image bytes sent to Anthropic by the API are not retained after the analysis completes (per the QAProof Privacy Policy).
+**Baselines (visual regression)**
 
-* Anthropic Terms of Service: https://www.anthropic.com/legal/commercial-terms
-* Anthropic Privacy Policy: https://www.anthropic.com/legal/privacy
+* `POST   https://api.qaproof.io/api/baselines` — create a baseline screenshot. Sends: page URL, baseline key.
+* `GET    https://api.qaproof.io/api/baselines` — list baselines.
+* `GET    https://api.qaproof.io/api/baselines/{key}` — fetch a single baseline (including screenshot bytes).
+* `DELETE https://api.qaproof.io/api/baselines/{key}` — delete a baseline.
 
-**Service: Figma (https://www.figma.com) — optional**
+**Monitors (scheduled tests)**
 
-If you connect your Figma account via OAuth, the QAProof API reads the specific Figma files you submit for testing (via their URL) so it can export the design as a PNG image. The API does not browse, list, or enumerate your Figma workspace; it only fetches the files you point it at.
+* `GET/POST   https://api.qaproof.io/api/monitors` — list / create scheduled monitors. Sends on create: page URL, schedule, threshold score, notification email.
+* `GET/PUT/DELETE https://api.qaproof.io/api/monitors/{id}` — read / update / delete a single monitor.
+* `GET   https://api.qaproof.io/api/monitors?schedule={daily|weekly|monthly}&due=1` — WP-Cron queries monitors due to run.
+* `GET   https://api.qaproof.io/api/monitors/{id}/results` — fetch a monitor's historical results.
+* `PUT   https://api.qaproof.io/api/results/{id}/approve` — approve a regression result (captures a fresh baseline).
 
-* Figma Terms of Service: https://www.figma.com/legal/tos/
-* Figma Privacy Policy: https://www.figma.com/legal/privacy/
+**Test history (cabinet sync)**
 
-**Trademarks**
+* `POST  https://api.qaproof.io/api/history` — save a test result to the SaaS history. Sends: test type, page URL, score, summary, differences JSON, screenshot URLs / base64 thumbnails.
+* `GET   https://api.qaproof.io/api/history?...` — list history rows with pagination + filters.
+* `GET   https://api.qaproof.io/api/history/{id}` — fetch a single history row (full result detail).
+* `DELETE https://api.qaproof.io/api/history/{id}` — delete a history row from the SaaS.
+* `GET   https://api.qaproof.io/api/history/stats?threshold=N` — fetch summary statistics for the dashboard tiles.
+
+**Email reports**
+
+* `POST  https://api.qaproof.io/api/send-report-email` — when the user clicks "Send to Email" on a test result, the plugin sends the generated PDF report (base64-encoded) and the recipient email address (the currently-logged-in WordPress administrator's user email, with fall-back to the QAProof notification email or the site admin email) to the API. The API then emails the report from its outbound mail server (Amazon SES). The PDF and the recipient email leave the WordPress site and are processed by the QAProof API and its email provider.
+
+**Common request metadata sent on every call**
+
+* Your **QAProof API key**, in the `Authorization: Bearer ...` header, so the API can authenticate the request.
+* A **WordPress / PHP version banner** in the standard `User-Agent` header (`QAProof-WordPress/<plugin> (WordPress/<wp>; PHP/<php>)`) so the API can detect known-incompatible host versions. The header does NOT contain your site URL — the API server learns the requesting IP only from the TCP connection itself.
+
+The plugin does NOT send: any post content, user passwords, page visitors' IP addresses, comments, cookies, or any other site content beyond the explicit URL the user types into the test form or its scheduled monitor configuration.
+
+QAProof Terms of Service: https://qaproof.io/terms
+QAProof Privacy Policy: https://qaproof.io/privacy
+
+= Service: Anthropic Claude — used by QAProof API, NOT by this plugin =
+
+The QAProof API server calls Anthropic Claude Vision to perform the AI image analysis. This plugin does NOT call Anthropic directly — the WordPress site never opens a connection to Anthropic's servers. Image bytes the QAProof API forwards to Anthropic are subject to Anthropic's no-training, no-retention API terms.
+
+Anthropic Terms of Service: https://www.anthropic.com/legal/commercial-terms
+Anthropic Privacy Policy: https://www.anthropic.com/legal/privacy
+
+= Service: Figma — used by QAProof API, NOT by this plugin =
+
+If you connect your Figma account via the in-admin OAuth flow or submit a public Figma URL, the QAProof API reads the specific Figma file(s) you submit for testing so it can export the design as a PNG image. The WordPress plugin itself never contacts Figma's servers directly; the OAuth handshake redirects through api.qaproof.io.
+
+Figma Terms of Service: https://www.figma.com/legal/tos/
+Figma Privacy Policy: https://www.figma.com/legal/privacy/
+
+= Trademarks =
 
 QAProof is an independent product. It is not affiliated with, endorsed by, or sponsored by Figma, Inc., Anthropic PBC, or Automattic Inc. "Figma" is a trademark of Figma, Inc. "Claude" is a trademark of Anthropic PBC. "WordPress" is a trademark of the WordPress Foundation.
 
 == Privacy ==
 
-The plugin stores the following data on your WordPress site:
+**Where test data lives.** All test results, monitor definitions, monitor result history, and visual regression baselines live on the QAProof SaaS, scoped to your QAProof workspace. The plugin does NOT create custom database tables on fresh installs (a single legacy table — `{prefix}qaproof_monitors` — may exist on sites upgrading from a pre-1.7.0 release; its data is migrated to the SaaS on first upgrade and the table is dropped on uninstall).
 
-* Your QAProof API key (in `wp_options`, non-autoloaded, never displayed unmasked in the UI).
-* Saved design configurations (page URL, Figma URL, optional cached design image) in `wp_options`.
-* Test history rows in a custom table `{prefix}qaproof_test_history` (test type, page URL, score, summary, JSON result, timestamp).
-* Monitor definitions and run results in `{prefix}qaproof_monitors` and `{prefix}qaproof_monitor_results`.
-* Notification recipient email (defaults to admin email; configurable per monitor).
+**Locally-stored data (in `wp_options` unless noted).** All of the following carry the `qaproof_` prefix and the API-key option is forced non-autoloaded:
 
-The plugin exposes WordPress's built-in personal-data exporter and eraser hooks for the notification email field, so administrators can comply with right-to-access / right-to-erasure requests via the standard **Tools → Export Personal Data** / **Erase Personal Data** screens.
+* `qaproof_api_key` — your QAProof API key. Never displayed unmasked in the UI; non-autoloaded.
+* `qaproof_notify_email` — the configured notification recipient (defaults to the site admin email).
+* `qaproof_notify_email_enabled`, `qaproof_notify_admin_enabled`, `qaproof_default_threshold`, `qaproof_cron_hour` — notification preferences.
+* `qaproof_saved_designs` — page URL, Figma URL, optional cached PNG of the Figma design (bytes fetched from the connected Figma file). Non-autoloaded.
+* `qaproof_feedback_log` — ring buffer (max 200 entries, trimmed by age after 180 days) of in-admin "How was this test?" ratings. Each entry contains: the numeric rating, an optional free-text comment, the page URL, the test type, the score, the WordPress user ID of the author, and a timestamp.
+* `qaproof_figma_api_usage`, `qaproof_figma_rate_limit` — per-file Figma API request counts and rate-limit retry timers, used to back off when Figma's per-plan quota is exhausted. No PII.
+* `qaproof_alert_count` — transient (30-day TTL) holding the admin-menu "you have N unread alerts" badge count.
+* `qaproof_db_version`, `qaproof_monitors_api_migrated` — version markers used by the one-time legacy migration.
 
-No tracking pixels, analytics, or third-party scripts run on the front-end of your site. All plugin assets (CSS, JS, fonts) are bundled locally — nothing is loaded from external CDNs.
+**Client-side (browser).** The plugin's JS sets the following `localStorage` keys (no cookies are set, no third-party storage is used):
+
+* `qaproof_theme` — your light / dark / auto theme preference.
+* `qaproof:design:<id>` / `qaproof:design:auto:<id>` — element-detection cache state per saved design so the in-admin UI shows the cached element overlay without a re-detection round-trip.
+
+Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cleared when the tab closes).
+
+**WordPress privacy hooks (Tools → Export Personal Data / Erase Personal Data).** The plugin registers a personal-data exporter and eraser covering: the notification recipient email and any feedback-log entries authored by the user whose email is requested. Local erasure removes these on this site only — it does NOT propagate to the QAProof SaaS. To delete SaaS-side test history, monitor results, or your QAProof account contact support@qaproof.io.
+
+**Where data is processed.** api.qaproof.io is hosted in AWS us-east-1 (United States). The QAProof API forwards image bytes to Anthropic Claude (United States) for analysis, fetches Figma file exports from Figma's API (United States) when you submit a Figma URL or connect Figma, and sends email reports via Amazon SES (United States). For EU-based site owners these are GDPR international transfers — see the QAProof Privacy Policy at https://qaproof.io/privacy for the legal mechanisms in use.
+
+**Privacy Policy helper.** The plugin contributes suggested copy to your site's Privacy Policy via WordPress's `wp_add_privacy_policy_content()`. Visit **Settings → Privacy → Policy guide** in your WordPress admin to review and merge it into your published Privacy Policy.
+
+**No analytics, no tracking.** No tracking pixels, no fingerprinting, no analytics, and no third-party scripts run on the front-end of your site. All plugin assets (CSS, JS, fonts) are bundled locally — nothing is loaded from external CDNs.
 
 == Screenshots ==
 
@@ -132,6 +192,21 @@ No tracking pixels, analytics, or third-party scripts run on the front-end of yo
 6. Settings — API key, saved designs, Figma OAuth connection.
 
 == Changelog ==
+
+= 1.0.1 =
+Compliance, transparency, and hardening round for the WordPress.org plugin review. No functional changes.
+
+* **External Services disclosure.** The `== External Services ==` section in readme.txt now enumerates every endpoint the plugin calls on api.qaproof.io (including `/api/compare`, `/api/jobs`, `/api/send-report-email`, `/api/history*`, `/api/results/*/approve`, `/api/figma-oauth/*`, `/api/baselines*`, `/api/monitors*`, `/api/me`, `/api/health`), the exact data sent in each request, and links to the Terms of Service and Privacy Policy for QAProof, Anthropic, and Figma.
+* **PHP limit raises tightened.** Replaced direct `ini_set('memory_limit', ...)` in the screenshot fetcher with WordPress's `wp_raise_memory_limit('image')`. `set_time_limit` in the scheduled-monitor cron handler is documented and remains gated on `function_exists` + `disable_functions` allow-list; it never runs outside the cron context.
+* **Settings tab navigation.** `?tab=` / `?subtab=` URL params now go through an explicit allow-list before reaching the template; capability gate retained.
+* **Vendor script handles namespaced.** Bundled Chart.js / jsPDF / jsPDF-AutoTable now enqueue under `qaproof-chartjs`, `qaproof-jspdf`, `qaproof-jspdf-autotable` handles so they can't collide with other plugins shipping different versions of the same library.
+* **Non-minified vendor sources shipped** alongside the minified ones (chart.umd.js / jspdf.umd.js / jspdf.plugin.autotable.js) per the wp.org "human-readable source" guideline.
+* **Dead code removed.** Three legacy CRUD classes (Monitor, Result, TestHistory) that no longer ran (replaced by the SaaS API) were deleted along with their `CREATE TABLE` statements. Fresh installs no longer add empty custom tables; existing installs upgrading from older versions still get their data migrated to the API on first run.
+* **Debug log spam removed.** Non-essential `console.log` calls stripped from the bundled JS modules. `console.warn` / `console.error` retained only on genuine failure paths.
+* **Line endings normalised.** Plugin PHP and JS files saved with LF endings; vendor files left as upstream ships them.
+* **XSS defence-in-depth.** Every interpolation of an API-returned string into innerHTML now passes through `Q.escapeHtml()` at the call site — even where the field is server-typed today, on the assumption that any future shape drift must not become an XSS path. Affected paths: monitor list error banner, monitor delete toast, monitor run failure toast, send-email-report result, baseline-captured toast, regression-completed toast.
+* **Transient cache key.** Monitor results page cache now uses a dedicated prefixed helper (`cache_key_results_page`) so the full transient name is obviously namespaced for static analysers.
+* **Compatibility headers.** `Tested up to: 7.0`.
 
 = 1.0.0 =
 * Initial public release.
@@ -147,6 +222,9 @@ No tracking pixels, analytics, or third-party scripts run on the front-end of yo
 * Self-hosted assets (no external CDN dependencies).
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Compliance and transparency update for the WordPress.org plugin review: full external-service disclosure, scoped PHP limit raises, allow-listed settings tabs, and tidier transient naming. No functional changes.
 
 = 1.0.0 =
 Initial release.

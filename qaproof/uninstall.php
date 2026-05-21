@@ -36,6 +36,9 @@ function qaproof_uninstall_blog_cleanup() {
 			'qaproof_feedback_log',
 			'qaproof_figma_api_usage',
 			'qaproof_figma_rate_limit',
+			// Migration progress flag — without this entry it survives
+			// uninstall and a future reinstall would skip the migration.
+			'qaproof_monitors_api_migrated',
 		];
 		foreach ( $settings_options as $opt ) {
 			delete_option( $opt );
