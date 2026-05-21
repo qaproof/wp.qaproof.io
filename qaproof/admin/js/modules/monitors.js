@@ -419,7 +419,10 @@
       if (monitorsLoading) monitorsLoading.classList.add('hidden');
       if (!resp.success) {
         var errMsg = (resp.error && resp.error.message) ? resp.error.message : 'Failed to load monitors.';
-        if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + errMsg + '</p>';
+        // Escape API error string before injecting into innerHTML — the SaaS
+        // controls this field today, but defending against the field carrying
+        // any HTML/script in the future is what wp.org reviewers expect.
+        if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + Q.escapeHtml(errMsg) + '</p>';
         return;
       }
       // Store plan quota for use in showMonitorForm / addMonitorBtn click
@@ -453,7 +456,8 @@
     }).catch(function (err) {
       if (monitorsLoading) monitorsLoading.classList.add('hidden');
       var msg = (err && err.message) ? err.message : 'Failed to load monitors.';
-      if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + msg + '</p>';
+      // Escape network-error string before injecting into innerHTML.
+      if (monitorsListEl) monitorsListEl.innerHTML = '<p class="qaproof-monitors-empty">' + Q.escapeHtml(msg) + '</p>';
     });
   }
 
@@ -825,12 +829,20 @@
     // Save original HTML so Cancel can restore instantly (no API call)
     var savedHTML = footer.innerHTML;
 
+    // Localized strings come from qaproof.i18n.* (set in class-admin-assets.php).
+    // Fall back to English literals (not Ukrainian) so an unlocalized build
+    // is still readable in any English-locale WP install.
+    var confirmText = qaproof.i18n.monitorDeleteConfirm || 'Delete this monitor and all its results?';
+    var yesText     = qaproof.i18n.monitorDeleteYes    || 'Delete';
+    var noText      = qaproof.i18n.monitorDeleteNo     || 'Cancel';
+    var deletedTpl  = qaproof.i18n.monitorDeleted      || 'Monitor for %s was deleted.';
+
     footer.innerHTML =
       '<div class="qaproof-inline-confirm">' +
-      '<span>' + (qaproof.i18n.monitorDeleteConfirm || 'Видалити монітор та всі результати?') + '</span>' +
+      '<span>' + Q.escapeHtml(confirmText) + '</span>' +
       '<div class="qaproof-inline-confirm-btns">' +
-      '<button type="button" class="qaproof-inline-confirm-yes">Видалити</button>' +
-      '<button type="button" class="qaproof-inline-confirm-no">Скасувати</button>' +
+      '<button type="button" class="qaproof-inline-confirm-yes">' + Q.escapeHtml(yesText) + '</button>' +
+      '<button type="button" class="qaproof-inline-confirm-no">' + Q.escapeHtml(noText) + '</button>' +
       '</div>' +
       '</div>';
 
@@ -840,12 +852,18 @@
       var domainName = domainEl ? domainEl.textContent : 'Monitor';
       apiCall('DELETE', '/monitors/' + id).then(function (resp) {
         if (resp.success) {
-          showToast(domainName + ' — монітор видалено.', 'success');
+          // domainName comes from card.textContent (DOM-side, safe text), but
+          // escape defensively before injecting into showToast's innerHTML.
+          var msg = deletedTpl.indexOf('%s') !== -1
+            ? deletedTpl.replace('%s', Q.escapeHtml(domainName))
+            : Q.escapeHtml(domainName) + ' — ' + Q.escapeHtml(deletedTpl);
+          showToast(msg, 'success');
           loadMonitors(true);
         } else {
           footer.innerHTML = savedHTML;
           rebindCardFooter(footer, id);
-          showToast((resp.error && resp.error.message) || 'Failed to delete monitor.', 'error');
+          // API error string is escaped before injection.
+          showToast(Q.escapeHtml((resp.error && resp.error.message) || 'Failed to delete monitor.'), 'error');
         }
       }).catch(function () {
         footer.innerHTML = savedHTML;
@@ -1026,6 +1044,13 @@
   }
 
   // Show a slide-in toast notification (auto-dismisses after 5s).
+  //
+  // CONTRACT: `message` and `actionLabel` are written via innerHTML so they
+  // MAY contain plugin-static markup like `<strong>` for emphasis. Any
+  // API-supplied or user-controlled value the caller wants to embed MUST be
+  // passed through Q.escapeHtml() at the CALL SITE before being concatenated
+  // into `message`. All current callers comply; new callers should follow
+  // the same pattern (see grep `showToast(` for examples).
   function showToast(message, type, onAction, actionLabel) {
     type = type || 'success';
     var existing = document.getElementById('qaproof-toast');
@@ -1034,6 +1059,12 @@
     var toast = document.createElement('div');
     toast.id = 'qaproof-toast';
     toast.className = 'qaproof-toast qaproof-toast-' + type;
+    // Live-region semantics. Errors get role="alert" (assertive — interrupts
+    // SR), success/info get role="status" (polite — queued). Without this
+    // SR users hear nothing when a toast appears.
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+    toast.setAttribute('aria-atomic', 'true');
 
     var icon = type === 'success' ? '✓' : '✕';
     toast.innerHTML =
@@ -1109,8 +1140,12 @@
           } catch(e) {}
           var pageUrl = (resp.data && resp.data.page_url) ? resp.data.page_url : '';
           try { pageUrl = new URL(pageUrl).hostname; } catch(e) {}
+          // pageUrl is API-supplied — escape before injecting into the toast's
+          // innerHTML so a maliciously-crafted page_url can't introduce script
+          // tags. URL().hostname normally strips most dangerous chars, but the
+          // catch-block fallback keeps the raw value on parse failure.
           showToast(
-            '✓ Baseline captured! <strong>' + pageUrl + '</strong> is now being monitored.',
+            '✓ Baseline captured! <strong>' + Q.escapeHtml(pageUrl) + '</strong> is now being monitored.',
             'success',
             function () { showMonitorDetail(monitorId); },
             'Run First Test'
@@ -1152,7 +1187,10 @@
             sessionStorage.removeItem('qaproof_run_start_' + monitorId);
           } catch(e) {}
           var score = (resp.data && resp.data[0] && resp.data[0].score != null) ? resp.data[0].score : null;
-          var scoreStr = score !== null ? ' Score: <strong>' + score + '</strong>' : '';
+          // Numeric coerce + escape — score should be an integer from the API,
+          // but treating it as untrusted defends against any future shape
+          // drift (e.g. API starts returning "n/a" as a string).
+          var scoreStr = score !== null ? ' Score: <strong>' + Q.escapeHtml(String(score)) + '</strong>' : '';
           showToast(
             'Regression test completed.' + scoreStr,
             'success',
@@ -1257,14 +1295,14 @@
           btn.textContent = 'Run First Test';
           try { sessionStorage.removeItem('qaproof_pending_run_' + monitorId); } catch(e) {}
           var errMsg = (resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to start test. Please try again.');
-          showToast(errMsg, 'error');
+          showToast(Q.escapeHtml(errMsg), 'error');
         }
       }).catch(function (err) {
         btn.disabled = false;
         btn.textContent = 'Run First Test';
         try { sessionStorage.removeItem('qaproof_pending_run_' + monitorId); } catch(e) {}
         var errMsg = (err && err.message) || (qaproof.i18n.monitorRunFailed || 'Failed to start test. Please try again.');
-        showToast(errMsg, 'error');
+        showToast(Q.escapeHtml(errMsg), 'error');
       });
     });
   }
@@ -1788,7 +1826,7 @@
             if (loadingBlock) loadingBlock.style.display = 'none';
             stopCapturingAnimation();
             try { sessionStorage.removeItem('qaproof_pending_run_' + monitor.id); } catch(e) {}
-            showToast((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'), 'error');
+            showToast(Q.escapeHtml((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.')), 'error');
           }
         }).catch(function () {
           runBtn.disabled = false;

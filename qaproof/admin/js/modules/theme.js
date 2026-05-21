@@ -10,6 +10,10 @@
   if (savedTheme === 'dark') {
     app.classList.add('qaproof-dark');
   }
+  // aria-pressed reflects whether dark theme is currently active. Set once
+  // on load so the initial state is announced correctly by screen readers,
+  // then kept in sync on every toggle below.
+  toggleBtn.setAttribute('aria-pressed', savedTheme === 'dark' ? 'true' : 'false');
 
   function updateChartColors(isDark) {
     if (typeof Chart === 'undefined' || !Chart.instances) return;
@@ -54,6 +58,7 @@
     var isDark = app.classList.contains('qaproof-dark');
     document.body.classList.toggle('qaproof-dark-page', isDark);
     localStorage.setItem('qaproof_theme', isDark ? 'dark' : 'light');
+    toggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
     updateChartColors(isDark);
   });
 })();
