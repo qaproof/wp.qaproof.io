@@ -179,14 +179,16 @@ class QAProof_API_Client {
             );
         }
 
-        // Screenshots are multi-MB base64; raise memory_limit when the host allows it.
-        if ( function_exists( 'ini_set' ) && ! in_array( 'ini_set', explode( ',', (string) ini_get( 'disable_functions' ) ), true ) ) {
-            $current = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
-            if ( $current && $current > 0 && $current < 256 * MB_IN_BYTES ) {
-                // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged, WordPress.PHP.IniSet.memory_limit_Blacklisted -- needed for multi-MB screenshot payloads; gated on availability.
-                ini_set( 'memory_limit', '256M' );
-            }
-        }
+        // Screenshots can be multi-MB base64 (a tall full-page capture decodes to
+        // ~30 MB JSON). Bumping memory only for THIS call, never globally.
+        //
+        // We prefer wp_raise_memory_limit() over a direct ini_set() because:
+        //   1. It respects the WP_MAX_MEMORY_LIMIT constant a hoster may set.
+        //   2. It runs the `image_memory_limit` filter so other plugins can vote.
+        //   3. It's the documented, Plugin-Check-blessed way to bump memory
+        //      for a single image-heavy operation.
+        // The 'image' context maps to WP_MAX_MEMORY_LIMIT, typically 256M.
+        wp_raise_memory_limit( 'image' );
 
         $response = wp_remote_get( $endpoint, [
             'headers' => [
@@ -224,6 +226,52 @@ class QAProof_API_Client {
         }
 
         return $decoded['data'];
+    }
+
+    /**
+     * Cancel an in-flight job. Fire-and-forget from the WP UI side — the API
+     * marks the job 'cancelled' and the runner aborts at the next stage gate
+     * so no quota is charged for the discarded work. Returns the API
+     * response payload on success (status + cancelled flag) so the WP UI
+     * can log the outcome; non-2xx becomes a WP_Error.
+     *
+     * Uses a short timeout because this is best-effort during unload.
+     *
+     * @param  string $job_id
+     * @return array|WP_Error
+     */
+    public static function cancel_job( $job_id ) {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/jobs/' . sanitize_text_field( $job_id );
+        $api_key  = QAProof_Settings::get_api_key();
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key',
+                __( 'API key not configured. Go to Settings to add your API key.', 'qaproof' )
+            );
+        }
+        $response = wp_remote_request( $endpoint, [
+            'method'    => 'DELETE',
+            'headers'   => [ 'Authorization' => 'Bearer ' . $api_key ],
+            'timeout'   => 5,
+            'sslverify' => true,
+        ]);
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
+                sprintf( __( 'Cancel failed: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+        $status  = wp_remote_retrieve_response_code( $response );
+        $decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+        // 404 or 409 (already done / not found) — treat as success so the
+        // unload handler never raises noise the user can't see.
+        if ( in_array( $status, [ 200, 404, 409 ], true ) ) {
+            return is_array( $decoded ) && isset( $decoded['data'] ) ? $decoded['data'] : [ 'status' => 'unknown' ];
+        }
+        $msg = isset( $decoded['error']['message'] )
+            ? $decoded['error']['message']
+            /* translators: %d: HTTP status code */
+            : sprintf( __( 'Cancel returned HTTP %d', 'qaproof' ), $status );
+        return new WP_Error( 'qaproof_api_error', $msg );
     }
 
     /**
