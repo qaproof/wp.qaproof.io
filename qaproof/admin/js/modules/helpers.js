@@ -104,6 +104,19 @@
     return base + '/job-screenshots/' + encodeURIComponent(jobId) + sep + '_=' + Date.now();
   }
 
+  /**
+   * Build a cancel URL for the in-flight job. Same WP REST proxy as polling
+   * — the proxy translates the WP-side route into a DELETE call to the API.
+   * Used on tab close (beforeunload) and explicit user cancel.
+   */
+  function buildCancelUrl(jobId) {
+    var url = qaproof.restBase + '/cancel-job/' + jobId;
+    if (qaproof.restBase.indexOf('rest_route=') !== -1) {
+      url = qaproof.restBase + '%2Fcancel-job%2F' + jobId;
+    }
+    return url;
+  }
+
   // ============================
   // Scroll helper — accounts for WP admin bar
   // ============================
@@ -134,6 +147,47 @@
     var div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  /**
+   * Announce that a result container has just been populated, so screen
+   * reader users learn the test finished and can navigate to it without
+   * blindly Tab-hunting.
+   *
+   * Mechanics:
+   *   - `role="region"` + `aria-label` makes it a navigable landmark.
+   *   - `tabindex="-1"` allows programmatic focus without breaking Tab order.
+   *   - The first <h1>/<h2> inside the container receives focus so screen
+   *     readers announce "<heading text>, heading level N".
+   *   - Falls back to focusing the container itself if no heading exists.
+   *   - A live-region nudge (`aria-live="polite"`) is set once on the
+   *     container so any future content swaps inside it are also announced.
+   */
+  function announceResultsReady(container, ariaLabelText) {
+    if (!container || typeof container.querySelector !== 'function') return;
+    try {
+      container.setAttribute('role', 'region');
+      container.setAttribute('aria-label', ariaLabelText || 'Test results');
+      // aria-live on the wrapper so partial updates (filter changes, marker
+      // re-render after image load) are also announced gently.
+      if (!container.hasAttribute('aria-live')) {
+        container.setAttribute('aria-live', 'polite');
+      }
+      var firstHeading = container.querySelector('h1, h2');
+      var focusTarget = firstHeading || container;
+      // tabindex=-1 lets the heading take focus without inserting itself into
+      // the natural Tab order.
+      if (!focusTarget.hasAttribute('tabindex')) {
+        focusTarget.setAttribute('tabindex', '-1');
+      }
+      // Defer focus until after scroll lands so a Chrome/Firefox auto-scroll
+      // doesn't fight our scrollToElement().
+      setTimeout(function () {
+        try { focusTarget.focus({ preventScroll: true }); } catch (_) {
+          try { focusTarget.focus(); } catch (__) {}
+        }
+      }, 50);
+    } catch (_) { /* DOM access can fail in weird iframe contexts */ }
   }
 
   function escapeAttr(str) {
@@ -262,8 +316,10 @@
   QAProof.saveActiveJob = saveActiveJob;
   QAProof.clearActiveJob = clearActiveJob;
   QAProof.getActiveJob = getActiveJob;
+  QAProof.announceResultsReady = announceResultsReady;
   QAProof.buildPollUrl = buildPollUrl;
   QAProof.buildScreenshotsUrl = buildScreenshotsUrl;
+  QAProof.buildCancelUrl = buildCancelUrl;
   QAProof.scrollToElement = scrollToElement;
   QAProof.getScoreClass = getScoreClass;
   QAProof.capitalize = capitalize;

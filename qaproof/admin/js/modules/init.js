@@ -112,7 +112,11 @@
     function fetchAccountInfo() {
       var keyInput = document.getElementById('qaproof_api_key');
       var key = keyInput ? keyInput.value.trim() : '';
-      if (!key) return; // no key — keep panel hidden
+      // Show the panel when the user has typed a key OR when a key is
+      // already saved (the input now renders empty for security — the
+      // server-side handler falls back to the saved option when no api_key
+      // is posted).
+      if (!key && !qaproof.hasApiKey) return;
 
       accountInfo.style.display  = '';
       if (accountLoading) accountLoading.style.display = '';
@@ -122,9 +126,9 @@
       var data = new FormData();
       data.append('action', 'qaproof_fetch_account_info');
       data.append('nonce', qaproof.ajaxNonce);
-      // Pass the current input value so the handler previews the unsaved key
-      // instead of falling back to the (possibly stale) saved option.
-      data.append('api_key', key);
+      // Pass the current input value when the user is previewing an unsaved
+      // key. When empty, the AJAX handler falls back to the saved option.
+      if (key) data.append('api_key', key);
 
       fetch(qaproof.ajaxUrl, {
         method: 'POST',
@@ -1046,7 +1050,6 @@
         Q.startJobPolling(jobId, {
           page: 'accessibility',
           onPoll: function (status, elapsed) {
-            console.log('[QAProof] A11y poll:', status, elapsed);
           },
           onDone: function (resultData) {
             a11yTimers.forEach(clearTimeout);
@@ -1496,7 +1499,6 @@
         return;
       }
 
-      console.log('[QAProof] Recovering submitting job — re-submitting (retry ' + (retryCount + 1) + '/3)', activeJob.testType, 'on', currentPage);
       var pendingRetries = retryCount + 1;
       Q.clearActiveJob(currentPage);
 
@@ -1516,7 +1518,6 @@
     }
 
     // Phase 'polling' — resume polling
-    console.log('[QAProof] Recovering active job:', activeJob.jobId, activeJob.testType, 'on', currentPage);
 
     if (currentPage === 'tests' && S.loading) {
       S.testsPageBusy = true;

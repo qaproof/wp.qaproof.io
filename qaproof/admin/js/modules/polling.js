@@ -16,7 +16,6 @@
     var RETRY_DELAY_MS = 2000;
 
     function attempt(retriesLeft) {
-      console.log('[QAProof] Fetching screenshots for job:', jobId, '(attempts left after this:', retriesLeft, ')');
 
       fetch(Q.buildScreenshotsUrl(jobId), {
         method: 'GET',
@@ -39,7 +38,6 @@
         }
 
       var screenshots = resp.data.screenshots;
-      console.log('[QAProof] Screenshots received:', Object.keys(screenshots).length, 'viewports');
 
       // Inject screenshots into existing img elements
       var viewports = ['desktop', 'tablet', 'tablet_landscape', 'mobile', 'mobile_landscape'];
@@ -54,7 +52,6 @@
               Q.waitForImage(imgEl).then(function () {
                 var markersLayer = document.getElementById('qaproof-markers-' + device);
                 if (markersLayer && markersLayer.children.length === 0 && resultData.differences) {
-                  console.log('[QAProof] Rendering markers after screenshot load for:', device);
                   Q.renderMarkersIntoLayer(markersLayer, resultData.differences, function (diff) {
                     var diffDevice = diff.device === 'tablet_portrait' ? 'tablet' : diff.device;
                     return !diffDevice || diffDevice === device;
@@ -120,7 +117,6 @@
                 if (suffix === 'fidelity') return;
                 var markersLayer = document.getElementById(markersLayerId);
                 if (markersLayer && markersLayer.children.length === 0 && resultData.differences) {
-                  console.log('[QAProof] Rendering markers after screenshot load for:', markersLayerId);
                   Q.renderMarkersIntoLayer(markersLayer, resultData.differences);
                 }
               });
@@ -211,20 +207,16 @@
             done = true;
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
-            console.log('[QAProof] Job done, rendering results (jobId=' + jobId + ')');
 
             // Render results immediately (without screenshots for fast display)
             onDone(job.result);
 
             // Fetch screenshots separately if they were stripped from poll response
             if (job.result.screenshotsAvailable && !job.result.screenshots) {
-              console.log('[QAProof] Fetching screenshots then saving history (jobId=' + jobId + ')');
               fetchAndInjectScreenshots(jobId, job.result, function (resultWithScreenshots) {
-                console.log('[QAProof] Screenshots done, calling onScreenshotsDone (jobId=' + jobId + ')');
                 if (onScreenshotsDone) onScreenshotsDone(resultWithScreenshots);
               });
             } else {
-              console.log('[QAProof] No separate screenshots fetch needed, calling onScreenshotsDone (jobId=' + jobId + ')');
               if (onScreenshotsDone) onScreenshotsDone(job.result);
             }
           } else if (job.status === 'failed') {
@@ -257,9 +249,37 @@
         });
     }, 5000);
 
+    // Best-effort fire-and-forget cancel ping to the server. Sent on tab close
+    // and on user-initiated cancel so the API can stop charging quota and skip
+    // the rest of the pipeline. We don't await the response — the page may be
+    // unloading. navigator.sendBeacon is the right primitive for this but our
+    // DELETE-as-method requires fetch; we fall back to fetch with keepalive.
+    function fireCancel() {
+      if (cancelled || done) return;
+      try {
+        fetch(Q.buildCancelUrl ? Q.buildCancelUrl(jobId) : Q.buildPollUrl(jobId), {
+          method:      'DELETE',
+          headers:     { 'X-WP-Nonce': qaproof.nonce },
+          credentials: 'same-origin',
+          keepalive:   true,
+        }).catch(function () {});
+      } catch (_) {
+        // ignore — best-effort
+      }
+    }
+
+    // Tab close / hard navigation = treat as user-cancelled. The user is no
+    // longer watching, no point billing them for the rest of the pipeline.
+    var unloadHandler = function () { fireCancel(); };
+    window.addEventListener('beforeunload', unloadHandler);
+
     return function cancel() {
       cancelled = true;
       clearInterval(pollInterval);
+      window.removeEventListener('beforeunload', unloadHandler);
+      // Don't fire cancel if the job is already done — that would race against
+      // the result render and cause a no-op DELETE call.
+      if (!done) fireCancel();
     };
   }
 
@@ -276,7 +296,6 @@
    * @param {object} resultData  Result object (score, categories, differences, etc.)
    */
   function saveTestHistory(testType, pageUrl, jobId, resultData) {
-    console.log('[QAProof] saveTestHistory called — testType=' + testType + ' jobId=' + (jobId || '(none)') + ' url=' + pageUrl);
 
     // Strip screenshots from the payload — PHP fetches them server-to-server.
     var payload = Object.assign({}, resultData);
@@ -297,7 +316,6 @@
     })
     .then(Q.safeJson)
     .then(function (resp) {
-      console.log('[QAProof] saveTestHistory response — success=' + resp.success + ' id=' + (resp.data && resp.data.id) + ' deduplicated=' + (resp.data && resp.data.deduplicated) + ' jobId=' + (jobId || '(none)'));
       return resp;
     })
     .catch(function (err) {

@@ -142,33 +142,79 @@
   function buildFidelityMetaBadgesHtml(data) {
     var badges = [];
     var vp = data.viewport;
+    var frame = data.figmaFrame;
+
+    // Captured-viewport badge. When the width came from a Figma frame, append
+    // the frame name (if known) so the user can confirm "this is the right
+    // page". Solves the "we silently auto-picked the first frame in your
+    // multi-page file" trust gap.
     if (vp && Number.isFinite(vp.width)) {
       var src = vp.source || 'default';
       var label = src === 'figma-frame' ? 'auto (Figma frame)'
                 : src === 'preset'      ? 'preset'
                 : src === 'explicit'    ? 'custom'
                 : 'default';
-      badges.push('<span class="qaproof-meta-badge" title="Live page captured at this viewport width">' +
+      var frameSuffix = '';
+      if (src === 'figma-frame' && frame && frame.name) {
+        frameSuffix = ' · ' + Q.escapeHtml(frame.name);
+      }
+      var vpTitle = 'Live page captured at this viewport width' +
+        (frame && frame.name ? '. Source: Figma frame "' + frame.name + '".' : '');
+      badges.push('<span class="qaproof-meta-badge" title="' + Q.escapeAttr(vpTitle) + '">' +
         '<span class="dashicons dashicons-desktop"></span> ' +
-        Q.escapeHtml(String(vp.width)) + 'px · ' + Q.escapeHtml(label) +
+        Q.escapeHtml(String(vp.width)) + 'px · ' + Q.escapeHtml(label) + frameSuffix +
         '</span>');
     }
+
     if (data.designSource) {
       var ds = data.designSource === 'figma-url' ? 'Figma URL' : 'Uploaded image';
       badges.push('<span class="qaproof-meta-badge"><span class="dashicons dashicons-art"></span> ' + Q.escapeHtml(ds) + '</span>');
     }
+
+    // Pixel-diff badge. When section detection failed we use a top-aligned
+    // fallback; the % is no longer a clean apples-to-apples measurement
+    // (different total heights inflate it). Mark the badge as warn instead
+    // of letting the customer treat the number as authoritative.
     var pd = data.pixelDiff;
     if (pd && pd.strategy) {
-      var strat = pd.strategy === 'section-aligned' ? 'aligned by section' : 'top-aligned';
-      badges.push('<span class="qaproof-meta-badge" title="Pixel-diff alignment strategy">' +
+      var isApprox = pd.strategy !== 'section-aligned';
+      var stratText = isApprox ? 'top-aligned (approximate)' : 'aligned by section';
+      var stratTitle = isApprox
+        ? 'Section detection failed; pixel-diff was computed on a top-aligned crop. Percentage may be inflated when the design and live page have different total heights.'
+        : 'Pixel-diff sliced and aligned per section before measurement.';
+      var pctText = Number.isFinite(pd.percentDiff) ? (pd.percentDiff + '%') : 'n/a';
+      badges.push('<span class="qaproof-meta-badge' + (isApprox ? ' qaproof-meta-badge-warn' : '') + '" title="' + Q.escapeAttr(stratTitle) + '">' +
         '<span class="dashicons dashicons-image-flip-vertical"></span> ' +
-        'Pixel diff ' + Q.escapeHtml(String(pd.percentDiff)) + '% · ' + Q.escapeHtml(strat) +
+        'Pixel diff ' + Q.escapeHtml(pctText) + ' · ' + Q.escapeHtml(stratText) +
         '</span>');
     }
+
     if (data.sectionsAvailable === false) {
       badges.push('<span class="qaproof-meta-badge qaproof-meta-badge-warn" title="Section detection produced no sections; differences grouped under \\"Page\\".">' +
         '<span class="dashicons dashicons-info-outline"></span> Sections unavailable</span>');
     }
+
+    // Cache-was-stale signal. When the backend detected that our saved
+    // design image was outdated against Figma (the designer pushed an edit
+    // between the cache time and now) it transparently re-fetched and used
+    // the fresh design. Surface this so the user knows (a) why their test
+    // took a few extra seconds and (b) that the score they see is against
+    // the *current* Figma file, not the cached one.
+    if (data.cacheWasStale) {
+      badges.push('<span class="qaproof-meta-badge qaproof-meta-badge-info" title="Your saved design image was older than the current Figma file. We re-fetched and used the fresh design for this test.">' +
+        '<span class="dashicons dashicons-update"></span> Design refreshed from Figma</span>');
+    }
+
+    // Selector-grounding signal. When the live-page DOM inventory was empty
+    // (CSP, JS error, headless detection that blocked our extraction), the
+    // AI invents selectors from memory. The diff markers may then point at
+    // the wrong element on the live page — flag this so the user knows the
+    // map of markers is approximate.
+    if (data.inventoryAvailable === false) {
+      badges.push('<span class="qaproof-meta-badge qaproof-meta-badge-warn" title="The live page DOM could not be inspected (CSP, JS error, or anti-bot block). Diff markers are based on AI estimation, not real elements.">' +
+        '<span class="dashicons dashicons-warning"></span> Markers approximate</span>');
+    }
+
     if (badges.length === 0) return '';
     return '<div class="qaproof-meta-badges" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px;">' + badges.join('') + '</div>';
   }
@@ -178,8 +224,10 @@
     var catCount = Object.keys(categories).length;
     var hasDiffs = (data.differences || []).length > 0;
 
-    // Explicit parse failure from backend (legacy `_parseFailed` and new `parseFailed`)
-    if (data._parseFailed || data.parseFailed) {
+    // Explicit parse failure from backend. We still check the legacy
+    // `_parseFailed` field for back-compat with results stored before the
+    // server stopped emitting it; new responses only carry `parseFailed`.
+    if (data.parseFailed || data._parseFailed) {
       return '<div class="qaproof-parse-warning">' +
         '<span class="dashicons dashicons-warning"></span> ' +
         '<strong>Analysis incomplete:</strong> The AI response could not be fully parsed. ' +
@@ -450,13 +498,54 @@
   /**
    * Build just the charts row (no stats cards).
    */
+  /**
+   * Build the HTML for the per-test radar + donut chart pair.
+   *
+   * `<canvas>` is invisible to screen readers by default — Chart.js draws to
+   * pixels with no DOM-side data. We give each canvas an `aria-label` that
+   * names what it shows AND emit a visually-hidden table next to it carrying
+   * the numeric data (category scores / severity counts) so AT users can
+   * read the same information the sighted chart conveys.
+   */
   function buildReportChartsHtml(data, containerId) {
     var differences = data.differences || [];
-    var hasIssues = differences.length > 0;
+    var categories  = data.categories  || {};
+    var hasIssues   = differences.length > 0;
+
+    // Visually-hidden data tables: same numbers the chart shows, in DOM form.
+    // wp-admin already ships `.screen-reader-text` (clip:rect(1px,1px,1px,1px))
+    // so we reuse the class instead of defining our own.
+    var radarTable = '<table class="screen-reader-text"><caption>Category scores</caption><thead><tr><th scope="col">Category</th><th scope="col">Score</th></tr></thead><tbody>';
+    var catEntries = Object.entries(categories);
+    for (var ci = 0; ci < catEntries.length; ci++) {
+      var catName = catEntries[ci][0].replace(/_/g, ' ');
+      var catScore = (catEntries[ci][1] && catEntries[ci][1].score != null) ? catEntries[ci][1].score : '—';
+      radarTable += '<tr><th scope="row">' + Q.escapeHtml(catName) + '</th><td>' + Q.escapeHtml(String(catScore)) + '</td></tr>';
+    }
+    radarTable += '</tbody></table>';
+
     var html = '<div class="qaproof-report-stats"><div class="qaproof-charts-row' + (hasIssues ? '' : ' qaproof-charts-single') + '">';
-    html += '<div class="qaproof-chart-card' + (hasIssues ? '' : ' qaproof-chart-full') + '"><div class="qaproof-chart-title">Category Scores</div><div class="qaproof-chart-wrap"><canvas id="' + containerId + '-radar"></canvas></div></div>';
+    html += '<div class="qaproof-chart-card' + (hasIssues ? '' : ' qaproof-chart-full') + '"><div class="qaproof-chart-title">Category Scores</div>' +
+            '<div class="qaproof-chart-wrap">' +
+            '<canvas id="' + containerId + '-radar" role="img" aria-label="Radar chart of category scores; see adjacent table for values"></canvas>' +
+            radarTable +
+            '</div></div>';
     if (hasIssues) {
-      html += '<div class="qaproof-chart-card"><div class="qaproof-chart-title">Issue Severity</div><div class="qaproof-chart-wrap qaproof-donut-wrap"><canvas id="' + containerId + '-donut"></canvas></div></div>';
+      var sev = { high: 0, medium: 0, low: 0 };
+      for (var di = 0; di < differences.length; di++) {
+        var s = (differences[di].severity || 'low').toLowerCase();
+        sev[s] = (sev[s] || 0) + 1;
+      }
+      var donutTable = '<table class="screen-reader-text"><caption>Issue severity distribution</caption><thead><tr><th scope="col">Severity</th><th scope="col">Count</th></tr></thead><tbody>' +
+        '<tr><th scope="row">High</th><td>'   + sev.high   + '</td></tr>' +
+        '<tr><th scope="row">Medium</th><td>' + sev.medium + '</td></tr>' +
+        '<tr><th scope="row">Low</th><td>'    + sev.low    + '</td></tr>' +
+        '</tbody></table>';
+      html += '<div class="qaproof-chart-card"><div class="qaproof-chart-title">Issue Severity</div>' +
+              '<div class="qaproof-chart-wrap qaproof-donut-wrap">' +
+              '<canvas id="' + containerId + '-donut" role="img" aria-label="Donut chart of issue severity; see adjacent table for counts"></canvas>' +
+              donutTable +
+              '</div></div>';
     }
     html += '</div></div>';
     return html;
@@ -778,10 +867,29 @@
       return;
     }
 
+    // Element-mode `matched:false` short-circuit. The AI could not locate the
+    // selected design region on the live page. Render a distinct help state
+    // with retry CTAs — NOT a misleading 0/100 score ring that reads as
+    // "the implementation is broken".
+    if (data && data.elementTest === true && data.matched === false) {
+      renderFidelityElementNotLocated(data);
+      return;
+    }
+
     var score = data.score;
     var scoreClass = Q.getScoreClass(score);
 
     var html = buildBackButtonHtml();
+
+    // High-priority callouts that change how the user should read the score.
+    // Rendered ABOVE the score ring so a designer doesn't react to "47/100"
+    // before learning why it might be unfair.
+    if (data.viewportWarning && data.viewportWarning.message) {
+      html += '<div class="qaproof-callout qaproof-callout-warn" style="margin:12px 0 16px;padding:12px 14px;border:1px solid #F59E0B;background:#FFFBEB;border-radius:6px;font-size:13px;line-height:1.5;">' +
+        '<strong>Viewport mismatch:</strong> ' + Q.escapeHtml(data.viewportWarning.message) +
+        ' <em>The score may not reflect implementation quality — re-run at a matching width to compare apples-to-apples.</em>' +
+        '</div>';
+    }
 
     // Combined score + stats header
     html += '<div class="qaproof-report-hero">';
@@ -789,6 +897,13 @@
     html += '    <div class="qaproof-report-hero-score">';
     html += buildScoreRingHtml(score, 'Design Fidelity Score', scoreClass);
     html += '      <div class="qaproof-score-label">Design Fidelity Score</div>';
+    // AI scores have inherent ±3-5 point variance run-to-run even with
+    // temperature 0 (different reasoning trace, slightly different diff
+    // list). Telling the user upfront prevents "why did my score change?"
+    // tickets and "the tool is unreliable" trust drops.
+    html += '      <div class="qaproof-score-disclaimer" style="font-size:11px;color:#888;margin-top:6px;text-align:center;" title="Vision-AI scoring is not bit-exact across runs.">';
+    html += '        AI-based score · expect ±5 point variance on re-run';
+    html += '      </div>';
     html += '    </div>';
     html += '    <div class="qaproof-report-hero-info">';
     html += '      <div class="qaproof-summary">' + Q.escapeHtml(data.summary || '') + '</div>';
@@ -839,9 +954,16 @@
       html += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.485-2.015-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/></svg> Markers</button>';
       html += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sync Scroll</button>';
       if (data.pixelDiff && data.pixelDiff.imageBase64) {
-        html += '        <button type="button" id="qaproof-toggle-pixeldiff" class="qaproof-chrome-btn" title="Toggle pixel-diff overlay">' +
+        // Note the explainer tooltip: pixel-diff and AI score are NOT the
+        // same measurement. Users routinely see "score 88 / pixel diff 32%"
+        // and wonder which one to trust — the tooltip below resolves that.
+        var pixelPct = Number.isFinite(data.pixelDiff.percentDiff) ? data.pixelDiff.percentDiff + '%' : '?';
+        var pixelTitle = 'Pixel-diff (raw pixel divergence) is a separate measurement from the AI Fidelity Score. ' +
+          'A high pixel-diff with a high AI score is normal — pixel-diff counts every shifted pixel (typography, smoothing), ' +
+          'while the AI Score weights changes by their visual significance.';
+        html += '        <button type="button" id="qaproof-toggle-pixeldiff" class="qaproof-chrome-btn" title="' + Q.escapeAttr(pixelTitle) + '">' +
           '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h12M8 2v12" stroke="currentColor" stroke-width="1.5"/></svg> ' +
-          'Pixel diff (' + (data.pixelDiff.percentDiff != null ? data.pixelDiff.percentDiff : '?') + '%)</button>';
+          'Pixel diff (' + Q.escapeHtml(pixelPct) + ')</button>';
       }
       html += '      </div>';
       html += '    </div>';
@@ -959,6 +1081,7 @@
     }
 
     Q.scrollToElement(S.resultsContainer);
+    Q.announceResultsReady && Q.announceResultsReady(S.resultsContainer, 'Test results');
   }
 
   // ============================
@@ -1169,6 +1292,7 @@
     }
 
     Q.scrollToElement(S.resultsContainer);
+    Q.announceResultsReady && Q.announceResultsReady(S.resultsContainer, 'Test results');
   }
 
   // ============================
@@ -1330,6 +1454,7 @@
     }
 
     Q.scrollToElement(S.resultsContainer);
+    Q.announceResultsReady && Q.announceResultsReady(S.resultsContainer, 'Test results');
   }
 
   // ============================
@@ -1845,6 +1970,7 @@
     }
 
     Q.scrollToElement(S.resultsContainer);
+    Q.announceResultsReady && Q.announceResultsReady(S.resultsContainer, 'Test results');
   }
 
   // ============================
@@ -1981,9 +2107,24 @@
     // Pin by default. No-pin only for page-level issues we can't logically point to.
     var isNoPin = !shouldHavePin(diff);
 
-    var marker = document.createElement('div');
+    // Use a real <button> instead of a styled <div>. This is the a11y fix
+    // that makes diff inspection actually usable by keyboard / screen
+    // readers: <button>s are tabbable, take Enter/Space, and announce as
+    // "button" with their accessible name. The old <div> implementation
+    // was an invisible feature for AT users.
+    var marker = document.createElement('button');
+    marker.type = 'button';
     marker.className = 'qaproof-marker ' + severityClass + (isNoPin ? ' qaproof-marker-nopin' : '');
     marker.dataset.index = idx;
+    // Accessible name combines the displayed number, the severity, and a
+    // short version of the description so screen reader users hear what
+    // each pin is about without needing to open the tooltip.
+    var num         = diff._displayNum || (idx + 1);
+    var ariaLabel   = (qaproof.i18n.markerAriaLabel || 'Diff %1$s, severity %2$s: %3$s')
+      .replace('%1$s', String(num))
+      .replace('%2$s', String(severity))
+      .replace('%3$s', Q.truncate(String(diff.description || ''), 120));
+    marker.setAttribute('aria-label', ariaLabel);
 
     // When the AI supplies explicit element bounds, snap the pin to the top-left
     // corner of the element so the tail points directly into the changed region.
@@ -2072,11 +2213,19 @@
     var anyHasPin = diffs.some(function(d) { return shouldHavePin(d.diff); });
     var anyWrappable = diffs.some(function(d) { return isWrappable(d.diff); });
 
-    var marker = document.createElement('div');
+    // Same accessibility treatment as the single-diff marker: a real
+    // <button> so keyboard/screen-reader users can reach and activate it.
+    var marker = document.createElement('button');
+    marker.type = 'button';
     marker.className = 'qaproof-marker qaproof-marker-pie' + (!anyHasPin ? ' qaproof-marker-nopin' : '');
     // Store all indices
     marker.dataset.index = diffs[0].idx;
     marker.dataset.indices = diffs.map(function(d) { return d.idx; }).join(',');
+    // Accessible name describes the grouped diffs in one short sentence.
+    var pieAriaLabel = (qaproof.i18n.markerPieAriaLabel || '%1$s diffs grouped at this location; worst severity %2$s.')
+      .replace('%1$s', String(diffs.length))
+      .replace('%2$s', String(worstSev));
+    marker.setAttribute('aria-label', pieAriaLabel);
     marker.style.top = group.top + '%';
     // No-pin pie markers (all page-level issues) are always centered horizontally
     marker.style.left = !anyHasPin ? '50%' : (group.left + '%');
@@ -2174,7 +2323,13 @@
     for (var i = 0; i < differences.length; i++) {
       var rawDiff = differences[i];
       if (!rawDiff.location) continue;
-      // noMarker items are rendered as round markers without the pin tail
+      // Strict noMarker honour. Previously the renderer dropped the pin tail
+      // but still painted a round dot at the AI's approximate coordinate —
+      // for page-level concerns ("overall typography differs") the dots
+      // ended up clustered at page-center, looking like a UI bug. They now
+      // live in the differences list only, with a "Page-level" pill so the
+      // user sees the issue without seeing a misleading map pin.
+      if (rawDiff.noMarker) continue;
       if (filterFn && !filterFn(rawDiff, i)) continue;
       var diff = (locKey && locKey !== 'location' && rawDiff[locKey])
         ? Object.assign({}, rawDiff, { location: rawDiff[locKey] })
@@ -2683,9 +2838,18 @@
         var sectionBadge = diff.sectionLabel
           ? '<span class="qaproof-badge qaproof-badge-section" title="Page section detected by AI">' + Q.escapeHtml(diff.sectionLabel) + '</span>'
           : '';
+        // "Page-level" pill for noMarker diffs — these are not tied to a
+        // specific element (e.g. overall typography). They no longer render
+        // a pin on the visual map; the pill tells the user "this is a
+        // page-wide observation, no map location" so they don't go hunting
+        // for a marker that isn't there.
+        var pageLevelBadge = diff.noMarker
+          ? '<span class="qaproof-badge qaproof-badge-page-level" title="Page-wide observation — not tied to a specific element">Page-level</span>'
+          : '';
 
         var el = document.createElement('div');
         el.className = 'qaproof-difference';
+        if (diff.noMarker) el.classList.add('qaproof-difference-page-level');
         el.dataset.index = diff._origIndex;
         el.dataset.severity = severity;
         if (diff.device) el.dataset.device = diff.device;
@@ -2698,6 +2862,7 @@
           '<div class="qaproof-diff-body">' +
           '  <div class="qaproof-diff-header">' +
           '    <span class="qaproof-severity-tag qaproof-severity-tag-' + severity + '">' + severityIcon(severity) + ' ' + Q.escapeHtml(Q.capitalize(severity)) + '</span>' +
+          '    ' + pageLevelBadge +
           '    ' + sectionBadge +
           '    ' + deviceBadge +
           '  </div>' +
@@ -2736,7 +2901,17 @@
     }
 
     function formatRecText(text) {
-      var formatted = Q.escapeHtml(text)
+      // Replace `backtick selectors` BEFORE escapeHtml so the captured group
+      // doesn't get HTML-encoded twice. Escape the inner text manually.
+      var withCode = text.replace(/`([^`]+)`/g, function (_match, inner) {
+        return 'CODE' + inner + 'ENDCODE';
+      });
+      var formatted = Q.escapeHtml(withCode);
+      // Restore the code markers as <code> spans.
+      formatted = formatted.replace(/CODE([^]+)ENDCODE/g, function (_m, inner) {
+        return '<code class="qaproof-rec-code">' + inner + '</code>';
+      });
+      formatted = formatted
         .replace(/\{([^}]+)\}/g, '<code class="qaproof-rec-code">{$1}</code>')
         .replace(/&lt;(\/?[\w-]+(?:\s+[\w-]+(?:=&#039;[^&#]*&#039;)?)?\s*\/?)&gt;/g, '<code class="qaproof-rec-tag">&lt;$1&gt;</code>');
       formatted = formatted.replace(/(WCAG\s+[\d.]+\s+SC\s+[\d.]+(?:\s+[\w\s,&]+)?(?:\([^)]+\))?)/g, '<span class="qaproof-rec-wcag">$1</span>');
@@ -2744,14 +2919,17 @@
       return formatted;
     }
 
-    // Classify recommendations: "code" recs contain CSS/HTML snippets, "quick" are short, rest are "structural"
+    // Classify recommendations:
+    //   "code" — explicit CSS/HTML snippets ({...} or <tag>) OR backtick-wrapped selector (new)
+    //   "quick" — short
+    //   "structural" — everything else
     var codeRecs = [];
     var quickRecs = [];
     var structuralRecs = [];
 
     for (var i = 0; i < recommendations.length; i++) {
       var text = recommendations[i];
-      var hasCode = /\{[^}]+\}|<[a-z]/.test(text);
+      var hasCode = /\{[^}]+\}|<[a-z]|`[^`]+`/.test(text);
       var isShort = text.length < 120;
       if (hasCode) {
         codeRecs.push({ text: text, num: i + 1 });
@@ -3280,14 +3458,28 @@
     var filterContainer = document.getElementById(filterId);
     if (!filterContainer) return;
 
+    // Group-level role so screen readers announce it as a related set of
+    // toggle controls (e.g. "filter buttons, button: All, pressed").
+    filterContainer.setAttribute('role', 'group');
+    if (!filterContainer.hasAttribute('aria-label')) {
+      filterContainer.setAttribute('aria-label', 'Filter');
+    }
+    // Stamp aria-pressed onto every chip up-front so initial state is
+    // correctly announced; the click handler keeps it in sync below.
+    filterContainer.querySelectorAll('.qaproof-filter-btn').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+    });
+
     filterContainer.addEventListener('click', function (e) {
       var btn = e.target.closest('.qaproof-filter-btn');
       if (!btn) return;
 
       filterContainer.querySelectorAll('.qaproof-filter-btn').forEach(function (b) {
         b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
       });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
 
       var filterValue = btn.dataset[filterKey];
 
@@ -3390,13 +3582,17 @@
     html += '<div class="qaproof-report-hero qaproof-fidelity-mismatch">';
     html += '  <div class="qaproof-report-hero-top">';
     html += '    <div class="qaproof-report-hero-info">';
-    html += '      <h2 style="margin:0 0 10px 0;">⚠ Design and live page don\'t match</h2>';
+    html += '      <h2 style="margin:0 0 10px 0;">Design and live page don\'t match</h2>';
     html += '      <div class="qaproof-summary">' + Q.escapeHtml(summary) + '</div>';
     html += '      <ul style="margin-top:14px;font-size:13px;line-height:1.7;">';
     if (data.designSite) html += '<li><strong>Design shows:</strong> ' + Q.escapeHtml(data.designSite) + '</li>';
     if (data.liveSite)   html += '<li><strong>Live page shows:</strong> ' + Q.escapeHtml(data.liveSite) + '</li>';
     html += '      </ul>';
-    html += '      <p style="margin-top:16px;color:#666;">Check that the Figma URL and the page URL refer to the same project, then run the test again.</p>';
+    html += '      <p style="margin-top:16px;color:#666;">Check that the design and the page URL refer to the same project, then run the test again.</p>';
+    html += '      <div class="qaproof-report-hero-actions" style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">';
+    html += '        <button type="button" data-qaproof-action="mismatch-edit-form" class="qaproof-btn"><span class="dashicons dashicons-edit"></span> Edit URL or design</button>';
+    html += '        <button type="button" data-qaproof-action="back-to-form" class="qaproof-btn qaproof-btn-secondary"><span class="dashicons dashicons-undo"></span> Back to test setup</button>';
+    html += '      </div>';
     html += '    </div>';
     html += '  </div>';
     html += '</div>';
@@ -3416,7 +3612,103 @@
 
     resultsContainer.innerHTML = html;
     resultsContainer.classList.remove('hidden');
+
+    // Wire up the mismatch recovery CTAs. Same handler shape as the element
+    // not-located state — back to the test form so the user can correct the
+    // URL or pick a different saved design without re-entering everything.
+    var goBack = function () {
+      if (Q.showTestForm) Q.showTestForm();
+      else if (Q.S && Q.S.testForm) { Q.S.testForm.classList.remove('hidden'); resultsContainer.classList.add('hidden'); }
+    };
+    var editBtn = resultsContainer.querySelector('[data-qaproof-action="mismatch-edit-form"]');
+    var backBtn = resultsContainer.querySelector('[data-qaproof-action="back-to-form"]');
+    if (editBtn) editBtn.addEventListener('click', goBack);
+    if (backBtn) backBtn.addEventListener('click', goBack);
+
     Q.scrollToResults && Q.scrollToResults();
+    Q.announceResultsReady && Q.announceResultsReady(resultsContainer, 'Test results');
+  }
+
+  /**
+   * Render the "element not located" state for element-mode fidelity tests.
+   *
+   * The user selected a region on the design and the AI scanned the live page
+   * for a match; `matched:false` means it could not find a corresponding
+   * element. Showing the default `Design Fidelity Score: 0` ring here is
+   * misleading — the implementation is not necessarily broken, the AI just
+   * couldn't locate the element. This dedicated state communicates that
+   * clearly and offers concrete recovery paths.
+   */
+  function renderFidelityElementNotLocated(data) {
+    var resultsContainer = document.getElementById('qaproof-results');
+    if (!resultsContainer) return;
+
+    var croppedSrc = data.screenshots && data.screenshots.figmaCropped ? data.screenshots.figmaCropped : '';
+    var liveSrc    = data.screenshots && data.screenshots.live          ? data.screenshots.live          : '';
+    var region     = data.elementRegion || null;
+    var summary    = data.summary || 'The AI could not locate the selected design region on the live page.';
+
+    var html = buildBackButtonHtml();
+    html += '<div class="qaproof-report-hero qaproof-fidelity-not-located">';
+    html += '  <div class="qaproof-report-hero-top">';
+    html += '    <div class="qaproof-report-hero-info">';
+    html += '      <h2 style="margin:0 0 10px 0;">Element not located on the live page</h2>';
+    html += '      <div class="qaproof-summary">' + Q.escapeHtml(summary) + '</div>';
+    html += '      <p style="margin-top:14px;color:#555;font-size:13px;line-height:1.6;">';
+    html += '        This usually means the selected element looks too different on the live page, ';
+    html += '        the region you selected is too small to match, or that element hasn\'t been implemented yet. ';
+    html += '        Try one of the recovery steps below.';
+    html += '      </p>';
+    html += '      <div class="qaproof-report-hero-actions" style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">';
+    html += '        <button type="button" data-qaproof-action="element-retry-larger" class="qaproof-btn"><span class="dashicons dashicons-editor-expand"></span> Select a larger region</button>';
+    html += '        <button type="button" data-qaproof-action="element-retry-fullpage" class="qaproof-btn"><span class="dashicons dashicons-image-rotate"></span> Switch to full-page comparison</button>';
+    html += '        <button type="button" data-qaproof-action="back-to-form" class="qaproof-btn qaproof-btn-secondary"><span class="dashicons dashicons-undo"></span> Back to test setup</button>';
+    html += '      </div>';
+    html += '    </div>';
+    html += '  </div>';
+    html += '</div>';
+
+    if (croppedSrc || liveSrc) {
+      html += '<div class="qaproof-screenshots-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;">';
+      if (croppedSrc) {
+        html += '<div><div style="font-weight:600;margin-bottom:6px;">Selected design region</div>';
+        if (region) {
+          html += '<div style="font-size:12px;color:#888;margin-bottom:6px;">' +
+            Math.round(region.width) + '% × ' + Math.round(region.height) + '% of design' +
+            '</div>';
+        }
+        html += '<img src="' + Q.escapeAttr(croppedSrc) + '" alt="Selected region" style="width:100%;border:1px solid #ddd;border-radius:6px;" /></div>';
+      }
+      if (liveSrc) {
+        html += '<div><div style="font-weight:600;margin-bottom:6px;">Live page (full)</div>';
+        html += '<img src="' + Q.escapeAttr(liveSrc) + '" alt="Live page" style="width:100%;border:1px solid #ddd;border-radius:6px;" /></div>';
+      }
+      html += '</div>';
+    }
+
+    resultsContainer.innerHTML = html;
+    resultsContainer.classList.remove('hidden');
+
+    // Wire up the recovery CTAs. We use plain data-attributes rather than IDs
+    // so future render variants can re-use the same handlers.
+    var c = resultsContainer;
+    var retryLarger   = c.querySelector('[data-qaproof-action="element-retry-larger"]');
+    var retryFullPage = c.querySelector('[data-qaproof-action="element-retry-fullpage"]');
+    var backToForm    = c.querySelector('[data-qaproof-action="back-to-form"]');
+    var goBack = function () {
+      if (Q.showTestForm) Q.showTestForm();
+      else if (Q.S && Q.S.testForm) { Q.S.testForm.classList.remove('hidden'); resultsContainer.classList.add('hidden'); }
+    };
+    if (backToForm)    backToForm.addEventListener('click', goBack);
+    if (retryLarger)   retryLarger.addEventListener('click', goBack);
+    if (retryFullPage) retryFullPage.addEventListener('click', function () {
+      // Clear element selection so the next run is full-page.
+      if (Q.S) { Q.S.selectedElement = null; Q.S.elementRegion = null; }
+      goBack();
+    });
+
+    Q.scrollToResults && Q.scrollToResults();
+    Q.announceResultsReady && Q.announceResultsReady(resultsContainer, 'Test results');
   }
 
   // ============================

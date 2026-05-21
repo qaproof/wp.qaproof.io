@@ -113,6 +113,24 @@
   var savedDesignSelect = document.getElementById('qaproof-saved-design');
   var savedDesignWrap   = document.getElementById('qaproof-figma-fields');
 
+  /**
+   * Format a saved-image age into a short human string. Returns '' for the
+   * legacy "no timestamp" case (0) so we can hide the suffix entirely
+   * rather than show "unknown age" — non-staleness on old saved designs is
+   * not a problem we need to flag in the UI, just a fact we don't know.
+   */
+  function formatSavedImageAge(ts) {
+    if (!ts || typeof ts !== 'number') return '';
+    var ageSec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+    if (ageSec < 60)      return 'cached just now';
+    if (ageSec < 3600)    return 'cached ' + Math.floor(ageSec / 60) + ' min ago';
+    if (ageSec < 86400)   return 'cached ' + Math.floor(ageSec / 3600) + ' h ago';
+    var days = Math.floor(ageSec / 86400);
+    if (days < 30) return 'cached ' + days + ' day' + (days === 1 ? '' : 's') + ' ago';
+    var months = Math.floor(days / 30);
+    return 'cached ' + months + ' month' + (months === 1 ? '' : 's') + ' ago — refresh from Figma';
+  }
+
   function populateSavedDesigns() {
     if (!savedDesignSelect || !qaproof.savedDesigns) return;
     var designs = qaproof.savedDesigns;
@@ -172,6 +190,9 @@
         .then(function (json) {
           if (json.success && json.imageBase64) {
             S.savedDesignImageBase64 = json.imageBase64;
+            // Capture Figma version token alongside the bytes — sent back to
+            // the backend on test submit for the staleness handshake.
+            S.savedDesignFigmaLastModified = json.figmaLastModified || '';
             showPreviewResult({
               imageBase64: json.imageBase64,
               fileKey: 'Saved',
@@ -179,7 +200,20 @@
               sizeKB: Math.round(json.imageBase64.length * 0.75 / 1024),
             });
             if (previewMeta) {
-              previewMeta.textContent = qaproof.i18n.previewSavedNoApi || 'Saved image \u00B7 No Figma API call';
+              // Surface staleness: a cached design image that's months old
+              // can silently produce false-positive diffs because Figma has
+              // moved on. We tell the user in the same line where they see
+              // "Saved image \u00B7 No Figma API call".
+              var stalenessText = formatSavedImageAge(found.imageFetchedAt);
+              previewMeta.textContent = (qaproof.i18n.previewSavedNoApi || 'Saved image \u00B7 No Figma API call') +
+                (stalenessText ? ' \u00B7 ' + stalenessText : '');
+              // Mark stale (>30 days) so CSS can colour it; default to neutral.
+              previewMeta.classList.remove('qaproof-stale', 'qaproof-fresh');
+              if (found.imageFetchedAt) {
+                var ageDays = (Date.now() / 1000 - found.imageFetchedAt) / 86400;
+                if (ageDays > 30) previewMeta.classList.add('qaproof-stale');
+                else if (ageDays < 7) previewMeta.classList.add('qaproof-fresh');
+              }
             }
           } else {
             // Image missing — fall back to Figma preview
@@ -618,12 +652,26 @@
     // Broadcast saved-design status to other tabs (Settings page listens via
     // the `storage` event in init.js). Also updates the current tab in case
     // Tests + Settings are rendered on the same page in the future.
+    //
+    // We stamp the Figma `lastModified` token captured at cache time onto
+    // the payload so the receiver can detect a stale entry: when the design
+    // image gets refreshed against a newer Figma version, the elements cache
+    // signalled here no longer corresponds to that image (B14/B15).
     function broadcastDesignStatus(designId, state, count, source) {
       if (!designId) return;
       try {
         var payload = { state: state, ts: Date.now() };
         if (typeof count === 'number') payload.count = count;
         if (source) payload.source = source;
+        var ver = '';
+        var allDesigns = qaproof.savedDesigns || [];
+        for (var i = 0; i < allDesigns.length; i++) {
+          if (allDesigns[i].id === designId) {
+            ver = allDesigns[i].figmaLastModified || S.savedDesignFigmaLastModified || '';
+            break;
+          }
+        }
+        if (ver) payload.figmaLastModified = ver;
         // Always set a fresh value so the `storage` event fires even when the
         // state repeats (localStorage only dispatches when the value changes).
         localStorage.setItem('qaproof:design:' + designId, JSON.stringify(payload));
@@ -713,7 +761,6 @@
           if (json.success && json.data && json.data.elements && json.data.elements.length > 0) {
             var bgSource = json.data.source || '';
             var elCount = json.data.elements.length;
-            console.log('[QAProof] Background detection done:', bgSource, '(' + elCount + ' elements)');
 
             detectedElementsSource = bgSource;
             S.elementsDetectedForCache = 'saved-elements|' + bgDesignId;
@@ -729,7 +776,6 @@
                 return { ok: true, count: elCount };
               });
           }
-          console.log('[QAProof] Background detection returned no elements');
           if (previewMeta) {
             previewMeta.textContent = qaproof.i18n.savedImageNoApi || 'Saved image \u00B7 No API call needed';
           }
@@ -1058,7 +1104,6 @@
     });
 
     var validElements = sanitizeElementCoordinates(elements);
-    console.log('[QAProof] Detected elements after validation:', validElements.length, validElements);
 
     validElements.forEach(function (el, idx) {
       var overlay = document.createElement('div');
@@ -1263,10 +1308,8 @@
         if (json.success && json.elements && json.elements.length > 0) {
           S.elementsDetectedForCache = cacheKey;
           detectedElementsSource = json.source || '';
-          console.log('[QAProof] Loaded cached elements:', json.source, '(' + json.elements.length + ' elements)');
           renderElementOverlays(json.elements);
         } else {
-          console.log('[QAProof] Cached elements empty, triggering live detection');
           sd.hasElements = false;
           triggerDetectElements();
         }
@@ -1324,7 +1367,6 @@
         var detectionSource = json.data.source || '';
         detectedElementsSource = detectionSource;
         if (detectionSource) {
-          console.log('[QAProof] Detection source:', detectionSource, '(' + json.data.elements.length + ' elements)');
         }
         if (requestBody.figmaUrl && detectionSource === 'ai-vision') {
           console.warn('[QAProof] Figma API detection failed, fell back to AI vision. Possibly rate-limited.');
@@ -1352,7 +1394,6 @@
           .then(Q.safeJson)
           .then(function (saveJson) {
             if (saveJson.success) {
-              console.log('[QAProof] Elements saved to design', autoSaveDesignId);
               var designs = qaproof.savedDesigns || [];
               for (var i = 0; i < designs.length; i++) {
                 if (designs[i].id === autoSaveDesignId) {
@@ -1597,6 +1638,18 @@
         if (savedParts2.length >= 2 && savedParts2[1]) {
           body.figmaImageBase64 = savedParts2[1];
         }
+        // Send the design's Figma URL alongside the cached bytes so the
+        // backend has somewhere to re-fetch from on staleness, and the
+        // version token captured at cache time so the backend can decide.
+        if (selectedDesign && selectedDesign.figmaUrl) {
+          body.figmaUrl = selectedDesign.figmaUrl;
+        }
+        var cachedToken = S.savedDesignFigmaLastModified
+          || (selectedDesign && selectedDesign.figmaLastModified)
+          || '';
+        if (cachedToken) {
+          body.cachedLastModified = cachedToken;
+        }
       } else if (S.uploadedFileBase64) {
         var parts2 = S.uploadedFileBase64.split(',');
         if (parts2.length < 2 || !parts2[1]) {
@@ -1696,17 +1749,29 @@
       .then(Q.safeJson)
       .then(function (data) {
         if (!data.success || !data.data || !data.data.jobId) {
+          // Concurrency cap — server returns 429 with code:'CONCURRENCY_LIMIT'.
+          // Surface a clear, actionable message instead of the generic
+          // "Failed to create test job" so the user knows it's a "wait and
+          // retry" situation, not a hard failure they need to debug.
+          var errCode = data.error && data.error.code;
+          if (errCode === 'CONCURRENCY_LIMIT') {
+            var active = (data.error && data.error.activeJobs) || 0;
+            var limit  = (data.error && data.error.limit) || 2;
+            throw new Error(
+              'You already have ' + active + ' test' + (active === 1 ? '' : 's') +
+              ' running (limit ' + limit + ' per workspace). Wait for one to finish ' +
+              'before starting another.'
+            );
+          }
           throw new Error((data.error && data.error.message) || 'Failed to create test job.');
         }
 
         var jobId = data.data.jobId;
-        console.log('[QAProof] Job created:', jobId);
         Q.saveActiveJob(jobId, body.testType, body.pageUrl, 'tests', 'polling', 0, body.wcagLevel);
 
         Q.startJobPolling(jobId, {
           page: 'tests',
           onPoll: function (status, elapsed) {
-            console.log('[QAProof] Poll:', status, elapsed);
           },
           onDone: function (resultData) {
             loadingTimers.forEach(clearTimeout);
@@ -1715,6 +1780,48 @@
             resultData.pageUrl = resultData.pageUrl || body.pageUrl || '';
             if (resultData.testType === 'accessibility' && body.wcagLevel) {
               resultData.targetWcagLevel = body.wcagLevel;
+            }
+
+            // Staleness handshake — if the backend detected that our cached
+            // saved-design image was outdated against Figma and re-fetched
+            // mid-test, push the fresh bytes + version back into WP so the
+            // next run starts current. The screenshot returned from the
+            // backend IS the fresh design (compressed for display); we save
+            // a fresh fetch via the design-image endpoint so the full-quality
+            // bytes are stored, not the JPEG-compressed display version.
+            if (resultData && resultData.testType === 'fidelity'
+                && resultData.cacheWasStale && designSelect && designSelect.value
+                && resultData.figmaLastModified) {
+              var designId = designSelect.value;
+              // Refresh the cached image AND its version token through the
+              // dedicated save endpoint. Fire-and-forget — failure to write
+              // back doesn't invalidate the test we just ran.
+              fetch(qaproof.restBase + '/figma-preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+                credentials: 'same-origin',
+                body: JSON.stringify({ figmaUrl: body.figmaUrl, forceRefresh: true }),
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (preview) {
+                  if (!preview.success || !preview.data || !preview.data.imageBase64) return;
+                  return fetch(qaproof.restBase + '/save-design-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                      designId:     designId,
+                      imageBase64:  preview.data.imageBase64,
+                      lastModified: preview.data.lastModified || resultData.figmaLastModified,
+                    }),
+                  });
+                })
+                .catch(function () { /* best-effort */ });
+              // Update in-memory state immediately so the user can re-run
+              // without round-tripping the WP REST.
+              S.savedDesignFigmaLastModified = resultData.figmaLastModified;
+              // Force the result UI to surface the staleness signal.
+              resultData._cacheRefreshedNotice = true;
             }
 
             if (resultData.testType === 'responsive') {
@@ -1734,7 +1841,6 @@
           onScreenshotsDone: function (resultData) {
             Q.saveTestHistory(body.testType, body.pageUrl, jobId, resultData)
               .then(function (saveResp) {
-                console.log('[QAProof] History saved:', saveResp);
                 if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
               })
               .catch(function (err) {
@@ -1744,7 +1850,7 @@
           },
           onFailed: function (errorMsg) {
             loadingTimers.forEach(clearTimeout);
-            Q.showError(Q.escapeHtml(errorMsg));
+            Q.showError(errorMsg);
             S.loading.classList.add('hidden');
             S.submitBtn.disabled = false;
             S.testsPageBusy = false;
@@ -1766,9 +1872,9 @@
           Q.showError(qaproof.i18n.errNoConnection || 'Could not reach the server. Check your connection. Reload the page to retry.');
         } else if (err.message && err.message.indexOf('Rate limit') !== -1) {
           Q.clearActiveJob('tests');
-          Q.showError(Q.escapeHtml(err.message));
+          Q.showError(err.message);
         } else {
-          Q.showError(Q.escapeHtml(err.message) + ' Reload the page to retry.');
+          Q.showError(err.message + ' Reload the page to retry.');
         }
         S.loading.classList.add('hidden');
         S.submitBtn.disabled = false;
@@ -1827,7 +1933,6 @@
           var emailData = Object.assign({}, lastResult);
           if (emailData.screenshots) emailData.screenshots = {};
           pdfBase64 = window.QAProof.generatePdfBase64(emailData);
-          console.log('[QAProof] pdfBase64 type:', typeof pdfBase64, 'length:', pdfBase64 ? pdfBase64.length : 0, 'prefix:', pdfBase64 ? pdfBase64.slice(0, 40) : 'null');
         } else {
           console.warn('[QAProof] generatePdfBase64 not found on window.QAProof:', window.QAProof);
         }
@@ -1865,7 +1970,8 @@
           setTimeout(function() { collapseEmailBtn(emailBtn); }, 1200);
         } else {
           sendBtn.disabled = false;
-          sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + (data.error || 'Failed');
+          // data.error is API-supplied — escape before injecting into innerHTML.
+          sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + Q.escapeHtml(data.error || 'Failed');
           setTimeout(function() {
             sendBtn.disabled = false;
             sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailConfirm || ' Confirm');
