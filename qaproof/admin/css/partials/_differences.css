@@ -593,6 +593,10 @@
 #qaproof-app .qaproof-badge-category { background: var(--qp-bg-surface); color: var(--qp-text-muted); }
 #qaproof-app .qaproof-badge-device { background: var(--qp-accent-dim); color: #0E7490; }
 #qaproof-app .qaproof-badge-section { background: rgba(124, 58, 237, 0.12); color: #7C3AED; font-weight: 600; }
+/* Page-level badge — used on noMarker diffs to indicate "no map pin, this is a page-wide observation". */
+#qaproof-app .qaproof-badge-page-level { background: rgba(107, 114, 128, 0.15); color: #6B7280; font-weight: 600; }
+/* Soft hairline border on page-level rows so they're visually distinguishable from element-tied diffs without being distracting. */
+#qaproof-app .qaproof-difference-page-level { border-left: 3px solid rgba(107, 114, 128, 0.5); }
 
 /* Fidelity report meta badges (viewport, design source, pixel diff strategy) */
 #qaproof-app .qaproof-meta-badge {
