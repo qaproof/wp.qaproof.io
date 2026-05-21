@@ -6,12 +6,16 @@ All bundled assets are GPL-compatible and redistributable under the
 terms below.
 
 --------------------------------------------------------------------------
-1. Chart.js (admin/js/vendor/chart.umd.min.js)
+1. Chart.js (admin/js/vendor/chart.umd.min.js, admin/js/vendor/chart.umd.js)
 --------------------------------------------------------------------------
 Version:    4.5.1
 Source:     https://github.com/chartjs/Chart.js
+Distribution downloaded from: https://unpkg.com/chart.js@4.5.1/dist/
 License:    MIT License
 Copyright:  Copyright (c) 2014-2025 Chart.js Contributors
+
+Both the minified and the non-minified UMD builds are shipped as published
+by the upstream project, unmodified.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -32,22 +36,31 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------------------------------
-2. jsPDF (admin/js/vendor/jspdf.umd.min.js)
+2. jsPDF (admin/js/vendor/jspdf.umd.min.js, admin/js/vendor/jspdf.umd.js)
 --------------------------------------------------------------------------
 Version:    3.0.3
 Source:     https://github.com/parallax/jsPDF
+Distribution downloaded from: https://unpkg.com/jspdf@3.0.3/dist/
 License:    MIT License
 Copyright:  Copyright (c) 2010-2025 jsPDF Contributors
+
+Both the minified and the non-minified UMD builds are shipped as published
+by the upstream project, unmodified.
 
 [Same MIT license text as above.]
 
 --------------------------------------------------------------------------
-3. jsPDF-AutoTable (admin/js/vendor/jspdf.plugin.autotable.min.js)
+3. jsPDF-AutoTable (admin/js/vendor/jspdf.plugin.autotable.min.js,
+   admin/js/vendor/jspdf.plugin.autotable.js)
 --------------------------------------------------------------------------
 Version:    5.0.2
 Source:     https://github.com/simonbengtsson/jsPDF-AutoTable
+Distribution downloaded from: https://unpkg.com/jspdf-autotable@5.0.2/dist/
 License:    MIT License
 Copyright:  Copyright (c) 2025 Simon Bengtsson
+
+Both the minified and the non-minified UMD builds are shipped as published
+by the upstream project, unmodified.
 
 [Same MIT license text as above.]
 
