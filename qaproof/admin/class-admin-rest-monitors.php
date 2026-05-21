@@ -11,10 +11,11 @@ class QAProof_Admin_REST_Monitors {
 
     const CACHE_TTL = 9;
 
-    private static function cache_key_list()         { return 'qaproof_mon_list'; }
-    private static function cache_key_monitor( $id ) { return 'qaproof_mon_' . md5( $id ); }
-    private static function cache_key_results( $id ) { return 'qaproof_mon_res_' . md5( $id ); }
-    public  static function run_queued_key( $id )    { return 'qaproof_run_q_' . md5( $id ); }
+    private static function cache_key_list()                        { return 'qaproof_mon_list'; }
+    private static function cache_key_monitor( $id )                { return 'qaproof_mon_' . md5( $id ); }
+    private static function cache_key_results( $id )                { return 'qaproof_mon_res_' . md5( $id ); }
+    private static function cache_key_results_page( $id, $limit )   { return 'qaproof_mon_res_' . md5( $id ) . '_lim' . (int) $limit; }
+    public  static function run_queued_key( $id )                   { return 'qaproof_run_q_' . md5( $id ); }
 
     private static function flush_monitor_cache( $id ) {
         delete_transient( self::cache_key_list() );
@@ -247,9 +248,15 @@ class QAProof_Admin_REST_Monitors {
         $offset = $request->get_param( 'offset' ) ? (int) $request->get_param( 'offset' ) : 0;
 
         // Cache only the first-page fetches used by the polling loop.
+        // cache_key_results_page() returns a fully-prefixed key
+        // (`qaproof_mon_res_<hash>_lim<N>`) so it can never collide with another
+        // plugin's transient storage. Earlier revisions built this key inline
+        // ("'lim' . $limit") which made the static analyser flag the literal
+        // 'lim' as a possibly-unprefixed key — same actual value, clearer
+        // provenance through the helper.
         $use_cache = ( $offset === 0 && $limit <= 20 );
         if ( $use_cache ) {
-            $cache_key = self::cache_key_results( $id ) . 'lim' . $limit;
+            $cache_key = self::cache_key_results_page( $id, $limit );
             $cached    = get_transient( $cache_key );
             if ( $cached !== false ) {
                 return new WP_REST_Response( [

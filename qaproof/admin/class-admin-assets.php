@@ -62,20 +62,23 @@ class QAProof_Admin_Assets {
         }
 
         // Locally bundled vendor libs (MIT). See THIRD-PARTY-NOTICES.txt.
+        // Handles are namespaced with the `qaproof-` prefix so they cannot
+        // collide with another plugin that ships a different jsPDF / Chart.js
+        // version under a generic handle — wp.org's handle-namespace guideline.
         $vendor_base = QAPROOF_PLUGIN_URL . 'admin/js/vendor/';
-        wp_enqueue_script( 'chartjs',
+        wp_enqueue_script( 'qaproof-chartjs',
             $vendor_base . 'chart.umd.min.js',
             [],
             '4.5.1',
             true );
-        wp_enqueue_script( 'jspdf',
+        wp_enqueue_script( 'qaproof-jspdf',
             $vendor_base . 'jspdf.umd.min.js',
             [],
             '3.0.3',
             true );
-        wp_enqueue_script( 'jspdf-autotable',
+        wp_enqueue_script( 'qaproof-jspdf-autotable',
             $vendor_base . 'jspdf.plugin.autotable.min.js',
-            [ 'jspdf' ],
+            [ 'qaproof-jspdf' ],
             '5.0.2',
             true );
 
@@ -86,8 +89,8 @@ class QAProof_Admin_Assets {
         wp_enqueue_script( 'qaproof-state',    $js_base . 'state.js',    [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/state.js' ), true );
         wp_enqueue_script( 'qaproof-theme',    $js_base . 'theme.js',    [],                   $asset_ver( 'admin/js/modules/theme.js' ), true );
         wp_enqueue_script( 'qaproof-polling',  $js_base . 'polling.js',  [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/polling.js' ), true );
-        wp_enqueue_script( 'qaproof-results',  $js_base . 'results.js',  [ 'qaproof-state', 'chartjs' ], $asset_ver( 'admin/js/modules/results.js' ), true );
-        wp_enqueue_script( 'qaproof-pdf',      $js_base . 'pdf.js',      [ 'qaproof-helpers', 'jspdf', 'jspdf-autotable' ], $asset_ver( 'admin/js/modules/pdf.js' ), true );
+        wp_enqueue_script( 'qaproof-results',  $js_base . 'results.js',  [ 'qaproof-state', 'qaproof-chartjs' ], $asset_ver( 'admin/js/modules/results.js' ), true );
+        wp_enqueue_script( 'qaproof-pdf',      $js_base . 'pdf.js',      [ 'qaproof-helpers', 'qaproof-jspdf', 'qaproof-jspdf-autotable' ], $asset_ver( 'admin/js/modules/pdf.js' ), true );
         wp_enqueue_script( 'qaproof-monitors', $js_base . 'monitors.js', [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/monitors.js' ), true );
         wp_enqueue_script( 'qaproof-history',  $js_base . 'history.js',  [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/history.js' ), true );
         wp_enqueue_script( 'qaproof-form',         $js_base . 'form.js',         [ 'qaproof-state', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/form.js' ), true );
@@ -307,6 +310,10 @@ class QAProof_Admin_Assets {
                 'monitorFormTitleAdd'    => __( 'Add Monitor', 'qaproof' ),
                 'monitorSaveFailed'      => __( 'Failed to save monitor.', 'qaproof' ),
                 'monitorDeleteConfirm'   => __( 'Delete this monitor and all its results?', 'qaproof' ),
+                'monitorDeleteYes'       => __( 'Delete', 'qaproof' ),
+                'monitorDeleteNo'        => __( 'Cancel', 'qaproof' ),
+                /* translators: %s: domain name of the monitor that was deleted */
+                'monitorDeleted'         => __( 'Monitor for %s was deleted.', 'qaproof' ),
                 'monitorTimeout'         => __( 'Test timed out. Check back later.', 'qaproof' ),
                 'monitorRunFailed'       => __( 'Failed to run monitor.', 'qaproof' ),
                 'monitorLoading'         => __( 'Loading monitor...', 'qaproof' ),
@@ -491,6 +498,16 @@ class QAProof_Admin_Assets {
                 'hasImage'        => ! empty( $d['imageBase64'] ),
                 'hasElements'     => ! empty( $d['elementsJson'] ),
                 'elementsSource'  => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
+                // Expose the cache age so the UI can warn users about stale
+                // Figma snapshots. 0 = unknown (legacy designs saved before
+                // this field existed). UI converts to "X days old".
+                'imageFetchedAt'  => isset( $d['imageFetchedAt'] ) ? (int) $d['imageFetchedAt'] : 0,
+                // Figma's `lastModified` ISO-8601 captured at the moment the
+                // cached image was fetched. Sent back to the backend on the
+                // next test run as `cachedLastModified` for the staleness
+                // handshake. Empty string when the cache predates v1.1 or
+                // came from a non-Figma upload.
+                'figmaLastModified' => isset( $d['figmaLastModified'] ) ? (string) $d['figmaLastModified'] : '',
             ];
         }
         return $result;
