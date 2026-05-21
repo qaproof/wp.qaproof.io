@@ -61,12 +61,12 @@ Quick version:
 # 1. Bump Version: in qaproof/qaproof.php + Stable tag: in qaproof/readme.txt
 # 2. Build:
 ./scripts/build-plugin-zip.sh
-# 3. Publish to GitHub Releases:
+# 3. Publish to GitHub Releases (archival ZIP; not the update channel):
 gh release create vX.Y.Z /tmp/qaproof-X.Y.Z.zip --title "vX.Y.Z" --notes "..."
-# 4. Bump version + download_url in api/src/routes/wordpress-updates.js (api repo) + push
+# 4. Push to wp.org SVN (canonical update channel for every install).
 ```
 
-Sites that installed via Upload Plugin auto-update through our [self-hosted update channel](qaproof/includes/class-updater.php) (Update URI header → `api.qaproof.io/api/wordpress/qaproof` manifest). Sites that installed via wordpress.org auto-update through the canonical wp.org channel.
+All installs auto-update through the canonical wordpress.org channel via slug match — no matter where the original ZIP came from. The plugin has no `Update URI:` header and no in-repo updater code.
 
 ## License
 
