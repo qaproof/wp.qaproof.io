@@ -99,10 +99,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     </div>
 
     <!-- Loading -->
-    <div id="qaproof-a11y-loading" class="hidden">
+    <div id="qaproof-a11y-loading" class="hidden" role="status" aria-live="polite" aria-atomic="true">
         <div class="qaproof-loading-inner">
             <div class="qaproof-loading-left">
-                <div class="qaproof-loading-spinner"></div>
+                <div class="qaproof-loading-spinner" aria-hidden="true"></div>
                 <div class="qaproof-loading-info">
                     <strong id="qaproof-a11y-loading-text"><?php esc_html_e( 'Auditing accessibility...', 'qaproof' ); ?></strong>
                     <p class="description" id="qaproof-a11y-loading-subtext"><?php esc_html_e( 'This may take 1-3 minutes.', 'qaproof' ); ?></p>
@@ -113,7 +113,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     </div>
 
     <!-- Error -->
-    <div id="qaproof-a11y-error" class="notice notice-error inline hidden">
+    <div id="qaproof-a11y-error" class="notice notice-error inline hidden" role="alert" aria-live="assertive" aria-atomic="true">
         <p id="qaproof-a11y-error-message"></p>
     </div>
 

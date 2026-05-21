@@ -173,6 +173,23 @@
   user-select: none;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  /* Reset native <button> chrome — markers are <button>s for keyboard
+     accessibility but should look pixel-identical to the old <div> design.
+     The visible focus ring below gives keyboard users a clear indication. */
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+/* Visible focus indicator for keyboard users — :focus-visible only fires
+   on keyboard navigation, so mouse clicks still look identical to before. */
+#qaproof-app .qaproof-marker:focus { outline: 0; }
+#qaproof-app .qaproof-marker:focus-visible {
+  outline: 2px solid #00ADB5;
+  outline-offset: 4px;
+  border-radius: 50%;
 }
 
 /* Pin body — top circle */

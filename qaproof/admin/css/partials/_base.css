@@ -1,4 +1,38 @@
 /* ============================
+   Global focus-visible — keyboard-only focus ring.
+   Several component CSS files have historic `outline: none !important` on
+   inputs / selects / textareas / custom buttons. Per WCAG 2.4.7 every
+   focusable element MUST have a visible focus indicator. We restore one
+   here using :focus-visible (fires on keyboard nav only, NOT mouse clicks).
+   ============================ */
+#qaproof-app *:focus-visible,
+#qaproof-app input:focus-visible,
+#qaproof-app select:focus-visible,
+#qaproof-app textarea:focus-visible,
+#qaproof-app button:focus-visible,
+#qaproof-app a:focus-visible,
+#qaproof-app [tabindex]:focus-visible {
+  outline: 2px solid #00ADB5 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(0, 173, 181, 0.25) !important;
+}
+
+/* ============================
+   prefers-reduced-motion — respect OS-level setting (SC 2.3.3).
+   Zeros animations / transitions for users who opted into less motion.
+   ============================ */
+@media (prefers-reduced-motion: reduce) {
+  #qaproof-app *,
+  #qaproof-app *::before,
+  #qaproof-app *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================
    Base Overrides
    ============================ */
 #qaproof-app {
