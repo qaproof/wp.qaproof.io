@@ -208,16 +208,25 @@
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
 
-            // Render results immediately (without screenshots for fast display)
-            onDone(job.result);
+            // Isolate render failures so they don't block the rest of the
+            // completion pipeline. A throw inside onDone() used to silently
+            // swallow into the outer .catch() (guarded by `done === true`),
+            // leaving the loader visible and skipping the screenshots fetch +
+            // history save. Now: log the error, then continue so screenshots
+            // and history still happen.
+            try {
+              onDone(job.result);
+            } catch (renderErr) {
+              console.error('[QAProof] onDone threw — continuing with screenshots/history (jobId=' + jobId + ')', renderErr);
+            }
 
             // Fetch screenshots separately if they were stripped from poll response
             if (job.result.screenshotsAvailable && !job.result.screenshots) {
               fetchAndInjectScreenshots(jobId, job.result, function (resultWithScreenshots) {
-                if (onScreenshotsDone) onScreenshotsDone(resultWithScreenshots);
+                if (onScreenshotsDone) { try { onScreenshotsDone(resultWithScreenshots); } catch (ssErr) { console.error('[QAProof] onScreenshotsDone threw', ssErr); } }
               });
             } else {
-              if (onScreenshotsDone) onScreenshotsDone(job.result);
+              if (onScreenshotsDone) { try { onScreenshotsDone(job.result); } catch (ssErr) { console.error('[QAProof] onScreenshotsDone threw', ssErr); } }
             }
           } else if (job.status === 'failed') {
             clearInterval(pollInterval);
@@ -249,11 +258,13 @@
         });
     }, 5000);
 
-    // Best-effort fire-and-forget cancel ping to the server. Sent on tab close
-    // and on user-initiated cancel so the API can stop charging quota and skip
-    // the rest of the pipeline. We don't await the response — the page may be
-    // unloading. navigator.sendBeacon is the right primitive for this but our
-    // DELETE-as-method requires fetch; we fall back to fetch with keepalive.
+    // Fire cancel only for explicit user-initiated cancellation (e.g. a Cancel
+    // button). We intentionally do NOT hook beforeunload/pagehide because
+    // WordPress admin navigation triggers those events on every menu click,
+    // which would cancel in-flight tests whenever the user navigates within WP.
+    // Instead, jobs run to completion on the server. If the user returns to the
+    // Tests page within the localStorage TTL (10 min), the recovery preflight
+    // picks up the running or completed job automatically.
     function fireCancel() {
       if (cancelled || done) return;
       try {
@@ -268,17 +279,9 @@
       }
     }
 
-    // Tab close / hard navigation = treat as user-cancelled. The user is no
-    // longer watching, no point billing them for the rest of the pipeline.
-    var unloadHandler = function () { fireCancel(); };
-    window.addEventListener('beforeunload', unloadHandler);
-
     return function cancel() {
       cancelled = true;
       clearInterval(pollInterval);
-      window.removeEventListener('beforeunload', unloadHandler);
-      // Don't fire cancel if the job is already done — that would race against
-      // the result render and cause a no-op DELETE call.
       if (!done) fireCancel();
     };
   }

@@ -1057,13 +1057,19 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-star-btn {
-  color: var(--qp-text-muted);
+  color: rgba(238, 238, 238, 0.3);
+}
+#qaproof-app.qaproof-dark .qaproof-star-btn:hover {
+  color: #F59E0B;
 }
 /* Active stars keep the same warm yellow as light theme — the muted grey
    above only applies to unselected stars. Without this override the dark-mode
    rule shadows .active and selected stars look identical to unselected ones. */
 #qaproof-app.qaproof-dark .qaproof-star-btn.active {
   color: #F59E0B;
+}
+#qaproof-app.qaproof-dark .qaproof-star-btn.active svg {
+  fill: currentColor;
 }
 #qaproof-app.qaproof-dark .qaproof-feedback-labels {
   color: var(--qp-text-muted);
@@ -1110,6 +1116,9 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-secondary);
 }
 #qaproof-app.qaproof-dark .qaproof-token-tab:hover:not(.active) {
+  color: var(--qp-text-primary);
+}
+#qaproof-app.qaproof-dark .qaproof-token-tab.active {
   color: var(--qp-text-primary);
 }
 #qaproof-app.qaproof-dark .qaproof-tab-badge {

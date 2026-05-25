@@ -14,6 +14,8 @@ Compare live pages against Figma, audit accessibility (WCAG 2.1), detect visual 
 
 QAProof helps WordPress site owners and developers catch visual bugs before users do. It pairs Playwright-rendered screenshots of your live pages with AI vision analysis to find design drift, accessibility issues, and responsive breakage automatically.
 
+https://youtu.be/I3ZUg2rDA7w
+
 Five test types, one workflow:
 
 * **Design Fidelity** — Compares your live page against a Figma design (or any image you upload) and reports layout drift, color mismatches, typography differences, spacing issues, and component variations with severity ratings and pixel-coordinate markers.
@@ -22,9 +24,9 @@ Five test types, one workflow:
 * **Visual Regression Monitoring** — Scheduled screenshot diffing. Captures a baseline of a page, then re-shoots on a daily / weekly / monthly schedule and alerts you if anything changed (broken CSS deploy, missing image, accidental layout shift). Email + in-admin notifications when scores drop below your threshold.
 * **Design Audit** — Extracts your live design tokens (colors, fonts, spacing, components) and grades your design system's internal consistency on a Design Debt Score.
 
-**How it works:** QAProof is a thin WordPress plugin that talks to a hosted SaaS API (api.qaproof.io). The API runs the headless browser, calls the AI vision model, and returns structured reports. You need a QAProof account and API key — sign up free at https://qaproof.io.
+**How it works:** QAProof is a WordPress plugin that talks to a hosted SaaS API (api.qaproof.io). The API runs the headless browser, calls the AI vision model, and returns structured reports. You need a QAProof account and API key — sign up free at https://qaproof.io.
 
-**Why a SaaS backend?** Running Playwright + Anthropic Claude Vision in a WordPress request would crash most hosts (Chromium binary alone is 300 MB, image analysis runs 10–60 s). Doing it server-side keeps your hosting fast and lets us batch / cache / dedupe expensive operations.
+**Why a SaaS backend?** Running a headless browser + AI vision model in a WordPress request would crash most hosts (Chromium binary alone is 300 MB, image analysis runs 10–60 s). Doing it server-side keeps your hosting fast and lets us batch / cache / dedupe expensive operations.
 
 == Installation ==
 

@@ -846,7 +846,7 @@
 /* Saved Designs Repeater (Settings page) */
 #qaproof-app .qaproof-design-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;            /* allows .qaproof-design-verify-msg to break to a new line */
   gap: 10px;
   padding: 14px 16px;
@@ -903,9 +903,14 @@
   font-size: 16px;
   width: 16px;
   height: 16px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 #qaproof-app #qaproof-add-design {
   margin-top: 6px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
   background: rgba(0, 173, 181, 0.1) !important;
   border: 1px solid var(--qp-accent-mid) !important;
   color: var(--qp-accent) !important;
@@ -924,8 +929,8 @@
   font-size: 14px;
   width: 14px;
   height: 14px;
-  vertical-align: middle;
-  margin-right: 4px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 #qaproof-app .qaproof-no-designs {
   color: var(--qp-text-placeholder) !important;
