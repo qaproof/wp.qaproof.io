@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 ?>
 <div class="wrap" id="qaproof-app">
+    <h1 class="screen-reader-text"><?php esc_html_e( 'Tests', 'qaproof' ); ?></h1>
     <div class="qaproof-page-header">
         <div class="qaproof-page-header-left">
             <h1><?php esc_html_e( 'Tests', 'qaproof' ); ?></h1>
