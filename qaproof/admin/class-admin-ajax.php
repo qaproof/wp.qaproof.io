@@ -137,13 +137,18 @@ class QAProof_Admin_AJAX {
      * Recursively sanitize a decoded history payload. Strings become text-safe;
      * known `data:image/...` base64 fields are validated and passed through
      * (raw bytes never appear in HTML); integers/floats/bools/null are kept.
+     *
+     * Keys are preserved verbatim — the result object is an API contract
+     * (camelCase fields like `aiScore`, `designSystem`, `viewportPreset`)
+     * consumed by JS that escapes values at render time. Running
+     * sanitize_key() on contract keys would mangle them into lowercase and
+     * break both `history_save()` lookups and the JS renderers.
      */
     private static function sanitize_history_payload( $value ) {
         if ( is_array( $value ) ) {
             $out = [];
             foreach ( $value as $k => $v ) {
-                $key = is_string( $k ) ? sanitize_key( $k ) : $k;
-                $out[ $key ] = self::sanitize_history_payload( $v );
+                $out[ $k ] = self::sanitize_history_payload( $v );
             }
             return $out;
         }

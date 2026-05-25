@@ -718,7 +718,10 @@
           var innerRadius = chart.getDatasetMeta(0).data[0] ? chart.getDatasetMeta(0).data[0].innerRadius : 0;
           var isChartDark = document.getElementById('qaproof-app') && document.getElementById('qaproof-app').classList.contains('qaproof-dark');
 
-          var activeEls = chart.tooltip._active;
+          // Chart.js 4.5.1 lazily initializes chart.tooltip — undefined on the
+          // first afterDraw pass. Guard the lookup so the plugin doesn't throw
+          // before tooltip exists; the next draw will see it populated.
+          var activeEls = chart.tooltip && chart.tooltip._active;
           var isHovered = activeEls && activeEls.length > 0;
 
           ctx.save();

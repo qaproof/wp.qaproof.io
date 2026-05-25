@@ -1058,7 +1058,11 @@
             // Inject user-selected WCAG level so PDF/history always shows the correct level
             if (wcagLevel) resultData.targetWcagLevel = wcagLevel;
             S.resultsContainer = a11yResults;
-            if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(resultData);
+            try {
+              if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(resultData);
+            } catch (renderErr) {
+              console.error('[QAProof] renderAccessibilityResults threw — hiding loader anyway', renderErr);
+            }
 
             a11yLoading.classList.add('hidden');
             a11ySubmitBtn.disabled = false;
@@ -1520,6 +1524,49 @@
     // Phase 'polling' — resume polling
 
     if (currentPage === 'tests' && S.loading) {
+      // Preflight: check job status before showing the loading UI.
+      // Avoids a loader flash when the job was already cancelled (e.g. because
+      // beforeunload fired during WP admin menu navigation).
+      fetch(Q.buildPollUrl(activeJob.jobId), {
+        method: 'GET',
+        headers: { 'X-WP-Nonce': qaproof.nonce },
+        credentials: 'same-origin',
+      })
+      .then(function (preRes) {
+        if (preRes.status === 404 || preRes.status === 502) throw new Error('JOB_GONE');
+        return Q.safeJson(preRes);
+      })
+      .then(function (preData) {
+        var status = preData.success && preData.data && preData.data.status;
+        // Terminal or missing — silently discard, let the user start fresh
+        if (!status || status === 'cancelled' || status === 'failed') {
+          Q.clearActiveJob('tests');
+          return;
+        }
+        // Already done — render immediately without showing the loading UI
+        if (status === 'done' && preData.data && preData.data.result) {
+          Q.clearActiveJob('tests');
+          var rd = preData.data.result;
+          rd.pageUrl = rd.pageUrl || activeJob.pageUrl || '';
+          if (rd.testType === 'responsive') {
+            Q.renderResponsiveResults(rd);
+          } else if (rd.testType === 'accessibility') {
+            Q.renderAccessibilityResults(rd);
+          } else if (rd.testType === 'design-audit') {
+            Q.renderDesignAuditResults(rd);
+          } else {
+            Q.renderFidelityResults(rd);
+          }
+          return;
+        }
+        // Job is still running — show loading and resume polling
+        resumeTestsPolling();
+      })
+      .catch(function () {
+        Q.clearActiveJob('tests'); // network error → reset silently
+      });
+
+      function resumeTestsPolling() {
       S.testsPageBusy = true;
       S.loading.classList.remove('hidden');
       if (S.submitBtn) S.submitBtn.disabled = true;
@@ -1631,12 +1678,16 @@
             .catch(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); });
         },
         onFailed: function (errorMsg) {
-          Q.showError(Q.escapeHtml(errorMsg));
+          resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
           S.loading.classList.add('hidden');
           if (S.submitBtn) S.submitBtn.disabled = false;
           S.testsPageBusy = false;
+          // Silently reset if the job was cancelled due to page navigation.
+          if (errorMsg && errorMsg.indexOf('cancelled') !== -1) return;
+          Q.showError(Q.escapeHtml(errorMsg));
         },
       });
+      } // end resumeTestsPolling()
     } else if (currentPage === 'accessibility') {
       var a11yLoad = document.getElementById('qaproof-a11y-loading');
       var a11yBtn = document.getElementById('qaproof-a11y-submit-btn');
@@ -1646,6 +1697,43 @@
       var a11yErrMsg = document.getElementById('qaproof-a11y-error-message');
       var a11yRes = document.getElementById('qaproof-a11y-results');
 
+      // Preflight: check job status before showing the loading UI.
+      // Avoids a loader flash when the job was already cancelled (e.g. because
+      // beforeunload fired during WP admin menu navigation).
+      fetch(Q.buildPollUrl(activeJob.jobId), {
+        method: 'GET',
+        headers: { 'X-WP-Nonce': qaproof.nonce },
+        credentials: 'same-origin',
+      })
+      .then(function (preRes) {
+        if (preRes.status === 404 || preRes.status === 502) throw new Error('JOB_GONE');
+        return Q.safeJson(preRes);
+      })
+      .then(function (preData) {
+        var status = preData.success && preData.data && preData.data.status;
+        // Terminal or missing — silently discard, let the user start fresh
+        if (!status || status === 'cancelled' || status === 'failed') {
+          Q.clearActiveJob('accessibility');
+          return;
+        }
+        // Already done — render immediately without showing the loading UI
+        if (status === 'done' && preData.data && preData.data.result) {
+          Q.clearActiveJob('accessibility');
+          var rd = preData.data.result;
+          rd.pageUrl = rd.pageUrl || activeJob.pageUrl || '';
+          if (activeJob.wcagLevel) rd.targetWcagLevel = activeJob.wcagLevel;
+          S.resultsContainer = a11yRes;
+          if (Q.renderAccessibilityResults) Q.renderAccessibilityResults(rd);
+          return;
+        }
+        // Job is still running — show loading and resume polling
+        resumeA11yPolling();
+      })
+      .catch(function () {
+        Q.clearActiveJob('accessibility'); // network error → reset silently
+      });
+
+      function resumeA11yPolling() {
       if (a11yLoad) a11yLoad.classList.remove('hidden');
       if (a11yBtn) a11yBtn.disabled = true;
       if (a11yLoadText) a11yLoadText.textContent = (qaproof.i18n.resumingA11y || 'Resuming accessibility test — waiting for results...');
@@ -1741,12 +1829,15 @@
         },
         onFailed: function (errorMsg) {
           a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
-          if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
-          if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
           if (a11yLoad) a11yLoad.classList.add('hidden');
           if (a11yBtn) a11yBtn.disabled = false;
+          // Silently reset if the job was cancelled due to page navigation.
+          if (errorMsg && errorMsg.indexOf('cancelled') !== -1) return;
+          if (a11yErrMsg) a11yErrMsg.textContent = errorMsg;
+          if (a11yErrDiv) a11yErrDiv.classList.remove('hidden');
         },
       });
+      } // end resumeA11yPolling()
     }
   })();
 

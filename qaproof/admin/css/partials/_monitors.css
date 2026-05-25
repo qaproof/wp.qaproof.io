@@ -372,15 +372,6 @@
   cursor: default !important;
   opacity: 0.85;
 }
-#qaproof-app .qaproof-mc-run-btn.qaproof-btn-running::after {
-  content: '...';
-  display: inline-block;
-  overflow: hidden;
-  width: 0;
-  vertical-align: bottom;
-  animation: qaproof-badge-ellipsis 1.6s steps(1, end) infinite;
-  letter-spacing: 1px;
-}
 /* Run button — disabled when paused */
 #qaproof-app .qaproof-mc-run-btn:disabled,
 #qaproof-app .qaproof-mc-run-btn[disabled] {

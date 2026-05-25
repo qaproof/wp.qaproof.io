@@ -258,6 +258,18 @@
 #qaproof-app .qaproof-monitors-toolbar {
   margin-bottom: 20px;
 }
+#qaproof-app #qaproof-add-monitor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#qaproof-app #qaproof-add-monitor .dashicons {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
 
 /* Empty state — card style */
 #qaproof-app .qaproof-monitors-empty {

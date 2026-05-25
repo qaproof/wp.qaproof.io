@@ -1272,7 +1272,11 @@
   color: var(--qp-border-light);
 }
 #qaproof-app .qaproof-token-tab.active {
-  color: var(--qp-text-primary);
+  /* The tabs container background is always dark in light mode
+     (var(--qp-text-primary) = #222831). The previous rule made active text
+     the same variable, so it disappeared against its own background.
+     Use white explicitly — dark mode overrides this to text-primary. */
+  color: #fff;
 }
 #qaproof-app .qaproof-tab-badge {
   display: inline-flex;
@@ -2626,18 +2630,30 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #4a5060;
+  color: rgba(238, 238, 238, 0.35);
   transition: color 0.15s ease, transform 0.15s ease;
   border-radius: 4px;
   line-height: 1;
 }
+#qaproof-app .qaproof-star-btn svg {
+  pointer-events: none;
+  fill: none;
+  display: block;
+}
+#qaproof-app .qaproof-star-btn svg * {
+  pointer-events: none;
+}
 
 #qaproof-app .qaproof-star-btn:hover {
+  color: #F59E0B;
   transform: scale(1.2);
 }
 
 #qaproof-app .qaproof-star-btn.active {
   color: #F59E0B;
+}
+#qaproof-app .qaproof-star-btn.active svg {
+  fill: currentColor;
 }
 
 #qaproof-app .qaproof-feedback-labels {

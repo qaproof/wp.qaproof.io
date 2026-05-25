@@ -65,6 +65,10 @@
       if (S.figmaFields) {
         S.figmaFields.classList.toggle('hidden', S.testType !== 'fidelity');
       }
+      var vpRow = document.getElementById('qaproof-fidelity-viewport-row');
+      if (vpRow) {
+        vpRow.classList.toggle('hidden', S.testType !== 'fidelity');
+      }
       // Re-position the source-toggle slider now that figmaFields is visible.
       // When hidden, getBoundingClientRect() returns 0,0 so the initial
       // positioning is wrong — fix it on the first frame after reveal.
@@ -97,6 +101,8 @@
       });
       defaultBtn.classList.add('active');
       if (S.figmaFields) S.figmaFields.classList.toggle('hidden', S.testType !== 'fidelity');
+      var vpRowDefault = document.getElementById('qaproof-fidelity-viewport-row');
+      if (vpRowDefault) vpRowDefault.classList.toggle('hidden', S.testType !== 'fidelity');
       if (S.submitBtn) {
         S.submitBtn.textContent = submitBtnLabelFor(S.testType);
       }
