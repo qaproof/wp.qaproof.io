@@ -29,6 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 ?>
 <div class="wrap" id="qaproof-app">
     <?php include __DIR__ . '/partial-theme-toggle.php'; ?>
+    <h1 class="screen-reader-text"><?php esc_html_e( 'QAProof', 'qaproof' ); ?></h1>
     <div class="qaproof-dash">
 
         <!-- Hero with integrated score ring -->

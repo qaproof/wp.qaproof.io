@@ -331,13 +331,19 @@ body.qaproof-dark-page #wpbody-content {
 #qaproof-app.qaproof-dark .notice {
   background: var(--qp-bg-card);
   border-color: rgba(255, 255, 255, 0.1);
-  color: var(--qp-text-secondary);
+  border-left-color: var(--qp-accent);
+}
+#qaproof-app.qaproof-dark .notice p {
+  color: var(--qp-accent);
 }
 #qaproof-app.qaproof-dark .notice-error {
   border-left-color: #f87171;
 }
 #qaproof-app.qaproof-dark .notice-warning {
   border-left-color: #fbbf24;
+}
+#qaproof-app.qaproof-dark .notice-warning p{
+  /*color: var(--qp-accent);*/
 }
 #qaproof-app.qaproof-dark .notice-success {
   border-left-color: #34d399;

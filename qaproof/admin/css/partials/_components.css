@@ -126,11 +126,14 @@
    Notice Overrides
    ============================ */
 #qaproof-app .notice {
-  background: var(--qp-text-primary);
-  border-color: rgba(238, 238, 238, 0.1);
-  color: var(--qp-border-light);
+  background: var(--qp-bg-card);
+  border-left-color: var(--qp-accent);
+  color: var(--qp-accent);
   border-radius: var(--qp-radius-sm);
   box-shadow: var(--qp-shadow);
+  border-top: 1px solid var(--qp-border-mid);
+  border-right: 1px solid var(--qp-border-mid);
+  border-bottom: 1px solid var(--qp-border-mid);
 }
 
 #qaproof-app .notice-warning {
