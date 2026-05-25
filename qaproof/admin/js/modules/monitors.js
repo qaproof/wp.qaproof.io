@@ -569,13 +569,23 @@
       var schedIcon = m.schedule === 'daily' ? '↻' : (m.schedule === 'weekly' ? '◷' : '◑');
 
       var domainInitial = domain ? domain.charAt(0).toUpperCase() : '?';
+      // Favicon comes from the monitored site itself (`/favicon.ico`). This
+      // is not a new external service — the browser fetches it directly from
+      // the same origin the plugin is already running tests against. If it
+      // 404s / blocks, the inline `onerror` hides the <img> and the CSS
+      // `:has()` rule falls back to showing the data-initial letter.
+      var faviconSrc = domain ? 'https://' + domain + '/favicon.ico' : '';
 
       html += '<div class="qaproof-monitor-card ' + cardVariant + '" data-id="' + m.id + '">';
 
       html += '<div class="qaproof-mc-body">';
 
       html += '<div class="qaproof-mc-left">';
-      html += '<div class="qaproof-mc-favicon" data-initial="' + Q.escapeHtml(domainInitial) + '"></div>';
+      html += '<div class="qaproof-mc-favicon" data-initial="' + Q.escapeHtml(domainInitial) + '">';
+      if (faviconSrc) {
+        html += '<img src="' + Q.escapeHtml(faviconSrc) + '" alt="" width="18" height="18" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'" />';
+      }
+      html += '</div>';
       html += '<div class="qaproof-mc-url-info">';
       // Top row: domain + badge
       html += '<div class="qaproof-mc-top-row">';
@@ -1412,13 +1422,25 @@
 
   function runMonitor(id, btn) {
     var hasBaseline = btn && btn.dataset.hasBaseline === '1';
-    // Add running animation to the row
-    var row = btn ? btn.closest('tr[data-id]') : null;
-    if (row) row.classList.add('qaproof-monitor-running');
+    // Add running animation to the card immediately so the gradient stripe
+    // appears on click — not 2-3 s later after the POST round-trips and
+    // loadMonitors() re-renders. The list now uses .qaproof-monitor-card,
+    // not the legacy `tr[data-id]` rows; targeting that class is what makes
+    // qaproof-card-running's ::before/::after animation kick in.
+    var card = btn ? btn.closest('.qaproof-monitor-card') : null;
+    if (card) {
+      card.classList.add('qaproof-card-running');
+      card.classList.remove('qaproof-card-setup', 'qaproof-card-paused', 'qaproof-card-active');
+    }
 
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span>';
+      // Mirror the post-render running state immediately so the user sees
+      // "⟳ Running" on click instead of a bare spinner that's then replaced
+      // by the running label once loadMonitors() finishes round-tripping.
+      btn.classList.add('qaproof-btn-running');
+      btn.classList.remove('qaproof-btn-setup');
+      btn.textContent = '⟳ Running';
     }
 
     var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
@@ -1431,13 +1453,19 @@
           .catch(function () { return 0; })
       : Promise.resolve(0);
 
+    // Roll back the optimistic running state shown on click (card stripe +
+    // button label) when the POST never started a run.
+    function rollbackRunningState() {
+      if (card) card.classList.remove('qaproof-card-running');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('qaproof-btn-running');
+        btn.textContent = hasBaseline ? (qaproof.i18n.monitorBtnRun || 'Check Now') : 'Set Up';
+      }
+    }
+
     getResultCount.then(function (resultCount) {
       return apiCall('POST', '/monitors/' + id + '/run').then(function (resp) {
-        if (row) row.classList.remove('qaproof-monitor-running');
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = qaproof.i18n.monitorBtnRun || 'Check Now';
-        }
         if (resp.success) {
           // Mark pending run so the card shows "Running" badge
           try {
@@ -1456,15 +1484,12 @@
             pollResultInList(id, resultCount, 0, null);
           }
         } else {
+          rollbackRunningState();
           Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
         }
       });
     }).catch(function () {
-      if (row) row.classList.remove('qaproof-monitor-running');
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = qaproof.i18n.monitorBtnRun || 'Check Now';
-      }
+      rollbackRunningState();
     });
   }
 
