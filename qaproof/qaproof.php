@@ -47,7 +47,7 @@ if ( PHP_VERSION_ID < 80000 ) {
     return;
 }
 
-define( 'QAPROOF_VERSION', '1.0.1' );
+define( 'QAPROOF_VERSION', '1.0.2' );
 define( 'QAPROOF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
