@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -194,6 +194,18 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 6. Settings — API key, saved designs, Figma OAuth connection.
 
 == Changelog ==
+
+= 1.0.2 =
+Bug-fix and polish release on top of the 1.0.1 compliance round.
+
+* **Tests now complete and save to history after audit-pass regressions.** A defensive transient gate added on `/poll-job`, `/job-screenshots`, and `/cancel-job` could return 403 when the transient was evicted (object-cache flush, replication lag), making finished tests appear stuck on the final step and never save to history. The SaaS workspace-scoped API key is the authoritative gate; the extra layer cost more in stuck-job UX than it bought.
+* **Monitor list: instant feedback on Run.** The running state (button label, card gradient stripe + pulse) now applies synchronously on click instead of waiting 2–3 s for the POST round-trip. Failed runs roll back cleanly.
+* **Monitor list: site favicon restored.** Loaded directly from each monitored site's own `/favicon.ico` (no third-party service introduced).
+* **Design Audit tab enabled** — `coming-soon` wrap removed; the existing implementation is now reachable from the Tests page.
+* **Admin notices restyled and re-anchored.** Notices now render outside the custom plugin headers instead of overlapping them; colours tightened to match the rest of the admin UI.
+* **Elements-cache key collision fix.** The per-design elements cache was keyed by base64 byte length, so two unrelated designs of identical byte size could share state. Key is now derived from `designId + figmaLastModified` (or a content fingerprint when unavailable).
+* **Build pipeline** ships the canonical `qaproof.zip` (versionless — required for the GitHub `/latest/download/` link the frontend hard-codes) plus a `qaproof-<version>.zip` sanity copy.
+* **README cleanup.** Removed stale references to the self-hosted update flow (`Update URI`, the deleted `class-updater`, the old `wordpress-updates.js` manifest).
 
 = 1.0.1 =
 Compliance, transparency, and hardening round for the WordPress.org plugin review. No functional changes.

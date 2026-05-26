@@ -3,7 +3,7 @@
  * Plugin Name:       QAProof
  * Plugin URI:        https://github.com/qaproof/wp.qaproof.io
  * Description:       Compare live pages against Figma, audit accessibility, detect visual regressions, analyze responsive behavior — AI vision powered.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Author:            QAProof
  * Author URI:        https://qaproof.io
  * License:           GPL-2.0-or-later
