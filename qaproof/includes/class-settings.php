@@ -1074,6 +1074,24 @@ class QAProof_Settings {
         $designs = self::get_saved_designs();
         ?>
         <div id="qaproof-saved-designs-wrap">
+            <?php /* Empty-state banner shown when Figma OAuth isn't connected.
+                 * Toggled via a class on #qaproof-app set by figma-oauth.js
+                 * after fetchStatus() resolves. Without OAuth the Verify
+                 * access / Add Design controls don't do anything useful
+                 * (the verify path falls back to a service PAT that the
+                 * user almost certainly hasn't shared the file with), so
+                 * we'd rather not pretend they do. Existing rows stay
+                 * visible — the cached image still works for tests — but
+                 * the action affordances are CSS-hidden until reconnect. */ ?>
+            <div class="qaproof-designs-needs-figma" hidden>
+                <p>
+                    <span class="dashicons dashicons-warning"></span>
+                    <?php esc_html_e( 'Connect Figma above to verify access and add new designs.', 'qaproof' ); ?>
+                </p>
+                <p class="description">
+                    <?php esc_html_e( 'Existing designs with a cached image still work on the Tests page. Designs that depend on a live Figma fetch will fail until you reconnect — or share each file with figma@qaproof.io via the Alternative path above.', 'qaproof' ); ?>
+                </p>
+            </div>
             <div id="qaproof-saved-designs-list">
                 <?php if ( empty( $designs ) ) : ?>
                     <p class="description qaproof-no-designs"><?php esc_html_e( 'No saved designs yet. Click "Add Design" to create one.', 'qaproof' ); ?></p>

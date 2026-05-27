@@ -1063,6 +1063,16 @@ body.qaproof-dark-page #wpbody-content {
   background: rgba(202, 138, 4, 0.14);
   border-color: rgba(202, 138, 4, 0.45);
 }
+#qaproof-app.qaproof-dark .qaproof-designs-needs-figma {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+#qaproof-app.qaproof-dark .qaproof-designs-needs-figma p {
+  color: #fcd34d;
+}
+#qaproof-app.qaproof-dark .qaproof-designs-needs-figma p + p {
+  color: rgba(238, 238, 238, 0.7);
+}
 
 /* ============================
    Feedback Section — Dark Theme

@@ -430,23 +430,37 @@
     return card.getAttribute('data-state') === 'connected';
   };
 
-  fetchStatus()
-    .then(function (s) {
-      render(s);
-      // Initial-render invalidation: if OAuth is already disconnected /
-      // revoked / unavailable when the page loads, the green
-      // "Ready · N elements (figma-api)" pills are misleading — they were
-      // built under a previous connected session that no longer exists.
-      // Same flip as the post-Disconnect handler, but applied on load
-      // instead of on user action. 'connected' is the only state where
-      // those pills should stay green.
-      var stateName = card.getAttribute('data-state') || '';
-      if (stateName !== 'connected') {
-        // Defer until init.js has rendered the saved-design rows + exposed
-        // window.QAProof.updateDesignStatus. Settings page is server-
-        // rendered, so the rows exist immediately; the helper is exposed
-        // inside the same DOMContentLoaded tick — one rAF is enough.
-        requestAnimationFrame(invalidateFigmaSourcedPills);
-      }
-    });
+  // After every render(), sync an app-level class so CSS can gate
+  // Figma-dependent affordances (Verify access / + Add Design buttons)
+  // in one place. data-state is the single source of truth set inside
+  // render() at every branch; mutating it triggers the observer below.
+  //
+  // Reasons to use a MutationObserver instead of patching every
+  // render() exit / every fetchStatus().then(render) call site:
+  //   1. There are 5+ such call sites (init, disconnect, popup-closed
+  //      watcher, programmatic refresh, error recovery) and missing one
+  //      leaves the UI in a half-correct state.
+  //   2. render() itself has multiple early returns (error / unavailable
+  //      / revoked / connected / disconnected) — wrapping each return
+  //      doubles the surface.
+  //   3. Future code paths that flip data-state for any new reason
+  //      automatically get the class sync for free.
+  function syncAppFigmaConnectedClass() {
+    var app = document.getElementById('qaproof-app');
+    if (!app) return;
+    var stateName = card.getAttribute('data-state') || '';
+    app.classList.toggle('qaproof-figma-not-connected', stateName !== 'connected');
+    // Whenever we leave the 'connected' state, also invalidate the
+    // saved-design pills that show '(figma-api)' / '(figma-oauth)' —
+    // those source qualifiers stop being authoritative the moment the
+    // OAuth session ends.
+    if (stateName !== 'connected') {
+      requestAnimationFrame(invalidateFigmaSourcedPills);
+    }
+  }
+
+  new MutationObserver(syncAppFigmaConnectedClass)
+    .observe(card, { attributes: true, attributeFilter: ['data-state'] });
+
+  fetchStatus().then(render);
 })();

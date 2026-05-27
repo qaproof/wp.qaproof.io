@@ -1935,6 +1935,55 @@
   border-color: rgba(202, 138, 4, 0.35);
 }
 
+/* --- When Figma OAuth is NOT connected ---------------------------------
+ * `qaproof-figma-not-connected` is set on #qaproof-app by figma-oauth.js
+ * after fetchStatus() resolves to anything except 'connected'. The Verify
+ * access and + Add Design buttons make no sense in this state — verify
+ * would fall back to a service PAT the user almost certainly hasn't
+ * shared the file with, and adding a design only to have it immediately
+ * fail to verify is dead UI. Hide both; show an explanation banner;
+ * dim the existing rows so the disabled state reads at a glance.
+ * Existing designs stay clickable for the trash button (cleanup) and
+ * remain usable on the Tests page (cached image bypasses Figma entirely).
+ */
+#qaproof-app.qaproof-figma-not-connected .qaproof-design-verify-btn,
+#qaproof-app.qaproof-figma-not-connected #qaproof-add-design {
+  display: none !important;
+}
+#qaproof-app.qaproof-figma-not-connected .qaproof-design-row {
+  opacity: 0.65;
+}
+#qaproof-app.qaproof-figma-not-connected .qaproof-design-row .qaproof-design-remove {
+  opacity: 1; /* trash icon stays full-strength so cleanup is still obvious */
+}
+#qaproof-app.qaproof-figma-not-connected .qaproof-designs-needs-figma[hidden] {
+  display: block !important;
+}
+#qaproof-app .qaproof-designs-needs-figma {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+#qaproof-app .qaproof-designs-needs-figma p {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #92400e;
+}
+#qaproof-app .qaproof-designs-needs-figma p + p {
+  margin-top: 6px;
+  padding-left: 28px;
+  font-size: 13px;
+  color: rgba(34, 40, 49, 0.7);
+}
+#qaproof-app .qaproof-designs-needs-figma .dashicons {
+  color: #d97706;
+  flex-shrink: 0;
+}
+
 #qaproof-app .qaproof-refresh-figma-btn {
   margin-left: 6px;
   background: transparent;
