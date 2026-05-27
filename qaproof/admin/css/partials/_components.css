@@ -140,12 +140,35 @@
   border-left-color: var(--qp-score-medium);
 }
 
-#qaproof-app .notice-error {
+#qaproof-app .notice-error,
+#qaproof-app .error {
   border-left-color: var(--qp-score-low);
+}
+
+#qaproof-app .notice-success,
+#qaproof-app .updated {
+  border-left-color: var(--qp-success);
+}
+
+#qaproof-app .notice-info {
+  border-left-color: var(--qp-accent);
 }
 
 #qaproof-app .notice a {
   color: var(--qp-accent);
+}
+
+#qaproof-app .notice.is-dismissible {
+  padding-right: 38px;
+}
+
+#qaproof-app .notice .notice-dismiss {
+  color: var(--qp-text-muted);
+  transition: color var(--qp-transition);
+}
+
+#qaproof-app .notice .notice-dismiss:hover {
+  color: var(--qp-text-primary);
 }
 
 /* ============================

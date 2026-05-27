@@ -144,10 +144,24 @@
   flex-shrink: 0;
 }
 /* Theme toggle inside page header — override absolute positioning */
-.qaproof-page-header-right .qaproof-theme-toggle {
-  position: static !important;
-  top: auto !important;
-  right: auto !important;
+.qaproof-theme-toggle {
+  position: absolute !important;
+  top: 20px;
+  right: 10px;
+  z-index: 9999;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid;
+  background: var(--qp-bg-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--qp-text-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
   flex-shrink: 0;
   border-color: var(--qp-text-dark);
 }

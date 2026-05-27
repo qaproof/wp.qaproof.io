@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 ?>
 <div class="wrap" id="qaproof-app">
     <h1 class="screen-reader-text"><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></h1>
+    <?php include __DIR__ . '/partial-theme-toggle.php'; ?>
     <div class="qaproof-page-header">
         <div class="qaproof-page-header-left">
             <h1><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></h1>
@@ -29,10 +30,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                     <?php esc_html_e( 'History', 'qaproof' ); ?>
                 </button>
             </div>
-            <?php include __DIR__ . '/partial-theme-toggle.php'; ?>
+
         </div>
     </div>
-
     <?php if ( empty( QAProof_Settings::get_api_key() ) ) : ?>
         <div class="notice notice-warning inline">
             <p>
