@@ -573,23 +573,20 @@
       var schedIcon = m.schedule === 'daily' ? '↻' : (m.schedule === 'weekly' ? '◷' : '◑');
 
       var domainInitial = domain ? domain.charAt(0).toUpperCase() : '?';
-      // Favicon comes from the monitored site itself (`/favicon.ico`). This
-      // is not a new external service — the browser fetches it directly from
-      // the same origin the plugin is already running tests against. If it
-      // 404s / blocks, the inline `onerror` hides the <img> and the CSS
-      // `:has()` rule falls back to showing the data-initial letter.
-      var faviconSrc = domain ? 'https://' + domain + '/favicon.ico' : '';
 
       html += '<div class="qaproof-monitor-card ' + cardVariant + '" data-id="' + m.id + '">';
 
       html += '<div class="qaproof-mc-body">';
 
       html += '<div class="qaproof-mc-left">';
-      html += '<div class="qaproof-mc-favicon" data-initial="' + Q.escapeHtml(domainInitial) + '">';
-      if (faviconSrc) {
-        html += '<img src="' + Q.escapeHtml(faviconSrc) + '" alt="" width="18" height="18" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'" />';
-      }
-      html += '</div>';
+      // No external favicon fetch — monitored sites are third-party origins
+      // from the WP admin's perspective. Loading <img src="https://<site>/
+      // favicon.ico"> from each would leak the admin's IP + UA to every
+      // monitored site and trip the wp.org plugin-check "no external
+      // requests" guideline (commit 0e56a29 already removed the equivalent
+      // Google s2 favicons fetch for the same reason). The CSS uses the
+      // data-initial letter as the badge instead.
+      html += '<div class="qaproof-mc-favicon" data-initial="' + Q.escapeHtml(domainInitial) + '"></div>';
       html += '<div class="qaproof-mc-url-info">';
       // Top row: domain + badge
       html += '<div class="qaproof-mc-top-row">';
@@ -1440,11 +1437,12 @@
     if (btn) {
       btn.disabled = true;
       // Mirror the post-render running state immediately so the user sees
-      // "⟳ Running" on click instead of a bare spinner that's then replaced
-      // by the running label once loadMonitors() finishes round-tripping.
+      // the running label on click instead of a bare spinner that's then
+      // replaced once loadMonitors() finishes round-tripping. Strip any
+      // sibling state classes so we don't end up with "running setup" etc.
+      btn.classList.remove('qaproof-btn-setup', 'qaproof-btn-active', 'qaproof-btn-paused');
       btn.classList.add('qaproof-btn-running');
-      btn.classList.remove('qaproof-btn-setup');
-      btn.textContent = '⟳ Running';
+      btn.textContent = qaproof.i18n.monitorBtnRunning || '⟳ Running';
     }
 
     var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
@@ -1464,7 +1462,9 @@
       if (btn) {
         btn.disabled = false;
         btn.classList.remove('qaproof-btn-running');
-        btn.textContent = hasBaseline ? (qaproof.i18n.monitorBtnRun || 'Check Now') : 'Set Up';
+        btn.textContent = hasBaseline
+          ? (qaproof.i18n.monitorBtnRun   || 'Check Now')
+          : (qaproof.i18n.monitorBtnSetup || 'Set Up');
       }
     }
 

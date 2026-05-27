@@ -557,3 +557,16 @@
   color: var(--qp-accent);
   font-size: 14px;
   font-weight: 700;
+  font-family: var(--qp-font);
+  padding: 12px 24px;
+  border-radius: var(--qp-radius-pill);
+  transition: all 0.25s ease;
+  border: 1px solid var(--qp-accent);
+  cursor: pointer;
+}
+
+#qaproof-app input[type="file"]::file-selector-button:hover {
+  color: var(--qp-white) !important;
+  border: 1px solid var(--qp-white) !important;
+  transform: translateY(-1px);
+}

@@ -2749,6 +2749,19 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   color: rgba(238, 238, 238, 0.5);
 }
 
+/* Inline error shown when the SaaS responds with a non-2xx or the
+   network is down — sits below the textarea inside the feedback card. */
+#qaproof-app .qaproof-feedback-error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 8px;
+}
+
 /* ============================
    Custom Datepicker
    ============================ */
@@ -3226,4 +3239,26 @@ body.qaproof-inspector-open #qaproof-app .qaproof-card {
   font-size: 12px;
   line-height: 1.5;
   color: var(--qp-text-secondary, #4b5563);
-  padding: 10px
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 173, 181, 0.06);
+  border: 1px solid rgba(0, 173, 181, 0.18);
+  margin: 0 0 16px;
+}
+
+.qaproof-figma-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* "Open in Figma" — neutral dark pill, distinct from the teal primary
+   "Verify again" CTA so the two actions don't compete visually. */
+.qaproof-figma-guide-btn-open {
+  background: #1f2937;
+  color: #fff;
+}
+.qaproof-figma-guide-btn-open:hover {
+  background: #111827;
+}

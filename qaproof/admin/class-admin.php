@@ -272,16 +272,9 @@ class QAProof_Admin {
         ]);
 
         register_rest_route( self::REST_NAMESPACE, '/feedback', [
-            [
-                'methods'             => 'GET',
-                'callback'            => [ __CLASS__, 'handle_get_feedback' ],
-                'permission_callback' => $permission,
-            ],
-            [
-                'methods'             => 'POST',
-                'callback'            => [ __CLASS__, 'handle_submit_feedback' ],
-                'permission_callback' => $permission,
-            ],
+            'methods'             => 'POST',
+            'callback'            => [ __CLASS__, 'handle_submit_feedback' ],
+            'permission_callback' => $permission,
         ]);
 
         register_rest_route( self::REST_NAMESPACE, '/test-history', [
@@ -337,70 +330,65 @@ class QAProof_Admin {
         return new WP_REST_Response( [ 'success' => true, 'sentTo' => $to ], 200 );
     }
 
+    /**
+     * "How was this test?" handler.
+     *
+     * Forwards the rating + optional comment to the QAProof SaaS and returns
+     * the result to the client. Feedback is NOT persisted on the WordPress
+     * site — the SaaS-side `plugin_feedback` table is the only store.
+     *
+     * Errors from the SaaS (network failure, 4xx/5xx, missing API key) are
+     * surfaced back through `error.message` so the UI can show a real
+     * "couldn't save" message rather than a silent success.
+     */
     public static function handle_submit_feedback( WP_REST_Request $request ) {
-        $rating   = intval( $request->get_param( 'rating' ) );
+        $rating = intval( $request->get_param( 'rating' ) );
+
         // Hard length cap BEFORE sanitize so a malicious admin can't blow up
-        // the wp_options row with a megabyte of text. 2000 chars is generous
-        // for a feedback comment and bounds the 200-entry ring buffer's
-        // worst-case footprint to ~400 KB.
-        $raw      = $request->get_param( 'comment' ) ?: '';
+        // the request payload with a megabyte of text. 2000 chars matches
+        // the SaaS-side schema cap.
+        $raw = $request->get_param( 'comment' ) ?: '';
         if ( is_string( $raw ) ) {
             $raw = function_exists( 'mb_substr' ) ? mb_substr( $raw, 0, 2000 ) : substr( $raw, 0, 2000 );
         } else {
             $raw = '';
         }
-        $comment  = sanitize_textarea_field( $raw );
+        $comment   = sanitize_textarea_field( $raw );
         $test_type = sanitize_text_field( $request->get_param( 'testType' ) ?: '' );
         $page_url  = esc_url_raw( $request->get_param( 'pageUrl' ) ?: '' );
         $score     = intval( $request->get_param( 'score' ) ?: 0 );
 
         if ( $rating < 1 || $rating > 5 ) {
-            return new WP_REST_Response( [ 'success' => false, 'error' => 'Rating must be 1–5.' ], 400 );
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [
+                    'code'    => 'INVALID_RATING',
+                    'message' => __( 'Rating must be 1–5.', 'qaproof' ),
+                ],
+            ], 400 );
         }
 
-        $entry = [
-            'id'        => uniqid( 'fb_', true ),
-            'rating'    => $rating,
-            'comment'   => $comment,
-            'testType'  => $test_type,
-            'pageUrl'   => $page_url,
-            'score'     => $score,
-            'userId'    => get_current_user_id(),
-            'createdAt' => current_time( 'mysql' ),
-        ];
+        $result = QAProof_API_Client::submit_feedback( [
+            'rating'        => $rating,
+            'comment'       => $comment,
+            'testType'      => $test_type,
+            'pageUrl'       => $page_url,
+            'score'         => $score,
+            'wpUserId'      => get_current_user_id(),
+            'sourceSiteUrl' => home_url(),
+        ] );
 
-        // Retention: keep at most 200 entries AND drop entries older than
-        // 180 days. The age cap matters for GDPR — a low-activity site
-        // would otherwise hold ratings + free-text comments + userId for
-        // years without ever hitting the count cap. 180 days is enough
-        // for the in-admin "see what you said last quarter" UX without
-        // becoming a permanent shadow log.
-        $feedback = get_option( 'qaproof_feedback_log', [] );
-        if ( ! is_array( $feedback ) ) {
-            $feedback = [];
+        if ( is_wp_error( $result ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [
+                    'code'    => $result->get_error_code(),
+                    'message' => $result->get_error_message(),
+                ],
+            ], 502 );
         }
-        $cutoff = strtotime( '-180 days' );
-        if ( $cutoff !== false ) {
-            $feedback = array_values( array_filter( $feedback, function ( $row ) use ( $cutoff ) {
-                if ( ! is_array( $row ) || empty( $row['createdAt'] ) ) {
-                    return false;
-                }
-                $ts = strtotime( $row['createdAt'] );
-                return $ts !== false && $ts >= $cutoff;
-            } ) );
-        }
-        array_unshift( $feedback, $entry );
-        if ( count( $feedback ) > 200 ) {
-            $feedback = array_slice( $feedback, 0, 200 );
-        }
-        update_option( 'qaproof_feedback_log', $feedback );
 
         return new WP_REST_Response( [ 'success' => true ], 200 );
-    }
-
-    public static function handle_get_feedback( WP_REST_Request $request ) {
-        $feedback = get_option( 'qaproof_feedback_log', [] );
-        return new WP_REST_Response( [ 'success' => true, 'data' => $feedback, 'total' => count( $feedback ) ], 200 );
     }
 
     private static function render_theme_toggle() {

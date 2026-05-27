@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,14 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.3 =
+Feedback storage moved to the SaaS + monitor-list compliance and i18n fixes.
+
+* **"How was this test?" feedback now stored on the QAProof SaaS, not in `wp_options`.** Each submission goes straight to `api.qaproof.io/api/feedback` (blocking 5-second request) and the response is surfaced to the user — success shows the thank-you card, errors render an inline message and let the user retry instead of silently pretending the rating saved. The previous local `qaproof_feedback_log` ring buffer is gone. No new data is collected — only what the in-admin widget already submitted (rating, optional comment, test type / page URL / score, WP user id, site URL).
+* **Privacy hooks updated** to reflect that feedback no longer lives on the WP site. The exporter / eraser callbacks now only cover `qaproof_notify_email`; SaaS-side feedback erasure is documented as a `support@qaproof.io` request. The privacy-policy boilerplate (`wp_add_privacy_policy_content`) now discloses the SaaS feedback flow explicitly.
+* **Monitor list: removed cross-origin favicon fetch.** The previous favicon was loaded from each monitored site's own `/favicon.ico`, which leaked the admin's IP + User-Agent to every monitored domain and tripped the wp.org plugin-check guideline that the 1.0.1 compliance pass was specifically about (commit `0e56a29` had already removed the equivalent Google s2 favicons fetch for the same reason). The badge now renders just the data-initial letter via the existing `:has()` CSS fallback.
+* **Monitor list: instant Run feedback is now localised.** Synchronous-on-click "⟳ Running" label uses the new `monitorBtnRunning` i18n key. The rollback path also localises the "Set Up" label (previously hard-coded English). The button-state class swap on click now clears all sibling state classes (`setup` / `active` / `paused`) so you can no longer end up with two competing states on the same button.
 
 = 1.0.2 =
 Bug-fix and polish release on top of the 1.0.1 compliance round.

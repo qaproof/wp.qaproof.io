@@ -1051,4 +1051,66 @@ class QAProof_API_Client {
     public static function figma_oauth_disconnect() {
         return self::api_request( 'POST', '/api/figma-oauth/disconnect', array() );
     }
+
+    /**
+     * Submit a "How was this test?" rating to the SaaS.
+     *
+     * Blocking — the caller (the REST handler) needs to surface success or
+     * failure to the user. 5-second timeout bounds the worst-case wait; the
+     * endpoint is a single INSERT on the SaaS side so it normally returns in
+     * <100 ms.
+     *
+     * Feedback is stored only on the SaaS; the WP install keeps no copy.
+     *
+     * @param array $payload  Validated/sanitised by the REST handler.
+     * @return array|WP_Error Success array `[ 'success' => true ]`, or
+     *                        WP_Error with a translatable user-visible
+     *                        message on failure (no API key, network error,
+     *                        non-2xx response).
+     */
+    public static function submit_feedback( $payload ) {
+        $api_key = QAProof_Settings::get_api_key();
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'qaproof_no_api_key',
+                __( 'API key not configured. Add your key in Settings → API before submitting feedback.', 'qaproof' )
+            );
+        }
+
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/feedback';
+        $response = wp_remote_post( $endpoint, [
+            'headers' => [
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ],
+            'body'        => wp_json_encode( $payload ),
+            'timeout'     => 5,
+            'sslverify'   => true,
+            'httpversion' => '1.1',
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'qaproof_api_network_error',
+                sprintf(
+                    /* translators: %s: low-level transport error message */
+                    __( 'Could not reach the API: %s', 'qaproof' ),
+                    $response->get_error_message()
+                )
+            );
+        }
+
+        $status = wp_remote_retrieve_response_code( $response );
+        if ( $status < 200 || $status >= 300 ) {
+            $body    = wp_remote_retrieve_body( $response );
+            $decoded = json_decode( $body, true );
+            $msg     = ( is_array( $decoded ) && ! empty( $decoded['error']['message'] ) )
+                ? $decoded['error']['message']
+                /* translators: %d: HTTP status code returned by the API */
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status );
+            return new WP_Error( 'qaproof_api_error', $msg, [ 'status' => $status ] );
+        }
+
+        return [ 'success' => true ];
+    }
 }

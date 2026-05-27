@@ -302,6 +302,7 @@ class QAProof_Admin_Assets {
                 'monitorActive'          => __( 'Active', 'qaproof' ),
                 'monitorPaused'          => __( 'Paused', 'qaproof' ),
                 'monitorBtnRun'          => __( 'Check Now', 'qaproof' ),
+                'monitorBtnRunning'      => __( '⟳ Running', 'qaproof' ),
                 'monitorBtnSetup'        => __( 'Set Up', 'qaproof' ),
                 'monitorBtnRun2'         => __( 'Run', 'qaproof' ),
                 'monitorBtnPause'        => __( 'Pause', 'qaproof' ),
