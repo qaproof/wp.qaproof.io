@@ -77,6 +77,29 @@ class QAProof_Admin_REST_Tests {
             }
         }
 
+        if ( $test_type === 'responsive' ) {
+            // Forward the per-site viewport widths configured under
+            // Settings → Tests → Responsive. The API's responsive test uses a
+            // hardcoded RESPONSIVE_VIEWPORTS list by default; sending these
+            // overrides the portrait widths for desktop/tablet/mobile. Landscape
+            // variants stay derived from portrait dimensions on the API side.
+            $vw_desktop = (int) get_option( 'qaproof_viewport_desktop', 1920 );
+            $vw_tablet  = (int) get_option( 'qaproof_viewport_tablet',  768 );
+            $vw_mobile  = (int) get_option( 'qaproof_viewport_mobile',  375 );
+
+            // Sane bounds — match the input min/max from the Settings form so a
+            // tampered option can't crash Chromium with absurd dimensions.
+            if ( $vw_desktop >= 800 && $vw_desktop <= 3840
+              && $vw_tablet  >= 320 && $vw_tablet  <= 1200
+              && $vw_mobile  >= 280 && $vw_mobile  <= 480 ) {
+                $api_params['viewportWidths'] = [
+                    'desktop' => $vw_desktop,
+                    'tablet'  => $vw_tablet,
+                    'mobile'  => $vw_mobile,
+                ];
+            }
+        }
+
         $result = QAProof_API_Client::run_test( $api_params );
 
         if ( is_wp_error( $result ) ) {
