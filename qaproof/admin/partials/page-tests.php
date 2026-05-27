@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 ?>
 <div class="wrap" id="qaproof-app">
+    <?php include __DIR__ . '/partial-theme-toggle.php'; ?>
     <h1 class="screen-reader-text"><?php esc_html_e( 'Tests', 'qaproof' ); ?></h1>
     <div class="qaproof-page-header">
         <div class="qaproof-page-header-left">
@@ -26,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                     <?php esc_html_e( 'History', 'qaproof' ); ?>
                 </button>
             </div>
-            <?php include __DIR__ . '/partial-theme-toggle.php'; ?>
+
         </div>
     </div>
 

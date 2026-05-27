@@ -36,6 +36,7 @@
   --qp-score-high: #FFFFFF;
   --qp-score-medium: #f0b429;
   --qp-score-low: #ef4444;
+  --qp-success: #22c55e;
 
   /* From Figma: border-radius tokens */
   --qp-radius-pill: 100px;
