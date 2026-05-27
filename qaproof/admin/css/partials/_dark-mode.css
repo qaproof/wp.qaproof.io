@@ -297,9 +297,9 @@ body.qaproof-dark-page #wpbody-content {
 #qaproof-app.qaproof-dark #qaproof-submit-btn,
 #qaproof-app.qaproof-dark input[type="file"]::file-selector-button,
 #qaproof-app.qaproof-dark .qaproof-pdf-btn,
-#qaproof-app.qaproof-dark .qaproof-email-btn:not(.qaproof-email-expanded) {
+#qaproof-app.qaproof-dark .qaproof-email-btn {
   color: var(--qp-accent);
-  background: var(--qp-bg-page-dark);
+  background: var(--qp-bg-page-dark) !important;
 }
 #qaproof-app.qaproof-dark .button-primary:hover,
 #qaproof-app.qaproof-dark .button-hero.button-primary:hover,
