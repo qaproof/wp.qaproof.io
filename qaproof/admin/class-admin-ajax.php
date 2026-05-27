@@ -130,6 +130,24 @@ class QAProof_Admin_AJAX {
         $saved_id = isset( $saved['id'] ) ? $saved['id'] : null;
         qaproof_debug_log( '[QAProof] ajax_save_history: record saved id=' . ( $saved_id ?: '?' ) . ' jobId=' . ( $job_id ?: '(none)' ) . ' testType=' . $test_type );
 
+        // Enforce Max History Entries — delete oldest records that exceed the cap.
+        $max = (int) get_option( 'qaproof_max_history', 30 );
+        if ( $max > 0 ) {
+            $check = QAProof_API_Client::history_list( [ 'limit' => 1, 'offset' => 0 ] );
+            if ( ! is_wp_error( $check ) && isset( $check['total'] ) && $check['total'] > $max ) {
+                $overflow_count = $check['total'] - $max;
+                $overflow = QAProof_API_Client::history_list( [ 'limit' => $overflow_count, 'offset' => $max ] );
+                if ( ! is_wp_error( $overflow ) ) {
+                    foreach ( $overflow['data'] as $old_record ) {
+                        if ( ! empty( $old_record['id'] ) ) {
+                            QAProof_API_Client::history_delete( $old_record['id'] );
+                        }
+                    }
+                    qaproof_debug_log( '[QAProof] ajax_save_history: pruned ' . $overflow_count . ' old records (max=' . $max . ')' );
+                }
+            }
+        }
+
         wp_send_json_success( [ 'saved' => true, 'id' => $saved_id, 'hasScreenshots' => $has_screenshots ] );
     }
 
