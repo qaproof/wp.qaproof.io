@@ -316,12 +316,18 @@ body.qaproof-dark-page #wpbody-content {
 }
 
 /* Dark: WordPress notices (.notice) */
-#qaproof-app.qaproof-dark .notice {
+#qaproof-app.qaproof-dark .notice,
+#qaproof-app.qaproof-dark .error,
+#qaproof-app.qaproof-dark .updated,
+#qaproof-app.qaproof-dark .settings-error {
   background: var(--qp-bg-card);
   border-color: rgba(255, 255, 255, 0.1);
   border-left-color: var(--qp-accent);
 }
-#qaproof-app.qaproof-dark .notice p {
+#qaproof-app.qaproof-dark .notice p,
+#qaproof-app.qaproof-dark .error p,
+#qaproof-app.qaproof-dark .updated p,
+#qaproof-app.qaproof-dark .settings-error p {
   color: var(--qp-accent);
 }
 #qaproof-app.qaproof-dark .notice-error,
@@ -335,7 +341,8 @@ body.qaproof-dark-page #wpbody-content {
   /*color: var(--qp-accent);*/
 }
 #qaproof-app.qaproof-dark .notice-success,
-#qaproof-app.qaproof-dark .updated {
+#qaproof-app.qaproof-dark .updated,
+#qaproof-app.qaproof-dark .settings-error {
   border-left-color: #34d399;
 }
 #qaproof-app.qaproof-dark .notice-info {
@@ -343,6 +350,14 @@ body.qaproof-dark-page #wpbody-content {
 }
 #qaproof-app.qaproof-dark .notice .notice-dismiss {
   color: var(--qp-text-muted);
+}
+#qaproof-app.qaproof-dark .notice .notice-dismiss::before,
+#qaproof-app.qaproof-dark .updated .notice-dismiss::before,
+#qaproof-app.qaproof-dark .error .notice-dismiss::before,
+#qaproof-app.qaproof-dark .settings-error .notice-dismiss::before {
+  font-family: dashicons !important;
+  content: "\f153" !important;
+  color: var(--qp-accent);
 }
 #qaproof-app.qaproof-dark .notice .notice-dismiss:hover {
   color: var(--qp-text-primary);

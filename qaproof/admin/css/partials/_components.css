@@ -125,7 +125,10 @@
 /* ============================
    Notice Overrides
    ============================ */
-#qaproof-app .notice {
+#qaproof-app .notice,
+#qaproof-app .error,
+#qaproof-app .updated,
+#qaproof-app .settings-error {
   background: var(--qp-bg-card);
   border-left-color: var(--qp-accent);
   color: var(--qp-accent);
@@ -146,7 +149,8 @@
 }
 
 #qaproof-app .notice-success,
-#qaproof-app .updated {
+#qaproof-app .updated,
+#qaproof-app .settings-error {
   border-left-color: var(--qp-success);
 }
 
@@ -165,6 +169,14 @@
 #qaproof-app .notice .notice-dismiss {
   color: var(--qp-text-muted);
   transition: color var(--qp-transition);
+}
+
+#qaproof-app .notice .notice-dismiss::before,
+#qaproof-app .updated .notice-dismiss::before,
+#qaproof-app .error .notice-dismiss::before,
+#qaproof-app .settings-error .notice-dismiss::before {
+  font-family: dashicons !important;
+  content: "\f153" !important;
 }
 
 #qaproof-app .notice .notice-dismiss:hover {
