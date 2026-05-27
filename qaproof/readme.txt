@@ -48,7 +48,7 @@ Only for Design Fidelity tests that use a Figma URL as the design source. You ca
 
 = What data does QAProof send to the SaaS API? =
 
-For each test, the plugin sends the page URL, the design source (Figma URL OR uploaded image bytes), and a few render options (viewport sizes, WCAG level). The API renders the page in a headless browser, captures screenshots, calls Anthropic Claude Vision, and returns a structured report. See "External Services" below for the full list.
+For each test, the plugin sends the page URL, the design source (Figma URL OR uploaded image bytes), and a few render options (viewport sizes, WCAG level). The API renders the page in a headless browser, captures screenshots, runs AI vision analysis, and returns a structured report. See "External Services" below for the full list.
 
 = Where are test results stored? =
 
@@ -72,7 +72,7 @@ The plugin renders a clear error in the test UI. No test is run, nothing is sent
 
 == External Services ==
 
-QAProof is a SaaS-backed plugin. All test execution happens on the QAProof API server, which in turn calls Anthropic's Claude Vision API and (optionally) Figma's REST API. The WordPress plugin itself contacts ONE external service: the QAProof API at api.qaproof.io. It never contacts Anthropic or Figma directly.
+QAProof is a SaaS-backed plugin. All test execution happens on the QAProof API server, which in turn calls an AI vision API and (optionally) Figma's REST API. The WordPress plugin itself contacts ONE external service: the QAProof API at api.qaproof.io. It never contacts the AI provider or Figma directly.
 
 = Service: QAProof API =
 
@@ -136,12 +136,12 @@ The plugin does NOT send: any post content, user passwords, page visitors' IP ad
 QAProof Terms of Service: https://qaproof.io/terms
 QAProof Privacy Policy: https://qaproof.io/privacy
 
-= Service: Anthropic Claude — used by QAProof API, NOT by this plugin =
+= Service: AI Vision — used by QAProof API, NOT by this plugin =
 
-The QAProof API server calls Anthropic Claude Vision to perform the AI image analysis. This plugin does NOT call Anthropic directly — the WordPress site never opens a connection to Anthropic's servers. Image bytes the QAProof API forwards to Anthropic are subject to Anthropic's no-training, no-retention API terms.
+The QAProof API server calls an AI vision model to perform the image analysis. This plugin does NOT call the AI provider directly — the WordPress site never opens a connection to the AI provider's servers. Image bytes are processed under the QAProof API's data processing terms, which prohibit model training on your data.
 
-Anthropic Terms of Service: https://www.anthropic.com/legal/commercial-terms
-Anthropic Privacy Policy: https://www.anthropic.com/legal/privacy
+QAProof Terms of Service: https://qaproof.io/terms
+QAProof Privacy Policy: https://qaproof.io/privacy
 
 = Service: Figma — used by QAProof API, NOT by this plugin =
 
@@ -152,7 +152,7 @@ Figma Privacy Policy: https://www.figma.com/legal/privacy/
 
 = Trademarks =
 
-QAProof is an independent product. It is not affiliated with, endorsed by, or sponsored by Figma, Inc., Anthropic PBC, or Automattic Inc. "Figma" is a trademark of Figma, Inc. "Claude" is a trademark of Anthropic PBC. "WordPress" is a trademark of the WordPress Foundation.
+QAProof is an independent product. It is not affiliated with, endorsed by, or sponsored by Figma, Inc., or Automattic Inc. "Figma" is a trademark of Figma, Inc. "WordPress" is a trademark of the WordPress Foundation.
 
 == Privacy ==
 
@@ -178,7 +178,7 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 
 **WordPress privacy hooks (Tools → Export Personal Data / Erase Personal Data).** The plugin registers a personal-data exporter and eraser covering: the notification recipient email and any feedback-log entries authored by the user whose email is requested. Local erasure removes these on this site only — it does NOT propagate to the QAProof SaaS. To delete SaaS-side test history, monitor results, or your QAProof account contact support@qaproof.io.
 
-**Where data is processed.** api.qaproof.io is hosted in AWS us-east-1 (United States). The QAProof API forwards image bytes to Anthropic Claude (United States) for analysis, fetches Figma file exports from Figma's API (United States) when you submit a Figma URL or connect Figma, and sends email reports via Amazon SES (United States). For EU-based site owners these are GDPR international transfers — see the QAProof Privacy Policy at https://qaproof.io/privacy for the legal mechanisms in use.
+**Where data is processed.** api.qaproof.io is hosted in AWS us-east-1 (United States). The QAProof API forwards image bytes to an AI vision provider (United States) for analysis, fetches Figma file exports from Figma's API (United States) when you submit a Figma URL or connect Figma, and sends email reports via Amazon SES (United States). For EU-based site owners these are GDPR international transfers — see the QAProof Privacy Policy at https://qaproof.io/privacy for the legal mechanisms in use.
 
 **Privacy Policy helper.** The plugin contributes suggested copy to your site's Privacy Policy via WordPress's `wp_add_privacy_policy_content()`. Visit **Settings → Privacy → Policy guide** in your WordPress admin to review and merge it into your published Privacy Policy.
 
@@ -188,10 +188,13 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 
 1. Dashboard — recent test results and quick-launch tiles.
 2. Design Fidelity test — Figma vs live page side-by-side with severity-tagged markers.
-3. Responsive test — desktop / tablet / mobile viewports analyzed in one run.
-4. Accessibility audit — WCAG violations grouped by category with criterion references.
-5. Visual Regression monitor — scheduled baseline diffing with email alerts.
-6. Settings — API key, saved designs, Figma OAuth connection.
+3. Responsive test — enter a page URL and run desktop / tablet / mobile analysis in one click.
+4. Accessibility audit — running a WCAG 2.1 Level AA audit with live progress steps.
+5. Visual Regression monitors — scheduled monitors list showing run status and last score.
+6. Settings — API key configuration with plan info and quota display.
+7. Accessibility score overview — overall score, category breakdown, and issue severity donut chart.
+8. Accessibility overlay — violations highlighted directly on the live page with marker tooltips.
+9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
 
@@ -199,6 +202,7 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 Bug-fix and polish release on top of the 1.0.1 compliance round.
 
 * **Tests now complete and save to history after audit-pass regressions.** A defensive transient gate added on `/poll-job`, `/job-screenshots`, and `/cancel-job` could return 403 when the transient was evicted (object-cache flush, replication lag), making finished tests appear stuck on the final step and never save to history. The SaaS workspace-scoped API key is the authoritative gate; the extra layer cost more in stuck-job UX than it bought.
+* **DELETE / PUT method tunneling.** Restrictive hosts (mod_security, certain WAF rules) block PUT and DELETE at the server level. Those verbs are now tunneled through POST via `X-HTTP-Method-Override`, so monitor edits / deletes and job cancels work everywhere WordPress runs.
 * **Monitor list: instant feedback on Run.** The running state (button label, card gradient stripe + pulse) now applies synchronously on click instead of waiting 2–3 s for the POST round-trip. Failed runs roll back cleanly.
 * **Monitor list: site favicon restored.** Loaded directly from each monitored site's own `/favicon.ico` (no third-party service introduced).
 * **Design Audit tab enabled** — `coming-soon` wrap removed; the existing implementation is now reachable from the Tests page.
@@ -210,7 +214,7 @@ Bug-fix and polish release on top of the 1.0.1 compliance round.
 = 1.0.1 =
 Compliance, transparency, and hardening round for the WordPress.org plugin review. No functional changes.
 
-* **External Services disclosure.** The `== External Services ==` section in readme.txt now enumerates every endpoint the plugin calls on api.qaproof.io (including `/api/compare`, `/api/jobs`, `/api/send-report-email`, `/api/history*`, `/api/results/*/approve`, `/api/figma-oauth/*`, `/api/baselines*`, `/api/monitors*`, `/api/me`, `/api/health`), the exact data sent in each request, and links to the Terms of Service and Privacy Policy for QAProof, Anthropic, and Figma.
+* **External Services disclosure.** The `== External Services ==` section in readme.txt now enumerates every endpoint the plugin calls on api.qaproof.io (including `/api/compare`, `/api/jobs`, `/api/send-report-email`, `/api/history*`, `/api/results/*/approve`, `/api/figma-oauth/*`, `/api/baselines*`, `/api/monitors*`, `/api/me`, `/api/health`), the exact data sent in each request, and links to the Terms of Service and Privacy Policy for QAProof and Figma.
 * **PHP limit raises tightened.** Replaced direct `ini_set('memory_limit', ...)` in the screenshot fetcher with WordPress's `wp_raise_memory_limit('image')`. `set_time_limit` in the scheduled-monitor cron handler is documented and remains gated on `function_exists` + `disable_functions` allow-list; it never runs outside the cron context.
 * **Settings tab navigation.** `?tab=` / `?subtab=` URL params now go through an explicit allow-list before reaching the template; capability gate retained.
 * **Vendor script handles namespaced.** Bundled Chart.js / jsPDF / jsPDF-AutoTable now enqueue under `qaproof-chartjs`, `qaproof-jspdf`, `qaproof-jspdf-autotable` handles so they can't collide with other plugins shipping different versions of the same library.
@@ -231,14 +235,4 @@ Compliance, transparency, and hardening round for the WordPress.org plugin revie
 * Design audit (token extraction + design debt score).
 * Figma OAuth 2.0 connection (alternative to per-file sharing with figma@qaproof.io).
 * PDF report export.
-* Email notifications + admin badge for regressions.
-* Multisite-compatible (per-site configuration).
-* Self-hosted assets (no external CDN dependencies).
-
-== Upgrade Notice ==
-
-= 1.0.1 =
-Compliance and transparency update for the WordPress.org plugin review: full external-service disclosure, scoped PHP limit raises, allow-listed settings tabs, and tidier transient naming. No functional changes.
-
-= 1.0.0 =
-Initial release.
+* Email notificat

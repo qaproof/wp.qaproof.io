@@ -395,14 +395,18 @@
   }
 
   function apiCall(method, path, body) {
+    // Some hosting providers block DELETE and PUT at the server level.
+    // WordPress supports X-HTTP-Method-Override to tunnel these via POST.
+    var tunneled = (method === 'DELETE' || method === 'PUT');
     var opts = {
-      method: method,
+      method: tunneled ? 'POST' : method,
       headers: {
         'Content-Type': 'application/json',
         'X-WP-Nonce': qaproof.nonce,
       },
       credentials: 'same-origin',
     };
+    if (tunneled) opts.headers['X-HTTP-Method-Override'] = method;
     if (body) opts.body = JSON.stringify(body);
     // Guard: if Q or Q.safeJson is not yet available, fall back to basic JSON parser.
     var parser = (Q && Q.safeJson) ? Q.safeJson : function (r) { return r.json(); };
