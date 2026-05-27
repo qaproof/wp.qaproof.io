@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,12 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.6 =
+Re-think: gate Figma-dependent affordances on actual OAuth state instead of just relabelling the pill.
+
+* **`Verify access` and `+ Add Design` are now hidden when Figma OAuth isn't connected.** Previously the buttons stayed visible alongside a "NOT CONNECTED" badge — clicking Verify would just round-trip to a service-PAT fallback the user almost certainly hadn't shared the file with, and Add Design dropped the user into a flow that would immediately fail at first verify. Both controls now appear only when the OAuth status resolves to `connected`. Existing saved designs stay visible (the cached image still works on the Tests page) but the Saved Designs section is dimmed and prefixed with an inline banner explaining why action affordances are off until reconnect.
+* **App-level OAuth-connection class is wired through a MutationObserver on the OAuth card's `data-state` attribute.** Single source of truth — every `render()` exit, every `fetchStatus().then(render)` call site, and every future state transition gets the same UI gating for free, instead of having to remember to update each callsite. The class also runs the existing `invalidateFigmaSourcedPills()` whenever state leaves `connected`, so the v1.0.4 disconnect-time flip and the v1.0.5 initial-render flip collapse into one place.
 
 = 1.0.5 =
 Follow-up to 1.0.4 — invalidate Figma-sourced pills on initial render, not only on Disconnect click.
