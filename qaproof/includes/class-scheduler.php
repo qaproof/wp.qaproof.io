@@ -30,21 +30,47 @@ class QAProof_Scheduler {
         // users see nothing in the UI and assume the plugin is broken. The
         // notice tells them to wire up a system cron OR turn the constant off.
         add_action( 'admin_notices', array( __CLASS__, 'maybe_show_disable_wp_cron_notice' ) );
+        add_action( 'wp_ajax_qaproof_dismiss_cron_notice', array( __CLASS__, 'ajax_dismiss_cron_notice' ) );
     }
 
     /**
-     * Render a dismissable warning when DISABLE_WP_CRON is true. Shown only
+     * Render a dismissible warning when DISABLE_WP_CRON is true. Shown only
      * on QAProof's own admin screens to avoid polluting the rest of wp-admin.
+     * Stores dismissal per-user in user_meta so it persists across page loads.
      */
     public static function maybe_show_disable_wp_cron_notice() {
         if ( ! defined( 'DISABLE_WP_CRON' ) || ! DISABLE_WP_CRON ) return;
         if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) return;
+        if ( get_user_meta( get_current_user_id(), 'qaproof_dismiss_cron_notice', true ) ) return;
         $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
         if ( ! $screen || strpos( $screen->id, 'qaproof' ) === false ) return;
-        echo '<div class="notice notice-warning"><p><strong>'
-           . esc_html__( 'QAProof:', 'qaproof' ) . '</strong> '
+
+        $nonce = wp_create_nonce( 'qaproof_dismiss_cron_notice' );
+        echo '<div class="notice notice-warning is-dismissible" id="qaproof-cron-notice" data-nonce="' . esc_attr( $nonce ) . '">'
+           . '<p><strong>' . esc_html__( 'QAProof:', 'qaproof' ) . '</strong> '
            . esc_html__( 'WordPress Cron is disabled on this site (DISABLE_WP_CRON). Scheduled QAProof monitors will not fire automatically until you run wp-cron.php from a system cron or remove the DISABLE_WP_CRON constant.', 'qaproof' )
-           . '</p></div>';
+           . '</p></div>'
+           . '<script>(function(){
+               var el = document.getElementById("qaproof-cron-notice");
+               if ( ! el ) return;
+               el.addEventListener("click", function(e){
+                   if ( ! e.target.classList.contains("notice-dismiss") ) return;
+                   fetch( ajaxurl, {
+                       method: "POST",
+                       headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                       body: "action=qaproof_dismiss_cron_notice&nonce=" + el.dataset.nonce
+                   });
+               });
+           })();</script>';
+    }
+
+    /**
+     * AJAX handler — saves dismissal flag in user_meta so notice stays hidden.
+     */
+    public static function ajax_dismiss_cron_notice() {
+        check_ajax_referer( 'qaproof_dismiss_cron_notice', 'nonce' );
+        update_user_meta( get_current_user_id(), 'qaproof_dismiss_cron_notice', 1 );
+        wp_die();
     }
 
     /** Register the `monthly` interval (WP ships daily + weekly only). */
