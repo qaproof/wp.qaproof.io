@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.5 =
+Follow-up to 1.0.4 — invalidate Figma-sourced pills on initial render, not only on Disconnect click.
+
+* **"Ready · N elements (figma-api)" pill no longer stays green when Figma is NOT CONNECTED on page load.** 1.0.4 wired the invalidation into the Disconnect handler only — so users who land on Settings after their plugin update (or after `figma_oauth_connections` was wiped server-side) still saw a green pill that implied live Figma API access. The figma-oauth.js init flow now also runs `invalidateFigmaSourcedPills()` whenever the resolved status isn't 'connected' (so disconnected / revoked / unavailable / OAuth-disabled all flip the pills to the amber 'stale' state on first render).
 
 = 1.0.4 =
 Design-fidelity audit fixes — verify-access error UX, mismatch panel, history view, and cron-notice scope.
