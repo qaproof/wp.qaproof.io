@@ -300,6 +300,11 @@
    */
   function saveTestHistory(testType, pageUrl, jobId, resultData) {
 
+    // Respect the "Auto-Save Results" setting from Settings → Tests.
+    if ( qaproof.autoSaveHistory === false ) {
+      return Promise.resolve( null );
+    }
+
     // Strip screenshots from the payload — PHP fetches them server-to-server.
     var payload = Object.assign({}, resultData);
     delete payload.screenshots;
