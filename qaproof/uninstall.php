@@ -33,7 +33,6 @@ function qaproof_uninstall_blog_cleanup() {
 			'qaproof_db_version',
 			'qaproof_api_endpoint',
 			'qaproof_cron_hour',
-			'qaproof_feedback_log',
 			'qaproof_figma_api_usage',
 			'qaproof_figma_rate_limit',
 			// Migration progress flag — without this entry it survives

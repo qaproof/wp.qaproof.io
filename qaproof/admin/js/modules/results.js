@@ -377,6 +377,7 @@
     h += '    <div class="qaproof-feedback-success-title">Thank you for your feedback!</div>';
     h += '    <div class="qaproof-feedback-success-text">Your input helps us improve the accuracy of our analysis.</div>';
     h += '  </div>';
+    h += '  <div class="qaproof-feedback-error hidden" role="alert" aria-live="assertive" id="' + id + '-feedback-error"></div>';
     h += '</div>';
     return h;
   }
@@ -422,11 +423,16 @@
       updateStars(selectedRating);
     });
 
+    var errorEl = document.getElementById(id + '-feedback-error');
+
     submitBtn.addEventListener('click', function () {
       var comment = commentEl ? commentEl.value.trim() : '';
       var lastResult = window.QAProof && window.QAProof.state && window.QAProof.state.lastResult;
 
       submitBtn.disabled = true;
+      var originalLabel = submitBtn.textContent;
+      submitBtn.textContent = 'Sending…';
+      if (errorEl) { errorEl.classList.add('hidden'); errorEl.textContent = ''; }
 
       fetch(qaproof.restBase + '/feedback', {
         method: 'POST',
@@ -442,12 +448,36 @@
           score: (lastResult && lastResult.score) || 0,
         }),
       })
-      .then(function(r) { return r.json(); })
-      .catch(function() { return { success: false }; })
-      .finally(function() {
-        // Show success regardless of server response (best-effort)
-        if (innerEl) innerEl.classList.add('hidden');
-        if (successEl) successEl.classList.remove('hidden');
+      .then(function(r) {
+        return r.json().catch(function() { return { success: false }; });
+      })
+      .then(function(body) {
+        // Real success path: hide the form, show the thank-you card.
+        if (body && body.success) {
+          if (innerEl) innerEl.classList.add('hidden');
+          if (successEl) successEl.classList.remove('hidden');
+          return;
+        }
+        // Server returned an error — surface it inline so the user knows
+        // their submission did NOT save. Re-enable the submit button so
+        // they can retry (e.g. transient network failure).
+        var msg = (body && body.error && body.error.message)
+          ? body.error.message
+          : 'Could not save feedback. Please try again later.';
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.classList.remove('hidden');
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
+      })
+      .catch(function() {
+        if (errorEl) {
+          errorEl.textContent = 'Network error. Please try again.';
+          errorEl.classList.remove('hidden');
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
       });
     });
   }
