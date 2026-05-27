@@ -218,6 +218,25 @@
       // Restore WCAG target level so PDF subtitle shows the correct level (A/AA/AAA)
       if (extractedData.wcagLevel) result.targetWcagLevel = extractedData.wcagLevel;
 
+      // Restore render-branch flags from the raw result blob. Without these
+      // the renderer falls through to the generic score UI even when the
+      // original test was a mismatch ("design and live page are different
+      // sites") or an element-mode no-match — both have meaningful recovery
+      // panels that depend on these booleans. history_save() in
+      // class-api-client.php is responsible for putting them in `result` on
+      // save; parseResultData lifts them back out on read. Keep the two
+      // lists in lockstep.
+      var rawResult = parseJson(item.result) || {};
+      var passthroughFlags = [
+        'mismatch', 'designSite', 'liveSite',
+        'elementTest', 'matched',
+        'freshnessCheckFailed', 'scoreRecomputed',
+        'parseFailed',
+      ];
+      passthroughFlags.forEach(function (k) {
+        if (rawResult[k] !== undefined) result[k] = rawResult[k];
+      });
+
       return result;
     }
 

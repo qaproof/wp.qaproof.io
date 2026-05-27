@@ -1058,6 +1058,11 @@ body.qaproof-dark-page #wpbody-content {
   background: rgba(239, 68, 68, 0.14);
   border-color: rgba(239, 68, 68, 0.45);
 }
+#qaproof-app.qaproof-dark .qaproof-status-stale {
+  color: #fbbf24;
+  background: rgba(202, 138, 4, 0.14);
+  border-color: rgba(202, 138, 4, 0.45);
+}
 
 /* ============================
    Feedback Section — Dark Theme

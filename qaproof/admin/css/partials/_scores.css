@@ -115,6 +115,28 @@
   position: relative;
 }
 
+/* ============================
+   Mismatch panel (.qaproof-fidelity-mismatch) — rendered when the AI
+   short-circuits because design and live page are different sites.
+   .qaproof-report-hero has a dark background (var(--qp-text-primary)
+   in light mode, var(--qp-bg-dark) in dark mode). The score-card
+   variants of the hero have their own white text on the score ring,
+   but the mismatch variant is text-only — h2, ul, p inherit the
+   default page text color, which equals the hero background → text
+   becomes invisible. Force white text + lighter hint color so the
+   recovery copy stays readable in both light and dark themes.
+   ============================ */
+#qaproof-app .qaproof-report-hero.qaproof-fidelity-mismatch,
+#qaproof-app .qaproof-report-hero.qaproof-fidelity-mismatch h2,
+#qaproof-app .qaproof-report-hero.qaproof-fidelity-mismatch .qaproof-summary,
+#qaproof-app .qaproof-report-hero.qaproof-fidelity-mismatch li,
+#qaproof-app .qaproof-report-hero.qaproof-fidelity-mismatch strong {
+  color: var(--qp-white);
+}
+#qaproof-app .qaproof-report-hero.qaproof-fidelity-mismatch .qaproof-fidelity-mismatch-hint {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* Inline stats row */
 #qaproof-app .qaproof-stats-inline {
   gap: 10px;

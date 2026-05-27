@@ -991,6 +991,23 @@ class QAProof_API_Client {
         foreach ( $copy_keys as $key ) {
             if ( isset( $data[ $key ] ) ) { $result_obj[ $key ] = $data[ $key ]; }
         }
+        // Pass-through flags that change which result UI is rendered when the
+        // history entry is opened later. Without these the JS render path falls
+        // through to the generic score layout — for a mismatch result that
+        // means an empty "—/100" ring and a misleading "No analysis data
+        // available" warning instead of the mismatch recovery panel.
+        // Element-mode failures (`elementTest: true, matched: false`) have the
+        // same property: the render path branches on these flags. Anything
+        // that controls a branch in renderFidelityResults() belongs here.
+        $passthrough_flags = array(
+            'mismatch', 'designSite', 'liveSite',
+            'elementTest', 'matched',
+            'freshnessCheckFailed', 'scoreRecomputed',
+            'parseFailed',
+        );
+        foreach ( $passthrough_flags as $key ) {
+            if ( isset( $data[ $key ] ) ) { $result_obj[ $key ] = $data[ $key ]; }
+        }
         if ( isset( $data['designSystem'] ) )    { $result_obj['extractedData']['designSystem']    = $data['designSystem']; }
         if ( isset( $data['components'] ) )      { $result_obj['extractedData']['components']      = $data['components']; }
         if ( isset( $data['designDebtScore'] ) ) { $result_obj['extractedData']['designDebtScore'] = $data['designDebtScore']; }

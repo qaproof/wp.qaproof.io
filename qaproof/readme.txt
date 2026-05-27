@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,17 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.4 =
+Design-fidelity audit fixes — verify-access error UX, mismatch panel, history view, and cron-notice scope.
+
+* **Saved-design "Verify access" errors are now visible.** PHP-rendered existing rows were missing the sibling `.qaproof-design-verify-msg` slot that the JS-built new rows have, so `setVerifyMsg()` silently no-oped and the user saw only "✗ Failed" with no reason. The slot is now rendered identically on both code paths and the FIGMA_FILE_NOT_FOUND / FIGMA_NOT_SHARED messages appear under the row.
+* **Cache pill invalidates on verify-access failure.** Previously "Ready · N elements (figma-api)" stayed green even after a FIGMA_FILE_NOT_FOUND or FIGMA_NOT_SHARED response. The pill now flips to a red `error` state with `File not found — cache stale` / `No access — cache stale` so the stale cache is visible at a glance. Other error codes (rate-limit, network) leave the pill alone since the file itself is still presumed valid.
+* **Mismatch panel text is readable.** When the AI short-circuits because design and live page are different sites, `.qaproof-report-hero.qaproof-fidelity-mismatch` rendered with `color === background` (both `rgb(34,40,49)`) so the heading + bullets were literally invisible. Explicit `color: var(--qp-white)` rules now keep the recovery copy readable in both light and dark themes; the inline `color:#666` hint was replaced with a class so it scales with the theme.
+* **History view of mismatch / element-mode results no longer collapses to "—/100".** `history_save()` was only copying `categories` / `differences` / `recommendations` into the stored result blob, so the render-branch flags (`mismatch`, `designSite`, `liveSite`, `elementTest`, `matched`, `freshnessCheckFailed`, `scoreRecomputed`, `parseFailed`) were silently dropped on save. `parseResultData()` lifts the same list back out on read, so opening a mismatch entry from History now routes through `renderFidelityMismatch()` (with its Edit URL / Back to test setup CTAs) instead of the generic score layout with a misleading "No analysis data available" warning.
+* **Preview empty-state copy no longer mentions an upload UI that doesn't exist.** "Select a saved design or upload an image to preview" → "Select a saved design to preview" (three places: i18n string, JS default, page-tests.php).
+* **DISABLE_WP_CRON notice scoped to Monitors / Dashboard only**, and dismissal stored in `wp_options` instead of `user_meta`. The constant only affects scheduled monitors, so showing the warning on Settings / Tests / Accessibility was noise. One admin clicking ✕ now quiets it for the whole site (previously each admin re-dismissed individually).
+* **Saved-design pills are invalidated on Figma OAuth disconnect.** New amber `stale` state with label "Re-verify — Figma disconnected" replaces the now-misleading `(figma-api)` / `(figma-oauth)` source suffix. Cached image stays usable for tests; user re-verifies per row to learn whether the file is still reachable via the service-PAT path.
 
 = 1.0.3 =
 Feedback storage moved to the SaaS + monitor-list compliance and i18n fixes.

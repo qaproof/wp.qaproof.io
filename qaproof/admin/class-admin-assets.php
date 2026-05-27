@@ -138,7 +138,7 @@ class QAProof_Admin_Assets {
                 'btnRunTest'             => __( 'Run Test', 'qaproof' ),
                 'btnAnalyzeElement'      => __( 'Analyze Element Fidelity', 'qaproof' ),
                 // form.js — Figma preview
-                'previewSelectDesign'    => __( 'Select a saved design or upload an image to preview.', 'qaproof' ),
+                'previewSelectDesign'    => __( 'Select a saved design to preview.', 'qaproof' ),
                 'previewCouldNotLoad'    => __( 'Could not load preview.', 'qaproof' ),
                 'previewRetry'           => __( 'Retry', 'qaproof' ),
                 'previewSavedNoApi'      => __( 'Saved image · No Figma API call', 'qaproof' ),
@@ -384,6 +384,9 @@ class QAProof_Admin_Assets {
                 'designPartial'          => __( 'Image cached · elements missing', 'qaproof' ),
                 'designDetectionFailed'  => __( 'Detection failed', 'qaproof' ),
                 'designRateLimit'        => __( 'Figma rate limit — try again later', 'qaproof' ),
+                'designFileNotFound'     => __( 'File not found — cache stale', 'qaproof' ),
+                'designFileNotShared'    => __( 'No access — cache stale', 'qaproof' ),
+                'designReverifyNeeded'   => __( 'Re-verify — Figma disconnected', 'qaproof' ),
                 'resetFigmaConfirm'      => __( "Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma's actual quota on their side.)", 'qaproof' ),
                 'resumingTest'           => __( 'Resuming test — waiting for results...', 'qaproof' ),
                 'resumingTestSub'        => __( 'Test is still running on the server', 'qaproof' ),

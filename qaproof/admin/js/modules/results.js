@@ -3621,7 +3621,7 @@
     if (data.designSite) html += '<li><strong>Design shows:</strong> ' + Q.escapeHtml(data.designSite) + '</li>';
     if (data.liveSite)   html += '<li><strong>Live page shows:</strong> ' + Q.escapeHtml(data.liveSite) + '</li>';
     html += '      </ul>';
-    html += '      <p style="margin-top:16px;color:#666;">Check that the design and the page URL refer to the same project, then run the test again.</p>';
+    html += '      <p class="qaproof-fidelity-mismatch-hint" style="margin-top:16px;">Check that the design and the page URL refer to the same project, then run the test again.</p>';
     html += '      <div class="qaproof-report-hero-actions" style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">';
     html += '        <button type="button" data-qaproof-action="mismatch-edit-form" class="qaproof-btn"><span class="dashicons dashicons-edit"></span> Edit URL or design</button>';
     html += '        <button type="button" data-qaproof-action="back-to-form" class="qaproof-btn qaproof-btn-secondary"><span class="dashicons dashicons-undo"></span> Back to test setup</button>';

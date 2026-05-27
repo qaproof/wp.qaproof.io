@@ -35,6 +35,10 @@ function qaproof_uninstall_blog_cleanup() {
 			'qaproof_cron_hour',
 			'qaproof_figma_api_usage',
 			'qaproof_figma_rate_limit',
+			// Cron-disabled notice dismissal — site-wide flag set when any
+			// admin closes the "DISABLE_WP_CRON is on" warning on the
+			// Monitors / Dashboard screen.
+			'qaproof_dismiss_cron_notice',
 			// Migration progress flag — without this entry it survives
 			// uninstall and a future reinstall would skip the migration.
 			'qaproof_monitors_api_migrated',

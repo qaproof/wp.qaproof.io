@@ -1115,6 +1115,11 @@ class QAProof_Settings {
                         </button>
                         <input type="hidden" value="<?php echo esc_attr( $d['id'] ); ?>" data-field="id" />
                     </div>
+                    <?php /* Sibling slot for long verify-access messages — kept in lockstep
+                         * with the row built in init.js so PHP-rendered (existing) rows and
+                         * JS-built (newly added) rows share the same DOM shape. Without this
+                         * setVerifyMsg() silently no-ops on existing rows and errors vanish. */ ?>
+                    <div class="qaproof-design-verify-msg" hidden></div>
                     <div class="qaproof-design-status qaproof-status-<?php echo esc_attr( $status ); ?>" data-status="<?php echo esc_attr( $status ); ?>" title="<?php echo esc_attr( $status_label ); ?>">
                         <span class="qaproof-design-status-dot"></span>
                         <span class="qaproof-design-status-label"><?php echo esc_html( $status_label ); ?></span>
