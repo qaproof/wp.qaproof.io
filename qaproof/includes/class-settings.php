@@ -584,7 +584,7 @@ class QAProof_Settings {
         <select name="qaproof_default_test_type">
             <option value="fidelity" <?php selected( $value, 'fidelity' ); ?>><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></option>
             <option value="responsive" <?php selected( $value, 'responsive' ); ?>><?php esc_html_e( 'Responsive Test', 'qaproof' ); ?></option>
-            <option value="accessibility" <?php selected( $value, 'accessibility' ); ?>><?php esc_html_e( 'Accessibility Audit', 'qaproof' ); ?></option>
+            <option value="design-audit" <?php selected( $value, 'design-audit' ); ?>><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></option>
         </select>
         <p class="description"><?php esc_html_e( 'Pre-selected test type on the Tests page.', 'qaproof' ); ?></p>
         <?php
