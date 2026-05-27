@@ -1925,6 +1925,15 @@
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.35);
 }
+/* 'stale' = cache valid but Figma OAuth was disconnected after detection,
+   so the (figma-api)/(figma-oauth) source on the previous label is no
+   longer authoritative. Amber like 'partial' but a slightly different
+   tint so they're visually distinguishable side by side. */
+#qaproof-app .qaproof-status-stale {
+  color: #a16207;
+  background: rgba(202, 138, 4, 0.1);
+  border-color: rgba(202, 138, 4, 0.35);
+}
 
 #qaproof-app .qaproof-refresh-figma-btn {
   margin-left: 6px;

@@ -422,7 +422,7 @@
       var badge = row.querySelector('.qaproof-design-status');
       if (!badge) return;
       var labelEl = badge.querySelector('.qaproof-design-status-label');
-      badge.classList.remove('qaproof-status-empty', 'qaproof-status-partial', 'qaproof-status-ready', 'qaproof-status-saving', 'qaproof-status-detecting', 'qaproof-status-error', 'qaproof-status-ratelimited');
+      badge.classList.remove('qaproof-status-empty', 'qaproof-status-partial', 'qaproof-status-ready', 'qaproof-status-saving', 'qaproof-status-detecting', 'qaproof-status-error', 'qaproof-status-ratelimited', 'qaproof-status-stale');
       badge.classList.add('qaproof-status-' + state);
       badge.setAttribute('data-status', state);
       var label = '';
@@ -436,6 +436,12 @@
         case 'partial':     label = (qaproof.i18n.designPartial || 'Image cached · elements missing'); break;
         case 'error':       label = (qaproof.i18n.designDetectionFailed || 'Detection failed'); break;
         case 'ratelimited': label = (qaproof.i18n.designRateLimit || 'Figma rate limit — try again later'); break;
+        // 'stale' = Figma OAuth was disconnected after the cache was built.
+        // The cached image still works for tests, but the elements were
+        // detected via a Figma path that's no longer live — re-verify so
+        // the user knows whether the file is still reachable via PAT (or
+        // not reachable at all). Styled like 'partial' (amber) on purpose.
+        case 'stale':       label = (qaproof.i18n.designReverifyNeeded || 'Re-verify — Figma disconnected'); break;
         default:            label = (qaproof.i18n.designNotCached || 'Not cached — open Tests page and click Save');
       }
       if (labelEl) labelEl.textContent = label;
@@ -2173,6 +2179,27 @@
             btn.classList.add('qaproof-verify-error');
             btn.textContent = '✗ ' + (qaproof.i18n.verifyFailedShort || 'Failed');
             setVerifyMsg(row, 'error', msg);
+            // When verify fails with FIGMA_FILE_NOT_FOUND or FIGMA_NOT_SHARED
+            // the cached elements (the green "Ready · N elements" pill) are
+            // stale — the file is no longer reachable, so a future test will
+            // also fail. Flip the pill from 'ready' to 'error' with a
+            // file-access-specific label so the user notices the cache is
+            // dead. Other error codes (rate-limit, network) leave the cache
+            // alone since the file itself is still presumed valid.
+            if (code === 'FIGMA_FILE_NOT_FOUND' || code === 'FIGMA_NOT_SHARED') {
+              var badge = row.querySelector('.qaproof-design-status');
+              if (badge) {
+                badge.classList.remove('qaproof-status-empty', 'qaproof-status-partial', 'qaproof-status-ready', 'qaproof-status-saving', 'qaproof-status-detecting', 'qaproof-status-ratelimited');
+                badge.classList.add('qaproof-status-error');
+                badge.setAttribute('data-status', 'error');
+                var labelEl = badge.querySelector('.qaproof-design-status-label');
+                var staleLabel = (code === 'FIGMA_FILE_NOT_FOUND')
+                  ? (qaproof.i18n.designFileNotFound || 'File not found — cache stale')
+                  : (qaproof.i18n.designFileNotShared || 'No access — cache stale');
+                if (labelEl) labelEl.textContent = staleLabel;
+                badge.setAttribute('title', staleLabel);
+              }
+            }
             // Revert button so a retry click is possible; keep the error
             // message visible. It's cleared on the next verify call (start
             // of this handler) or when the user edits the URL.

@@ -35,15 +35,25 @@ class QAProof_Scheduler {
 
     /**
      * Render a dismissible warning when DISABLE_WP_CRON is true. Shown only
-     * on QAProof's own admin screens to avoid polluting the rest of wp-admin.
-     * Stores dismissal per-user in user_meta so it persists across page loads.
+     * on QAProof's own Monitors screen — the cron constant only affects
+     * scheduled monitors, so showing it on Tests / Settings / Accessibility
+     * is noise. Dismissal is stored site-wide in wp_options (one admin
+     * acknowledges it, all admins are quiet) rather than per-user.
      */
     public static function maybe_show_disable_wp_cron_notice() {
         if ( ! defined( 'DISABLE_WP_CRON' ) || ! DISABLE_WP_CRON ) return;
         if ( ! current_user_can( QAProof_Admin::CAPABILITY ) ) return;
-        if ( get_user_meta( get_current_user_id(), 'qaproof_dismiss_cron_notice', true ) ) return;
+        if ( get_option( 'qaproof_dismiss_cron_notice', false ) ) return;
         $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-        if ( ! $screen || strpos( $screen->id, 'qaproof' ) === false ) return;
+        if ( ! $screen ) return;
+        // Only show on the Monitors screen — the cron constant doesn't affect
+        // ad-hoc tests, so this warning is irrelevant outside Monitors.
+        // Screen IDs: `qaproof_page_qaproof-monitors`, `toplevel_page_qaproof`
+        // (Dashboard). Show on both since Dashboard surfaces monitor status.
+        $screen_id = $screen->id;
+        $is_monitor_screen   = strpos( $screen_id, 'qaproof-monitors' ) !== false;
+        $is_dashboard_screen = $screen_id === 'toplevel_page_qaproof';
+        if ( ! $is_monitor_screen && ! $is_dashboard_screen ) return;
 
         $nonce = wp_create_nonce( 'qaproof_dismiss_cron_notice' );
         echo '<div class="notice notice-warning is-dismissible" id="qaproof-cron-notice" data-nonce="' . esc_attr( $nonce ) . '">'
@@ -65,11 +75,13 @@ class QAProof_Scheduler {
     }
 
     /**
-     * AJAX handler — saves dismissal flag in user_meta so notice stays hidden.
+     * AJAX handler — saves dismissal flag in wp_options (site-wide) so any
+     * admin dismissing the notice quiets it for everyone. Previously stored
+     * in user_meta which made each admin re-dismiss individually.
      */
     public static function ajax_dismiss_cron_notice() {
         check_ajax_referer( 'qaproof_dismiss_cron_notice', 'nonce' );
-        update_user_meta( get_current_user_id(), 'qaproof_dismiss_cron_notice', 1 );
+        update_option( 'qaproof_dismiss_cron_notice', 1 );
         wp_die();
     }
 

@@ -329,7 +329,7 @@
     if (previewEmpty) {
       var emptyText = previewEmpty.querySelector('p');
       if (emptyText) {
-        emptyText.textContent = qaproof.i18n.previewSelectDesign || 'Select a saved design or upload an image to preview.';
+        emptyText.textContent = qaproof.i18n.previewSelectDesign || 'Select a saved design to preview.';
       }
     }
   }
