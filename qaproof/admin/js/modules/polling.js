@@ -300,6 +300,12 @@
    */
   function saveTestHistory(testType, pageUrl, jobId, resultData) {
 
+    // Respect the "Auto-Save Results" setting from Settings → Tests.
+    // wp_localize_script converts PHP false → JS '' (empty string), not false.
+    if ( qaproof.autoSaveHistory === false || qaproof.autoSaveHistory === '' ) {
+      return Promise.resolve( null );
+    }
+
     // Strip screenshots from the payload — PHP fetches them server-to-server.
     var payload = Object.assign({}, resultData);
     delete payload.screenshots;
