@@ -430,5 +430,23 @@
     return card.getAttribute('data-state') === 'connected';
   };
 
-  fetchStatus().then(render);
+  fetchStatus()
+    .then(function (s) {
+      render(s);
+      // Initial-render invalidation: if OAuth is already disconnected /
+      // revoked / unavailable when the page loads, the green
+      // "Ready · N elements (figma-api)" pills are misleading — they were
+      // built under a previous connected session that no longer exists.
+      // Same flip as the post-Disconnect handler, but applied on load
+      // instead of on user action. 'connected' is the only state where
+      // those pills should stay green.
+      var stateName = card.getAttribute('data-state') || '';
+      if (stateName !== 'connected') {
+        // Defer until init.js has rendered the saved-design rows + exposed
+        // window.QAProof.updateDesignStatus. Settings page is server-
+        // rendered, so the rows exist immediately; the helper is exposed
+        // inside the same DOMContentLoaded tick — one rAF is enough.
+        requestAnimationFrame(invalidateFigmaSourcedPills);
+      }
+    });
 })();
