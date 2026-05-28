@@ -41,17 +41,6 @@ class QAProof_Admin_REST_Tests {
             if ( ! empty( $params['figmaImageBase64'] ) ) {
                 $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
             }
-            // Version handshake for the saved-design image cache. When the JS
-            // sends a cached PNG it also sends the Figma `lastModified` token
-            // captured at the moment of caching. We validate it strictly as
-            // ISO-8601 so an attacker (or a compromised SaaS upstream) can't
-            // sneak arbitrary content through this round-trip.
-            if ( ! empty( $params['cachedLastModified'] ) && is_string( $params['cachedLastModified'] ) ) {
-                $validated = QAProof_Settings::validate_iso8601( $params['cachedLastModified'] );
-                if ( $validated !== '' ) {
-                    $api_params['cachedLastModified'] = $validated;
-                }
-            }
             if ( isset( $params['ignoreText'] ) ) {
                 $api_params['ignoreText'] = rest_sanitize_boolean( $params['ignoreText'] );
             }

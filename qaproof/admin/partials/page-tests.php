@@ -132,10 +132,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         <div class="qaproof-preview-header">
                             <span class="dashicons dashicons-visibility"></span>
                             <?php esc_html_e( 'Design Preview', 'qaproof' ); ?>
-                            <button type="button" class="qaproof-save-design-btn" id="qaproof-save-design-btn" title="<?php esc_attr_e( 'Save image to selected design (no more API calls)', 'qaproof' ); ?>" style="display:none">
-                                <span class="dashicons dashicons-download"></span>
-                                <span class="qaproof-save-design-label"><?php esc_html_e( 'Save', 'qaproof' ); ?></span>
-                            </button>
                             <button type="button" class="qaproof-refresh-figma-btn" id="qaproof-refresh-figma-btn" title="<?php esc_attr_e( 'Refresh from Figma (bypass cache)', 'qaproof' ); ?>" style="display:none">
                                 <span class="dashicons dashicons-update"></span>
                             </button>
