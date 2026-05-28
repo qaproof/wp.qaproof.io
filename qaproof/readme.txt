@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.15
+Stable tag: 1.0.16
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.16 =
+Fix the Visual Comparison missing from a fresh Design Fidelity result.
+
+* The side-by-side Visual Comparison (design vs live, with difference markers) only appeared when you opened a test from History — never right after running it. Screenshots are stripped from the poll response and loaded asynchronously to keep the payload small, but the comparison block only rendered when screenshots were already present, so on a fresh run it was skipped entirely and the async load had no `<img>` elements to populate. It now renders the comparison shell as soon as the result arrives (matching how the responsive/accessibility sections already work) and the screenshots + markers fill in when they load. No API change.
 
 = 1.0.15 =
 Design Fidelity accuracy overhaul — stop the content noise, catch real layout differences.
