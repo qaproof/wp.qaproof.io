@@ -27,6 +27,18 @@ class QAProof_Database {
      * pushes their local monitor rows up to the SaaS API exactly once.
      */
     public static function maybe_upgrade() {
+        // One-time sweep of orphaned recurring WP-Cron events left by the
+        // removed class-scheduler.php (pre-API monitor scheduling). Monitor
+        // runs now happen entirely on the SaaS API, so these events have no
+        // registered handler and would otherwise sit in the cron array firing
+        // as no-ops (WP Crontrol shows "no action") until uninstall. Gated on
+        // its own flag, NOT db_version, so it also reaches sites that already
+        // migrated to db_version 1.8.0 (which return early just below).
+        if ( ! get_option( 'qaproof_legacy_cron_cleared' ) ) {
+            self::clear_legacy_cron_hooks();
+            update_option( 'qaproof_legacy_cron_cleared', 1 );
+        }
+
         $current = get_option( 'qaproof_db_version', '0' );
         if ( version_compare( $current, '1.8.0', '>=' ) ) {
             return;
@@ -47,6 +59,27 @@ class QAProof_Database {
         }
 
         update_option( 'qaproof_db_version', '1.8.0' );
+    }
+
+    /**
+     * Clear recurring WP-Cron events registered by the removed
+     * class-scheduler.php (daily/weekly/monthly regression runs + the
+     * single-event "run monitor" dispatch). Scheduling moved server-side
+     * (api: monitor-scheduler.js), so these hooks have no handler. Uses
+     * wp_unschedule_hook() rather than wp_clear_scheduled_hook() to drop ALL
+     * events for each hook regardless of args — qaproof_run_monitor was
+     * scheduled with a monitor-id argument. Mirrors the list in uninstall.php.
+     */
+    private static function clear_legacy_cron_hooks() {
+        $hooks = array(
+            'qaproof_cron_daily',
+            'qaproof_cron_weekly',
+            'qaproof_cron_monthly',
+            'qaproof_run_monitor',
+        );
+        foreach ( $hooks as $hook ) {
+            wp_unschedule_hook( $hook );
+        }
     }
 
     /**

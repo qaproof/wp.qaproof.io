@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.13
+Stable tag: 1.0.14
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,12 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.14 =
+Fix the "Ignore Text Differences" toggle, and sweep up orphaned WP-Cron events.
+
+* The Design Fidelity setting "Ignore text content differences" was effectively stuck ON. `wp_localize_script` string-casts scalars, so the localized option arrived in JS as `"1"` (on) or `""` (off) — never a real boolean. The form compared it with `!== false`, and an empty string is never strictly equal to `false`, so every fidelity test sent `ignoreText: true` regardless of the toggle. Turning the setting off had no effect; text differences were always ignored. The form now coerces truthiness, so off actually means off (text differences get flagged again). No API change.
+* Cleared leftover WP-Cron events on upgraded sites. Monitor scheduling moved entirely to the SaaS API a few releases ago, but sites upgrading from a pre-API version still had the old recurring `qaproof_cron_daily/weekly/monthly` events (and the single-event `qaproof_run_monitor`) sitting in WordPress's cron array, firing on schedule with no handler attached — harmless no-ops, but visible as "no action" entries in tools like WP Crontrol. The plugin now sweeps them once (idempotent, guarded by a one-time flag so it also reaches sites already on the latest DB version). The plugin no longer schedules or relies on WP-Cron at all.
 
 = 1.0.13 =
 Hardening: API client treats any 2xx as success.
