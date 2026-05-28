@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,14 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.10 =
+Fix the monitor "Run now" button.
+
+* **"Run now" was dispatching into a void.** When monitor scheduling moved to the API server, `class-scheduler.php` (which held the `qaproof_run_monitor` WP-Cron handler) was removed — but the "Run now" button still scheduled that now-handlerless hook, so a manual run never actually executed. The button now calls a new API endpoint (`POST /api/monitors/:id/run`) that runs the monitor immediately server-side, reusing the exact same logic as the scheduled runs (baseline on first run, regression afterwards, with email alerts). The browser polls for the result as before.
+* Removed the now-pointless browser-side `wp-cron.php` pings from the monitor polling loops — the run no longer depends on a WP-Cron tick.
+
+**Requires** the companion `api.qaproof.io` deploy that adds `POST /api/monitors/:id/run`.
 
 = 1.0.9 =
 Deep cleanup of the Design Fidelity feature: removed two redundant subsystems and tidied the OAuth card. ~1600 lines of dead/duplicate code deleted.
