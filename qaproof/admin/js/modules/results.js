@@ -963,11 +963,20 @@
     // (figmaCropped) so the user sees the exact piece the AI was asked to
     // match. The live screenshot stays full-page; the matched region (if any)
     // is highlighted via an overlay box.
-    if (data.screenshots) {
+    if (data.screenshots || data.screenshotsAvailable) {
+      // Screenshots are stripped from the poll response (loaded async via
+      // fetchAndInjectScreenshots). Render the comparison shell now — with
+      // empty <img> placeholders that the async inject targets by id
+      // (#qaproof-screenshot-figma / -live) — so the Visual Comparison shows
+      // on a fresh run. Previously this block was gated on `data.screenshots`
+      // alone, so on a fresh test the whole comparison was skipped and only
+      // appeared when reloaded from History (where screenshots are inline).
+      // Mirrors the responsive/a11y/design-audit sections.
+      var ss = data.screenshots || {};
       var isElement = !!data.elementTest;
-      var designSrc = isElement && data.screenshots.figmaCropped
-        ? data.screenshots.figmaCropped
-        : (data.screenshots.figma || '');
+      var designSrc = isElement && ss.figmaCropped
+        ? ss.figmaCropped
+        : (ss.figma || '');
       var designLabel = isElement ? 'Design — selected element' : 'Design (Figma)';
       var matched = data.matchedRegion || null;
       var matchedStyle = '';
@@ -1014,7 +1023,7 @@
       html += '        <div class="qaproof-screenshot-label">Live Page' + (isElement && matched ? ' — AI-located region' : '') + '</div>';
       html += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-live">';
       html += '          <div class="qaproof-screenshot-inner" style="position:relative;">';
-      html += '            <img id="qaproof-screenshot-live" src="' + Q.escapeAttr(data.screenshots.live || '') + '" alt="Live" />';
+      html += '            <img id="qaproof-screenshot-live" src="' + Q.escapeAttr(ss.live || '') + '" alt="Live" />';
       if (data.pixelDiff && data.pixelDiff.imageBase64) {
         html += '            <img id="qaproof-pixeldiff-overlay" src="' + Q.escapeAttr(data.pixelDiff.imageBase64) + '" alt="Pixel diff" ' +
           'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;opacity:0;pointer-events:none;transition:opacity 0.2s;" />';
@@ -1091,13 +1100,18 @@
     renderDifferencesInto('qaproof-differences', 'qaproof-diff-count', S.allDifferences, false);
     renderRecommendationsInto('qaproof-recommendations', data.recommendations, 'qaproof-rec-count');
 
-    // Markers after images load
-    if (data.screenshots) {
-      var figmaImg = document.getElementById('qaproof-screenshot-figma');
-      var liveImg = document.getElementById('qaproof-screenshot-live');
-      Promise.all([Q.waitForImage(figmaImg), Q.waitForImage(liveImg)]).then(function () {
-        renderMarkers(S.allDifferences);
-      });
+    // Wire the comparison toolbar + sync-scroll whenever the comparison shell
+    // exists (screenshots inline OR coming async). When inline, render markers
+    // once both images load; when async, fetchAndInjectScreenshots renders the
+    // markers after injecting the images.
+    if (data.screenshots || data.screenshotsAvailable) {
+      if (data.screenshots) {
+        var figmaImg = document.getElementById('qaproof-screenshot-figma');
+        var liveImg = document.getElementById('qaproof-screenshot-live');
+        Promise.all([Q.waitForImage(figmaImg), Q.waitForImage(liveImg)]).then(function () {
+          renderMarkers(S.allDifferences);
+        });
+      }
 
       setupSyncScroll();
       setupToolbar();
