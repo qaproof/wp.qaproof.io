@@ -218,7 +218,10 @@ class QAProof_Settings {
         register_setting( self::GROUP_TESTS_FIDELITY, 'qaproof_fidelity_ignore_text', [
             'type'              => 'boolean',
             'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => false,
+            // On by default — design fidelity scores visual layout, not copy.
+            // Live pages carry real/dynamic content the mockup never had, so
+            // flagging text differences by default just produces noise.
+            'default'           => true,
         ]);
 
         add_settings_section(
@@ -852,10 +855,10 @@ class QAProof_Settings {
     }
 
     public static function render_fidelity_ignore_text_field() {
-        $value = get_option( 'qaproof_fidelity_ignore_text', false );
+        $value = get_option( 'qaproof_fidelity_ignore_text', true );
         echo '<label><input type="checkbox" name="qaproof_fidelity_ignore_text" value="1" ' . checked( $value, true, false ) . ' /> ';
         echo esc_html__( 'Ignore text content differences (focus on visual layout only).', 'qaproof' ) . '</label>';
-        echo '<p class="description">' . esc_html__( 'Enable when designs ship with placeholder/lorem-ipsum text. By default the analysis flags missing or mismatched copy.', 'qaproof' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'On by default — fidelity compares visual layout, and live pages usually carry different copy than the mockup. Uncheck to also flag missing or mismatched text content.', 'qaproof' ) . '</p>';
     }
 
     public static function render_viewports_field() {
