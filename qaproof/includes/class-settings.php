@@ -225,8 +225,6 @@ class QAProof_Settings {
             __( 'Design Fidelity', 'qaproof' ),
             function () {
                 echo '<p>' . esc_html__( 'Settings for design fidelity comparisons (Figma vs live page).', 'qaproof' ) . '</p>';
-
-                $service_email = 'figma@qaproof.io';
                 ?>
                 <div class="qaproof-figma-conn-card" id="qaproof-figma-conn-card" data-state="loading">
                     <div class="qaproof-figma-conn-header">
@@ -237,33 +235,17 @@ class QAProof_Settings {
                         <p class="qaproof-figma-conn-loading"><?php esc_html_e( 'Checking connection…', 'qaproof' ); ?></p>
                     </div>
                 </div>
-
-                <details class="qaproof-figma-access-card qaproof-figma-access-card--alt" id="qaproof-figma-access-fallback">
-                    <summary class="qaproof-figma-access-summary">
-                        <?php esc_html_e( 'Alternative: share files manually with our service account', 'qaproof' ); ?>
-                    </summary>
-                    <p class="qaproof-figma-access-lead"><?php esc_html_e( 'Prefer not to connect an account? Share each file you want to test with the address below. Works on any Figma plan.', 'qaproof' ); ?></p>
-                    <div class="qaproof-figma-access-email">
-                        <label class="qaproof-figma-access-email-label"><?php esc_html_e( 'Service email', 'qaproof' ); ?></label>
-                        <code class="qaproof-figma-access-email-value"><?php echo esc_html( $service_email ); ?></code>
-                        <button type="button" class="button qaproof-copy-email-btn" data-copy="<?php echo esc_attr( $service_email ); ?>">
-                            <?php esc_html_e( 'Copy', 'qaproof' ); ?>
-                        </button>
-                        <button type="button" class="button qaproof-figma-guide-open">
-                            <?php esc_html_e( 'Show me how →', 'qaproof' ); ?>
-                        </button>
-                    </div>
-                    <ol class="qaproof-figma-access-steps">
-                        <li><?php esc_html_e( 'Open your Figma file and click Share in the top-right corner.', 'qaproof' ); ?></li>
-                        <li><?php
-                            // translators: %s is the service email address (figma@qaproof.io).
-                            printf( esc_html__( 'Paste %s into the invite field and set the permission to Can view.', 'qaproof' ), '<code>' . esc_html( $service_email ) . '</code>' );
-                        ?></li>
-                        <li><?php esc_html_e( 'Send the invite, then paste the file URL into a saved design below.', 'qaproof' ); ?></li>
-                        <li><?php esc_html_e( 'Click Verify access to confirm the link works.', 'qaproof' ); ?></li>
-                    </ol>
-                </details>
                 <?php
+                /*
+                 * The "Alternative: share files manually with figma@qaproof.io"
+                 * details/card lived here through v1.0.6. It was removed in
+                 * v1.0.7 — the server-side service-account PAT fallback it
+                 * relied on no longer exists, so the per-file share flow had
+                 * nowhere to land. OAuth is now the only Figma auth path.
+                 * Customers that ran the old share-with-service-email workflow
+                 * just see the Connect Figma card; old `figma_oauth_connections`
+                 * rows and cached design images continue to work either way.
+                 */
             },
             'qaproof-settings-tests-fidelity'
         );
@@ -1077,19 +1059,19 @@ class QAProof_Settings {
             <?php /* Empty-state banner shown when Figma OAuth isn't connected.
                  * Toggled via a class on #qaproof-app set by figma-oauth.js
                  * after fetchStatus() resolves. Without OAuth the Verify
-                 * access / Add Design controls don't do anything useful
-                 * (the verify path falls back to a service PAT that the
-                 * user almost certainly hasn't shared the file with), so
-                 * we'd rather not pretend they do. Existing rows stay
-                 * visible — the cached image still works for tests — but
-                 * the action affordances are CSS-hidden until reconnect. */ ?>
+                 * access / Add Design controls have no Figma auth to use
+                 * (the service-PAT fallback was removed in v1.0.7), so we
+                 * hide them. Existing rows stay visible — the cached image
+                 * still works for tests — but the action affordances are
+                 * CSS-hidden until the user reconnects via the OAuth card
+                 * above. */ ?>
             <div class="qaproof-designs-needs-figma" hidden>
                 <p>
                     <span class="dashicons dashicons-warning"></span>
                     <?php esc_html_e( 'Connect Figma above to verify access and add new designs.', 'qaproof' ); ?>
                 </p>
                 <p class="description">
-                    <?php esc_html_e( 'Existing designs with a cached image still work on the Tests page. Designs that depend on a live Figma fetch will fail until you reconnect — or share each file with figma@qaproof.io via the Alternative path above.', 'qaproof' ); ?>
+                    <?php esc_html_e( 'Existing designs with a cached image still work on the Tests page. Designs that depend on a live Figma fetch will fail until you reconnect.', 'qaproof' ); ?>
                 </p>
             </div>
             <div id="qaproof-saved-designs-list">

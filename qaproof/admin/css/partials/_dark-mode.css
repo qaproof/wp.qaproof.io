@@ -479,38 +479,6 @@ body.qaproof-dark-page #wpbody-content {
   background: var(--qp-bg-surface);
   color: var(--qp-text-primary);
 }
-
-/* Dark: Figma share guide modal */
-#qaproof-app.qaproof-dark .qaproof-figma-guide-lead,
-#qaproof-app.qaproof-dark .qaproof-figma-guide-email-label,
-#qaproof-app.qaproof-dark .qaproof-figma-guide-tip {
-  color: var(--qp-text-secondary);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-email {
-  background: rgba(255, 255, 255, 0.05);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-email-value {
-  color: var(--qp-text-primary);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-steps > li {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--qp-text-primary);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-steps code {
-  background: rgba(0, 173, 181, 0.22);
-  color: var(--qp-text-primary);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-tip {
-  background: rgba(0, 173, 181, 0.1);
-  border-color: rgba(0, 173, 181, 0.28);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-btn-open {
-  background: #4b5563;
-}
-#qaproof-app.qaproof-dark .qaproof-figma-guide-btn-open:hover {
-  background: #374151;
-}
-
 /* Dark: monitor table */
 #qaproof-app.qaproof-dark .qaproof-monitors-table {
   background: var(--qp-bg-dark);
@@ -870,7 +838,6 @@ body.qaproof-dark-page #wpbody-content {
   color: var(--qp-text-primary) !important;
 }
 
-
 /* ============================
    Datepicker — Dark Theme
    ============================ */
@@ -1196,24 +1163,6 @@ body.qaproof-dark-page #wpbody-content {
 #qaproof-app.qaproof-dark .qaproof-type-scale-item:hover {
   background: var(--qp-divider);
 }
-
-/* Figma onboard card (Settings → Tests → Fidelity)
-   light defaults are too bright on dark — use card / border variables. */
-#qaproof-app.qaproof-dark .qaproof-figma-access-card {
-  background: var(--qp-bg-card);
-  border-color: var(--qp-border);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-access-lead,
-#qaproof-app.qaproof-dark .qaproof-figma-access-email-label,
-#qaproof-app.qaproof-dark .qaproof-figma-access-steps {
-  color: var(--qp-text-secondary);
-}
-#qaproof-app.qaproof-dark .qaproof-figma-access-email-value {
-  background: var(--qp-bg-input, var(--qp-bg-elevated));
-  border-color: var(--qp-border);
-  color: var(--qp-text-primary);
-}
-
 /* Figma OAuth connection card — dark theme */
 #qaproof-app.qaproof-dark .qaproof-figma-conn-card {
   background: var(--qp-bg-card);
@@ -1259,10 +1208,6 @@ body.qaproof-dark-page #wpbody-content {
   background: rgba(255,255,255,0.04);
   color: var(--qp-text-secondary);
 }
-#qaproof-app.qaproof-dark .qaproof-figma-access-card--alt > .qaproof-figma-access-summary {
-  color: var(--qp-text-secondary);
-}
-
 /* Verify-access button success/error tints */
 #qaproof-app.qaproof-dark .qaproof-design-verify-btn.qaproof-verify-ok {
   background: rgba(46, 160, 67, 0.18) !important;
