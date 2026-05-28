@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.14
+Stable tag: 1.0.15
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,14 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.15 =
+Design Fidelity accuracy overhaul — stop the content noise, catch real layout differences.
+
+* "Ignore text content differences" is now ON by default. Design fidelity is about visual match, and live pages almost always carry different copy than the mockup (placeholder vs real text, dynamic catalogs, prices). Flagging that by default buried genuine visual issues — broken layout, wrong header height, off spacing — under a pile of "this product title differs" noise. Uncheck the setting to opt back into text-content flagging.
+* Catches structural/proportion differences it used to miss. The comparison now runs an explicit structural pass (header/nav height, hero size, grid density, card proportions, footer) and the two images are normalised to the same width before analysis, so the AI can tell when a region is taller or shorter and flag it. Previously a different header height could slip through entirely.
+
+**Requires** the companion `api.qaproof.io` deploy (prompt + image-pipeline changes).
 
 = 1.0.14 =
 Fix the "Ignore Text Differences" toggle, and sweep up orphaned WP-Cron events.
