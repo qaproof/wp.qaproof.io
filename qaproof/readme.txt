@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.6
+Stable tag: 1.0.8
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,25 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.8 =
+Fix the admin version badge showing the wrong version.
+
+* **`QAPROOF_VERSION` was hardcoded to `1.0.3`** and the release process only ever bumped the plugin-header `Version:` line — so from v1.0.4 through v1.0.7 the admin footer badge, the asset cache-bust query string, and the API-client User-Agent all reported `1.0.3` while the actual code moved on. The constant is now **derived from the plugin header** via `get_file_data()`, so the two can never drift again. No functional change beyond correct version reporting.
+
+= 1.0.7 =
+Figma is now OAuth-only — the manual "share files with our service account" path is gone, plus a batch of OAuth-flow correctness fixes from a full audit of the design-fidelity feature.
+
+* **Removed the "Alternative: share files manually with our service account" workflow end to end.** The service-account PAT it relied on (`figma@qaproof.io` per-file invites) was retired on the API; keeping the UI for it just confused users into a setup path that no longer worked. Deleted: the Alternative card in Settings, the step-by-step share-guide modal, the "Show me how" / Copy-service-email buttons, and all the associated i18n strings and CSS. Connect Figma (OAuth) is now the single, clear path. Existing saved designs with a cached image keep working on the Tests page regardless.
+* **Verify-access / preview / test error copy is OAuth-aware.** `FIGMA_NOT_SHARED` now explains the *connected account* doesn't have access (and how to fix it in Figma) instead of telling users to share with a service email that no longer reads files. Added a distinct `FIGMA_NOT_CONFIGURED` message for the "not connected yet" case.
+* **OAuth disconnect UX:** the confirm dialog and disabled-server blurb no longer reference the removed manual-share fallback.
+* **Internal correctness fixes (from the audit):**
+  * Disconnect no longer double-fires the saved-design pill invalidation — the MutationObserver on the connection card's state is the single source of truth.
+  * The fragile `errorMsg.indexOf('figma@qaproof.io')` string-match that used to trigger the share guide on a failed test was removed; it broke whenever backend copy changed.
+  * Fixed a stuck-submit bug: an invalid-image early-return left `testsPageBusy` set, silently blocking the next test click until reload.
+  * Dropped dead `maybeToggleFallbackOnTransition` code that pointed at the now-deleted Alternative card.
+
+**Companion API release required:** this pairs with an `api.qaproof.io` deploy that removes `FIGMA_SERVICE_TOKEN` and makes OAuth the only Figma auth path (`FIGMA_OAUTH_CLIENT_ID/SECRET` now required in production). Also tightens the Figma rate-limit `Retry-After` handling and an OAuth token-refresh race that could spuriously mark a workspace "reconnect needed".
 
 = 1.0.6 =
 Re-think: gate Figma-dependent affordances on actual OAuth state instead of just relabelling the pill.

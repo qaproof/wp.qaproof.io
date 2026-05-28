@@ -3,7 +3,7 @@
  * Plugin Name:       QAProof
  * Plugin URI:        https://github.com/qaproof/wp.qaproof.io
  * Description:       Compare live pages against Figma, audit accessibility, detect visual regressions, analyze responsive behavior — AI vision powered.
- * Version:           1.0.6
+ * Version:           1.0.8
  * Author:            QAProof
  * Author URI:        https://qaproof.io
  * License:           GPL-2.0-or-later
@@ -47,7 +47,22 @@ if ( PHP_VERSION_ID < 80000 ) {
     return;
 }
 
-define( 'QAPROOF_VERSION', '1.0.3' );
+/*
+ * Single source of truth for the version is the `Version:` header at the top
+ * of this file. Derive the runtime constant from it via get_file_data() so
+ * the two can NEVER drift again. QAPROOF_VERSION feeds the admin footer
+ * badge, the asset cache-bust query string (class-admin-assets.php), and the
+ * API-client User-Agent (class-api-client.php). Through v1.0.7 this was a
+ * hardcoded '1.0.3' that the release process forgot to bump for four
+ * releases — the footer reported the wrong version the whole time. The
+ * '1.0.7' fallback only applies if get_file_data() is somehow unavailable.
+ */
+if ( ! defined( 'QAPROOF_VERSION' ) ) {
+    $qaproof_header = function_exists( 'get_file_data' )
+        ? get_file_data( __FILE__, array( 'Version' => 'Version' ) )
+        : array();
+    define( 'QAPROOF_VERSION', ! empty( $qaproof_header['Version'] ) ? $qaproof_header['Version'] : '1.0.7' );
+}
 define( 'QAPROOF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'QAPROOF_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );

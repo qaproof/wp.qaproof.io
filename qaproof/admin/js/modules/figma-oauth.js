@@ -13,13 +13,11 @@
 
   var bodyEl  = card.querySelector('[data-conn-body]');
   var badgeEl = card.querySelector('[data-conn-badge]');
-  var fallbackCard = document.getElementById('qaproof-figma-access-fallback');
   var i18n = (qaproof.i18n || {});
 
   var openPopup = null;
   var popupPoll = null;
   // Tracked so dimFallback() only toggles on state transitions, not every render.
-  var prevConnectedState = null;
   // Empty when api endpoint can't be parsed; in that case origin check is skipped.
   var expectedOAuthOrigin = (qaproof.apiOrigin || '').replace(/\/+$/, '');
 
@@ -57,7 +55,6 @@
         ? (i18n.figmaOAuthApiKeyMissing || 'Set your QAProof API key in Settings → API to use OAuth.')
         : (state.message || i18n.figmaOAuthLoadFailed || 'Could not load Figma connection status.');
       bodyEl.appendChild(makeError(errMsg));
-      maybeToggleFallbackOnTransition(false);
       return;
     }
 
@@ -66,9 +63,8 @@
       setBadge(i18n.figmaOAuthBadgeDisabled || 'Disabled');
       bodyEl.appendChild(makeBlurb(
         i18n.figmaOAuthDisabledExplain ||
-        'OAuth is not enabled on this QAProof server. Use the service account below to share files manually.'
+        'Figma OAuth is not enabled on this QAProof server. Contact support to turn it on.'
       ));
-      maybeToggleFallbackOnTransition(false);
       return;
     }
 
@@ -83,7 +79,6 @@
       bodyEl.appendChild(makeActions([
         button('button-primary', i18n.figmaOAuthReconnect || 'Reconnect Figma →', onConnectClick),
       ]));
-      maybeToggleFallbackOnTransition(false);
       return;
     }
 
@@ -107,7 +102,6 @@
       bodyEl.appendChild(makeActions([
         button('qaproof-figma-conn-disconnect', i18n.figmaOAuthDisconnect || 'Disconnect', onDisconnectClick),
       ]));
-      maybeToggleFallbackOnTransition(true);
       return;
     }
 
@@ -121,24 +115,10 @@
     bodyEl.appendChild(makeActions([
       button('button-primary', i18n.figmaOAuthConnect || 'Connect Figma →', onConnectClick),
     ]));
-    maybeToggleFallbackOnTransition(false);
   }
 
   function setBadge(text) {
     if (badgeEl) badgeEl.textContent = text || '';
-  }
-
-  // Only auto-toggles on state transitions so manual user toggles aren't undone.
-  function maybeToggleFallbackOnTransition(shouldDim) {
-    if (!fallbackCard) return;
-    var connected = !!shouldDim;
-    if (prevConnectedState === connected) return;
-    if (connected) {
-      fallbackCard.removeAttribute('open');
-    } else {
-      fallbackCard.setAttribute('open', '');
-    }
-    prevConnectedState = connected;
   }
 
   function makeBlurb(text) {
@@ -384,7 +364,7 @@
     e.preventDefault();
     var btn = e.currentTarget;
     var confirmMsg = i18n.figmaOAuthDisconnectConfirm ||
-      'Disconnect Figma? Fidelity tests will use the manual share-with figma@qaproof.io path until you reconnect.';
+      'Disconnect Figma? Fidelity tests that fetch from Figma will stop working until you reconnect. Saved designs with a cached image keep working.';
     var confirmFn = (window.QAProof && typeof window.QAProof.confirm === 'function')
       ? function () {
           return window.QAProof.confirm(confirmMsg, {
@@ -411,7 +391,10 @@
         .then(function (res) { return res.json().then(function (j) { return { ok: res.ok, body: j }; }); })
         .then(function () { return fetchStatus(); })
         .then(render)
-        .then(function () { invalidateFigmaSourcedPills(); })
+        // No explicit invalidateFigmaSourcedPills() here — render() mutates
+        // the card's data-state, which the MutationObserver below picks up
+        // and runs the invalidation once. Calling it here too would double-
+        // fire (harmless but redundant). Single source of truth = observer.
         .catch(function () {
           if (btn.isConnected) {
             btn.disabled = false;

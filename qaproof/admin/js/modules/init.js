@@ -1848,227 +1848,30 @@
   })();
 
   // ============================
-  // Settings page: Figma onboard helpers
-  // (Copy service email, Verify access per saved design, Share guide modal)
+  // Settings page: Verify access per saved design
   // ============================
+  // The share-with-figma@qaproof.io modal + service-email Copy button +
+  // "Show me how" trigger lived here through v1.0.6. Removed in v1.0.7
+  // alongside the service-account PAT path — OAuth is now the only Figma
+  // auth, and the modal taught the wrong recovery flow (per-file shares
+  // that no longer work). Only the per-row Verify access handler remains.
   (function () {
     if (!window.qaproof || !qaproof.restBase) return;
 
-    // Step-by-step "Share your file with figma@qaproof.io" modal.
-    // Triggered manually from the "Show me how →" button in Settings, and
-    // auto-opened after the verify-access REST call returns FIGMA_NOT_SHARED
-    // (with figmaUrl + onRetry so users can jump to the file and retry from
-    // inside the modal). Reuses the .qaproof-modal infrastructure but uses
-    // .qaproof-modal-wide for the larger content body.
-    //
-    // opts: { figmaUrl?: string, onRetry?: () => void }
-    function openFigmaShareGuide(opts) {
-      opts = opts || {};
-      var i18n = (window.qaproof && qaproof.i18n) || {};
-      var email = i18n.figmaServiceEmail || 'figma@qaproof.io';
-      var figmaUrl = typeof opts.figmaUrl === 'string' ? opts.figmaUrl.trim() : '';
-      var onRetry = typeof opts.onRetry === 'function' ? opts.onRetry : null;
-
-      // Mount root: prefer #qaproof-app so dark-mode + scoped vars cascade.
-      var root = document.getElementById('qaproof-modal-root');
-      if (!root) {
-        root = document.createElement('div');
-        root.id = 'qaproof-modal-root';
-        (document.getElementById('qaproof-app') || document.body).appendChild(root);
-      }
-      // If a previous instance is still mounted (e.g. user clicked twice),
-      // close it so we don't stack overlays and trap focus weirdly.
-      var prev = root.querySelector('.qaproof-modal-overlay[data-qaproof-figma-guide]');
-      if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
-
-      var overlay = document.createElement('div');
-      overlay.className = 'qaproof-modal-overlay';
-      overlay.setAttribute('data-qaproof-figma-guide', '1');
-      overlay.setAttribute('role', 'dialog');
-      overlay.setAttribute('aria-modal', 'true');
-
-      var modal = document.createElement('div');
-      modal.className = 'qaproof-modal qaproof-modal-wide';
-      overlay.appendChild(modal);
-
-      var title = document.createElement('h2');
-      title.className = 'qaproof-modal-title';
-      title.textContent = i18n.figmaGuideTitle || 'Share your Figma file with QAProof';
-      modal.appendChild(title);
-
-      var lead = document.createElement('p');
-      lead.className = 'qaproof-figma-guide-lead';
-      lead.textContent = i18n.figmaGuideLead ||
-        'QAProof reads designs through a service account. Add it as a viewer on each file you want to test — you only do this once per file.';
-      modal.appendChild(lead);
-
-      // Service email row (reuses .qaproof-copy-email-btn so the existing
-      // clipboard handler at the bottom of this IIFE picks it up).
-      var emailRow = document.createElement('div');
-      emailRow.className = 'qaproof-figma-guide-email';
-      var emailLbl = document.createElement('span');
-      emailLbl.className = 'qaproof-figma-guide-email-label';
-      emailLbl.textContent = i18n.figmaGuideServiceEmail || 'Service email';
-      emailRow.appendChild(emailLbl);
-      var emailVal = document.createElement('code');
-      emailVal.className = 'qaproof-figma-guide-email-value';
-      emailVal.textContent = email;
-      emailRow.appendChild(emailVal);
-      var copyBtn = document.createElement('button');
-      copyBtn.type = 'button';
-      copyBtn.className = 'button qaproof-copy-email-btn';
-      copyBtn.setAttribute('data-copy', email);
-      copyBtn.textContent = i18n.figmaGuideCopy || 'Copy';
-      emailRow.appendChild(copyBtn);
-      modal.appendChild(emailRow);
-
-      // Steps
-      var steps = document.createElement('ol');
-      steps.className = 'qaproof-figma-guide-steps';
-      var stepsText = [
-        i18n.figmaGuideStep1 || 'In Figma, open the file and click the blue "Share" button in the top-right corner.',
-        i18n.figmaGuideStep2 || 'Paste figma@qaproof.io into the invite field. Set the permission to "Can view".',
-        i18n.figmaGuideStep3 || 'Click "Send invite". The optional message field can stay empty.',
-        i18n.figmaGuideStep4 || 'Come back here and click "Verify access" — QAProof will confirm the file is reachable.',
-      ];
-      stepsText.forEach(function (s) {
-        var li = document.createElement('li');
-        li.textContent = s;
-        steps.appendChild(li);
-      });
-      modal.appendChild(steps);
-
-      // Tip
-      var tip = document.createElement('p');
-      tip.className = 'qaproof-figma-guide-tip';
-      tip.textContent = i18n.figmaGuideTip ||
-        'Tip: sharing only works if the file lives in a team you own (or your drafts). Files owned by another account need that owner to share with the address above.';
-      modal.appendChild(tip);
-
-      // Actions
-      var actions = document.createElement('div');
-      actions.className = 'qaproof-figma-guide-actions';
-
-      if (figmaUrl) {
-        var openBtn = document.createElement('button');
-        openBtn.type = 'button';
-        openBtn.className = 'qaproof-modal-btn qaproof-figma-guide-btn-open';
-        openBtn.textContent = i18n.figmaGuideOpenFile || 'Open file in Figma →';
-        openBtn.addEventListener('click', function () {
-          try { window.open(figmaUrl, '_blank', 'noopener,noreferrer'); } catch (_) {}
-        });
-        actions.appendChild(openBtn);
-      }
-
-      if (onRetry) {
-        var retryBtn = document.createElement('button');
-        retryBtn.type = 'button';
-        retryBtn.className = 'qaproof-modal-btn qaproof-modal-btn-primary';
-        retryBtn.textContent = i18n.figmaGuideRetry || 'I shared it — verify again';
-        retryBtn.addEventListener('click', function () {
-          close();
-          try { onRetry(); } catch (_) {}
-        });
-        actions.appendChild(retryBtn);
-      }
-
-      var closeBtn = document.createElement('button');
-      closeBtn.type = 'button';
-      closeBtn.className = 'qaproof-modal-btn qaproof-modal-cancel';
-      closeBtn.textContent = i18n.figmaGuideClose || 'Close';
-      closeBtn.addEventListener('click', function () { close(); });
-      actions.appendChild(closeBtn);
-
-      modal.appendChild(actions);
-
-      function close() {
-        overlay.classList.remove('qaproof-modal-visible');
-        document.removeEventListener('keydown', onKey);
-        overlay.removeEventListener('click', onBackdrop);
-        // Wait for fade-out (matches the 0.18s opacity transition on .qaproof-modal-overlay).
-        setTimeout(function () {
-          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        }, 200);
-      }
-      function onKey(ev) { if (ev.key === 'Escape') close(); }
-      function onBackdrop(ev) { if (ev.target === overlay) close(); }
-
-      root.appendChild(overlay);
-      // Force reflow so the opacity transition actually animates in
-      // (without this the overlay would render at opacity:1 instantly
-      // because the visible class is added in the same frame as mount).
-      void overlay.offsetWidth;
-      overlay.classList.add('qaproof-modal-visible');
-      document.addEventListener('keydown', onKey);
-      overlay.addEventListener('click', onBackdrop);
-
-      // Focus the primary action so keyboard users can immediately confirm.
-      var focusTarget = modal.querySelector('.qaproof-modal-btn-primary') ||
-                        modal.querySelector('.qaproof-modal-btn');
-      if (focusTarget) { try { focusTarget.focus({ preventScroll: true }); } catch (_) { focusTarget.focus(); } }
-
-      return { close: close };
+    // Compat shim — older code paths (or third-party JS embedded by
+    // customers) may reference window.QAProof.showFigmaShareGuide(). Leave
+    // a no-op stub for one release so they don't crash on
+    // `undefined is not a function`; drop entirely in v1.1.x.
+    if (!window.QAProof) window.QAProof = {};
+    if (typeof window.QAProof.showFigmaShareGuide !== 'function') {
+      window.QAProof.showFigmaShareGuide = function () { /* deprecated v1.0.7 */ };
     }
 
-    // Expose for use from other modules (e.g. form.js when a fidelity test
-    // would have failed on FIGMA_NOT_SHARED).
-    if (!window.QAProof) window.QAProof = {};
-    window.QAProof.showFigmaShareGuide = openFigmaShareGuide;
-
-    // Settings "Show me how →" button next to the service email Copy button.
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.qaproof-figma-guide-open');
-      if (!btn) return;
-      e.preventDefault();
-      openFigmaShareGuide({});
-    });
-
-    // Copy "figma@qaproof.io" to clipboard.
-    // We show ✓ only when copy actually succeeded; on hard failure show ✗ so
-    // the user knows to copy the email manually (it's visible in the card).
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.qaproof-copy-email-btn');
-      if (!btn) return;
-      e.preventDefault();
-      var email = btn.getAttribute('data-copy') || '';
-      if (!email) return;
-
-      var original = btn.textContent;
-      var flash = function (text, ms) {
-        btn.textContent = text;
-        setTimeout(function () { btn.textContent = original; }, ms || 1500);
-      };
-
-      var legacyCopy = function () {
-        var ta = document.createElement('textarea');
-        ta.value = email;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'absolute';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        var ok = false;
-        try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
-        document.body.removeChild(ta);
-        return ok;
-      };
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(email).then(
-          function () { flash('✓'); },
-          function () {
-            // Fallback for older browsers / clipboard permission denied
-            if (legacyCopy()) flash('✓');
-            else flash('✗', 2500);
-          }
-        );
-      } else if (legacyCopy()) {
-        flash('✓');
-      } else {
-        flash('✗', 2500);
-      }
-    });
-
+    // The old openFigmaShareGuide() body (~150 lines, .qaproof-modal-wide
+    // builder + Steps list + Open file / Retry / Close actions) and the
+    // adjacent "Show me how →" and figma@qaproof.io Copy click handlers
+    // were here in v1.0.6. Pull from `git show v1.0.6 -- this file` if
+    // anyone needs to resurrect the manual-share flow.
     // Verify access: calls /designs/verify-access with the row's figmaUrl.
     //
     // Button label stays compact at all times — long error messages go into a
@@ -2150,27 +1953,13 @@
             var code = r.body && r.body.error && r.body.error.code ? r.body.error.code : '';
             var msg;
             if (code === 'FIGMA_NOT_SHARED') {
-              // Prefer backend's message — it's auth-source-aware (OAuth mode
-              // returns a different recovery hint than the service-PAT mode).
+              // OAuth-only since v1.0.7: the backend message explains the
+              // connected account doesn't have access to this file. (The
+              // old auto-open "share with figma@qaproof.io" guide modal was
+              // removed — it taught a recovery path that no longer exists.)
               msg = (r.body && r.body.error && r.body.error.message) ||
                     qaproof.i18n.figmaNotShared ||
-                    'Share this file with figma@qaproof.io';
-              // Auto-open the share guide so users see actionable instructions
-              // instead of just an inline red message. Skip when OAuth is
-              // connected — the modal teaches the wrong recovery path then.
-              var oauthOn = window.QAProof && typeof window.QAProof.isFigmaOAuthConnected === 'function'
-                && window.QAProof.isFigmaOAuthConnected();
-              if (!oauthOn) {
-                setTimeout(function () {
-                  if (!btn.isConnected) return;
-                  openFigmaShareGuide({
-                    figmaUrl: url,
-                    onRetry: function () {
-                      if (btn.isConnected && !btn.disabled) btn.click();
-                    },
-                  });
-                }, 350);
-              }
+                    'Your connected Figma account does not have access to this file.';
             } else if (code === 'FIGMA_FILE_NOT_FOUND') {
               msg = qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.';
             } else {

@@ -359,12 +359,12 @@
   }
 
   function mapFigmaErrorMessage(code, fallback) {
-    // Backend message ("fallback" arg) is preferred for FIGMA_NOT_SHARED because
-    // it differs between OAuth and service-PAT auth modes. The i18n string only
-    // covers the PAT case; using it always would mis-advise OAuth users.
+    // For FIGMA_NOT_SHARED the backend message ("fallback" arg) is preferred
+    // — it names the connected account and explains the OAuth access model.
     if (code === 'FIGMA_NOT_SHARED' && fallback) return fallback;
     var map = {
-      'FIGMA_NOT_SHARED':           (qaproof.i18n.figmaNotShared || 'Share this file with figma@qaproof.io (Can view) and try again.'),
+      'FIGMA_NOT_SHARED':           (qaproof.i18n.figmaNotShared || 'Your connected Figma account does not have access to this file.'),
+      'FIGMA_NOT_CONFIGURED':       (qaproof.i18n.figmaNotConfigured || 'Figma is not connected. Connect Figma in Settings.'),
       'FIGMA_FILE_NOT_FOUND':       (qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.'),
       'FIGMA_RATE_LIMITED':         (qaproof.i18n.figmaRateLimited || 'Figma temporarily throttled our requests. Try again in a minute.'),
       'FIGMA_RENDER_TIMEOUT':       (qaproof.i18n.figmaRenderTimeout || 'Design too complex to preview.'),
@@ -379,27 +379,13 @@
     return code === 'FIGMA_RATE_LIMITED' || code === 'FIGMA_RENDER_TIMEOUT';
   }
 
-  // When the Figma preview fails because the user hasn't shared the file with
-  // figma@qaproof.io, auto-pop the step-by-step guide. Without this prompt the
-  // inline "Share this file..." red message gives no path forward — users
-  // typically don't know what to do next. The modal is exposed by init.js as
-  // window.QAProof.showFigmaShareGuide. Small delay lets the inline error
-  // render first so the modal feels causal.
-  //
-  // Skip when OAuth is connected — the guide teaches sharing with
-  // figma@qaproof.io, which is wrong for OAuth users (they need to grant
-  // their CONNECTED Figma account access to the file in Figma directly).
-  function maybeOpenFigmaShareGuide(code, figmaUrl, retryFn) {
-    if (code !== 'FIGMA_NOT_SHARED') return;
-    if (!(window.QAProof && typeof window.QAProof.showFigmaShareGuide === 'function')) return;
-    if (window.QAProof.isFigmaOAuthConnected && window.QAProof.isFigmaOAuthConnected()) return;
-    setTimeout(function () {
-      window.QAProof.showFigmaShareGuide({
-        figmaUrl: figmaUrl || '',
-        onRetry: typeof retryFn === 'function' ? retryFn : null,
-      });
-    }, 600);
-  }
+  // No-op since v1.0.7. The share-with-figma@qaproof.io guide modal was
+  // removed with the service-account PAT path — OAuth is the only auth now,
+  // so FIGMA_NOT_SHARED is surfaced purely as an inline message (the user's
+  // recovery is to grant their connected account access in Figma, or
+  // reconnect a different account, both done outside this plugin). Kept as
+  // a stub so existing call sites don't need touching.
+  function maybeOpenFigmaShareGuide(/* code, figmaUrl, retryFn */) {}
 
   function triggerFigmaPreview(manual) {
     var url = '';
@@ -1689,6 +1675,10 @@
           Q.showError(qaproof.i18n.errInvalidImage || 'Invalid image data. Please re-upload the design file.');
           S.loading.classList.add('hidden');
           S.submitBtn.disabled = false;
+          // Must also clear the busy flag — without it the next submit click
+          // is silently swallowed by the `if (S.testsPageBusy) return` guard
+          // at the top of this handler until the page is reloaded.
+          S.testsPageBusy = false;
           return;
         }
         body.figmaImageBase64 = parts2[1];
@@ -1887,15 +1877,11 @@
             S.loading.classList.add('hidden');
             S.submitBtn.disabled = false;
             S.testsPageBusy = false;
-            // The job-queue stores failures as a plain message string, not a
-            // structured code. We sniff the well-known FIGMA_NOT_SHARED
-            // marker ("figma@qaproof.io") to surface the share guide so the
-            // user can recover without leaving the page.
-            if (errorMsg && typeof errorMsg === 'string' &&
-                errorMsg.indexOf('figma@qaproof.io') !== -1 &&
-                body.figmaUrl) {
-              maybeOpenFigmaShareGuide('FIGMA_NOT_SHARED', body.figmaUrl, null);
-            }
+            // Pre-v1.0.7 this sniffed the failure string for "figma@qaproof.io"
+            // to auto-open the share guide. The guide is gone (OAuth-only) and
+            // the string-match was fragile — it broke the moment the backend
+            // copy changed. The error message itself is already shown via
+            // Q.showError above, which is enough.
           },
         });
       })
