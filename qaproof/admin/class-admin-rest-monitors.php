@@ -17,6 +17,37 @@ class QAProof_Admin_REST_Monitors {
     private static function cache_key_results_page( $id, $limit )   { return 'qaproof_mon_res_' . md5( $id ) . '_lim' . (int) $limit; }
     public  static function run_queued_key( $id )                   { return 'qaproof_run_q_' . md5( $id ); }
 
+    /**
+     * Resolve the "is a run in flight?" timestamp for a monitor row, with
+     * self-healing. The run_queued transient is set when "Run now" dispatches
+     * (see handle_run_monitor) but the API — which actually executes the run —
+     * cannot clear a WordPress transient when it finishes. So we detect
+     * completion here: once the monitor's last_run_at advances to or past the
+     * queue time, the run is done (success OR failure both bump last_run_at),
+     * so we drop the transient and report not-running. Without this the card
+     * would show "Running" for the full 25-minute transient TTL even though
+     * the run finished in ~50s. Falls back to the transient TTL if last_run_at
+     * never advances (e.g. the API process died mid-run).
+     *
+     * @param array $monitor Monitor row (must carry id + last_run_at).
+     * @return string|null ISO-8601 queue time while running, null otherwise.
+     */
+    private static function resolve_run_queued_at( $monitor ) {
+        $id = isset( $monitor['id'] ) ? $monitor['id'] : '';
+        if ( $id === '' ) return null;
+
+        $run_ts = get_transient( self::run_queued_key( $id ) );
+        if ( ! $run_ts ) return null;
+
+        $last_run = ( ! empty( $monitor['last_run_at'] ) ) ? strtotime( (string) $monitor['last_run_at'] ) : 0;
+        if ( $last_run && $last_run >= (int) $run_ts ) {
+            delete_transient( self::run_queued_key( $id ) );
+            return null;
+        }
+
+        return gmdate( 'c', (int) $run_ts );
+    }
+
     private static function flush_monitor_cache( $id ) {
         delete_transient( self::cache_key_list() );
         delete_transient( self::cache_key_monitor( $id ) );
@@ -29,29 +60,29 @@ class QAProof_Admin_REST_Monitors {
 
     public static function handle_list_monitors() {
         $cached = get_transient( self::cache_key_list() );
-        if ( $cached !== false ) {
-            return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
+        if ( $cached === false ) {
+            $monitors = QAProof_API_Client::monitors_list();
+
+            if ( is_wp_error( $monitors ) ) {
+                $data = $monitors->get_error_data();
+                $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
+                return new WP_REST_Response( [
+                    'success' => false,
+                    'error'   => [ 'message' => $monitors->get_error_message() ],
+                ], $http );
+            }
+
+            set_transient( self::cache_key_list(), $monitors, self::CACHE_TTL );
+            $cached = $monitors;
         }
 
-        $monitors = QAProof_API_Client::monitors_list();
-
-        if ( is_wp_error( $monitors ) ) {
-            $data = $monitors->get_error_data();
-            $http = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
-            return new WP_REST_Response( [
-                'success' => false,
-                'error'   => [ 'message' => $monitors->get_error_message() ],
-            ], $http );
-        }
-
-
-        set_transient( self::cache_key_list(), $monitors, self::CACHE_TTL );
-        $cached = $monitors;
-
-        // Inject run_queued_at fresh on every read — never cached.
+        // Inject run_queued_at fresh on every read — never cached, and applied
+        // on BOTH the cache-hit and cache-miss paths (previously only on miss,
+        // so the "Running" badge flickered with the 9s list cache). The helper
+        // self-heals: it clears the transient once last_run_at shows the run
+        // finished. Worst-case staleness is the 9s cache, then it resolves.
         foreach ( $cached as &$m ) {
-            $run_ts = get_transient( self::run_queued_key( $m['id'] ) );
-            $m['run_queued_at'] = $run_ts ? gmdate( 'c', (int) $run_ts ) : null;
+            $m['run_queued_at'] = self::resolve_run_queued_at( $m );
         }
         unset( $m );
 
@@ -77,8 +108,7 @@ class QAProof_Admin_REST_Monitors {
             $cached = $monitor;
         }
 
-        $run_ts = get_transient( self::run_queued_key( $id ) );
-        $cached['run_queued_at'] = $run_ts ? gmdate( 'c', (int) $run_ts ) : null;
+        $cached['run_queued_at'] = self::resolve_run_queued_at( $cached );
 
         return new WP_REST_Response( [ 'success' => true, 'data' => $cached ], 200 );
     }

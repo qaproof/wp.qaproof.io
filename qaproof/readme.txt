@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.12 =
+Fix monitor card stuck on "Running" after a run finished.
+
+* "Run now" sets a `run_queued` transient (25-min TTL) to show the instant "Running" state. The run itself executes on the API server, which cannot clear a WordPress transient when it completes — so the card kept showing "Running" for up to 25 minutes even though the regression actually finished in ~50 seconds (the result row was already saved). The list now self-heals: as soon as the monitor's `last_run_at` shows the run completed (success or failure), the transient is cleared and the card returns to its score. Also fixed the `run_queued_at` flag being injected only on the cache-miss path, which made the badge flicker with the 9-second list cache.
 
 = 1.0.11 =
 Hotfix: "Run now" reported a false error.
