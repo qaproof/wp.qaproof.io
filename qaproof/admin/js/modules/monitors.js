@@ -501,7 +501,7 @@
 
     for (var i = 0; i < monitors.length; i++) {
       var m = monitors[i];
-      var hasBaseline  = parseInt(m.has_baseline, 10);
+      var hasBaseline  = m.has_baseline ? 1 : 0;
       var isEnabled    = parseInt(m.is_enabled, 10);
       var lastScore    = m.last_score != null ? parseInt(m.last_score, 10) : null;
 
@@ -1140,7 +1140,7 @@
     listPollTimers[monitorId] = setTimeout(function () {
       delete listPollTimers[monitorId];
       apiCall('GET', '/monitors/' + monitorId).then(function (resp) {
-        if (resp.success && resp.data && parseInt(resp.data.has_baseline, 10) === 1) {
+        if (resp.success && resp.data && resp.data.has_baseline) {
           try {
             sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
             sessionStorage.removeItem('qaproof_run_start_' + monitorId);
@@ -1235,7 +1235,7 @@
       // Use server-side run_queued_at as primary signal; sessionStorage as fallback.
       if (!isRunQueued(m) && !hasActivePendingRun(m.id)) return;
 
-      if (!parseInt(m.has_baseline, 10)) {
+      if (!m.has_baseline) {
         // Baseline capture in progress
         pollBaselineInList(m.id, 0);
       } else {
@@ -1329,7 +1329,7 @@
     }
 
     apiCall('GET', '/monitors/' + monitorId).then(function (resp) {
-      if (resp.success && resp.data && parseInt(resp.data.has_baseline, 10) === 1) {
+      if (resp.success && resp.data && resp.data.has_baseline) {
         // Baseline saved — complete step 3 and reload detail
         stopMonitorPoll();
         try {
@@ -1662,7 +1662,7 @@
     }
 
     // Compute early — needed for both the header button and the loading block below
-    var pollHasBaseline = parseInt(monitor.has_baseline, 10);
+    var pollHasBaseline = monitor.has_baseline ? 1 : 0;
     var isSettingUp = shouldPoll && !pollHasBaseline;
 
     var html = '';
@@ -1699,9 +1699,13 @@
     } else if (monitorResults.length === 0) {
       html += '<p class="qaproof-monitors-empty">' + (qaproof.i18n.monitorNoResults || 'No results yet. Click "Run Now" to run the first check.') + '</p>';
     } else {
+      var visibleResults = monitorResults.filter(function(r) { return r.status !== 'baseline_created'; });
       html += '<div class="qaproof-results-timeline">';
-      for (var i = 0; i < monitorResults.length; i++) {
-        var r = monitorResults[i];
+      if (visibleResults.length === 0) {
+        html += '<p class="qaproof-monitors-empty">' + (qaproof.i18n.monitorNoResults || 'No results yet. Click "Run Now" to run the first check.') + '</p>';
+      }
+      for (var i = 0; i < visibleResults.length; i++) {
+        var r = visibleResults[i];
         var rScoreClass = r.score != null ? Q.getScoreClass(parseInt(r.score, 10)) : '';
         var statusBadge = '';
         if (r.status === 'failed') statusBadge = '<span class="qaproof-badge qaproof-badge-high">Failed</span>';
@@ -1923,6 +1927,13 @@
     Q.activeDiffIndex  = null;
     Q.syncScrollEnabled = true;
     Q.markersVisible   = true;
+
+    if (Q.state) Q.state.lastResult = {
+      testType: 'regression', score: score, summary: result.summary || '',
+      categories: categories, differences: differences,
+      recommendations: recommendations, pageUrl: result.page_url || '',
+      screenshots: screenshots,
+    };
 
     var score      = result.score != null ? parseInt(result.score, 10) : null;
     var scoreClass = Q.getScoreClass(score);
