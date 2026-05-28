@@ -805,19 +805,16 @@ body.qaproof-dark-page #wpbody-content {
 }
 
 /* ============================
-   Test Type Selector & Source Toggle — Dark Theme
+   Test Type Selector — Dark Theme
    ============================ */
-#qaproof-app.qaproof-dark .qaproof-test-type-selector,
-#qaproof-app.qaproof-dark .qaproof-source-toggle {
+#qaproof-app.qaproof-dark .qaproof-test-type-selector {
   background: #1a1e24;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
-#qaproof-app.qaproof-dark .qaproof-test-type-btn:hover:not(.active),
-#qaproof-app.qaproof-dark .qaproof-source-btn:hover:not(.active) {
+#qaproof-app.qaproof-dark .qaproof-test-type-btn:hover:not(.active) {
   color: var(--qp-text-primary);
 }
-#qaproof-app.qaproof-dark .qaproof-test-type-slider,
-#qaproof-app.qaproof-dark .qaproof-source-toggle-slider {
+#qaproof-app.qaproof-dark .qaproof-test-type-slider {
   border-color: var(--qp-bg-accent);
 }
 
@@ -988,48 +985,6 @@ body.qaproof-dark-page #wpbody-content {
   border-color: #f87171 !important;
 }
 
-/* Status badge — base */
-#qaproof-app.qaproof-dark .qaproof-design-status {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.10);
-  color: var(--qp-text-secondary);
-}
-
-/* Status badge — variants */
-#qaproof-app.qaproof-dark .qaproof-status-empty {
-  color: var(--qp-text-muted);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-#qaproof-app.qaproof-dark .qaproof-status-partial {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.35);
-}
-#qaproof-app.qaproof-dark .qaproof-status-ready {
-  color: #34d399;
-  background: rgba(16, 185, 129, 0.14);
-  border-color: rgba(16, 185, 129, 0.45);
-}
-#qaproof-app.qaproof-dark .qaproof-status-ready .qaproof-design-status-dot {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-}
-#qaproof-app.qaproof-dark .qaproof-status-saving,
-#qaproof-app.qaproof-dark .qaproof-status-detecting {
-  color: var(--qp-accent);
-  background: rgba(0, 173, 181, 0.12);
-  border-color: rgba(0, 173, 181, 0.4);
-}
-#qaproof-app.qaproof-dark .qaproof-status-error {
-  color: #f87171;
-  background: rgba(239, 68, 68, 0.14);
-  border-color: rgba(239, 68, 68, 0.45);
-}
-#qaproof-app.qaproof-dark .qaproof-status-stale {
-  color: #fbbf24;
-  background: rgba(202, 138, 4, 0.14);
-  border-color: rgba(202, 138, 4, 0.45);
-}
 #qaproof-app.qaproof-dark .qaproof-designs-needs-figma {
   background: rgba(245, 158, 11, 0.12);
   border-color: rgba(245, 158, 11, 0.35);

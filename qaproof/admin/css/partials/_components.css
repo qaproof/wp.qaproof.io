@@ -568,21 +568,6 @@
   background: var(--qp-text-placeholder);
 }
 
-/* ============================
-   Upload Preview
-   ============================ */
-#qaproof-app #qaproof-upload-preview-img {
-  border: none !important;
-  border-radius: var(--qp-radius-sm) !important;
-  box-shadow: var(--qp-shadow-sm);
-}
-
-/* ============================
-   File Input
-   ============================ */
-#qaproof-app input[type="file"] {
-  color: var(--qp-text-secondary);
-}
 
 #qaproof-app input[type="file"]::file-selector-button {
   display: inline-flex;

@@ -4,10 +4,6 @@
   var Q = window.QAProof;
   var S = Q.state;
 
-  // Hoisted so the test-type handler can re-position the source slider
-  // after figmaFields becomes visible (getBoundingClientRect returns 0,0 when hidden).
-  var moveSourceSlider = null;
-
   // Single source of truth for the submit-button label per test type.
   // Used by both the test-type click handler and the initial-state setter
   // below; previously duplicated in two slightly-different inline literals.
@@ -69,22 +65,8 @@
       if (vpRow) {
         vpRow.classList.toggle('hidden', S.testType !== 'fidelity');
       }
-      // Re-position the source-toggle slider now that figmaFields is visible.
-      // When hidden, getBoundingClientRect() returns 0,0 so the initial
-      // positioning is wrong — fix it on the first frame after reveal.
-      if (S.testType === 'fidelity' && moveSourceSlider && S.sourceToggle) {
-        requestAnimationFrame(function () {
-          var activeSrcBtn = S.sourceToggle.querySelector('.qaproof-source-btn.active');
-          if (activeSrcBtn) moveSourceSlider(activeSrcBtn);
-        });
-      }
       updateFigmaPreviewVisibility();
       updateSavedDesignVisibility();
-      // Show/hide figma upload for non-fidelity test types
-      var figmaUpload = document.getElementById('qaproof-figma-upload');
-      if (figmaUpload) {
-        figmaUpload.classList.toggle('hidden', S.testType !== 'fidelity');
-      }
 
       if (S.submitBtn) {
         S.submitBtn.textContent = submitBtnLabelFor(S.testType);
@@ -119,24 +101,6 @@
   var savedDesignSelect = document.getElementById('qaproof-saved-design');
   var savedDesignWrap   = document.getElementById('qaproof-figma-fields');
 
-  /**
-   * Format a saved-image age into a short human string. Returns '' for the
-   * legacy "no timestamp" case (0) so we can hide the suffix entirely
-   * rather than show "unknown age" — non-staleness on old saved designs is
-   * not a problem we need to flag in the UI, just a fact we don't know.
-   */
-  function formatSavedImageAge(ts) {
-    if (!ts || typeof ts !== 'number') return '';
-    var ageSec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-    if (ageSec < 60)      return 'cached just now';
-    if (ageSec < 3600)    return 'cached ' + Math.floor(ageSec / 60) + ' min ago';
-    if (ageSec < 86400)   return 'cached ' + Math.floor(ageSec / 3600) + ' h ago';
-    var days = Math.floor(ageSec / 86400);
-    if (days < 30) return 'cached ' + days + ' day' + (days === 1 ? '' : 's') + ' ago';
-    var months = Math.floor(days / 30);
-    return 'cached ' + months + ' month' + (months === 1 ? '' : 's') + ' ago — refresh from Figma';
-  }
-
   function populateSavedDesigns() {
     if (!savedDesignSelect || !qaproof.savedDesigns) return;
     var designs = qaproof.savedDesigns;
@@ -147,8 +111,7 @@
     designs.forEach(function (d) {
       var opt = document.createElement('option');
       opt.value = d.id;
-      var badges = (d.hasImage ? ' \u2713' : '') + (d.hasElements ? ' \u25A0' : '');
-      opt.textContent = d.name + badges;
+      opt.textContent = d.name;
       savedDesignSelect.appendChild(opt);
     });
   }
@@ -168,7 +131,6 @@
       }
       var designId = savedDesignSelect.value;
       if (!designId) {
-        S.savedDesignImageBase64 = null;
         return;
       }
 
@@ -183,125 +145,11 @@
       var figmaUrlEl = document.getElementById('qaproof-figma-url');
       if (figmaUrlEl && found.figmaUrl) figmaUrlEl.value = found.figmaUrl;
 
-      // If this design has a saved image, load it from WP (zero Figma API calls)
-      if (found.hasImage) {
-        updateFigmaPreviewVisibility();
-
-        // Lazy-load saved image from WP REST
-        setPreviewState('loading');
-        fetch(qaproof.restBase + '/saved-design-image/' + found.id, {
-          headers: { 'X-WP-Nonce': qaproof.nonce },
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (json) {
-          if (json.success && json.imageBase64) {
-            S.savedDesignImageBase64 = json.imageBase64;
-            // Capture Figma version token alongside the bytes — sent back to
-            // the backend on test submit for the staleness handshake.
-            S.savedDesignFigmaLastModified = json.figmaLastModified || '';
-            showPreviewResult({
-              imageBase64: json.imageBase64,
-              fileKey: 'Saved',
-              nodeId: found.name || found.id,
-              sizeKB: Math.round(json.imageBase64.length * 0.75 / 1024),
-            });
-            if (previewMeta) {
-              // Surface staleness: a cached design image that's months old
-              // can silently produce false-positive diffs because Figma has
-              // moved on. We tell the user in the same line where they see
-              // "Saved image \u00B7 No Figma API call".
-              var stalenessText = formatSavedImageAge(found.imageFetchedAt);
-              previewMeta.textContent = (qaproof.i18n.previewSavedNoApi || 'Saved image \u00B7 No Figma API call') +
-                (stalenessText ? ' \u00B7 ' + stalenessText : '');
-              // Mark stale (>30 days) so CSS can colour it; default to neutral.
-              previewMeta.classList.remove('qaproof-stale', 'qaproof-fresh');
-              if (found.imageFetchedAt) {
-                var ageDays = (Date.now() / 1000 - found.imageFetchedAt) / 86400;
-                if (ageDays > 30) previewMeta.classList.add('qaproof-stale');
-                else if (ageDays < 7) previewMeta.classList.add('qaproof-fresh');
-              }
-            }
-          } else {
-            // Image missing — fall back to Figma preview
-            S.savedDesignImageBase64 = null;
-            triggerFigmaPreview(true);
-          }
-        })
-        .catch(function () {
-          S.savedDesignImageBase64 = null;
-          triggerFigmaPreview(true);
-        });
-        return; // Don't trigger Figma preview — we're loading from WP
-      }
-
-      S.savedDesignImageBase64 = null;
-
       // If design has Figma URL, silently fetch preview
       if (found.figmaUrl) {
         updateFigmaPreviewVisibility();
         clearTimeout(figmaPreviewTimeout);
         figmaPreviewTimeout = setTimeout(function () { triggerFigmaPreview(true); }, 300);
-      }
-    });
-  }
-
-  // ============================
-  // Design Source Toggle (Saved Design / Upload Image)
-  // ============================
-  if (S.sourceToggle) {
-    // Create sliding indicator
-    var srcSlider = document.createElement('div');
-    srcSlider.className = 'qaproof-source-toggle-slider';
-    S.sourceToggle.appendChild(srcSlider);
-
-    moveSourceSlider = function (btn) {
-      var navRect = S.sourceToggle.getBoundingClientRect();
-      var btnRect = btn.getBoundingClientRect();
-      srcSlider.style.width = btnRect.width + 'px';
-      srcSlider.style.height = btnRect.height + 'px';
-      srcSlider.style.transform = 'translateX(' + (btnRect.left - navRect.left - S.sourceToggle.clientLeft) + 'px) translateY(' + (btnRect.top - navRect.top - S.sourceToggle.clientTop) + 'px)';
-    };
-
-    // Initial position without transition
-    requestAnimationFrame(function () {
-      var activeBtn = S.sourceToggle.querySelector('.qaproof-source-btn.active');
-      if (activeBtn) {
-        srcSlider.style.transition = 'none';
-        moveSourceSlider(activeBtn);
-        requestAnimationFrame(function () { srcSlider.style.transition = ''; });
-      }
-    });
-
-    S.sourceToggle.addEventListener('click', function (e) {
-      var btn = e.target.closest('.qaproof-source-btn');
-      if (!btn || btn.classList.contains('active')) return;
-
-      S.sourceToggle.querySelectorAll('.qaproof-source-btn').forEach(function (b) {
-        b.classList.remove('active');
-      });
-      btn.classList.add('active');
-      moveSourceSlider(btn);
-
-      var source = btn.dataset.source;
-      if (S.sourceSaved) S.sourceSaved.classList.toggle('hidden', source !== 'saved');
-      if (S.sourceUpload) S.sourceUpload.classList.toggle('hidden', source !== 'upload');
-
-      // Update preview based on source
-      if (source === 'saved') {
-        var designSel = document.getElementById('qaproof-saved-design');
-        if (designSel && designSel.value) {
-          designSel.dispatchEvent(new Event('change'));
-        } else {
-          setPreviewState('empty');
-        }
-      } else if (source === 'upload') {
-        S.savedDesignImageBase64 = null;
-        if (S.uploadedFileBase64) {
-          showUploadedImagePreview(S.uploadedFileBase64, '', 0);
-          if (previewMeta) previewMeta.textContent = qaproof.i18n.previewSavedNoApi || 'Uploaded image';
-        } else {
-          setPreviewState('empty');
-        }
       }
     });
   }
@@ -545,33 +393,6 @@
           figmaPreviewCache[cacheKey] = { data: json.data, ts: Date.now() };
           figmaRateLimitUntil = 0;
           showPreviewResult(json.data);
-
-          var designId = savedDesignSelect ? savedDesignSelect.value : '';
-          if (designId && json.data.imageBase64) {
-            S.savedDesignImageBase64 = json.data.imageBase64;
-            fetch(qaproof.restBase + '/save-design-image', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-WP-Nonce':   qaproof.nonce,
-              },
-              body: JSON.stringify({ designId: designId, imageBase64: json.data.imageBase64 }),
-            })
-            .then(Q.safeJson)
-            .then(function (saveJson) {
-              if (saveJson.success) {
-                var designs = qaproof.savedDesigns || [];
-                for (var i = 0; i < designs.length; i++) {
-                  if (designs[i].id === designId) {
-                    designs[i].imageBase64 = json.data.imageBase64;
-                    break;
-                  }
-                }
-                if (previewMeta) previewMeta.textContent = qaproof.i18n.previewRefreshedSaved || 'Refreshed & saved \u00B7 No API call needed next time';
-              }
-            })
-            .catch(function () { /* silent — refresh itself succeeded */ });
-          }
         } else {
           var code = json.error && json.error.code ? json.error.code : '';
           var msg  = json.error && json.error.message ? json.error.message : '';
@@ -592,278 +413,6 @@
   }
 
   // ============================
-  // Save Design Image Button
-  // ============================
-  var saveDesignBtn = document.getElementById('qaproof-save-design-btn');
-  var saveDesignLabel = saveDesignBtn ? saveDesignBtn.querySelector('.qaproof-save-design-label') : null;
-
-  function updateSaveDesignBtnVisibility() {
-    if (!saveDesignBtn) return;
-    var hasSelectedDesign = savedDesignSelect && savedDesignSelect.value;
-    var previewLoaded = previewSuccess && !previewSuccess.classList.contains('hidden');
-    saveDesignBtn.style.display = (hasSelectedDesign && previewLoaded) ? '' : 'none';
-  }
-
-  // Patch setPreviewState again to also update save button
-  var _prevSetPreviewState = setPreviewState;
-  setPreviewState = function (state, errorText, showRetry) {
-    _prevSetPreviewState(state, errorText, showRetry);
-    updateSaveDesignBtnVisibility();
-  };
-
-  if (saveDesignBtn) {
-    // Small helper to ensure the button has a dedicated "working" class so
-    // CSS can show a spinner / disabled state distinct from a normal hover.
-    function setSaveBtnState(state, text) {
-      if (saveDesignLabel) saveDesignLabel.textContent = text;
-      saveDesignBtn.classList.remove('is-working', 'is-done', 'is-error');
-      if (state === 'working') {
-        saveDesignBtn.classList.add('is-working');
-        saveDesignBtn.disabled = true;
-      } else if (state === 'done') {
-        saveDesignBtn.classList.add('is-done');
-        saveDesignBtn.disabled = false;
-      } else if (state === 'error') {
-        saveDesignBtn.classList.add('is-error');
-        saveDesignBtn.disabled = false;
-      } else {
-        saveDesignBtn.disabled = false;
-      }
-    }
-
-    function flashSaveBtnDone(text) {
-      setSaveBtnState('done', text);
-      setTimeout(function () { setSaveBtnState('idle', qaproof.i18n.saveBtnSave || 'Save'); }, 2500);
-    }
-
-    function flashSaveBtnError(text) {
-      setSaveBtnState('error', text);
-      setTimeout(function () { setSaveBtnState('idle', qaproof.i18n.saveBtnSave || 'Save'); }, 2500);
-    }
-
-    // Broadcast saved-design status to other tabs (Settings page listens via
-    // the `storage` event in init.js). Also updates the current tab in case
-    // Tests + Settings are rendered on the same page in the future.
-    //
-    // We stamp the Figma `lastModified` token captured at cache time onto
-    // the payload so the receiver can detect a stale entry: when the design
-    // image gets refreshed against a newer Figma version, the elements cache
-    // signalled here no longer corresponds to that image (B14/B15).
-    function broadcastDesignStatus(designId, state, count, source) {
-      if (!designId) return;
-      try {
-        var payload = { state: state, ts: Date.now() };
-        if (typeof count === 'number') payload.count = count;
-        if (source) payload.source = source;
-        var ver = '';
-        var allDesigns = qaproof.savedDesigns || [];
-        for (var i = 0; i < allDesigns.length; i++) {
-          if (allDesigns[i].id === designId) {
-            ver = allDesigns[i].figmaLastModified || S.savedDesignFigmaLastModified || '';
-            break;
-          }
-        }
-        if (ver) payload.figmaLastModified = ver;
-        // Always set a fresh value so the `storage` event fires even when the
-        // state repeats (localStorage only dispatches when the value changes).
-        localStorage.setItem('qaproof:design:' + designId, JSON.stringify(payload));
-      } catch (err) { /* storage may be disabled; ignore */ }
-      if (typeof window.QAProof.updateDesignStatus === 'function') {
-        window.QAProof.updateDesignStatus(designId, state, count, source);
-      }
-    }
-
-    saveDesignBtn.addEventListener('click', function () {
-      if (!savedDesignSelect || !savedDesignSelect.value) return;
-      var designId = savedDesignSelect.value;
-
-      var imageData = previewImage ? previewImage.src : null;
-      if (!imageData || !imageData.startsWith('data:image')) return;
-
-      setSaveBtnState('working', qaproof.i18n.saveBtnSaving || 'Saving image...');
-      broadcastDesignStatus(designId, 'saving');
-
-      // Helper: save elements to WP for this design
-      function saveElementsToDesign(elDesignId, els, source) {
-        return fetch(qaproof.restBase + '/save-design-elements', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-WP-Nonce':   qaproof.nonce,
-          },
-          body: JSON.stringify({ designId: elDesignId, elements: els, source: source }),
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (saveJson) {
-          if (saveJson.success) {
-            var designs = qaproof.savedDesigns || [];
-            for (var i = 0; i < designs.length; i++) {
-              if (designs[i].id === elDesignId) {
-                designs[i].hasElements = true;
-                designs[i].elementsSource = source;
-                break;
-              }
-            }
-            if (typeof window.QAProof.updateDetectBtnLabel === 'function') {
-              window.QAProof.updateDetectBtnLabel();
-            }
-          }
-          return saveJson;
-        });
-      }
-
-      // Helper: run background detection and save results.
-      // Returns a Promise that resolves when detection + saving is done (or failed).
-      // While it's running, the Save button stays in 'working' state so the user
-      // clearly sees that the operation is not finished yet.
-      function bgDetectAndSave(bgDesignId) {
-        var bgSd = null;
-        var dsList = qaproof.savedDesigns || [];
-        for (var di = 0; di < dsList.length; di++) {
-          if (dsList[di].id === bgDesignId) { bgSd = dsList[di]; break; }
-        }
-
-        var bgRequestBody;
-        if (bgSd && bgSd.figmaUrl) {
-          bgRequestBody = { figmaUrl: bgSd.figmaUrl };
-        } else if (imageData && imageData.startsWith('data:image')) {
-          var bgParts = imageData.split(',');
-          if (bgParts.length < 2 || !bgParts[1]) return Promise.resolve({ ok: false });
-          bgRequestBody = { figmaImageBase64: bgParts[1] };
-        } else {
-          return Promise.resolve({ ok: false });
-        }
-
-        setSaveBtnState('working', qaproof.i18n.saveBtnDetecting || 'Detecting elements...');
-        broadcastDesignStatus(bgDesignId, 'detecting');
-        if (previewMeta) {
-          previewMeta.textContent = qaproof.i18n.savedImageDetecting || 'Saved image \u00B7 Detecting elements...';
-        }
-
-        return fetch(qaproof.restBase + '/detect-elements', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-WP-Nonce':   qaproof.nonce,
-          },
-          body: JSON.stringify(bgRequestBody),
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (json) {
-          if (json.success && json.data && json.data.elements && json.data.elements.length > 0) {
-            var bgSource = json.data.source || '';
-            var elCount = json.data.elements.length;
-
-            detectedElementsSource = bgSource;
-            S.elementsDetectedForCache = 'saved-elements|' + bgDesignId;
-            renderElementOverlays(json.data.elements);
-            if (elementControlsDiv) elementControlsDiv.style.display = '';
-
-            return saveElementsToDesign(bgDesignId, json.data.elements, bgSource)
-              .then(function () {
-                if (previewMeta) {
-                  previewMeta.textContent = qaproof.i18n.savedImageElements || 'Saved image + elements \u00B7 No API call needed';
-                }
-                broadcastDesignStatus(bgDesignId, 'ready', elCount, bgSource);
-                return { ok: true, count: elCount };
-              });
-          }
-          if (previewMeta) {
-            previewMeta.textContent = qaproof.i18n.savedImageNoApi || 'Saved image \u00B7 No API call needed';
-          }
-          broadcastDesignStatus(bgDesignId, 'partial');
-          return { ok: true, count: 0 };
-        })
-        .catch(function (err) {
-          console.warn('[QAProof] Background element detection failed:', err && err.message);
-          if (previewMeta) {
-            previewMeta.textContent = qaproof.i18n.savedImageDetFailed || 'Saved image \u00B7 Element detection failed';
-          }
-          broadcastDesignStatus(bgDesignId, 'error');
-          return { ok: false };
-        });
-      }
-
-      // Step 1: Save image (+ existing elements if any)
-      var savePromises = [];
-      savePromises.push(
-        fetch(qaproof.restBase + '/save-design-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-WP-Nonce':   qaproof.nonce,
-          },
-          body: JSON.stringify({ designId: designId, imageBase64: imageData }),
-        }).then(function (res) { return res.json(); })
-      );
-
-      var hasExistingElements = detectedElements && detectedElements.length > 0;
-      if (hasExistingElements) {
-        var elSource = detectedElementsSource || 'ai-vision';
-        savePromises.push(saveElementsToDesign(designId, detectedElements, elSource));
-      }
-
-      Promise.all(savePromises)
-      .then(function (results) {
-        var json = results[0];
-        if (!json.success) {
-          flashSaveBtnError(qaproof.i18n.saveBtnError || 'Error');
-          broadcastDesignStatus(designId, 'error');
-          return;
-        }
-
-        var designs = qaproof.savedDesigns || [];
-        for (var i = 0; i < designs.length; i++) {
-          if (designs[i].id === designId) {
-            designs[i].imageBase64 = imageData;
-            designs[i].hasImage = true;
-            break;
-          }
-        }
-        S.savedDesignImageBase64 = imageData;
-
-        // Case A: elements already existed and were saved alongside the image.
-        if (hasExistingElements && results[1] && results[1].success) {
-          if (previewMeta) {
-            previewMeta.textContent = qaproof.i18n.savedImageElements || 'Saved image + elements \u00B7 No API call needed';
-          }
-          flashSaveBtnDone(qaproof.i18n.saveBtnSavedElements || 'Saved + elements \u2713');
-          broadcastDesignStatus(designId, 'ready', detectedElements.length, detectedElementsSource || 'ai-vision');
-          return;
-        }
-
-        // Case B: no existing elements — run background detection and keep the
-        // button in 'working' state until it finishes so the user waits.
-        if (!hasExistingElements) {
-          bgDetectAndSave(designId).then(function (bgResult) {
-            if (bgResult && bgResult.ok && bgResult.count > 0) {
-              flashSaveBtnDone((qaproof.i18n.saveBtnSaved || 'Saved \u2713').replace('\u2713', '') + ' + ' + bgResult.count + ' elements \u2713');
-            } else if (bgResult && bgResult.ok) {
-              // Image saved, detection found nothing — still a successful save.
-              flashSaveBtnDone(qaproof.i18n.saveBtnSaved || 'Saved \u2713');
-            } else {
-              // Image was saved but detection failed — communicate partial success.
-              flashSaveBtnError(qaproof.i18n.saveBtnDetectionFailed || 'Saved (detection failed)');
-            }
-          });
-          return;
-        }
-
-        // Case C: existing elements, but element-save failed — partial success.
-        if (previewMeta) {
-          previewMeta.textContent = qaproof.i18n.savedImageNoApi || 'Saved image \u00B7 No API call needed';
-        }
-        flashSaveBtnDone(qaproof.i18n.saveBtnSaved || 'Saved \u2713');
-        broadcastDesignStatus(designId, 'partial');
-      })
-      .catch(function () {
-        flashSaveBtnError(qaproof.i18n.saveBtnError || 'Error');
-        broadcastDesignStatus(designId, 'error');
-      });
-    });
-  }
-
-  // ============================
   // Element Detection & Selection
   // ============================
   var detectedElements = [];
@@ -873,29 +422,16 @@
   var detectBtn = document.getElementById('qaproof-detect-elements-btn');
   var fullPageBtn = document.getElementById('qaproof-fullpage-btn');
 
-  // Swap the detect button label between "Detect Elements" and
-  // "Show detected elements" depending on whether the currently-selected
-  // saved design already has cached pixel-perfect elements.
+  // Detect button always reads "Detect Elements" — the live /detect-elements
+  // POST is the only detection path.
   function updateDetectBtnLabel() {
     if (!detectBtn) return;
     var labelEl = detectBtn.querySelector('.qaproof-detect-btn-label');
     if (!labelEl) return;
-    var selected = null;
-    if (savedDesignSelect && savedDesignSelect.value) {
-      var list = qaproof.savedDesigns || [];
-      for (var i = 0; i < list.length; i++) {
-        if (list[i].id === savedDesignSelect.value) { selected = list[i]; break; }
-      }
-    }
-    if (selected && selected.hasElements) {
-      labelEl.textContent = qaproof.i18n.detectBtnShowLabel || 'Show detected elements';
-      detectBtn.setAttribute('title', qaproof.i18n.detectBtnShowTitle || 'Load cached elements detected in Settings — no API call needed');
-    } else {
-      labelEl.textContent = qaproof.i18n.detectBtnLabel || 'Detect Elements';
-      detectBtn.removeAttribute('title');
-    }
+    labelEl.textContent = qaproof.i18n.detectBtnLabel || 'Detect Elements';
+    detectBtn.removeAttribute('title');
   }
-  // Make it reachable from other handlers (e.g. after saveElementsToDesign).
+  // Make it reachable from other handlers.
   window.QAProof.updateDetectBtnLabel = updateDetectBtnLabel;
   updateDetectBtnLabel();
   var overlaysContainer = document.getElementById('qaproof-element-overlays');
@@ -1280,82 +816,10 @@
       }
     }
 
-    // Saved design with cached elements
-    if (sd && sd.hasElements) {
-      cacheKey = 'saved-elements|' + sd.id;
-      if (S.elementsDetectedForCache === cacheKey && detectedElements.length > 0) {
-        renderElementOverlays(detectedElements);
-        return;
-      }
-      if (detectingDiv) detectingDiv.classList.remove('hidden');
-      if (elementControlsDiv) elementControlsDiv.style.display = 'none';
-      fetch(qaproof.restBase + '/saved-design-elements/' + sd.id, {
-        method: 'GET',
-        headers: { 'X-WP-Nonce': qaproof.nonce },
-      })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (detectingDiv) detectingDiv.classList.add('hidden');
-        if (elementControlsDiv) elementControlsDiv.style.display = '';
-        if (json.success && json.elements && json.elements.length > 0) {
-          S.elementsDetectedForCache = cacheKey;
-          detectedElementsSource = json.source || '';
-          renderElementOverlays(json.elements);
-        } else {
-          sd.hasElements = false;
-          triggerDetectElements();
-        }
-      })
-      .catch(function () {
-        if (detectingDiv) detectingDiv.classList.add('hidden');
-        if (elementControlsDiv) elementControlsDiv.style.display = '';
-        sd.hasElements = false;
-        triggerDetectElements();
-      });
-      return;
-    }
-
-    // Build a content-addressable cache key.
-    //
-    // Previous implementation keyed by base64 byte length ('upload|123456' /
-    // 'saved|123456'), which collided for two different ≈1.8 MB designs that
-    // happen to encode to the same number of bytes — the in-memory element
-    // state from design A would silently render on design B. Now we hash
-    // a short content slice OR use a stable identifier when one is available.
-    function shortContentKey(prefix, dataUri) {
-      // Sample 256 bytes from three positions (head/mid/tail) — cheap
-      // collision-resistant fingerprint without needing crypto.
-      var len = dataUri.length;
-      if (len < 800) return prefix + '|' + dataUri.slice(-256);
-      return prefix + '|' + len + '|'
-        + dataUri.slice(0, 256)
-        + '|' + dataUri.slice(Math.floor(len / 2), Math.floor(len / 2) + 256)
-        + '|' + dataUri.slice(-256);
-    }
-
     // Saved design with Figma URL
     if (sd && sd.figmaUrl) {
-      // Include figmaLastModified (when known) so a Figma edit invalidates
-      // the in-memory cache without waiting for page reload.
-      cacheKey = 'figmaUrl|' + sd.figmaUrl + '|' + (sd.figmaLastModified || '');
+      cacheKey = 'figmaUrl|' + sd.figmaUrl;
       requestBody = { figmaUrl: sd.figmaUrl };
-    } else if (S.uploadedFileBase64) {
-      var base64Parts = S.uploadedFileBase64.split(',');
-      if (base64Parts.length < 2 || !base64Parts[1]) return;
-      cacheKey = shortContentKey('upload', S.uploadedFileBase64);
-      requestBody = { figmaImageBase64: base64Parts[1] };
-    } else if (S.savedDesignImageBase64) {
-      var savedParts = S.savedDesignImageBase64.split(',');
-      if (savedParts.length < 2 || !savedParts[1]) return;
-      // Prefer the design id + lastModified — they're cheap, exact, and let
-      // the cache survive base64 round-trips without false-hits.
-      var savedDesignId = sd && sd.id ? sd.id : '';
-      var savedLastMod  = sd && sd.figmaLastModified ? sd.figmaLastModified
-                          : S.savedDesignFigmaLastModified || '';
-      cacheKey = savedDesignId
-        ? 'savedImg|' + savedDesignId + '|' + savedLastMod
-        : shortContentKey('savedImg', S.savedDesignImageBase64);
-      requestBody = { figmaImageBase64: savedParts[1] };
     } else {
       return;
     }
@@ -1395,39 +859,6 @@
           }
         }
         renderElementOverlays(json.data.elements);
-
-        var autoSaveDesignId = savedDesignSelect ? savedDesignSelect.value : '';
-        if (autoSaveDesignId && json.data.elements.length > 0) {
-          fetch(qaproof.restBase + '/save-design-elements', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-WP-Nonce':   qaproof.nonce,
-            },
-            body: JSON.stringify({
-              designId: autoSaveDesignId,
-              elements: json.data.elements,
-              source:   detectionSource,
-            }),
-          })
-          .then(Q.safeJson)
-          .then(function (saveJson) {
-            if (saveJson.success) {
-              var designs = qaproof.savedDesigns || [];
-              for (var i = 0; i < designs.length; i++) {
-                if (designs[i].id === autoSaveDesignId) {
-                  designs[i].hasElements = true;
-                  designs[i].elementsSource = detectionSource;
-                  break;
-                }
-              }
-              if (typeof window.QAProof.updateDetectBtnLabel === 'function') {
-                window.QAProof.updateDetectBtnLabel();
-              }
-            }
-          })
-          .catch(function () { /* silent */ });
-        }
       } else {
         var msg = (json.error && json.error.message) ? json.error.message : (qaproof.i18n.detectNoElements || 'No elements detected. Try a different design image.');
         if (detectError) {
@@ -1515,58 +946,6 @@
   }
 
   // ============================
-  // File Upload
-  // ============================
-  if (S.figmaFileInput) {
-    S.figmaFileInput.addEventListener('change', function (e) {
-      if (e.target.files.length) handleFile(e.target.files[0]);
-    });
-  }
-
-  if (S.uploadClearBtn) {
-    S.uploadClearBtn.addEventListener('click', function () {
-      S.uploadedFileBase64 = null;
-      if (S.figmaFileInput) S.figmaFileInput.value = '';
-      if (S.uploadPreview) S.uploadPreview.classList.add('hidden');
-      if (typeof clearElementOverlays === 'function') clearElementOverlays();
-      setPreviewState('empty');
-    });
-  }
-
-  function handleFile(file) {
-    var MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    if (!file.type.startsWith('image/')) {
-      Q.showError(qaproof.i18n.errUploadType || 'Please upload an image file (PNG, JPEG, WebP).');
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      Q.showError('File too large (' + (file.size / 1024 / 1024).toFixed(1) + 'MB). Maximum size: 5MB.');
-      return;
-    }
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      S.uploadedFileBase64 = e.target.result;
-      if (S.uploadPreviewImg) S.uploadPreviewImg.src = S.uploadedFileBase64;
-      if (S.uploadPreview) S.uploadPreview.classList.remove('hidden');
-
-      showUploadedImagePreview(S.uploadedFileBase64, file.name, file.size);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function showUploadedImagePreview(base64DataUrl, fileName, fileSize) {
-    if (typeof clearElementOverlays === 'function') clearElementOverlays();
-    if (previewImage) previewImage.src = base64DataUrl;
-    if (previewMeta) {
-      var parts = [];
-      if (fileName) parts.push(fileName);
-      if (fileSize) parts.push((fileSize / 1024).toFixed(0) + ' KB');
-      previewMeta.textContent = parts.join(' · ');
-    }
-    setPreviewState('success');
-  }
-
-  // ============================
   // Form Submit
   // ============================
   if (S.form) S.form.addEventListener('submit', function (e) {
@@ -1614,22 +993,20 @@
 
     // Validate
     if (S.testType === 'fidelity') {
-      if (!S.savedDesignImageBase64 && !S.uploadedFileBase64) {
-        var designSel2 = document.getElementById('qaproof-saved-design');
-        var hasFigmaUrl = false;
-        if (designSel2 && designSel2.value) {
-          var ds = qaproof.savedDesigns || [];
-          for (var vi = 0; vi < ds.length; vi++) {
-            if (ds[vi].id === designSel2.value && ds[vi].figmaUrl) { hasFigmaUrl = true; break; }
-          }
+      var designSel2 = document.getElementById('qaproof-saved-design');
+      var hasFigmaUrl = false;
+      if (designSel2 && designSel2.value) {
+        var ds = qaproof.savedDesigns || [];
+        for (var vi = 0; vi < ds.length; vi++) {
+          if (ds[vi].id === designSel2.value && ds[vi].figmaUrl) { hasFigmaUrl = true; break; }
         }
-        if (!hasFigmaUrl) {
-          Q.showError(qaproof.i18n.errNoDesign || 'Please upload a design image or select a saved design.');
-          S.loading.classList.add('hidden');
-          S.submitBtn.disabled = false;
-          S.testsPageBusy = false;
-          return;
-        }
+      }
+      if (!hasFigmaUrl) {
+        Q.showError(qaproof.i18n.errNoDesign || 'Please select a saved design.');
+        S.loading.classList.add('hidden');
+        S.submitBtn.disabled = false;
+        S.testsPageBusy = false;
+        return;
       }
     }
 
@@ -1652,37 +1029,7 @@
           if (allDesigns[di].id === designSelect.value) { selectedDesign = allDesigns[di]; break; }
         }
       }
-      if (S.savedDesignImageBase64) {
-        var savedParts2 = S.savedDesignImageBase64.split(',');
-        if (savedParts2.length >= 2 && savedParts2[1]) {
-          body.figmaImageBase64 = savedParts2[1];
-        }
-        // Send the design's Figma URL alongside the cached bytes so the
-        // backend has somewhere to re-fetch from on staleness, and the
-        // version token captured at cache time so the backend can decide.
-        if (selectedDesign && selectedDesign.figmaUrl) {
-          body.figmaUrl = selectedDesign.figmaUrl;
-        }
-        var cachedToken = S.savedDesignFigmaLastModified
-          || (selectedDesign && selectedDesign.figmaLastModified)
-          || '';
-        if (cachedToken) {
-          body.cachedLastModified = cachedToken;
-        }
-      } else if (S.uploadedFileBase64) {
-        var parts2 = S.uploadedFileBase64.split(',');
-        if (parts2.length < 2 || !parts2[1]) {
-          Q.showError(qaproof.i18n.errInvalidImage || 'Invalid image data. Please re-upload the design file.');
-          S.loading.classList.add('hidden');
-          S.submitBtn.disabled = false;
-          // Must also clear the busy flag — without it the next submit click
-          // is silently swallowed by the `if (S.testsPageBusy) return` guard
-          // at the top of this handler until the page is reloaded.
-          S.testsPageBusy = false;
-          return;
-        }
-        body.figmaImageBase64 = parts2[1];
-      } else if (selectedDesign && selectedDesign.figmaUrl) {
+      if (selectedDesign && selectedDesign.figmaUrl) {
         body.figmaUrl = selectedDesign.figmaUrl;
       }
 
@@ -1803,48 +1150,6 @@
             resultData.pageUrl = resultData.pageUrl || body.pageUrl || '';
             if (resultData.testType === 'accessibility' && body.wcagLevel) {
               resultData.targetWcagLevel = body.wcagLevel;
-            }
-
-            // Staleness handshake — if the backend detected that our cached
-            // saved-design image was outdated against Figma and re-fetched
-            // mid-test, push the fresh bytes + version back into WP so the
-            // next run starts current. The screenshot returned from the
-            // backend IS the fresh design (compressed for display); we save
-            // a fresh fetch via the design-image endpoint so the full-quality
-            // bytes are stored, not the JPEG-compressed display version.
-            if (resultData && resultData.testType === 'fidelity'
-                && resultData.cacheWasStale && designSelect && designSelect.value
-                && resultData.figmaLastModified) {
-              var designId = designSelect.value;
-              // Refresh the cached image AND its version token through the
-              // dedicated save endpoint. Fire-and-forget — failure to write
-              // back doesn't invalidate the test we just ran.
-              fetch(qaproof.restBase + '/figma-preview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
-                credentials: 'same-origin',
-                body: JSON.stringify({ figmaUrl: body.figmaUrl, forceRefresh: true }),
-              })
-                .then(function (r) { return r.json(); })
-                .then(function (preview) {
-                  if (!preview.success || !preview.data || !preview.data.imageBase64) return;
-                  return fetch(qaproof.restBase + '/save-design-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                      designId:     designId,
-                      imageBase64:  preview.data.imageBase64,
-                      lastModified: preview.data.lastModified || resultData.figmaLastModified,
-                    }),
-                  });
-                })
-                .catch(function () { /* best-effort */ });
-              // Update in-memory state immediately so the user can re-run
-              // without round-tripping the WP REST.
-              S.savedDesignFigmaLastModified = resultData.figmaLastModified;
-              // Force the result UI to surface the staleness signal.
-              resultData._cacheRefreshedNotice = true;
             }
 
             if (resultData.testType === 'responsive') {

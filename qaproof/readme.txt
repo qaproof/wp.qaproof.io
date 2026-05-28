@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,16 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.9 =
+Deep cleanup of the Design Fidelity feature: removed two redundant subsystems and tidied the OAuth card. ~1600 lines of dead/duplicate code deleted.
+
+* **Removed the WP-side design-image/element cache.** The "Save image to WordPress" flow (storing 2–5 MB base64 per design in wp_options, plus the cache-status pill, auto-cache queue, staleness detection, lazy-load, and the save-image / save-elements REST endpoints) was redundant with the API's own server-side Figma cache (filesystem, 24h TTL) — and with OAuth each workspace now uses its own Figma quota, so the original shared-quota pressure that justified the WP cache is gone. Saved designs are now simply **name + Figma URL**. The Figma preview, Detect Elements / Inspector, and Verify access all keep working (they hit the API live; the API caches server-side). Net: a whole class of pill-state bugs eliminated, no more multi-MB blobs in the options table, and the confusing "open the Tests page and click Save" indirection is gone.
+* **Removed the dead Upload-Image source.** Its markup had already been taken out of the Tests page, but the JS (source toggle, file reader, upload preview) and CSS were left behind querying elements that no longer exist. All of it is now gone; the saved-design Figma URL is the single design source in the plugin.
+* **Figma connection card:** the connected account is now shown in **bold** ("Connected as **you@example.com**").
+* Pruned the now-unused i18n strings and CSS that backed the removed flows.
+
+**Companion API:** pairs with an `api.qaproof.io` deploy that drops the WP-cache `cachedLastModified` staleness handshake from the compare schema. (The API keeps `figmaImageBase64` for external API consumers — only the WP-plugin's use of it was removed.)
 
 = 1.0.8 =
 Fix the admin version badge showing the wrong version.

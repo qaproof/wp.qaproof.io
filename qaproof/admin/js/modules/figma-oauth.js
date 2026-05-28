@@ -86,10 +86,18 @@
       card.setAttribute('data-state', 'connected');
       setBadge(i18n.figmaOAuthBadgeConnected || 'Connected');
       var who = state.figmaUserEmail || state.figmaUserHandle || (i18n.figmaOAuthUnknownUser || 'Figma user');
-      bodyEl.appendChild(makeBlurb(
-        (i18n.figmaOAuthConnectedAs || 'Connected as') + ' ' + who + '. ' +
-        (i18n.figmaOAuthReadsOnDemand || 'QAProof reads files only when you run a test against them.')
-      ));
+      // Account is rendered bold so the connected identity stands out from the
+      // surrounding sentence. Built with DOM nodes (not innerHTML) so `who`
+      // — which originates from Figma's API — can never inject markup.
+      var connBlurb = document.createElement('p');
+      connBlurb.className = 'qaproof-figma-conn-blurb';
+      connBlurb.appendChild(document.createTextNode((i18n.figmaOAuthConnectedAs || 'Connected as') + ' '));
+      var whoEl = document.createElement('strong');
+      whoEl.textContent = who;
+      connBlurb.appendChild(whoEl);
+      connBlurb.appendChild(document.createTextNode('. ' +
+        (i18n.figmaOAuthReadsOnDemand || 'QAProof reads files only when you run a test against them.')));
+      bodyEl.appendChild(connBlurb);
       bodyEl.appendChild(makeMeta(state));
       // Figma REST API doesn't honor "Anyone with the link can view" sharing.
       // Surface that as a persistent note in the connected state so users know
@@ -330,36 +338,6 @@
     }
   });
 
-  /**
-   * After Figma OAuth is disconnected, the saved-design pills that showed
-   * "Ready · N elements (figma-api)" or "(figma-oauth)" are technically
-   * still serving a valid cached image, but the SOURCE qualifier is no
-   * longer authoritative — future verify-access / refresh calls fall back
-   * to the service-PAT path which may or may not have access to the file.
-   *
-   * Flip each Figma-sourced pill to the 'stale' state (amber). User can
-   * re-verify per-row; on success the pill goes back to 'ready' via the
-   * verify-access success handler, on failure to 'error' via the
-   * FIGMA_FILE_NOT_FOUND / FIGMA_NOT_SHARED branch (see init.js).
-   *
-   * Non-Figma-sourced pills (e.g. ai-vision) are left alone — they don't
-   * depend on the OAuth connection.
-   */
-  function invalidateFigmaSourcedPills() {
-    if (!window.QAProof || typeof window.QAProof.updateDesignStatus !== 'function') return;
-    var rows = document.querySelectorAll('.qaproof-design-row[data-design-id]');
-    rows.forEach(function (row) {
-      var status = row.querySelector('.qaproof-design-status');
-      if (!status || !status.classList.contains('qaproof-status-ready')) return;
-      var label = (status.querySelector('.qaproof-design-status-label') || status).textContent || '';
-      // Source token sits inside a trailing `(...)` pair. We invalidate
-      // only Figma-derived sources; other detection sources (ai-vision,
-      // sketch, penpot) stay untouched.
-      if (!/\((figma-api|figma-oauth)\)/.test(label)) return;
-      window.QAProof.updateDesignStatus(row.getAttribute('data-design-id'), 'stale');
-    });
-  }
-
   function onDisconnectClick(e) {
     e.preventDefault();
     var btn = e.currentTarget;
@@ -391,10 +369,6 @@
         .then(function (res) { return res.json().then(function (j) { return { ok: res.ok, body: j }; }); })
         .then(function () { return fetchStatus(); })
         .then(render)
-        // No explicit invalidateFigmaSourcedPills() here — render() mutates
-        // the card's data-state, which the MutationObserver below picks up
-        // and runs the invalidation once. Calling it here too would double-
-        // fire (harmless but redundant). Single source of truth = observer.
         .catch(function () {
           if (btn.isConnected) {
             btn.disabled = false;
@@ -433,13 +407,6 @@
     if (!app) return;
     var stateName = card.getAttribute('data-state') || '';
     app.classList.toggle('qaproof-figma-not-connected', stateName !== 'connected');
-    // Whenever we leave the 'connected' state, also invalidate the
-    // saved-design pills that show '(figma-api)' / '(figma-oauth)' —
-    // those source qualifiers stop being authoritative the moment the
-    // OAuth session ends.
-    if (stateName !== 'connected') {
-      requestAnimationFrame(invalidateFigmaSourcedPills);
-    }
   }
 
   new MutationObserver(syncAppFigmaConnectedClass)

@@ -212,30 +212,6 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
-        register_rest_route( self::REST_NAMESPACE, '/save-design-image', [
-            'methods'             => 'POST',
-            'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_save_design_image' ],
-            'permission_callback' => $permission,
-        ]);
-
-        register_rest_route( self::REST_NAMESPACE, '/saved-design-image/(?P<id>[a-f0-9]+)', [
-            'methods'             => 'GET',
-            'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_get_design_image' ],
-            'permission_callback' => $permission,
-        ]);
-
-        register_rest_route( self::REST_NAMESPACE, '/save-design-elements', [
-            'methods'             => 'POST',
-            'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_save_design_elements' ],
-            'permission_callback' => $permission,
-        ]);
-
-        register_rest_route( self::REST_NAMESPACE, '/saved-design-elements/(?P<id>[a-f0-9]+)', [
-            'methods'             => 'GET',
-            'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_get_design_elements' ],
-            'permission_callback' => $permission,
-        ]);
-
         register_rest_route( self::REST_NAMESPACE, '/detect-elements', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Designs', 'handle_detect_elements' ],

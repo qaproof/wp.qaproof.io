@@ -16,8 +16,9 @@ class QAProof_Settings {
     public static function init() {
         add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
         // register_setting() has no autoload flag — keep these options out of
-        // alloptions on every save (API key for attack surface, saved designs
-        // for size: the latter holds base64-cached preview images).
+        // alloptions on every save (API key for attack surface; saved designs
+        // are small now — name + Figma URL — but stay non-autoloaded for
+        // consistency and so a future field addition can't bloat alloptions).
         add_action( 'update_option_qaproof_api_key', [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
         add_action( 'add_option_qaproof_api_key',    [ __CLASS__, 'ensure_api_key_not_autoloaded' ], 10, 0 );
         add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
@@ -604,116 +605,10 @@ class QAProof_Settings {
                 'pageUrl'  => isset( $d['pageUrl'] ) ? sanitize_url( $d['pageUrl'] ) : '',
                 'figmaUrl' => isset( $d['figmaUrl'] ) ? self::sanitize_figma_url( $d['figmaUrl'] ) : '',
             ];
-            // Cached preview image — accept only well-formed data:image URIs up to 8 MB.
-            if ( ! empty( $d['imageBase64'] ) && is_string( $d['imageBase64'] ) ) {
-                $img = $d['imageBase64'];
-                if ( preg_match( '#^data:image/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$#', $img ) && strlen( $img ) <= 8 * 1024 * 1024 ) {
-                    $entry['imageBase64'] = $img;
-                }
-            }
-            // imageFetchedAt — UNIX timestamp (seconds) of when the cached image
-            // was last fetched from Figma. Surfaced in the WP UI so the user
-            // can tell at a glance whether their cached design is fresh. Only
-            // stored when an image is present.
-            if ( isset( $entry['imageBase64'] ) && isset( $d['imageFetchedAt'] ) ) {
-                $ts = absint( $d['imageFetchedAt'] );
-                // Defensive bounds: ignore values from before 2024 or in the
-                // future (clock drift / malicious input).
-                if ( $ts >= 1704067200 && $ts <= time() + 3600 ) {
-                    $entry['imageFetchedAt'] = $ts;
-                }
-            }
-            // figmaLastModified — the Figma file's `lastModified` ISO-8601
-            // timestamp captured at the moment we cached the image. This is
-            // the version handshake: the backend compares it against the
-            // current Figma source before trusting the cached bytes. Without
-            // this, a stale cache silently produces false-positive fidelity
-            // diffs against an old design (cache audit B13).
-            //
-            // SECURITY: strict ISO-8601 validation. The token round-trips
-            // through the (potentially compromised) SaaS, so we refuse any
-            // string that doesn't parse as a real datetime — that closes
-            // the door on a SaaS injecting bogus values that survive into
-            // the WP option row and later get echoed elsewhere.
-            if ( isset( $entry['imageBase64'] ) && ! empty( $d['figmaLastModified'] ) && is_string( $d['figmaLastModified'] ) ) {
-                $candidate = self::validate_iso8601( $d['figmaLastModified'] );
-                if ( $candidate !== '' ) {
-                    $entry['figmaLastModified'] = $candidate;
-                }
-            }
-            // Detected elements — decode, validate shape, re-encode.
-            if ( ! empty( $d['elementsJson'] ) && is_string( $d['elementsJson'] ) ) {
-                $decoded = json_decode( $d['elementsJson'], true );
-                if ( is_array( $decoded ) ) {
-                    $entry['elementsJson'] = wp_json_encode( self::sanitize_elements_tree( $decoded ) );
-                }
-            }
-            if ( ! empty( $d['elementsSource'] ) ) {
-                $entry['elementsSource'] = sanitize_text_field( $d['elementsSource'] );
-            }
             $clean[] = $entry;
         }
         return wp_json_encode( $clean );
     }
-
-    /**
-     * Validate a string as an ISO-8601 datetime. Returns the trimmed string
-     * on success or '' on failure. We accept any format DateTime can parse
-     * AND require the formatted output to match (so partial garbage like
-     * "2024" — which DateTime accepts as Jan 1 — is rejected).
-     *
-     * Used as a defence-in-depth gate against a compromised SaaS reply
-     * placing arbitrary content into the Figma version handshake token.
-     */
-    public static function validate_iso8601( $value ) {
-        if ( ! is_string( $value ) ) return '';
-        $value = trim( $value );
-        if ( $value === '' || strlen( $value ) > 64 ) return '';
-        try {
-            $dt = new DateTime( $value );
-            // Round-trip check: if the input were "<script>" the DateTime
-            // constructor would throw — but values like "2024" silently
-            // become 2024-01-01. Re-format and require the prefix match.
-            $iso = $dt->format( 'Y-m-d\TH:i:s' );
-            // Cheap heuristic: real Figma lastModified is "YYYY-MM-DDTHH:MM:SSZ"
-            // (or with TZ offset). Reject anything that doesn't start with
-            // exactly that shape.
-            if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $value ) ) {
-                return '';
-            }
-            unset( $iso );
-            return sanitize_text_field( $value );
-        } catch ( Exception $e ) {
-            return '';
-        }
-    }
-
-    /** Recursively sanitize a decoded elements tree (strings, numbers, bools, null). */
-    private static function sanitize_elements_tree( $value ) {
-        if ( is_array( $value ) ) {
-            $out = [];
-            foreach ( $value as $k => $v ) {
-                $key = is_string( $k ) ? sanitize_key( $k ) : $k;
-                $out[ $key ] = self::sanitize_elements_tree( $v );
-            }
-            return $out;
-        }
-        if ( is_string( $value ) )   return sanitize_textarea_field( $value );
-        if ( is_int( $value ) || is_float( $value ) || is_bool( $value ) || $value === null ) {
-            return $value;
-        }
-        return null;
-    }
-
-    /** Maximum age, in seconds, that a cached Figma design image is allowed to
-     * remain in `wp_options.qaproof_saved_designs`. After that we drop just
-     * the `imageBase64`/`imageFetchedAt` fields (the saved-design row itself
-     * stays — the user can re-cache by clicking Refresh). 90 days is a
-     * retention compromise: long enough that day-to-day testing doesn't
-     * burn Figma API calls, short enough that designs aren't kept on the
-     * site indefinitely after the customer stops using them.
-     */
-    const SAVED_DESIGN_IMAGE_MAX_AGE = 90 * DAY_IN_SECONDS;
 
     /** Request-level cache. null = not yet loaded. Reset via flush_saved_designs_cache(). */
     private static $saved_designs_cache = null;
@@ -727,64 +622,8 @@ class QAProof_Settings {
         if ( ! is_array( $designs ) ) {
             $designs = [];
         }
-        // Retention sweep: lazily evict cached images older than the cap.
-        // The returned array reflects what's actually in the DB after the
-        // sweep — when the DB write fails (disk full, MySQL packet-size
-        // ceiling, etc.) we keep the ORIGINAL un-evicted array in memory
-        // so a downstream caller doesn't act on data that doesn't match
-        // what persisted. Without this, the in-memory cache claimed
-        // "imageBase64 dropped" while the DB still held the bytes — every
-        // request kept re-evicting and re-failing the same write.
-        $designs = self::evict_stale_design_images( $designs );
         self::$saved_designs_cache = $designs;
         return self::$saved_designs_cache;
-    }
-
-    /** Drop `imageBase64`/`imageFetchedAt` from designs whose cache has
-     *  exceeded SAVED_DESIGN_IMAGE_MAX_AGE. Persists the trimmed array; on
-     *  DB-write failure returns the ORIGINAL input so the in-memory state
-     *  matches what's persisted.
-     */
-    private static function evict_stale_design_images( $designs ) {
-        if ( empty( $designs ) ) return $designs;
-        $cutoff  = time() - self::SAVED_DESIGN_IMAGE_MAX_AGE;
-        $evicted = 0;
-        // Build a trimmed COPY first so we can keep $designs intact for the
-        // failure-rollback path. PHP arrays are value-copied so this is cheap
-        // unless the array is huge (which is exactly when this matters).
-        $trimmed = [];
-        foreach ( $designs as $d ) {
-            if ( ! is_array( $d ) || empty( $d['imageBase64'] ) ) {
-                $trimmed[] = $d;
-                continue;
-            }
-            $ts = isset( $d['imageFetchedAt'] ) ? (int) $d['imageFetchedAt'] : 0;
-            // No timestamp = legacy entry (predates v1.0.1). We give it the
-            // benefit of the doubt — assume "recent enough" so we don't
-            // surprise upgraders by silently evicting working caches.
-            if ( $ts <= 0 ) {
-                $trimmed[] = $d;
-                continue;
-            }
-            if ( $ts < $cutoff ) {
-                unset( $d['imageBase64'], $d['imageFetchedAt'], $d['figmaLastModified'] );
-                $evicted++;
-            }
-            $trimmed[] = $d;
-        }
-        if ( $evicted === 0 ) {
-            return $designs;
-        }
-        // update_option returns false when nothing changed (same value) OR
-        // when the DB write failed; treat false as "didn't persist" and
-        // fall back to the original un-trimmed array.
-        $persisted = update_option( 'qaproof_saved_designs', wp_json_encode( $trimmed ) );
-        if ( ! $persisted ) {
-            qaproof_debug_log( '[QAProof] evict_stale_design_images: DB write failed; keeping in-memory state in sync with DB.' );
-            return $designs;
-        }
-        qaproof_debug_log( sprintf( '[QAProof] evict_stale_design_images: dropped %d stale cached image(s)', $evicted ) );
-        return $trimmed;
     }
 
     public static function flush_saved_designs_cache() {
@@ -947,113 +786,6 @@ class QAProof_Settings {
         return 0;
     }
 
-    /**
-     * Persist a cached design image + its Figma version token.
-     *
-     * @param string      $design_id    Saved-design id (4-byte hex).
-     * @param string      $image_b64    data:image/...;base64,... payload.
-     * @param string|null $last_modified Figma `lastModified` ISO-8601 captured
-     *                                  when the image was fetched. The
-     *                                  backend uses this on the next test
-     *                                  run to decide whether the cache is
-     *                                  still current. Null when unknown
-     *                                  (e.g. upload-image flow) — stored as
-     *                                  "no signal" so the backend falls
-     *                                  through to its own TTL gate.
-     */
-    public static function update_saved_design_image( $design_id, $image_b64, $last_modified = null ) {
-        $designs = self::get_saved_designs();
-        $found   = false;
-        foreach ( $designs as &$d ) {
-            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
-                $previous_version = isset( $d['figmaLastModified'] ) ? (string) $d['figmaLastModified'] : '';
-                $d['imageBase64']     = $image_b64;
-                // Stamp the fetch time so the UI can render "X days old" and
-                // the user can decide whether to refresh before testing. We
-                // store seconds (not ms) to keep numeric comparisons cheap.
-                $d['imageFetchedAt']  = time();
-                if ( is_string( $last_modified ) && $last_modified !== '' ) {
-                    $d['figmaLastModified'] = $last_modified;
-                } else {
-                    // Caller couldn't determine the version (e.g. user
-                    // uploaded an image instead of fetching from Figma).
-                    // Drop any stale token so we don't lie to the backend.
-                    unset( $d['figmaLastModified'] );
-                }
-                // Versioned-elements invalidation. When the Figma file moves
-                // on (new `lastModified`) the cached element bounding boxes
-                // computed against the OLD design are wrong: the inspector
-                // overlay would land on a button that's now half a screen
-                // away. Drop the elements cache so the next detection runs
-                // fresh against the new layout (cache audit B14).
-                $new_version = isset( $d['figmaLastModified'] ) ? (string) $d['figmaLastModified'] : '';
-                if ( $previous_version !== '' && $new_version !== '' && $previous_version !== $new_version ) {
-                    unset( $d['elementsJson'], $d['elementsSource'] );
-                    qaproof_debug_log( sprintf(
-                        '[QAProof] update_saved_design_image: figmaLastModified changed (%s -> %s); cleared elementsJson for design %s',
-                        $previous_version, $new_version, $design_id
-                    ) );
-                }
-                $found = true;
-                break;
-            }
-        }
-        unset( $d );
-        if ( ! $found ) return false;
-        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
-        return true;
-    }
-
-    public static function clear_saved_design_image( $design_id ) {
-        $designs = self::get_saved_designs();
-        $found   = false;
-        foreach ( $designs as &$d ) {
-            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
-                unset( $d['imageBase64'], $d['imageFetchedAt'], $d['figmaLastModified'] );
-                $found = true;
-                break;
-            }
-        }
-        unset( $d );
-        if ( ! $found ) return false;
-        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
-        return true;
-    }
-
-    public static function update_saved_design_elements( $design_id, $elements, $source = '' ) {
-        $designs = self::get_saved_designs();
-        $found   = false;
-        foreach ( $designs as &$d ) {
-            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
-                $d['elementsJson'] = wp_json_encode( $elements );
-                $d['elementsSource'] = $source;
-                $found = true;
-                break;
-            }
-        }
-        unset( $d );
-        if ( ! $found ) return false;
-        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
-        return true;
-    }
-
-    public static function clear_saved_design_elements( $design_id ) {
-        $designs = self::get_saved_designs();
-        $found   = false;
-        foreach ( $designs as &$d ) {
-            if ( isset( $d['id'] ) && $d['id'] === $design_id ) {
-                unset( $d['elementsJson'] );
-                unset( $d['elementsSource'] );
-                $found = true;
-                break;
-            }
-        }
-        unset( $d );
-        if ( ! $found ) return false;
-        update_option( 'qaproof_saved_designs', wp_json_encode( $designs ) );
-        return true;
-    }
-
     public static function render_saved_designs_field() {
         $designs = self::get_saved_designs();
         ?>
@@ -1080,34 +812,7 @@ class QAProof_Settings {
                 <?php if ( empty( $designs ) ) : ?>
                     <p class="description qaproof-no-designs"><?php esc_html_e( 'No saved designs yet. Click "Add Design" to create one.', 'qaproof' ); ?></p>
                 <?php endif; ?>
-                <?php foreach ( $designs as $i => $d ) :
-                    $has_image    = ! empty( $d['imageBase64'] );
-                    $has_elements = ! empty( $d['elementsJson'] );
-                    $elements_count = 0;
-                    if ( $has_elements ) {
-                        $decoded = json_decode( $d['elementsJson'], true );
-                        if ( is_array( $decoded ) ) {
-                            $elements_count = count( $decoded );
-                        }
-                    }
-                    $source = ! empty( $d['elementsSource'] ) ? $d['elementsSource'] : '';
-                    // Force re-detection on Figma-sourced designs cached with ai-vision —
-                    // we'd rather get pixel-perfect Figma-API overlays.
-                    $has_figma_source = ! empty( $d['figmaUrl'] );
-                    $is_stale_ai      = ( $source === 'ai-vision' ) && $has_figma_source;
-                    if ( $has_image && $has_elements && ! $is_stale_ai ) {
-                        $status       = 'ready';
-                        /* translators: %d: element count */
-                        $status_label = sprintf( __( 'Ready · %d elements', 'qaproof' ), $elements_count );
-                        if ( $source ) $status_label .= ' (' . $source . ')';
-                    } elseif ( $has_image ) {
-                        $status       = 'partial';
-                        $status_label = __( 'Image cached · elements missing', 'qaproof' );
-                    } else {
-                        $status       = 'empty';
-                        $status_label = __( 'Not cached — open Tests page and click Save', 'qaproof' );
-                    }
-                ?>
+                <?php foreach ( $designs as $i => $d ) : ?>
                 <div class="qaproof-design-row" data-index="<?php echo (int) $i; ?>" data-design-id="<?php echo esc_attr( $d['id'] ); ?>">
                     <div class="qaproof-design-row-fields">
                         <input type="text" placeholder="<?php esc_attr_e( 'Design Name', 'qaproof' ); ?>" value="<?php echo esc_attr( $d['name'] ); ?>" data-field="name" class="regular-text" />
@@ -1122,10 +827,6 @@ class QAProof_Settings {
                          * JS-built (newly added) rows share the same DOM shape. Without this
                          * setVerifyMsg() silently no-ops on existing rows and errors vanish. */ ?>
                     <div class="qaproof-design-verify-msg" hidden></div>
-                    <div class="qaproof-design-status qaproof-status-<?php echo esc_attr( $status ); ?>" data-status="<?php echo esc_attr( $status ); ?>" title="<?php echo esc_attr( $status_label ); ?>">
-                        <span class="qaproof-design-status-dot"></span>
-                        <span class="qaproof-design-status-label"><?php echo esc_html( $status_label ); ?></span>
-                    </div>
                     <button type="button" class="button qaproof-design-remove" title="<?php esc_attr_e( 'Remove', 'qaproof' ); ?>">
                         <span class="dashicons dashicons-trash"></span>
                     </button>

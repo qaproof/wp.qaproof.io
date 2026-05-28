@@ -141,8 +141,6 @@ class QAProof_Admin_Assets {
                 'previewSelectDesign'    => __( 'Select a saved design to preview.', 'qaproof' ),
                 'previewCouldNotLoad'    => __( 'Could not load preview.', 'qaproof' ),
                 'previewRetry'           => __( 'Retry', 'qaproof' ),
-                'previewSavedNoApi'      => __( 'Saved image · No Figma API call', 'qaproof' ),
-                'previewRefreshedSaved'  => __( 'Refreshed & saved · No API call needed next time', 'qaproof' ),
                 'previewCouldNotRefresh' => __( 'Could not refresh preview.', 'qaproof' ),
                 'previewFileLabel'       => __( 'File: ', 'qaproof' ),
                 'previewNodeLabel'       => __( 'Node: ', 'qaproof' ),
@@ -196,23 +194,8 @@ class QAProof_Admin_Assets {
                 'figmaOAuthPopupBlocked'      => __( 'Popup was blocked. Allow popups for this site and try again.', 'qaproof' ),
                 'figmaOAuthConnectFailed'     => __( 'Failed to connect Figma.', 'qaproof' ),
                 'figmaOAuthNetwork'           => __( 'Network error. Try again.', 'qaproof' ),
-                // form.js — save/detect states
-                'saveBtnSave'            => __( 'Save', 'qaproof' ),
-                'saveBtnSaving'          => __( 'Saving image...', 'qaproof' ),
-                'saveBtnDetecting'       => __( 'Detecting elements...', 'qaproof' ),
-                'saveBtnSavedElements'   => __( 'Saved + elements ✓', 'qaproof' ),
-                'saveBtnSaved'           => __( 'Saved ✓', 'qaproof' ),
-                'saveBtnDetectionFailed' => __( 'Saved (detection failed)', 'qaproof' ),
-                'saveBtnError'           => __( 'Error', 'qaproof' ),
-                'savedImageNoApi'        => __( 'Saved image · No API call needed', 'qaproof' ),
-                'savedImageElements'     => __( 'Saved image + elements · No API call needed', 'qaproof' ),
-                'savedImageDetecting'    => __( 'Saved image · Detecting elements...', 'qaproof' ),
-                'savedImageDetFailed'    => __( 'Saved image · Element detection failed', 'qaproof' ),
-                'savedImagePartial'      => __( 'Saved image · No API call needed', 'qaproof' ),
                 // form.js — detect elements
                 'detectBtnLabel'         => __( 'Detect Elements', 'qaproof' ),
-                'detectBtnShowLabel'     => __( 'Show detected elements', 'qaproof' ),
-                'detectBtnShowTitle'     => __( 'Load cached elements detected in Settings — no API call needed', 'qaproof' ),
                 'detectBtnDetected'      => __( 'Elements detected:', 'qaproof' ),
                 'detectNoElements'       => __( 'No elements detected. Try a different design image.', 'qaproof' ),
                 'detectFailed'           => __( 'Detection failed. Check your connection and try again.', 'qaproof' ),
@@ -247,12 +230,8 @@ class QAProof_Admin_Assets {
                 'errTestRunning'         => __( 'A test is already running. Please wait for it to finish.', 'qaproof' ),
                 /* translators: %s: value */
                 'errNoApiKey'            => __( 'API key not configured. <a href="%s">Go to Settings</a> to add your key.', 'qaproof' ),
-                'errNoDesign'            => __( 'Please upload a design image or select a saved design.', 'qaproof' ),
+                'errNoDesign'            => __( 'Please select a saved design.', 'qaproof' ),
                 'errNoConnection'        => __( 'Could not reach the server. Check your connection. Reload the page to retry.', 'qaproof' ),
-                'errInvalidImage'        => __( 'Invalid image data. Please re-upload the design file.', 'qaproof' ),
-                'errUploadType'          => __( 'Please upload an image file (PNG, JPEG, WebP).', 'qaproof' ),
-                /* translators: %s: file size in MB */
-                'errUploadSize'          => __( 'File too large (%s MB). Maximum size: 5MB.', 'qaproof' ),
                 // form.js — loading steps (design-audit)
                 'stepCaptureScreenshot'  => __( 'Capturing page screenshot', 'qaproof' ),
                 'stepExtractTokens'      => __( 'Extracting design tokens from DOM', 'qaproof' ),
@@ -364,16 +343,7 @@ class QAProof_Admin_Assets {
                 'apiKeyStartError'       => __( 'API key must start with "qap_"', 'qaproof' ),
                 'apiKeyLengthError'      => __( ' characters — expected 68 (qap_ + 64 hex chars)', 'qaproof' ),
                 'apiKeyCharError'        => __( 'Key contains invalid characters — only 0-9 and a-f are allowed after "qap_"', 'qaproof' ),
-                'designNotCached'        => __( 'Not cached — open Tests page and click Save', 'qaproof' ),
                 'designRemove'           => __( 'Remove', 'qaproof' ),
-                'designReady'            => __( 'Ready · ', 'qaproof' ),
-                'designElements'         => __( ' elements', 'qaproof' ),
-                'designPartial'          => __( 'Image cached · elements missing', 'qaproof' ),
-                'designDetectionFailed'  => __( 'Detection failed', 'qaproof' ),
-                'designRateLimit'        => __( 'Figma rate limit — try again later', 'qaproof' ),
-                'designFileNotFound'     => __( 'File not found — cache stale', 'qaproof' ),
-                'designFileNotShared'    => __( 'No access — cache stale', 'qaproof' ),
-                'designReverifyNeeded'   => __( 'Re-verify — Figma disconnected', 'qaproof' ),
                 'resetFigmaConfirm'      => __( "Reset the Figma API call counter for this month?\n\n(This only resets the local tracker in this plugin — it does NOT reset Figma's actual quota on their side.)", 'qaproof' ),
                 'resumingTest'           => __( 'Resuming test — waiting for results...', 'qaproof' ),
                 'resumingTestSub'        => __( 'Test is still running on the server', 'qaproof' ),
@@ -469,8 +439,7 @@ class QAProof_Admin_Assets {
     }
 
     /**
-     * Saved designs trimmed for JS localization — strips imageBase64
-     * (browser fetches it lazily via REST) and adds a hasImage flag.
+     * Saved designs trimmed for JS localization — name + figmaUrl per row.
      */
     private static function get_saved_designs_for_js() {
         $designs = QAProof_Settings::get_saved_designs();
@@ -486,19 +455,6 @@ class QAProof_Admin_Assets {
                 'pageUrl'         => isset( $d['pageUrl'] )    ? $d['pageUrl']    : '',
                 'figmaUrl'        => $figma_url,
                 'fileKey'         => QAProof_Settings::extract_figma_file_key( $figma_url ),
-                'hasImage'        => ! empty( $d['imageBase64'] ),
-                'hasElements'     => ! empty( $d['elementsJson'] ),
-                'elementsSource'  => isset( $d['elementsSource'] ) ? $d['elementsSource'] : '',
-                // Expose the cache age so the UI can warn users about stale
-                // Figma snapshots. 0 = unknown (legacy designs saved before
-                // this field existed). UI converts to "X days old".
-                'imageFetchedAt'  => isset( $d['imageFetchedAt'] ) ? (int) $d['imageFetchedAt'] : 0,
-                // Figma's `lastModified` ISO-8601 captured at the moment the
-                // cached image was fetched. Sent back to the backend on the
-                // next test run as `cachedLastModified` for the staleness
-                // handshake. Empty string when the cache predates v1.1 or
-                // came from a non-Figma upload.
-                'figmaLastModified' => isset( $d['figmaLastModified'] ) ? (string) $d['figmaLastModified'] : '',
             ];
         }
         return $result;
