@@ -858,6 +858,19 @@ class QAProof_API_Client {
         return true;
     }
 
+    /**
+     * Trigger an immediate monitor run on the API (manual "Run now").
+     * The API reuses its scheduler's runMonitor() — baseline on first run,
+     * regression otherwise — and responds 202 right away; the run finishes
+     * server-side. The browser then polls monitors_get_results() for the
+     * outcome. Returns the { dispatched, mode } payload or WP_Error.
+     */
+    public static function monitors_run( $id ) {
+        $result = self::api_request( 'POST', '/api/monitors/' . rawurlencode( $id ) . '/run' );
+        if ( is_wp_error( $result ) ) return $result;
+        return $result;
+    }
+
     public static function monitors_get_results( $id, $args = array() ) {
         $limit  = isset( $args['limit'] )  ? (int) $args['limit']  : 20;
         $offset = isset( $args['offset'] ) ? (int) $args['offset'] : 0;

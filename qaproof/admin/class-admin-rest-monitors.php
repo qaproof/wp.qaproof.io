@@ -219,11 +219,26 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Dispatch via WP-Cron single event so the request can return immediately;
-        // the JS poll loop pings /wp-cron.php once to guarantee dispatch.
-        wp_schedule_single_event( time() - 1, 'qaproof_run_monitor', [ $id ] );
+        // Dispatch the run on the API (POST /api/monitors/:id/run). The API
+        // reuses its scheduler's runMonitor() — baseline on first run,
+        // regression otherwise — and returns 202 immediately; the run finishes
+        // server-side. The browser polls /monitors/:id/results for the result.
+        //
+        // Replaces the old wp_schedule_single_event('qaproof_run_monitor')
+        // dispatch: monitor scheduling moved to the API server (class-scheduler.php
+        // was removed), so the WP-Cron hook had no handler and "Run now"
+        // dispatched into a void.
+        $dispatch = QAProof_API_Client::monitors_run( $id );
+        if ( is_wp_error( $dispatch ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => $dispatch->get_error_message() ],
+            ], 502 );
+        }
 
-        // 25-min TTL covers the scheduler's 8-min poll + PHP timeout headroom.
+        // run_queued transient drives the instant "running" state in the list
+        // UI until a fresh result row appears. 25-min TTL covers a slow
+        // regression (screenshot capture + AI) plus headroom.
         set_transient( self::run_queued_key( $id ), time(), 25 * MINUTE_IN_SECONDS );
         self::flush_monitor_cache( $id );
 
@@ -231,7 +246,8 @@ class QAProof_Admin_REST_Monitors {
             'success' => true,
             'data'    => [
                 'monitor' => $monitor,
-                'message' => __( 'Monitor test queued. Results will appear shortly.', 'qaproof' ),
+                'mode'    => isset( $dispatch['mode'] ) ? $dispatch['mode'] : null,
+                'message' => __( 'Monitor run started. Results will appear shortly.', 'qaproof' ),
             ],
         ], 200 );
     }

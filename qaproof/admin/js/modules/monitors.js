@@ -1137,10 +1137,6 @@
       loadMonitors(true);
       return;
     }
-    // Ping wp-cron from browser every 3rd attempt so the queued monitor run fires reliably
-    if (attempts % 3 === 0) {
-      try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
-    }
     listPollTimers[monitorId] = setTimeout(function () {
       delete listPollTimers[monitorId];
       apiCall('GET', '/monitors/' + monitorId).then(function (resp) {
@@ -1182,10 +1178,6 @@
       stopListPollForMonitor(monitorId);
       loadMonitors(true);
       return;
-    }
-    // Ping wp-cron from browser every 3rd attempt so the queued monitor run fires reliably
-    if (attempts % 3 === 0) {
-      try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
     }
     var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
     listPollTimers[monitorId] = setTimeout(function () {
@@ -1336,12 +1328,6 @@
       return;
     }
 
-    // Ping wp-cron from the browser every 3 attempts (~15s) so the queued
-    // monitor run fires reliably even when WP's own cron tick is delayed.
-    if (monitorPollCount % 3 === 1) {
-      try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
-    }
-
     apiCall('GET', '/monitors/' + monitorId).then(function (resp) {
       if (resp.success && resp.data && parseInt(resp.data.has_baseline, 10) === 1) {
         // Baseline saved — complete step 3 and reload detail
@@ -1383,12 +1369,6 @@
         if (monitorsLoading) monitorsLoading.classList.add('hidden');
       }, 3000);
       return;
-    }
-
-    // Ping wp-cron from the browser every 3 attempts (~15s) so the queued
-    // monitor run fires reliably even when WP's own cron tick is delayed.
-    if (monitorPollCount % 3 === 1) {
-      try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6)); } catch(e) {}
     }
 
     // Use & separator when restBase already contains ? (rest_route= format), else ?
