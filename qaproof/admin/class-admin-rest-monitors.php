@@ -52,6 +52,8 @@ class QAProof_Admin_REST_Monitors {
         delete_transient( self::cache_key_list() );
         delete_transient( self::cache_key_monitor( $id ) );
         delete_transient( self::cache_key_results( $id ) );
+        delete_transient( self::cache_key_results_page( $id, 1 ) );
+        delete_transient( self::cache_key_results_page( $id, 20 ) );
     }
 
     private static function flush_list_cache() {
