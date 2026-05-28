@@ -353,13 +353,9 @@ class QAProof_Scheduler {
 
             if ( isset( $poll['status'] ) && $poll['status'] === 'done' && isset( $poll['result'] ) ) {
                 $result = $poll['result'];
-
-                // poll strips screenshots to keep payload small; fetch separately.
-                $screenshots_response = QAProof_API_Client::get_job_screenshots( $job_id );
-                if ( ! is_wp_error( $screenshots_response ) && ! empty( $screenshots_response['screenshots'] ) ) {
-                    $result['screenshots'] = $screenshots_response['screenshots'];
-                }
-
+                // Screenshots are fetched in a separate background cron so the
+                // result row is saved immediately and the browser sees completion
+                // without waiting for the slow server-to-server screenshot download.
                 break;
             }
 
@@ -389,16 +385,27 @@ class QAProof_Scheduler {
         $score       = isset( $result['score'] )      ? (int) $result['score']   : null;
         $has_changes = ! empty( $result['hasChanges'] );
 
-        self::save_result_with_retry( $monitor['id'], array(
+        // Save the result row first (without screenshots — the monitors save
+        // endpoint caps at 5 MB), then patch screenshots onto it via the
+        // dedicated 10 MB endpoint. Both happen inline in this cron worker so
+        // the saved result is complete; no second background event is queued.
+        $saved = self::save_result_with_retry( $monitor['id'], array(
             'score'           => $score,
             'has_changes'     => $has_changes ? 1 : 0,
             'summary'         => isset( $result['summary'] )         ? $result['summary']         : null,
             'categories'      => isset( $result['categories'] )      ? $result['categories']      : null,
             'differences'     => isset( $result['differences'] )     ? $result['differences']     : null,
             'recommendations' => isset( $result['recommendations'] ) ? $result['recommendations'] : null,
-            'screenshots'     => isset( $result['screenshots'] )     ? $result['screenshots']     : null,
             'status'          => 'completed',
         ) );
+
+        $result_id = is_array( $saved ) && isset( $saved['id'] ) ? $saved['id'] : null;
+        if ( $result_id && ! empty( $job_id ) ) {
+            $shots = QAProof_API_Client::get_job_screenshots( $job_id );
+            if ( ! is_wp_error( $shots ) && ! empty( $shots['screenshots'] ) ) {
+                QAProof_API_Client::monitors_update_result_screenshots( $result_id, $shots['screenshots'] );
+            }
+        }
 
         QAProof_API_Client::monitors_update( $monitor['id'], array(
             'last_run_at' => gmdate( 'c' ),

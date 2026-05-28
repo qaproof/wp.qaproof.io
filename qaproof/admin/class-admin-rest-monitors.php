@@ -225,21 +225,172 @@ class QAProof_Admin_REST_Monitors {
             ], 404 );
         }
 
-        // Dispatch via WP-Cron single event so the request can return immediately;
-        // the JS poll loop pings /wp-cron.php once to guarantee dispatch.
-        wp_schedule_single_event( time() - 1, 'qaproof_run_monitor', [ $id ] );
+        // Pick the job type: capture a baseline if the monitor has none yet,
+        // otherwise run a regression against the existing baseline. BOTH now run
+        // as async jobs — the browser polls /poll-job/:jobId and calls
+        // /monitors/:id/finish-run when done. Baseline-as-a-job keeps bulk
+        // monitor setups from blocking the request for the full 20-60s capture.
+        $is_setup  = empty( $monitor['has_baseline'] );
+        $test_type = $is_setup ? 'baseline' : 'regression';
 
-        // 25-min TTL covers the scheduler's 8-min poll + PHP timeout headroom.
+        $job_response = QAProof_API_Client::run_test( [
+            'pageUrl'  => $monitor['page_url'],
+            'testType' => $test_type,
+        ] );
+
+        if ( is_wp_error( $job_response ) ) {
+            // Pass the API status + code through (e.g. 429 CONCURRENCY_LIMIT) so the
+            // browser can queue/retry bulk setups instead of surfacing a hard error.
+            $data    = $job_response->get_error_data();
+            $status  = ( is_array( $data ) && isset( $data['status'] ) ) ? (int) $data['status'] : 502;
+            $err     = [ 'message' => $job_response->get_error_message() ];
+            if ( is_array( $data ) && isset( $data['error_code'] ) ) {
+                $err['code'] = $data['error_code'];
+            }
+            return new WP_REST_Response( [ 'success' => false, 'error' => $err ], $status );
+        }
+
+        $job_id = isset( $job_response['jobId'] ) ? $job_response['jobId'] : null;
+        if ( empty( $job_id ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'API did not return a job ID.', 'qaproof' ) ],
+            ], 502 );
+        }
+
+        // Keep the 25-min transient so scheduled-cron-aware UI components (run_queued_at)
+        // still work correctly if the user opens the monitor in another tab.
         set_transient( self::run_queued_key( $id ), time(), 25 * MINUTE_IN_SECONDS );
         self::flush_monitor_cache( $id );
 
         return new WP_REST_Response( [
             'success' => true,
             'data'    => [
+                'mode'    => $is_setup ? 'baseline' : 'regression',
+                'job_id'  => $job_id,
                 'monitor' => $monitor,
-                'message' => __( 'Monitor test queued. Results will appear shortly.', 'qaproof' ),
             ],
         ], 200 );
+    }
+
+    /**
+     * POST /monitors/:id/finish-run
+     *
+     * Called by the browser after it polls a regression job to completion.
+     * Saves the result row, sends notifications, and schedules the background
+     * screenshot-fetch cron so the browser doesn't have to wait for screenshots.
+     */
+    public static function handle_finish_run( WP_REST_Request $request ) {
+        $id     = sanitize_text_field( $request['id'] );
+        $params = $request->get_json_params();
+
+        $monitor = QAProof_API_Client::monitors_get( $id );
+        if ( is_wp_error( $monitor ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'Monitor not found.', 'qaproof' ) ],
+            ], 404 );
+        }
+
+        $job_id    = isset( $params['job_id'] )       ? sanitize_text_field( $params['job_id'] )             : '';
+        $result    = isset( $params['result'] ) && is_array( $params['result'] ) ? $params['result']         : null;
+        $error_msg = isset( $params['error_message'] ) ? sanitize_textarea_field( $params['error_message'] ) : '';
+
+        if ( $result === null && empty( $error_msg ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => __( 'result or error_message is required.', 'qaproof' ) ],
+            ], 400 );
+        }
+
+        // Baseline-job completion: there's no test result row to save — the job
+        // just captured a baseline. Stamp has_baseline + baseline_key on the
+        // monitor so the next run does a regression, then return.
+        if ( $result && ! empty( $result['baselineKey'] )
+             && ( ! isset( $result['testType'] ) || $result['testType'] === 'baseline' ) ) {
+            QAProof_API_Client::monitors_update( $id, [
+                'baseline_key' => sanitize_text_field( $result['baselineKey'] ),
+                'has_baseline' => 1,
+                'last_run_at'  => gmdate( 'Y-m-d H:i:s' ),
+            ] );
+            delete_transient( self::run_queued_key( $id ) );
+            self::flush_monitor_cache( $id );
+
+            return new WP_REST_Response( [
+                'success' => true,
+                'data'    => [ 'mode' => 'baseline', 'has_baseline' => true ],
+            ], 200 );
+        }
+
+        if ( $result ) {
+            $save_data = [
+                'score'           => isset( $result['score'] )           ? (int) $result['score']                                : null,
+                'has_changes'     => ! empty( $result['hasChanges'] ) ? (bool) $result['hasChanges'] : false,
+                'status'          => 'completed',
+                'summary'         => isset( $result['summary'] )         ? $result['summary']               : '',
+                'categories'      => isset( $result['categories'] )      ? $result['categories']            : [],
+                'differences'     => isset( $result['differences'] )     ? $result['differences']           : [],
+                'recommendations' => isset( $result['recommendations'] ) ? $result['recommendations']       : [],
+            ];
+
+            $saved = QAProof_API_Client::monitors_save_result( $id, $save_data );
+
+            if ( is_wp_error( $saved ) ) {
+                return new WP_REST_Response( [
+                    'success' => false,
+                    'error'   => [ 'message' => $saved->get_error_message() ],
+                ], 502 );
+            }
+
+            $result_id = isset( $saved['id'] ) ? $saved['id'] : null;
+
+            // Update the monitor's last_score and last_run_at in the SaaS DB.
+            QAProof_API_Client::monitors_update( $id, [
+                'last_score'  => $save_data['score'],
+                'last_run_at' => gmdate( 'Y-m-d H:i:s' ),
+            ] );
+
+            // Clear the run_queued transient so the badge disappears.
+            delete_transient( self::run_queued_key( $id ) );
+            self::flush_monitor_cache( $id );
+
+            // Send notification if score is below threshold — same logic as the scheduler.
+            $notify_on       = isset( $monitor['notify_on'] ) ? $monitor['notify_on'] : 'failures';
+            $score           = $save_data['score'];
+            $below_threshold = $score !== null && $score < (int) $monitor['threshold_score'];
+
+            if ( $notify_on === 'all' || ( $notify_on === 'failures' && $below_threshold ) ) {
+                QAProof_Notifications::notify( $monitor, $result );
+            }
+
+            // Fetch screenshots inline and patch them onto the result row so the
+            // report renders complete — no deferred WP-Cron (which fired only on
+            // the next visit + 60s lock, leaving screenshots "loading" for ~5 min).
+            // Uses the dedicated /api/results/:id/screenshots endpoint (10 MB body
+            // limit) rather than the monitors save endpoint (5 MB) so two full-page
+            // PNGs don't trip a 413.
+            if ( $result_id && ! empty( $job_id ) ) {
+                $shots = QAProof_API_Client::get_job_screenshots( $job_id );
+                if ( ! is_wp_error( $shots ) && ! empty( $shots['screenshots'] ) ) {
+                    QAProof_API_Client::monitors_update_result_screenshots( $result_id, $shots['screenshots'] );
+                }
+            }
+
+            return new WP_REST_Response( [
+                'success' => true,
+                'data'    => [ 'result_id' => $result_id ],
+            ], 200 );
+        }
+
+        // Error case — save a failed result row.
+        QAProof_API_Client::monitors_save_result( $id, [
+            'status'        => 'failed',
+            'error_message' => $error_msg,
+        ] );
+        delete_transient( self::run_queued_key( $id ) );
+        self::flush_monitor_cache( $id );
+
+        return new WP_REST_Response( [ 'success' => true ], 200 );
     }
 
     public static function handle_get_results( WP_REST_Request $request ) {
@@ -288,60 +439,6 @@ class QAProof_Admin_REST_Monitors {
             'data'    => $result['data'],
             'total'   => $result['total'],
         ], 200 );
-    }
-
-    public static function handle_approve_result( WP_REST_Request $request ) {
-        $result_id  = sanitize_text_field( $request['id'] );
-        $monitor_id = sanitize_text_field( $request->get_param( 'monitorId' ) );
-
-        if ( empty( $monitor_id ) ) {
-            // Without monitorId we can only flip status, not recreate the baseline.
-            $approved = QAProof_API_Client::monitors_approve_result( $result_id );
-            if ( is_wp_error( $approved ) ) {
-                return new WP_REST_Response( [
-                    'success' => false,
-                    'error'   => [ 'message' => $approved->get_error_message() ],
-                ], 502 );
-            }
-            return new WP_REST_Response( [ 'success' => true ], 200 );
-        }
-
-        $monitor = QAProof_API_Client::monitors_get( $monitor_id );
-        if ( is_wp_error( $monitor ) ) {
-            return new WP_REST_Response( [
-                'success' => false,
-                'error'   => [ 'message' => __( 'Monitor not found.', 'qaproof' ) ],
-            ], 404 );
-        }
-
-        // Retry once on CAPTURE_UNSTABLE — same rationale as the scheduler.
-        $baseline_result = QAProof_API_Client::create_baseline( $monitor['page_url'] );
-
-        if ( is_wp_error( $baseline_result ) ) {
-            $error_data  = $baseline_result->get_error_data( 'qaproof_api_error' );
-            $is_unstable = isset( $error_data['error_code'] ) && $error_data['error_code'] === 'CAPTURE_UNSTABLE';
-
-            if ( $is_unstable ) {
-                $baseline_result = QAProof_API_Client::create_baseline( $monitor['page_url'], true );
-            }
-
-            if ( is_wp_error( $baseline_result ) ) {
-                return new WP_REST_Response( [
-                    'success' => false,
-                    'error'   => [ 'message' => $baseline_result->get_error_message() ],
-                ], 502 );
-            }
-        }
-
-        QAProof_API_Client::monitors_update( $monitor_id, [
-            'baseline_key' => $baseline_result['key'],
-            'has_baseline' => 1,
-        ] );
-
-        QAProof_API_Client::monitors_approve_result( $result_id );
-
-        self::flush_monitor_cache( $monitor_id );
-        return new WP_REST_Response( [ 'success' => true ], 200 );
     }
 
     public static function handle_clear_notifications() {

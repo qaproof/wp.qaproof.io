@@ -166,6 +166,12 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[a-fA-F0-9-]{8,64})/finish-run', [
+            'methods'             => 'POST',
+            'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_finish_run' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[a-fA-F0-9-]{8,64})/results', [
             'methods'             => 'GET',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_get_results' ],

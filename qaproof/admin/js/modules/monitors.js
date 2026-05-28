@@ -1421,7 +1421,14 @@
     });
   }
 
-  function runMonitor(id, btn) {
+  // Bulk setups hit the API's per-workspace concurrency cap (429). We keep the
+  // card "running" and retry on an interval so each monitor gets its turn as a
+  // slot frees, instead of erroring out. ~20 × 8s ≈ 2.5 min of patience.
+  var MONITOR_RUN_MAX_RETRIES = 20;
+  var MONITOR_RUN_RETRY_MS    = 8000;
+
+  function runMonitor(id, btn, attempt) {
+    attempt = attempt || 0;
     var hasBaseline = btn && btn.dataset.hasBaseline === '1';
     // Add running animation to the card immediately so the gradient stripe
     // appears on click — not 2-3 s later after the POST round-trips and
@@ -1455,8 +1462,17 @@
           .catch(function () { return 0; })
       : Promise.resolve(0);
 
-    // Roll back the optimistic running state shown on click (card stripe +
-    // button label) when the POST never started a run.
+    // Mark the run as pending IMMEDIATELY — before the POST fires — so that
+    // if the user opens the monitor detail view while the long baseline capture
+    // (~20s) is still in flight, hasActivePendingRun() returns true and the
+    // detail view shows the loading block straight away.
+    try {
+      sessionStorage.setItem('qaproof_pending_run_' + id, '1');
+      sessionStorage.setItem('qaproof_run_start_' + id, String(Date.now()));
+    } catch(e) {}
+
+    // Roll back the optimistic running state (card stripe + button label +
+    // sessionStorage) when the POST fails to start a run.
     function rollbackRunningState() {
       if (card) card.classList.remove('qaproof-card-running');
       if (btn) {
@@ -1466,28 +1482,76 @@
           ? (qaproof.i18n.monitorBtnRun   || 'Check Now')
           : (qaproof.i18n.monitorBtnSetup || 'Set Up');
       }
+      try {
+        sessionStorage.removeItem('qaproof_pending_run_' + id);
+        sessionStorage.removeItem('qaproof_run_start_' + id);
+      } catch(e) {}
     }
 
     getResultCount.then(function (resultCount) {
       return apiCall('POST', '/monitors/' + id + '/run').then(function (resp) {
         if (resp.success) {
-          // Mark pending run so the card shows "Running" badge
+          // Store pre-run result count so detail view can detect completion at render time
           try {
-            sessionStorage.setItem('qaproof_pending_run_' + id, '1');
-            sessionStorage.setItem('qaproof_run_start_' + id, String(Date.now()));
-            // Store pre-run result count so detail view can detect completion at render time
             if (hasBaseline) {
               sessionStorage.setItem('qaproof_pre_run_count_' + id, String(resultCount));
             }
           } catch(e) {}
           loadMonitors(true);
-          // Stay in the list view — use background list-mode polling
-          if (!hasBaseline) {
+
+          var jobId = resp.data && resp.data.job_id;
+
+          if (jobId) {
+            // Both setup (baseline capture) and Check Now (regression) now run
+            // as async jobs. Poll the API job, then call finish-run — the PHP
+            // handler stamps has_baseline for a baseline result, or saves a
+            // result row for a regression result.
+            Q.startJobPolling(jobId, {
+              page: 'monitors',
+              onDone: function (result) {
+                apiCall('POST', '/monitors/' + id + '/finish-run', {
+                  job_id: jobId,
+                  result: result,
+                }).then(function () {
+                  try {
+                    sessionStorage.removeItem('qaproof_pending_run_' + id);
+                    sessionStorage.removeItem('qaproof_run_start_' + id);
+                    sessionStorage.removeItem('qaproof_pre_run_count_' + id);
+                  } catch(e) {}
+                  loadMonitors(true);
+                  // Refresh detail view if it's open for this monitor.
+                  var openId;
+                  try { openId = sessionStorage.getItem('qaproof_open_monitor'); } catch(e) {}
+                  if (openId && String(openId) === String(id)) {
+                    showMonitorDetail(id);
+                  }
+                }).catch(function () {
+                  rollbackRunningState();
+                  Q.alert(qaproof.i18n.monitorRunFailed || 'Failed to save result.');
+                });
+              },
+              onFailed: function (errMsg) {
+                rollbackRunningState();
+                Q.alert(errMsg || (qaproof.i18n.monitorRunFailed || 'Check Now failed.'));
+              },
+            });
+          } else if (!hasBaseline) {
+            // Legacy fallback (older API without a baseline job): poll until
+            // has_baseline flips to 1.
             pollBaselineInList(id);
           } else {
+            // Legacy fallback (older API without a job id): poll the DB.
             pollResultInList(id, resultCount, 0, null);
           }
         } else {
+          // Per-workspace concurrency cap (429). Expected during bulk setups —
+          // keep the card "running" and retry after a delay so each monitor
+          // gets its turn instead of surfacing an error.
+          var code = resp.error && resp.error.code;
+          if (code === 'CONCURRENCY_LIMIT' && attempt < MONITOR_RUN_MAX_RETRIES) {
+            setTimeout(function () { runMonitor(id, btn, attempt + 1); }, MONITOR_RUN_RETRY_MS);
+            return;
+          }
           rollbackRunningState();
           Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
         }
@@ -1846,23 +1910,56 @@
           startRegressionAnimation(monitor.id);
         }
 
-        apiCall('POST', '/monitors/' + monitor.id + '/run').then(function (resp) {
-          if (resp.success) {
-            pollForMonitorResult(monitor.id, totalResultCount || 0);
-          } else {
-            runBtn.disabled = false;
-            runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now');
-            if (loadingBlock) loadingBlock.style.display = 'none';
-            stopCapturingAnimation();
-            try { sessionStorage.removeItem('qaproof_pending_run_' + monitor.id); } catch(e) {}
-            showToast(Q.escapeHtml((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.')), 'error');
-          }
-        }).catch(function () {
+        // Restore the run button + loading UI on any failure path.
+        function detailRunFailed(msg) {
           runBtn.disabled = false;
           runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now');
           if (loadingBlock) loadingBlock.style.display = 'none';
           stopCapturingAnimation();
           try { sessionStorage.removeItem('qaproof_pending_run_' + monitor.id); } catch(e) {}
+          if (msg) showToast(Q.escapeHtml(msg), 'error');
+        }
+
+        apiCall('POST', '/monitors/' + monitor.id + '/run').then(function (resp) {
+          if (!resp.success) {
+            detailRunFailed((resp.error && resp.error.message) || (qaproof.i18n.monitorRunFailed || 'Failed to run monitor.'));
+            return;
+          }
+
+          var jobId = resp.data && resp.data.job_id;
+          if (!jobId) {
+            // Legacy fallback (older API without a job id): poll the DB.
+            pollForMonitorResult(monitor.id, totalResultCount || 0);
+            return;
+          }
+
+          // Both setup (baseline capture) and Check Now (regression) run as
+          // async jobs. Poll the job, then call finish-run — the PHP handler
+          // marks has_baseline for a baseline result or saves a result row for
+          // a regression result. (The old DB-poll path hung on baseline runs
+          // because a baseline produces no result row.)
+          Q.startJobPolling(jobId, {
+            page: 'monitors',
+            onDone: function (result) {
+              apiCall('POST', '/monitors/' + monitor.id + '/finish-run', {
+                job_id: jobId,
+                result: result,
+              }).then(function () {
+                try {
+                  sessionStorage.removeItem('qaproof_pending_run_' + monitor.id);
+                  sessionStorage.removeItem('qaproof_run_start_' + monitor.id);
+                } catch(e) {}
+                showMonitorDetail(monitor.id);
+              }).catch(function () {
+                detailRunFailed(qaproof.i18n.monitorRunFailed || 'Failed to save result.');
+              });
+            },
+            onFailed: function (errMsg) {
+              detailRunFailed(errMsg || (qaproof.i18n.monitorRunFailed || 'Check Now failed.'));
+            },
+          });
+        }).catch(function () {
+          detailRunFailed();
         });
       });
     }
@@ -1905,6 +2002,103 @@
     });
   }
 
+  /**
+   * Poll for screenshots on a completed result that has none yet.
+   * Called after renderResultDetail renders a placeholder. When screenshots
+   * arrive, re-renders the screenshot section in-place without touching the
+   * rest of the detail view. Max 24 attempts × 5s = 2 minutes.
+   */
+  function pollForScreenshots(monitorId, resultId, container, differences, attempts) {
+    attempts = attempts || 0;
+    if (attempts >= 24) return; // give up after 2 min
+
+    // Ping wp-cron every 3rd attempt to keep the SCREENSHOTS_HOOK moving.
+    if (attempts > 0 && attempts % 3 === 0) {
+      try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6), { mode: 'no-cors' }); } catch(e) {}
+    }
+
+    setTimeout(function () {
+      // Abort if the user navigated away and the placeholder is no longer in the DOM.
+      if (!document.getElementById('qaproof-screenshots-pending')) return;
+
+      var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
+      apiCall('GET', '/monitors/' + monitorId + '/results' + sep + 'limit=20').then(function (resp) {
+        if (!resp.success || !resp.data) {
+          pollForScreenshots(monitorId, resultId, container, differences, attempts + 1);
+          return;
+        }
+        var found = null;
+        for (var i = 0; i < resp.data.length; i++) {
+          if (String(resp.data[i].id) === String(resultId)) { found = resp.data[i]; break; }
+        }
+        if (!found) {
+          pollForScreenshots(monitorId, resultId, container, differences, attempts + 1);
+          return;
+        }
+
+        var sc = found.screenshots_json ? JSON.parse(found.screenshots_json) : {};
+        if (sc.baseline && sc.current) {
+          // Screenshots arrived — replace placeholder with the real section.
+          var placeholder = document.getElementById('qaproof-screenshots-pending');
+          if (!placeholder) return; // user navigated away
+
+          var sectionHtml = '';
+          sectionHtml += '<div class="qaproof-screenshot-section">';
+          sectionHtml += '  <div class="qaproof-screenshot-chrome">';
+          sectionHtml += '    <div class="qaproof-chrome-bar">';
+          sectionHtml += '      <div class="qaproof-chrome-logo"><img src="' + qaproof.pluginUrl + 'admin/images/icon.svg" width="22" height="22" alt="" aria-hidden="true"></div>';
+          sectionHtml += '      <div class="qaproof-chrome-title">' + (qaproof.i18n.monitorVisualComp || 'Visual Comparison') + '</div>';
+          sectionHtml += '      <div class="qaproof-chrome-actions">';
+          sectionHtml += '        <button type="button" id="qaproof-toggle-markers" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg> ' + (qaproof.i18n.monitorMarkers || 'Markers') + '</button>';
+          sectionHtml += '        <button type="button" id="qaproof-toggle-sync" class="qaproof-chrome-btn active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v4h4M12 14v-4H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4L8.5 7.5M4 12l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> ' + (qaproof.i18n.monitorSyncScroll || 'Sync Scroll') + '</button>';
+          sectionHtml += '      </div>';
+          sectionHtml += '    </div>';
+          sectionHtml += '    <div class="qaproof-comparison-viewport">';
+          sectionHtml += '      <div class="qaproof-screenshot-col">';
+          sectionHtml += '        <div class="qaproof-screenshot-label">' + (qaproof.i18n.monitorBaseline || 'Baseline') + '</div>';
+          sectionHtml += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-figma">';
+          sectionHtml += '          <div class="qaproof-screenshot-inner">';
+          sectionHtml += '            <img id="qaproof-screenshot-figma" src="' + Q.escapeAttr(sc.baseline) + '" alt="Baseline" />';
+          sectionHtml += '            <div class="qaproof-markers-layer" id="qaproof-markers-figma"></div>';
+          sectionHtml += '          </div>';
+          sectionHtml += '        </div>';
+          sectionHtml += '      </div>';
+          sectionHtml += '      <div class="qaproof-screenshot-col">';
+          sectionHtml += '        <div class="qaproof-screenshot-label">' + (qaproof.i18n.monitorCurrent || 'Current') + '</div>';
+          sectionHtml += '        <div class="qaproof-screenshot-wrapper" id="qaproof-wrapper-live">';
+          sectionHtml += '          <div class="qaproof-screenshot-inner">';
+          sectionHtml += '            <img id="qaproof-screenshot-live" src="' + Q.escapeAttr(sc.current) + '" alt="Current" />';
+          sectionHtml += '            <div class="qaproof-markers-layer" id="qaproof-markers-live"></div>';
+          sectionHtml += '          </div>';
+          sectionHtml += '        </div>';
+          sectionHtml += '      </div>';
+          sectionHtml += '    </div>';
+          sectionHtml += '  </div>';
+          sectionHtml += '</div>';
+
+          var wrapper = document.createElement('div');
+          wrapper.innerHTML = sectionHtml;
+          placeholder.parentNode.replaceChild(wrapper.firstChild, placeholder);
+
+          // Wire up sync-scroll, toolbar and markers now that images are in the DOM.
+          var bImg = document.getElementById('qaproof-screenshot-figma');
+          var cImg = document.getElementById('qaproof-screenshot-live');
+          if (bImg && cImg) {
+            Promise.all([Q.waitForImage(bImg), Q.waitForImage(cImg)]).then(function () {
+              Q.renderMarkers(differences);
+            });
+          }
+          Q.setupSyncScroll();
+          Q.setupToolbar();
+        } else {
+          pollForScreenshots(monitorId, resultId, container, differences, attempts + 1);
+        }
+      }).catch(function () {
+        pollForScreenshots(monitorId, resultId, container, differences, attempts + 1);
+      });
+    }, 5000);
+  }
+
   function viewResult(resultId) {
     var detailArea = document.getElementById('qaproof-result-detail');
     if (!detailArea) return;
@@ -1924,11 +2118,11 @@
         detailArea.innerHTML = '<p>' + (qaproof.i18n.monitorResultNotFound || 'Result not found.') + '</p>';
         return;
       }
-      renderResultDetail(result, detailArea);
+      renderResultDetail(result, detailArea, monitorId);
     });
   }
 
-  function renderResultDetail(result, container) {
+  function renderResultDetail(result, container, monitorId) {
     if (result.status === 'failed') {
       container.innerHTML = '<div class="qaproof-card"><h3>' + (qaproof.i18n.monitorRunFailed2 || 'Run Failed') + '</h3><p>' + Q.escapeHtml(result.error_message || '') + '</p></div>';
       return;
@@ -1996,6 +2190,12 @@
       html += '    </div>';
       html += '  </div>';
       html += '</div>';
+    } else if (result.status === 'completed') {
+      // Screenshots not yet available (background fetch still in progress) — show placeholder.
+      html += '<div id="qaproof-screenshots-pending" style="margin:16px 0;padding:12px 16px;background:rgba(0,183,158,0.08);border-radius:8px;display:flex;align-items:center;gap:10px;">';
+      html += '<span class="spinner is-active" style="float:none;margin:0;"></span>';
+      html += '<span>' + (qaproof.i18n.monitorScreenshotsLoading || 'Screenshots are loading in the background…') + '</span>';
+      html += '</div>';
     }
 
     html += '<h3>' + (qaproof.i18n.monitorDifferences || 'Differences') + ' <span class="qaproof-diff-count" id="qaproof-diff-count">' + differences.length + '</span></h3>';
@@ -2027,6 +2227,12 @@
       Promise.all([Q.waitForImage(bImg), Q.waitForImage(cImg)]).then(function () { Q.renderMarkers(differences); });
       Q.setupSyncScroll();
       Q.setupToolbar();
+    } else if (result.status === 'completed' && monitorId) {
+      // Screenshots are not yet saved — poll for them in background.
+      // Also ping wp-cron immediately so the SCREENSHOTS_HOOK fires without waiting
+      // for the next natural page load (critical when DISABLE_WP_CRON=true).
+      try { fetch('/wp-cron.php?doing_wp_cron=' + (Date.now() / 1000).toFixed(6), { mode: 'no-cors' }); } catch(e) {}
+      pollForScreenshots(monitorId, result.id, container, differences, 0);
     }
 
     Q.setupFilterFor('qaproof-severity-filter', 'severity');

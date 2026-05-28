@@ -932,6 +932,29 @@ class QAProof_API_Client {
         return true;
     }
 
+    /**
+     * Attach screenshots to an already-saved monitor result.
+     *
+     * Called by the background cron `qaproof_fetch_monitor_screenshots` after
+     * the main result row was saved without screenshots so the UI could show the
+     * score immediately. Screenshots are fetched server-to-server separately and
+     * then patched onto the existing row via this endpoint.
+     *
+     * @param string $result_id  Monitor result UUID.
+     * @param array  $screenshots  Associative array of viewport => base64 data-URI.
+     * @return true|WP_Error
+     */
+    public static function monitors_update_result_screenshots( $result_id, $screenshots ) {
+        $result = self::api_request(
+            'PATCH',
+            '/api/results/' . rawurlencode( $result_id ) . '/screenshots',
+            array( 'screenshots' => $screenshots ),
+            self::BASELINE_TIMEOUT
+        );
+        if ( is_wp_error( $result ) ) return $result;
+        return true;
+    }
+
     // ── Test History ──────────────────────────────────────────────────────────
 
     public static function history_list( $args = array() ) {
