@@ -95,7 +95,6 @@ if ( ! function_exists( 'qaproof_debug_log' ) ) {
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-api-client.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-settings.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-database.php';
-require_once QAPROOF_PLUGIN_DIR . 'includes/class-scheduler.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-notifications.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-privacy.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin.php';
@@ -110,22 +109,10 @@ require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-rest-history.php';
 add_action( 'plugins_loaded', function() {
     QAProof_Settings::init();
     QAProof_Admin::init();
-    QAProof_Scheduler::init();
     QAProof_Notifications::init();
     QAProof_Privacy::init();
     QAProof_API_Client::register_user_agent_filter();
     QAProof_Database::maybe_upgrade();
-});
-
-register_activation_hook( __FILE__, function() {
-    // Cron events only — fresh installs no longer create custom DB tables.
-    // Monitors / results / test-history live in the SaaS API; old local
-    // tables (if present from a pre-1.0.1 install) are dropped on uninstall.
-    QAProof_Scheduler::schedule_events();
-});
-
-register_deactivation_hook( __FILE__, function() {
-    QAProof_Scheduler::unschedule_events();
 });
 
 add_filter( 'plugin_action_links_' . QAPROOF_PLUGIN_BASENAME, function ( $links ) {

@@ -101,7 +101,7 @@ class QAProof_Settings {
             'default'           => 90,
         ]);
 
-        register_setting( self::GROUP_MONITORS, 'qaproof_cron_hour', [
+        register_setting( self::GROUP_MONITORS, 'qaproof_notify_hour', [
             'type'              => 'integer',
             'sanitize_callback' => function( $val ) {
                 $val = (int) $val;
@@ -150,9 +150,9 @@ class QAProof_Settings {
         );
 
         add_settings_field(
-            'qaproof_cron_hour',
+            'qaproof_notify_hour',
             __( 'Report Delivery Time', 'qaproof' ),
-            [ __CLASS__, 'render_cron_hour_field' ],
+            [ __CLASS__, 'render_notify_hour_field' ],
             'qaproof-settings-monitors',
             'qaproof_monitoring_section'
         );
@@ -517,9 +517,23 @@ class QAProof_Settings {
         echo '<p class="description">' . esc_html__( 'Score below this threshold triggers notifications. 0-100, default 95.', 'qaproof' ) . '</p>';
     }
 
-    public static function render_cron_hour_field() {
-        $value    = (int) get_option( 'qaproof_cron_hour', 8 );
-        $site_tz  = wp_timezone_string();
+
+
+    public static function render_default_test_type_field() {
+        $value = get_option( 'qaproof_default_test_type', 'fidelity' );
+        ?>
+        <select name="qaproof_default_test_type">
+            <option value="fidelity" <?php selected( $value, 'fidelity' ); ?>><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></option>
+            <option value="responsive" <?php selected( $value, 'responsive' ); ?>><?php esc_html_e( 'Responsive Test', 'qaproof' ); ?></option>
+            <option value="design-audit" <?php selected( $value, 'design-audit' ); ?>><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></option>
+        </select>
+        <p class="description"><?php esc_html_e( 'Pre-selected test type on the Tests page.', 'qaproof' ); ?></p>
+        <?php
+    }
+
+    public static function render_notify_hour_field() {
+        $value   = (int) get_option( 'qaproof_notify_hour', 8 );
+        $site_tz = wp_timezone_string();
         $sections = [
             [ 'icon' => '🌙', 'label' => __( 'Night',     'qaproof' ), 'start' => 0,  'end' => 5  ],
             [ 'icon' => '🌅', 'label' => __( 'Morning',   'qaproof' ), 'start' => 6,  'end' => 11 ],
@@ -527,7 +541,7 @@ class QAProof_Settings {
             [ 'icon' => '🌆', 'label' => __( 'Evening',   'qaproof' ), 'start' => 18, 'end' => 23 ],
         ];
         ?>
-        <div class="qaproof-hour-picker" data-field="qaproof_cron_hour">
+        <div class="qaproof-hour-picker" data-field="qaproof_notify_hour">
             <?php foreach ( $sections as $section ) : ?>
             <div class="qaproof-hour-section">
                 <div class="qaproof-hour-section-label">
@@ -546,29 +560,17 @@ class QAProof_Settings {
             </div>
             <?php endforeach; ?>
         </div>
-        <input type="hidden" name="qaproof_cron_hour" id="qaproof_cron_hour" value="<?php echo esc_attr( $value ); ?>">
+        <input type="hidden" name="qaproof_notify_hour" id="qaproof_notify_hour" value="<?php echo esc_attr( $value ); ?>">
         <p class="description" style="margin-top: 10px;">
             <?php
             echo wp_kses_post( sprintf(
                 /* translators: 1: selected hour, 2: timezone string */
-                __( 'Monitors run at %1$s:00 (%2$s). Changes apply from the next scheduled run.', 'qaproof' ),
+                __( 'Monitors run at %1$s:00 (%2$s).', 'qaproof' ),
                 '<strong id="qaproof-hour-display">' . esc_html( sprintf( '%02d', $value ) ) . '</strong>',
                 '<strong>' . esc_html( $site_tz ) . '</strong>'
             ) );
             ?>
         </p>
-        <?php
-    }
-
-    public static function render_default_test_type_field() {
-        $value = get_option( 'qaproof_default_test_type', 'fidelity' );
-        ?>
-        <select name="qaproof_default_test_type">
-            <option value="fidelity" <?php selected( $value, 'fidelity' ); ?>><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></option>
-            <option value="responsive" <?php selected( $value, 'responsive' ); ?>><?php esc_html_e( 'Responsive Test', 'qaproof' ); ?></option>
-            <option value="design-audit" <?php selected( $value, 'design-audit' ); ?>><?php esc_html_e( 'Design Audit', 'qaproof' ); ?></option>
-        </select>
-        <p class="description"><?php esc_html_e( 'Pre-selected test type on the Tests page.', 'qaproof' ); ?></p>
         <?php
     }
 
