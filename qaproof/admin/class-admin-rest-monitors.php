@@ -44,18 +44,6 @@ class QAProof_Admin_REST_Monitors {
             ], $http );
         }
 
-        // Cron schedule data only lives on this WP install — enrich here.
-        $cron_next = [
-            'daily'   => wp_next_scheduled( QAProof_Scheduler::DAILY_HOOK ),
-            'weekly'  => wp_next_scheduled( QAProof_Scheduler::WEEKLY_HOOK ),
-            'monthly' => wp_next_scheduled( QAProof_Scheduler::MONTHLY_HOOK ),
-        ];
-
-        foreach ( $monitors as &$m ) {
-            $ts = isset( $cron_next[ $m['schedule'] ] ) ? $cron_next[ $m['schedule'] ] : false;
-            $m['next_run_at'] = $ts ? gmdate( 'Y-m-d H:i:s', $ts ) : null;
-        }
-        unset( $m );
 
         set_transient( self::cache_key_list(), $monitors, self::CACHE_TTL );
         $cached = $monitors;
@@ -117,15 +105,18 @@ class QAProof_Admin_REST_Monitors {
 
         $valid_notify_on = [ 'failures', 'all' ];
         $create_data = [
-            'page_url'        => $url,
-            'schedule'        => isset( $params['schedule'] ) ? sanitize_text_field( $params['schedule'] ) : 'daily',
-            'notify_email'    => isset( $params['notify_email'] )    ? (int) $params['notify_email']    : 1,
-            'notify_admin'    => isset( $params['notify_admin'] )    ? (int) $params['notify_admin']    : 1,
-            'notify_on'       => isset( $params['notify_on'] ) && in_array( $params['notify_on'], $valid_notify_on, true )
-                                    ? $params['notify_on'] : 'failures',
-            'threshold_score' => isset( $params['threshold_score'] )
-                                    ? (int) $params['threshold_score']
-                                    : (int) get_option( 'qaproof_default_threshold', 95 ),
+            'page_url'             => $url,
+            'schedule'             => isset( $params['schedule'] ) ? sanitize_text_field( $params['schedule'] ) : 'daily',
+            'notify_email'         => isset( $params['notify_email'] )    ? (int) $params['notify_email']    : 1,
+            'notify_admin'         => isset( $params['notify_admin'] )    ? (int) $params['notify_admin']    : 1,
+            'notify_on'            => isset( $params['notify_on'] ) && in_array( $params['notify_on'], $valid_notify_on, true )
+                                         ? $params['notify_on'] : 'failures',
+            'threshold_score'      => isset( $params['threshold_score'] )
+                                         ? (int) $params['threshold_score']
+                                         : (int) get_option( 'qaproof_default_threshold', 95 ),
+            'notify_hour'          => (int) get_option( 'qaproof_notify_hour', 8 ),
+            'notify_timezone'      => wp_timezone_string(),
+            'notify_email_address' => get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
         ];
         if ( ! empty( $params['scheduled_at'] ) ) {
             $create_data['scheduled_at'] = sanitize_text_field( $params['scheduled_at'] );
@@ -166,6 +157,9 @@ class QAProof_Admin_REST_Monitors {
         if ( isset( $params['notify_on'] ) && in_array( $params['notify_on'], [ 'failures', 'all' ], true ) ) {
             $update['notify_on'] = sanitize_text_field( $params['notify_on'] );
         }
+        $update['notify_hour']          = (int) get_option( 'qaproof_notify_hour', 8 );
+        $update['notify_timezone']      = wp_timezone_string();
+        $update['notify_email_address'] = get_option( 'qaproof_notify_email', get_option( 'admin_email' ) );
 
         $monitor = QAProof_API_Client::monitors_update( $id, $update );
 
