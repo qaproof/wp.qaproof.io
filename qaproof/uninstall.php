@@ -42,6 +42,10 @@ function qaproof_uninstall_blog_cleanup() {
 			// Migration progress flag — without this entry it survives
 			// uninstall and a future reinstall would skip the migration.
 			'qaproof_monitors_api_migrated',
+			// One-time flag guarding the orphaned-cron sweep in
+			// class-database.php::maybe_upgrade(). Removing it lets a future
+			// reinstall re-run the (idempotent) sweep.
+			'qaproof_legacy_cron_cleared',
 		];
 		foreach ( $settings_options as $opt ) {
 			delete_option( $opt );
@@ -82,7 +86,10 @@ function qaproof_uninstall_blog_cleanup() {
 		'qaproof_run_monitor',
 	];
 	foreach ( $cron_hooks as $hook ) {
-		wp_clear_scheduled_hook( $hook );
+		// wp_unschedule_hook drops ALL events for the hook regardless of args
+		// (qaproof_run_monitor carried a monitor-id), unlike
+		// wp_clear_scheduled_hook which only matches the empty-args set.
+		wp_unschedule_hook( $hook );
 	}
 
 	delete_option( 'qaproof_uninstall_delete_api_key' );

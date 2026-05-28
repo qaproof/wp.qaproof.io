@@ -1019,7 +1019,10 @@
 
     if (S.testType === 'fidelity') {
       if (typeof qaproof !== 'undefined') {
-        body.ignoreText = qaproof.fidelityIgnoreText !== false;
+        // wp_localize_script string-casts scalars, so the localized value is
+        // "1" (on) or "" (off) — never a JS boolean. Coerce truthiness rather
+        // than comparing against `false`, which "" never strict-equals.
+        body.ignoreText = !!qaproof.fidelityIgnoreText;
       }
       var designSelect = document.getElementById('qaproof-saved-design');
       var selectedDesign = null;
