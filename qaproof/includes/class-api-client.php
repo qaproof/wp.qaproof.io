@@ -83,7 +83,7 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -149,7 +149,7 @@ class QAProof_API_Client {
             return new WP_Error( 'qaproof_job_not_found', __( 'Job not found or expired.', 'qaproof' ) );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -216,7 +216,7 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -428,7 +428,7 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -500,7 +500,7 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             /* translators: %d: HTTP status code */
             $error_msg  = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
             $error_code = isset( $decoded['error']['code'] )    ? $decoded['error']['code']    : 'API_ERROR';
@@ -570,7 +570,7 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -638,7 +638,7 @@ class QAProof_API_Client {
             );
         }
 
-        if ( $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -662,7 +662,7 @@ class QAProof_API_Client {
         }
 
         $status_code = wp_remote_retrieve_response_code( $response );
-        if ( $status_code !== 200 ) {
+        if ( ( $status_code < 200 || $status_code >= 300 ) ) {
             return new WP_Error( 'qaproof_health_error',
                 /* translators: %d: HTTP status code */
                 sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code )
@@ -903,7 +903,7 @@ class QAProof_API_Client {
         $status_code = wp_remote_retrieve_response_code( $response );
         $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
 
-        if ( $decoded === null || $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( $decoded === null || ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */
@@ -988,7 +988,7 @@ class QAProof_API_Client {
         $status_code = wp_remote_retrieve_response_code( $response );
         $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
 
-        if ( $decoded === null || $status_code !== 200 || empty( $decoded['success'] ) ) {
+        if ( $decoded === null || ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
             $msg = isset( $decoded['error']['message'] )
                 ? $decoded['error']['message']
                 /* translators: %d: HTTP status code */

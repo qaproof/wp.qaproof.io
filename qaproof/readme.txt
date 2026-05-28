@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.12
+Stable tag: 1.0.13
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.13 =
+Hardening: API client treats any 2xx as success.
+
+* Ten API-client methods hard-coded `HTTP 200` as the only success status (separate from the shared `api_request()` helper fixed in 1.0.11). Every endpoint they call returns 200 today, so there's no behaviour change — but if any of them ever returns 201/202/204, it would have been misread as an error (the same class of bug that broke "Run now" on 202 in 1.0.11). All ten now accept any 2xx, with the response body's `success` flag remaining the authoritative gate.
 
 = 1.0.12 =
 Fix monitor card stuck on "Running" after a run finished.
