@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.8 =
+Fix the admin version badge showing the wrong version.
+
+* **`QAPROOF_VERSION` was hardcoded to `1.0.3`** and the release process only ever bumped the plugin-header `Version:` line — so from v1.0.4 through v1.0.7 the admin footer badge, the asset cache-bust query string, and the API-client User-Agent all reported `1.0.3` while the actual code moved on. The constant is now **derived from the plugin header** via `get_file_data()`, so the two can never drift again. No functional change beyond correct version reporting.
 
 = 1.0.7 =
 Figma is now OAuth-only — the manual "share files with our service account" path is gone, plus a batch of OAuth-flow correctness fixes from a full audit of the design-fidelity feature.
