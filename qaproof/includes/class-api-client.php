@@ -796,13 +796,16 @@ class QAProof_API_Client {
 
     public static function monitors_create( $data ) {
         $payload = array(
-            'page_url'              => isset( $data['page_url'] )        ? $data['page_url']        : '',
-            'schedule'              => isset( $data['schedule'] )        ? $data['schedule']        : 'daily',
-            'is_enabled'            => isset( $data['is_enabled'] )      ? (bool) $data['is_enabled'] : true,
-            'notify_email_enabled'  => isset( $data['notify_email'] )    ? (bool) $data['notify_email'] : true,
-            'notify_admin_enabled'  => isset( $data['notify_admin'] )    ? (bool) $data['notify_admin'] : true,
-            'notify_on'             => isset( $data['notify_on'] )       ? $data['notify_on']       : 'failures',
-            'threshold_score'       => isset( $data['threshold_score'] ) ? (int) $data['threshold_score'] : 90,
+            'page_url'              => isset( $data['page_url'] )             ? $data['page_url']             : '',
+            'schedule'              => isset( $data['schedule'] )             ? $data['schedule']             : 'daily',
+            'is_enabled'            => isset( $data['is_enabled'] )           ? (bool) $data['is_enabled']    : true,
+            'notify_email_enabled'  => isset( $data['notify_email'] )         ? (bool) $data['notify_email']  : true,
+            'notify_admin_enabled'  => isset( $data['notify_admin'] )         ? (bool) $data['notify_admin']  : true,
+            'notify_on'             => isset( $data['notify_on'] )            ? $data['notify_on']            : 'failures',
+            'threshold_score'       => isset( $data['threshold_score'] )      ? (int) $data['threshold_score'] : 90,
+            'notify_hour'           => isset( $data['notify_hour'] )          ? (int) $data['notify_hour']    : 8,
+            'notify_timezone'       => isset( $data['notify_timezone'] )      ? $data['notify_timezone']      : 'UTC',
+            'notify_email'          => isset( $data['notify_email_address'] ) ? $data['notify_email_address'] : null,
         );
         if ( ! empty( $data['scheduled_at'] ) ) {
             $payload['scheduled_at'] = $data['scheduled_at'];
@@ -819,6 +822,7 @@ class QAProof_API_Client {
         $direct_fields = array(
             'page_url', 'schedule', 'baseline_key', 'scheduled_at',
             'last_run_at', 'last_score', 'threshold_score', 'notify_on',
+            'notify_hour', 'notify_timezone', 'notify_email',
         );
         foreach ( $direct_fields as $field ) {
             if ( array_key_exists( $field, $data ) ) {
