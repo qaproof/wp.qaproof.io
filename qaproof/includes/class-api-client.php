@@ -353,7 +353,11 @@ class QAProof_API_Client {
             );
         }
 
-        $is_success_code = ( $status_code === 200 || $status_code === 201 );
+        // Accept any 2xx — a REST client shouldn't special-case 200/201. The
+        // monitor run-now endpoint returns 202 Accepted (fire-and-forget), and
+        // future endpoints may use 204/etc. The `success` flag in the body is
+        // the authoritative gate below; the status only needs to be 2xx.
+        $is_success_code = ( $status_code >= 200 && $status_code < 300 );
 
         if ( ! $is_success_code || empty( $decoded['success'] ) ) {
             $error_msg = isset( $decoded['error']['message'] )

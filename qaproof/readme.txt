@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.11 =
+Hotfix: "Run now" reported a false error.
+
+* The API client's success check accepted only HTTP 200/201. The new monitor run-now endpoint returns **202 Accepted** (fire-and-forget), so a successful run was misread as an error ("API returned HTTP 202"). The client now accepts any 2xx status — the `success` flag in the response body remains the authoritative check. The monitor run actually dispatched fine; only the WP-side response handling was wrong.
 
 = 1.0.10 =
 Fix the monitor "Run now" button.
