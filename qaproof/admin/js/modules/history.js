@@ -336,7 +336,7 @@
           if (resp.success && resp.data) {
             var resultData = parseResultData(resp.data);
             var fileName = 'qaproof-' + (resultData.testType || 'report') + '-report.pdf';
-            Q.downloadServerPdf(resultData, fileName);
+            Q.generatePdfReport(resultData);
           }
         })
         .catch(function () {
