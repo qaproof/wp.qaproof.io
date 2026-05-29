@@ -1403,6 +1403,12 @@
         // Check if we got a NEW result (total increased)
         if (newTotal > expectedResultCount) {
           stopMonitorPoll();
+          // Tear the loader down THE MOMENT completion is detected — otherwise the
+          // scripted run animation keeps firing and re-shows "Generating report…"
+          // even after the re-render (it lingered next to the fresh result).
+          stopCapturingAnimation();
+          var lb = document.getElementById('qaproof-loading-block');
+          if (lb) lb.style.display = 'none';
           try {
             sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
             sessionStorage.removeItem('qaproof_run_start_' + monitorId);
