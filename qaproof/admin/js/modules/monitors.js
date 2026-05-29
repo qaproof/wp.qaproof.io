@@ -1902,7 +1902,7 @@
 
     monitorDetail.querySelectorAll('.qaproof-view-result').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        viewResult(this.dataset.id);
+        viewResult(this.dataset.id, monitor.page_url);
       });
     });
   }
@@ -1932,7 +1932,7 @@
     });
   }
 
-  function viewResult(resultId) {
+  function viewResult(resultId, pageUrl) {
     var detailArea = document.getElementById('qaproof-result-detail');
     if (!detailArea) return;
     detailArea.innerHTML = '<span class="spinner is-active" style="float:none;"></span> ' + (qaproof.i18n.monitorLoadingResult || 'Loading result...');
@@ -1951,16 +1951,17 @@
         detailArea.innerHTML = '<p>' + (qaproof.i18n.monitorResultNotFound || 'Result not found.') + '</p>';
         return;
       }
-      renderResultDetail(result, detailArea);
+      renderResultDetail(result, detailArea, pageUrl);
     });
   }
 
-  function renderResultDetail(result, container) {
+  function renderResultDetail(result, container, pageUrl) {
     if (result.status === 'failed') {
       container.innerHTML = '<div class="qaproof-card"><h3>' + (qaproof.i18n.monitorRunFailed2 || 'Run Failed') + '</h3><p>' + Q.escapeHtml(result.error_message || '') + '</p></div>';
       return;
     }
 
+    var score          = result.score != null ? parseInt(result.score, 10) : null;
     var categories     = result.categories_json     ? JSON.parse(result.categories_json)     : {};
     var differences    = result.differences_json    ? JSON.parse(result.differences_json)    : [];
     var recommendations = result.recommendations_json ? JSON.parse(result.recommendations_json) : [];
@@ -1974,11 +1975,9 @@
     if (Q.state) Q.state.lastResult = {
       testType: 'regression', score: score, summary: result.summary || '',
       categories: categories, differences: differences,
-      recommendations: recommendations, pageUrl: result.page_url || '',
+      recommendations: recommendations, pageUrl: pageUrl || '',
       screenshots: screenshots,
     };
-
-    var score      = result.score != null ? parseInt(result.score, 10) : null;
     var scoreClass = Q.getScoreClass(score);
 
     var html = '<hr />';
@@ -2071,7 +2070,7 @@
         Q.downloadServerPdf({
           testType: 'regression', score: score, summary: result.summary,
           categories: categories, differences: differences,
-          recommendations: recommendations, pageUrl: result.page_url || '',
+          recommendations: recommendations, pageUrl: pageUrl || '',
         }, 'qaproof-regression-report.pdf');
       });
     }
