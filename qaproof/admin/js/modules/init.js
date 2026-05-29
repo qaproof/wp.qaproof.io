@@ -651,6 +651,7 @@
     perPage:      (qaproof.maxHistory && parseInt(qaproof.maxHistory, 10) > 0) ? parseInt(qaproof.maxHistory, 10) : 10,
     resultLoadingEl:     S.loading,
     resultLoadingTextEl: S.loadingText,
+    resultLoadingSubtextEl: S.loadingSubtext,
     resultContainerEl:   S.resultsContainer,
     renderResult: null, // uses fallback global render functions
     showError:    Q.showError,
@@ -833,6 +834,7 @@
     perPage:      (qaproof.maxHistory && parseInt(qaproof.maxHistory, 10) > 0) ? parseInt(qaproof.maxHistory, 10) : 10,
     resultLoadingEl:     document.getElementById('qaproof-a11y-loading'),
     resultLoadingTextEl: document.getElementById('qaproof-a11y-loading-text'),
+    resultLoadingSubtextEl: document.getElementById('qaproof-a11y-loading-subtext'),
     resultContainerEl:   document.getElementById('qaproof-a11y-results'),
     renderResult: function (resultData) {
       S.resultsContainer = document.getElementById('qaproof-a11y-results');

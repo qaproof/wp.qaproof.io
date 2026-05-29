@@ -326,6 +326,7 @@ class QAProof_Admin_Assets {
                 'histTestTypeRegression' => __( 'Regression', 'qaproof' ),
                 'histTestTypeDesignAudit'=> __( 'Design Audit', 'qaproof' ),
                 'histLoadingResult'      => __( 'Loading test result...', 'qaproof' ),
+                'histLoadingSub'         => __( 'Fetching the saved result — just a moment.', 'qaproof' ),
                 'histCouldNotLoad'       => __( 'Could not load test result.', 'qaproof' ),
                 'histFailedLoad'         => __( 'Failed to load test result.', 'qaproof' ),
                 'histDeleteConfirm'      => __( 'Delete this test result?', 'qaproof' ),
