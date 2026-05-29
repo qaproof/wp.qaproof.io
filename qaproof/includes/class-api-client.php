@@ -1073,6 +1073,51 @@ class QAProof_API_Client {
         return self::api_request( 'POST', '/api/send-report-email', $params, 60 );
     }
 
+    /**
+     * Generate a PDF from result data via the server-side Playwright renderer.
+     * Returns raw PDF binary string on success, WP_Error on failure.
+     *
+     * @param  array $result_data { testType, pageUrl, score, summary, categories,
+     *                              differences, recommendations, screenshots }
+     * @return string|WP_Error
+     */
+    public static function generate_pdf( $result_data ) {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/report/generate';
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $response = wp_remote_post( $endpoint, [
+            'headers'   => [
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ],
+            'body'      => wp_json_encode( $result_data ),
+            'timeout'   => 90,
+            'sslverify' => true,
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code  = wp_remote_retrieve_response_code( $response );
+        $content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+        if ( $status_code !== 200 || strpos( $content_type, 'application/pdf' ) === false ) {
+            $body    = wp_remote_retrieve_body( $response );
+            $decoded = json_decode( $body, true );
+            $msg     = isset( $decoded['error'] ) ? $decoded['error'] : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_pdf_error', $msg );
+        }
+
+        return wp_remote_retrieve_body( $response );
+    }
+
     // ── Figma OAuth ───────────────────────────────────────────────────────────
 
     /** @return array|WP_Error { authorizeUrl } */
