@@ -32,6 +32,14 @@
   var listPollTimers = {};
   var LIST_POLL_MAX = 120; // 10 minutes at 5s intervals
 
+  // Guard against duplicate "run completed" toasts. loadMonitors(true) restarts
+  // the poll loops on every completion, and a poll deletes its timer before its
+  // async fetch resolves — so with several monitors finishing at once,
+  // overlapping loops each re-detect the same completion and spam the toast.
+  // We record monitorIds we've already toasted for the current run and skip
+  // repeats; the entry is cleared when a fresh run is dispatched (runMonitor).
+  var listCompletedNotified = {};
+
   // ---- Custom Datepicker ----
   var qaproofDatepicker = (function () {
     var trigger = document.getElementById('qaproof-datepicker-trigger');
@@ -1145,6 +1153,9 @@
             sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
             sessionStorage.removeItem('qaproof_run_start_' + monitorId);
           } catch(e) {}
+          // Already toasted this setup (overlapping restarted loop) — stop quietly.
+          if (listCompletedNotified[monitorId]) { stopListPollForMonitor(monitorId); return; }
+          listCompletedNotified[monitorId] = true;
           var pageUrl = (resp.data && resp.data.page_url) ? resp.data.page_url : '';
           try { pageUrl = new URL(pageUrl).hostname; } catch(e) {}
           // pageUrl is API-supplied — escape before injecting into the toast's
@@ -1189,6 +1200,10 @@
             sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
             sessionStorage.removeItem('qaproof_run_start_' + monitorId);
           } catch(e) {}
+          // Already toasted this run (an overlapping restarted loop re-detected
+          // the same completion) — stop this loop, don't re-toast or re-reload.
+          if (listCompletedNotified[monitorId]) { stopListPollForMonitor(monitorId); return; }
+          listCompletedNotified[monitorId] = true;
           var score = (resp.data && resp.data[0] && resp.data[0].score != null) ? resp.data[0].score : null;
           // Numeric coerce + escape — score should be an integer from the API,
           // but treating it as untrusted defends against any future shape
@@ -1211,6 +1226,8 @@
                 sessionStorage.removeItem('qaproof_pending_run_' + monitorId);
                 sessionStorage.removeItem('qaproof_run_start_' + monitorId);
               } catch(e) {}
+              if (listCompletedNotified[monitorId]) { stopListPollForMonitor(monitorId); return; }
+              listCompletedNotified[monitorId] = true;
               showToast('Monitor run finished. Refreshing…', 'info');
               loadMonitors(true);
             } else {
@@ -1425,6 +1442,21 @@
       btn.textContent = qaproof.i18n.monitorBtnRunning || '⟳ Running';
     }
 
+    // Mark the run as pending SYNCHRONOUSLY on click — before the POST (and the
+    // extra GET /results round-trip for regression) resolves. Otherwise, if the
+    // user clicks into the monitor detail immediately, showMonitorDetail reads
+    // sessionStorage before the flag is set and shows "not running" for the
+    // 2-3s the round-trips take. Set it now so the detail view shows running
+    // instantly; rollbackRunningState clears it if the dispatch fails.
+    try {
+      sessionStorage.setItem('qaproof_pending_run_' + id, '1');
+      sessionStorage.setItem('qaproof_run_start_' + id, String(Date.now()));
+    } catch(e) {}
+
+    // New run dispatched — allow the completion toast to fire again for this
+    // monitor (it was suppressed after the previous run's toast).
+    delete listCompletedNotified[id];
+
     var sep = (qaproof.restBase.indexOf('?') !== -1) ? '&' : '?';
 
     // Before running a regression check, snapshot the current result count so
@@ -1446,6 +1478,12 @@
           ? (qaproof.i18n.monitorBtnRun   || 'Check Now')
           : (qaproof.i18n.monitorBtnSetup || 'Set Up');
       }
+      // Clear the optimistic pending flag set synchronously at dispatch — the
+      // run never actually started, so the detail view must not show "running".
+      try {
+        sessionStorage.removeItem('qaproof_pending_run_' + id);
+        sessionStorage.removeItem('qaproof_run_start_' + id);
+      } catch(e) {}
     }
 
     getResultCount.then(function (resultCount) {
@@ -1700,10 +1738,14 @@
       html += '<p class="qaproof-monitors-empty">' + (qaproof.i18n.monitorNoResults || 'No results yet. Click "Run Now" to run the first check.') + '</p>';
     } else {
       var visibleResults = monitorResults.filter(function(r) { return r.status !== 'baseline_created'; });
-      html += '<div class="qaproof-results-timeline">';
       if (visibleResults.length === 0) {
+        // The only rows are non-visible markers (e.g. a 'baseline_created' row
+        // the API scheduler writes when it captures the baseline). Render the
+        // bare empty-state — NOT inside the white .qaproof-results-timeline
+        // card, otherwise the dark empty card sits in a white frame.
         html += '<p class="qaproof-monitors-empty">' + (qaproof.i18n.monitorNoResults || 'No results yet. Click "Run Now" to run the first check.') + '</p>';
-      }
+      } else {
+      html += '<div class="qaproof-results-timeline">';
       for (var i = 0; i < visibleResults.length; i++) {
         var r = visibleResults[i];
         var rScoreClass = r.score != null ? Q.getScoreClass(parseInt(r.score, 10)) : '';
@@ -1723,6 +1765,7 @@
         html += '</div>';
       }
       html += '</div>';
+      }
     }
 
     // Inline loading block — always rendered (hidden by default).
