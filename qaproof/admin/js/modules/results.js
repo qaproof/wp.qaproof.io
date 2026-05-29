@@ -2837,7 +2837,10 @@
       var worstSev = gHigh > 0 ? 'high' : gMed > 0 ? 'medium' : 'low';
 
       var groupEl = document.createElement('div');
-      groupEl.className = 'qaproof-diff-group' + (g > 0 ? ' collapsed' : '');
+      // Collapse non-first groups only on LARGE reports (e.g. accessibility with many
+      // categories). On small reports (regression, etc.) expand all so a detected change
+      // is never hidden inside a collapsed category — markers show it but the list didn't.
+      groupEl.className = 'qaproof-diff-group' + ((g > 0 && differences.length > 12) ? ' collapsed' : '');
       groupEl.dataset.category = catKey;
 
       // Group header (collapsible)
