@@ -165,6 +165,13 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        // Single result WITH screenshots — lazy-loaded on "View" so the list stays light.
+        register_rest_route( self::REST_NAMESPACE, '/monitors/(?P<id>[a-fA-F0-9-]{8,64})/results/(?P<rid>[\w-]+)', [
+            'methods'             => 'GET',
+            'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_get_single_result' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/results/(?P<id>[\w-]+)/approve', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Monitors', 'handle_approve_result' ],

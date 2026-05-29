@@ -847,7 +847,7 @@ class QAProof_API_Client {
         $direct_fields = array(
             'page_url', 'schedule', 'baseline_key', 'scheduled_at',
             'last_run_at', 'last_score', 'threshold_score', 'notify_on',
-            'notify_hour', 'notify_timezone', 'notify_email',
+            'notify_hour', 'notify_timezone', 'notify_email', 'notify_email_address',
         );
         foreach ( $direct_fields as $field ) {
             if ( array_key_exists( $field, $data ) ) {
@@ -934,6 +934,46 @@ class QAProof_API_Client {
 
         $rows = array_map( [ __CLASS__, 'normalize_result' ], (array) $decoded['data'] );
         return array( 'data' => $rows, 'total' => isset( $decoded['total'] ) ? (int) $decoded['total'] : count( $rows ) );
+    }
+
+    /**
+     * Fetch ONE monitor result WITH screenshots (lazy-loaded on "View"). The list
+     * endpoint omits screenshots for speed; this returns the full row.
+     */
+    public static function monitors_get_result( $id, $rid ) {
+        $path     = '/api/monitors/' . rawurlencode( $id ) . '/results/' . rawurlencode( $rid );
+        $endpoint = QAProof_Settings::get_api_endpoint() . $path;
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $response = wp_remote_get( $endpoint, array(
+            'headers'   => array( 'Authorization' => 'Bearer ' . $api_key ),
+            'timeout'   => self::TIMEOUT,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null || ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
+            $msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_api_error', $msg );
+        }
+
+        return self::normalize_result( (array) $decoded['data'] );
     }
 
     public static function monitors_save_result( $monitor_id, $data ) {

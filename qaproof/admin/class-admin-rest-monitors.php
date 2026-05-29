@@ -332,6 +332,25 @@ class QAProof_Admin_REST_Monitors {
         ], 200 );
     }
 
+    /**
+     * One monitor result WITH screenshots — lazy-loaded when the user clicks "View",
+     * so the history list (handle_get_results) can stay light and fast.
+     */
+    public static function handle_get_single_result( WP_REST_Request $request ) {
+        $id  = sanitize_text_field( $request['id'] );
+        $rid = sanitize_text_field( $request['rid'] );
+
+        $result = QAProof_API_Client::monitors_get_result( $id, $rid );
+        if ( is_wp_error( $result ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => $result->get_error_message() ],
+            ], 502 );
+        }
+
+        return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );
+    }
+
     public static function handle_approve_result( WP_REST_Request $request ) {
         $result_id  = sanitize_text_field( $request['id'] );
         $monitor_id = sanitize_text_field( $request->get_param( 'monitorId' ) );

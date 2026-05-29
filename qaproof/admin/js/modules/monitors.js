@@ -1956,18 +1956,15 @@
     var monitorId = runBtn ? runBtn.dataset.id : null;
     if (!monitorId) return;
 
-    apiCall('GET', '/monitors/' + monitorId + '/results').then(function (resp) {
-      if (!resp.success) return;
-      var result = null;
-      for (var i = 0; i < resp.data.length; i++) {
-        if (String(resp.data[i].id) === String(resultId)) { result = resp.data[i]; break; }
-      }
-      if (!result) {
-        detailArea.innerHTML = '<p>' + (qaproof.i18n.monitorResultNotFound || 'Result not found.') + '</p>';
-        return;
-      }
-      renderResultDetail(result, detailArea, pageUrl);
-    });
+    // Fetch THIS result alone (with screenshots) — the list endpoint omits screenshots
+    // for speed, so we lazy-load them here only for the result being opened.
+    var notFound = function () {
+      detailArea.innerHTML = '<p>' + (qaproof.i18n.monitorResultNotFound || 'Result not found.') + '</p>';
+    };
+    apiCall('GET', '/monitors/' + monitorId + '/results/' + resultId).then(function (resp) {
+      if (!resp.success || !resp.data) { notFound(); return; }
+      renderResultDetail(resp.data, detailArea, pageUrl);
+    }).catch(notFound);
   }
 
   function renderResultDetail(result, container, pageUrl) {
@@ -2072,7 +2069,7 @@
     if (screenshots.baseline && screenshots.current) {
       var bImg = document.getElementById('qaproof-screenshot-figma');
       var cImg = document.getElementById('qaproof-screenshot-live');
-      Promise.all([Q.waitForImage(bImg), Q.waitForImage(cImg)]).then(function () { Q.renderMarkers(differences); });
+      Promise.all([Q.waitForImage(bImg), Q.waitForImage(cImg)]).then(function () { Q.renderMarkers(differences, true /* currentOnly — baseline has no DOM to position against */); });
       Q.setupSyncScroll();
       Q.setupToolbar();
     }
