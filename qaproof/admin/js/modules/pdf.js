@@ -587,6 +587,33 @@
     }
 
     // ══════════════════════════════════════════════
+    // SCREENSHOTS
+    // ══════════════════════════════════════════════
+    var ssEntries = data.screenshots
+      ? Object.entries(data.screenshots).filter(function (e) {
+          return typeof e[1] === 'string' && e[1].indexOf('data:image') === 0;
+        })
+      : [];
+    if (ssEntries.length) {
+      sectionHeading('Screenshots');
+      for (var si = 0; si < ssEntries.length; si++) {
+        var ssLabel = ssEntries[si][0]
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        var ssUri = ssEntries[si][1];
+        var imgProps = doc.getImageProperties(ssUri);
+        var imgH = Math.round(CW * imgProps.height / imgProps.width);
+        checkPage(imgH + 10);
+        doc.setFontSize(8);
+        setC(C.body);
+        doc.text(ssLabel, M, y);
+        y += 4;
+        doc.addImage(ssUri, 'JPEG', M, y, CW, imgH);
+        y += imgH + 8;
+      }
+    }
+
+    // ══════════════════════════════════════════════
     // DISCLAIMER
     // ══════════════════════════════════════════════
     checkPage(22);
