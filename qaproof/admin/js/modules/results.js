@@ -3220,12 +3220,20 @@
     }
   }
 
-  function renderMarkers(differences) {
+  function renderMarkers(differences, currentOnly) {
     var markersFigma = document.getElementById('qaproof-markers-figma');
     var markersLive = document.getElementById('qaproof-markers-live');
-    // Baseline screenshot: use locationBaseline coordinates if available (regression tests).
-    // For fidelity tests locationBaseline is absent, so it falls back to location.
-    renderMarkersIntoLayer(markersFigma, differences, null, 'locationBaseline');
+    // currentOnly (regression monitors): the baseline is just a stored reference image
+    // with NO DOM, so we can't position markers on it accurately — reusing current
+    // coordinates misplaces them whenever baseline/current layout or height differ.
+    // Keep the baseline clean and pin only on the current screenshot.
+    if (currentOnly) {
+      if (markersFigma) markersFigma.innerHTML = '';
+    } else {
+      // Baseline screenshot: use locationBaseline coordinates if available.
+      // For fidelity tests locationBaseline is absent, so it falls back to location.
+      renderMarkersIntoLayer(markersFigma, differences, null, 'locationBaseline');
+    }
     renderMarkersIntoLayer(markersLive, differences);
   }
 
