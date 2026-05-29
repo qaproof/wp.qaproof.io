@@ -794,9 +794,8 @@
             a11ySubmitBtn.disabled = false;
           },
           onScreenshotsDone: function (resultData) {
-            Q.saveTestHistory('accessibility', pageUrl, jobId, resultData)
-              .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
-              .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
+            // Server-side single writer persists history; just refresh the list.
+            if (a11yHistoryMgr) a11yHistoryMgr.load(true);
           },
           onFailed: function (errorMsg) {
             a11yTimers.forEach(clearTimeout);
@@ -1399,9 +1398,8 @@
           S.testsPageBusy = false;
         },
         onScreenshotsDone: function (resultData) {
-          Q.saveTestHistory(activeJob.testType, activeJob.pageUrl, activeJob.jobId, resultData)
-            .then(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); })
-            .catch(function () { if (testsHistoryMgr) testsHistoryMgr.load(true); });
+          // Server-side single writer persists history; just refresh the list.
+          if (testsHistoryMgr) testsHistoryMgr.load(true);
         },
         onFailed: function (errorMsg) {
           resumeTimers.forEach(function (t) { if (t) clearTimeout(t); });
@@ -1549,9 +1547,8 @@
           if (a11yBtn) a11yBtn.disabled = false;
         },
         onScreenshotsDone: function (resultData) {
-          Q.saveTestHistory('accessibility', activeJob.pageUrl, activeJob.jobId, resultData)
-            .then(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); })
-            .catch(function () { if (a11yHistoryMgr) a11yHistoryMgr.load(true); });
+          // Server-side single writer persists history; just refresh the list.
+          if (a11yHistoryMgr) a11yHistoryMgr.load(true);
         },
         onFailed: function (errorMsg) {
           a11yResumeTimers.forEach(function (t) { if (t) clearTimeout(t); });

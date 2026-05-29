@@ -16,7 +16,6 @@ class QAProof_Admin {
         add_action( 'admin_enqueue_scripts', [ 'QAProof_Admin_Assets', 'enqueue_assets' ] );
         add_action( 'rest_api_init', [ __CLASS__, 'register_rest_routes' ] );
         add_action( 'wp_ajax_qaproof_health_check',       [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
-        add_action( 'wp_ajax_qaproof_save_history',       [ 'QAProof_Admin_AJAX', 'ajax_save_history' ] );
         add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
     }
 
@@ -120,12 +119,6 @@ class QAProof_Admin {
         register_rest_route( self::REST_NAMESPACE, '/cancel-job/(?P<jobId>[a-f0-9]+)', [
             'methods'             => 'DELETE',
             'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_cancel_job' ],
-            'permission_callback' => $permission,
-        ]);
-
-        register_rest_route( self::REST_NAMESPACE, '/save-test-result', [
-            'methods'             => 'POST',
-            'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_save_test_result' ],
             'permission_callback' => $permission,
         ]);
 

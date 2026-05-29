@@ -771,8 +771,29 @@ class QAProof_API_Client {
         }
 
         if ( ! isset( $h['extracted_data_json'] ) ) {
-            $extracted = isset( $result_data['extractedData'] ) ? $result_data['extractedData'] : null;
-            $h['extracted_data_json'] = $extracted !== null ? wp_json_encode( $extracted ) : null;
+            $extracted = isset( $result_data['extractedData'] ) && is_array( $result_data['extractedData'] )
+                ? $result_data['extractedData']
+                : array();
+            // The API returns these at the TOP LEVEL of the result object
+            // (design-audit puts designSystem/components/designDebtScore there;
+            // accessibility puts the user-selected level in targetWcagLevel).
+            // The history renderer reads them from extractedData, so fold the
+            // top-level fields in as a fallback. (Pre-removal, the WP client
+            // save did this re-nesting before POSTing; now that history is
+            // written server-side as the native result, we re-nest on read.)
+            if ( ! isset( $extracted['designSystem'] ) && isset( $result_data['designSystem'] ) ) {
+                $extracted['designSystem'] = $result_data['designSystem'];
+            }
+            if ( ! isset( $extracted['components'] ) && isset( $result_data['components'] ) ) {
+                $extracted['components'] = $result_data['components'];
+            }
+            if ( ! isset( $extracted['designDebtScore'] ) && isset( $result_data['designDebtScore'] ) ) {
+                $extracted['designDebtScore'] = $result_data['designDebtScore'];
+            }
+            if ( ! isset( $extracted['wcagLevel'] ) && isset( $result_data['targetWcagLevel'] ) ) {
+                $extracted['wcagLevel'] = $result_data['targetWcagLevel'];
+            }
+            $h['extracted_data_json'] = ! empty( $extracted ) ? wp_json_encode( $extracted ) : null;
         }
 
         return $h;
@@ -1006,49 +1027,10 @@ class QAProof_API_Client {
         return self::normalize_history( $result );
     }
 
-    public static function history_save( $data ) {
-        $result_obj = array();
-        $copy_keys  = array( 'categories', 'differences', 'recommendations' );
-        foreach ( $copy_keys as $key ) {
-            if ( isset( $data[ $key ] ) ) { $result_obj[ $key ] = $data[ $key ]; }
-        }
-        // Pass-through flags that change which result UI is rendered when the
-        // history entry is opened later. Without these the JS render path falls
-        // through to the generic score layout — for a mismatch result that
-        // means an empty "—/100" ring and a misleading "No analysis data
-        // available" warning instead of the mismatch recovery panel.
-        // Element-mode failures (`elementTest: true, matched: false`) have the
-        // same property: the render path branches on these flags. Anything
-        // that controls a branch in renderFidelityResults() belongs here.
-        $passthrough_flags = array(
-            'mismatch', 'designSite', 'liveSite',
-            'elementTest', 'matched',
-            'freshnessCheckFailed', 'scoreRecomputed',
-            'parseFailed',
-        );
-        foreach ( $passthrough_flags as $key ) {
-            if ( isset( $data[ $key ] ) ) { $result_obj[ $key ] = $data[ $key ]; }
-        }
-        if ( isset( $data['designSystem'] ) )    { $result_obj['extractedData']['designSystem']    = $data['designSystem']; }
-        if ( isset( $data['components'] ) )      { $result_obj['extractedData']['components']      = $data['components']; }
-        if ( isset( $data['designDebtScore'] ) ) { $result_obj['extractedData']['designDebtScore'] = $data['designDebtScore']; }
-        if ( isset( $data['targetWcagLevel'] ) ) { $result_obj['extractedData']['wcagLevel']       = $data['targetWcagLevel']; }
-
-        $payload = array(
-            'test_type'   => isset( $data['test_type'] )  ? $data['test_type']       : '',
-            'page_url'    => isset( $data['page_url'] )   ? $data['page_url']        : '',
-            'score'       => isset( $data['score'] )      ? (int) $data['score']     : null,
-            'summary'     => isset( $data['summary'] )    ? $data['summary']         : null,
-            'job_id'      => isset( $data['job_id'] )     ? $data['job_id']          : null,
-        );
-        if ( ! empty( $result_obj ) ) { $payload['result'] = $result_obj; }
-        if ( ! empty( $data['screenshots'] ) ) { $payload['screenshots'] = $data['screenshots']; }
-
-        // History payload can include 2–5 MB of base64 screenshots.
-        $result = self::api_request( 'POST', '/api/history', $payload, self::BASELINE_TIMEOUT );
-        if ( is_wp_error( $result ) ) return $result;
-        return self::normalize_history( $result );
-    }
+    // NOTE: history_save() (POST /api/history) was removed. The SaaS API now
+    // persists each test_history row server-side when the async job completes,
+    // so a client-side POST here only created a duplicate row. The read paths
+    // (history_list / history_get / history_delete / history_stats) remain.
 
     public static function history_delete( $id ) {
         $result = self::api_request( 'DELETE', '/api/history/' . rawurlencode( $id ) );

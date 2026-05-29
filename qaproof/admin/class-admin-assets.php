@@ -115,7 +115,6 @@ class QAProof_Admin_Assets {
             'defaultThreshold'  => (int) get_option( 'qaproof_default_threshold', 95 ),
             'defaultTestType'   => get_option( 'qaproof_default_test_type', 'fidelity' ),
             'savedDesigns'      => self::get_saved_designs_for_js(),
-            'autoSaveHistory'   => (bool) get_option( 'qaproof_auto_save_history', true ),
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),
             'adminEmail'        => wp_get_current_user()->user_email ?: get_option( 'qaproof_notify_email', get_option( 'admin_email' ) ),
