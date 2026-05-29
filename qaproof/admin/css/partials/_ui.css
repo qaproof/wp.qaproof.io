@@ -746,6 +746,33 @@
   border-color: rgba(0, 173, 181, 0.3);
 }
 
+/* Recovery-panel primary CTAs (fidelity mismatch / element-not-found). The
+   bare .qaproof-btn has no base style, so on the dark hero card the primary
+   action ("Edit URL or design", "Select a larger region") looked identical to
+   the muted secondary "Back to test setup". Give the primary the accent fill so
+   the recommended action clearly stands out. Targeted by data-action so it does
+   NOT touch the normal result hero's Download/Email buttons. */
+#qaproof-app .qaproof-report-hero-actions .qaproof-btn[data-qaproof-action="mismatch-edit-form"],
+#qaproof-app .qaproof-report-hero-actions .qaproof-btn[data-qaproof-action="element-retry-larger"],
+#qaproof-app .qaproof-report-hero-actions .qaproof-btn[data-qaproof-action="element-retry-fullpage"] {
+  background: var(--qp-accent);
+  color: #fff;
+  border: 1px solid var(--qp-accent);
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-family: 'Kodchasan', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#qaproof-app .qaproof-report-hero-actions .qaproof-btn[data-qaproof-action="mismatch-edit-form"]:hover,
+#qaproof-app .qaproof-report-hero-actions .qaproof-btn[data-qaproof-action="element-retry-larger"]:hover,
+#qaproof-app .qaproof-report-hero-actions .qaproof-btn[data-qaproof-action="element-retry-fullpage"]:hover {
+  background: var(--qp-accent-hover);
+  border-color: var(--qp-accent-hover);
+}
+
 .qaproof-email-send-btn {
   display: inline-flex;
   align-items: center;

@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.17
+Stable tag: 1.0.18
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,13 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.18 =
+History: clearer loading message (and companion fidelity fixes in the API).
+
+* Opening a saved result from History no longer shows the "This may take 1-3 minutes" subtext — that copy is for running a brand-new test. Loading a stored result is a single fetch, so it now reads "Fetching the saved result — just a moment."
+
+**Requires** the companion `api.qaproof.io` deploy — fidelity comparison improvements: better detection of real visual/structural differences, and a reliable "design and live page don't match" result when the linked Figma design is a whole-file overview rather than a single page frame (instead of inventing a score).
 
 = 1.0.17 =
 Server-side PDF reports, duplicate test-history fix, and monitor polish.

@@ -243,6 +243,7 @@
     function viewItem(id) {
       var rLoading = cfg.resultLoadingEl;
       var rText    = cfg.resultLoadingTextEl;
+      var rSub     = cfg.resultLoadingSubtextEl;
       var rContainer = cfg.resultContainerEl;
 
       // Switch to test/audit tab, hide form, mark source
@@ -253,6 +254,10 @@
         rLoading.style.display = '';
       }
       if (rText) rText.textContent = qaproof.i18n.histLoadingResult || 'Loading test result...';
+      // Loading a saved result is a single fetch (seconds) — override the
+      // running-a-test subtitle ("This may take 1-3 minutes"), which the shared
+      // loading box keeps from the last live run and which is misleading here.
+      if (rSub) rSub.textContent = qaproof.i18n.histLoadingSub || 'Fetching the saved result — just a moment.';
       if (rContainer) rContainer.classList.add('hidden');
 
       fetch(qaproof.restBase.replace(/\/+$/, '') + '/test-history/' + id, {
