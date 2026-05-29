@@ -418,7 +418,13 @@
     if (body) opts.body = JSON.stringify(body);
     // Guard: if Q or Q.safeJson is not yet available, fall back to basic JSON parser.
     var parser = (Q && Q.safeJson) ? Q.safeJson : function (r) { return r.json(); };
-    return fetch(qaproof.restBase + path, opts).then(parser);
+    // When pretty permalinks are off, restBase is ".../index.php?rest_route=/qaproof/v1".
+    // A path carrying its own "?query" (e.g. /results/ID/approve?monitorId=X) would add a
+    // SECOND "?", which WP folds into the route string → rest_no_route 404. Swap to "&".
+    var url = (qaproof.restBase.indexOf('?') !== -1 && path.indexOf('?') !== -1)
+      ? qaproof.restBase + path.replace('?', '&')
+      : qaproof.restBase + path;
+    return fetch(url, opts).then(parser);
   }
 
   function loadMonitors(silent) {
@@ -1918,16 +1924,25 @@
         btn.textContent = qaproof.i18n.monitorApproving || 'Approving...';
       }
       var approvePath = '/results/' + resultId + '/approve' + (monitorId ? '?monitorId=' + encodeURIComponent(monitorId) : '');
+      var resetApproveBtn = function () {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
+        }
+      };
       apiCall('POST', approvePath).then(function (resp) {
         if (resp.success) {
           showMonitorDetail(monitorId);
         } else {
           Q.alert((resp.error && resp.error.message) || (qaproof.i18n.monitorApproveFailed || 'Failed to approve.'));
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = qaproof.i18n.monitorApproveChanges || 'Approve Changes';
-          }
+          resetApproveBtn();
         }
+      }).catch(function (err) {
+        // Without this, a failed/timed-out request (approve recaptures the baseline,
+        // which can take 40-90s) left the button stuck on "Approving..." forever.
+        Q.alert((qaproof.i18n.monitorApproveFailed || 'Failed to approve.') + ' ' +
+          (err && err.message ? err.message : 'The request failed or timed out — the baseline recapture may still be running. Reload in a minute to check.'));
+        resetApproveBtn();
       });
     });
   }
