@@ -247,6 +247,12 @@ class QAProof_Admin {
             'permission_callback' => $permission,
         ]);
 
+        register_rest_route( self::REST_NAMESPACE, '/generate-pdf', [
+            'methods'             => 'POST',
+            'callback'            => [ __CLASS__, 'handle_generate_pdf' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/feedback', [
             'methods'             => 'POST',
             'callback'            => [ __CLASS__, 'handle_submit_feedback' ],
@@ -275,35 +281,65 @@ class QAProof_Admin {
     }
 
     public static function handle_send_report_email( WP_REST_Request $request ) {
-        $pdf_base64 = $request->get_param( 'pdfBase64' );
-        $file_name  = sanitize_file_name( $request->get_param( 'fileName' ) ?: 'qaproof-report.pdf' );
-        $test_type  = sanitize_text_field( $request->get_param( 'testType' ) ?: 'report' );
-        $page_url   = esc_url_raw( $request->get_param( 'pageUrl' ) ?: '' );
-        $score      = intval( $request->get_param( 'score' ) ?: 0 );
-
-        if ( empty( $pdf_base64 ) ) {
-            return new WP_REST_Response( [ 'success' => false, 'error' => 'No PDF data provided.' ], 400 );
-        }
+        $result_data = $request->get_param( 'resultData' );
+        $file_name   = sanitize_file_name( $request->get_param( 'fileName' ) ?: 'qaproof-report.pdf' );
 
         $current_user = wp_get_current_user();
         $to = ( $current_user->ID && $current_user->user_email )
             ? $current_user->user_email
             : get_option( 'qaproof_notify_email', get_option( 'admin_email' ) );
 
-        $result = QAProof_API_Client::send_report_email( [
-            'pdfBase64' => $pdf_base64,
-            'to'        => $to,
-            'fileName'  => $file_name,
-            'testType'  => $test_type,
-            'pageUrl'   => $page_url,
-            'score'     => $score,
-        ] );
+        if ( ! empty( $result_data ) && is_array( $result_data ) ) {
+            // New path — API generates PDF server-side from result data.
+            $result = QAProof_API_Client::send_report_email( [
+                'resultData' => $result_data,
+                'to'         => $to,
+                'fileName'   => $file_name,
+            ] );
+        } else {
+            // Legacy path — pdfBase64 sent from browser jsPDF (kept for backward compat).
+            $pdf_base64 = $request->get_param( 'pdfBase64' );
+            if ( empty( $pdf_base64 ) ) {
+                return new WP_REST_Response( [ 'success' => false, 'error' => 'No PDF data provided.' ], 400 );
+            }
+            $result = QAProof_API_Client::send_report_email( [
+                'pdfBase64' => $pdf_base64,
+                'to'        => $to,
+                'fileName'  => $file_name,
+                'testType'  => sanitize_text_field( $request->get_param( 'testType' ) ?: 'report' ),
+                'pageUrl'   => esc_url_raw( $request->get_param( 'pageUrl' ) ?: '' ),
+                'score'     => intval( $request->get_param( 'score' ) ?: 0 ),
+            ] );
+        }
 
         if ( is_wp_error( $result ) ) {
             return new WP_REST_Response( [ 'success' => false, 'error' => $result->get_error_message() ], 500 );
         }
 
         return new WP_REST_Response( [ 'success' => true, 'sentTo' => $to ], 200 );
+    }
+
+    public static function handle_generate_pdf( WP_REST_Request $request ) {
+        $result_data = $request->get_param( 'resultData' );
+
+        if ( empty( $result_data ) || ! is_array( $result_data ) ) {
+            return new WP_REST_Response( [ 'success' => false, 'error' => 'No result data provided.' ], 400 );
+        }
+
+        $pdf = QAProof_API_Client::generate_pdf( $result_data );
+
+        if ( is_wp_error( $pdf ) ) {
+            return new WP_REST_Response( [ 'success' => false, 'error' => $pdf->get_error_message() ], 502 );
+        }
+
+        $test_type = sanitize_file_name( isset( $result_data['testType'] ) ? $result_data['testType'] : 'report' );
+        $stamp     = gmdate( 'Y-m-d' );
+        $filename  = "qaproof-{$test_type}-{$stamp}.pdf";
+
+        return new WP_HTTP_Response( $pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ] );
     }
 
     /**

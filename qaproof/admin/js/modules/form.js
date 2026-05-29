@@ -1241,9 +1241,8 @@
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<span class="dashicons dashicons-update qaproof-spin"></span>' + (qaproof.i18n.emailSending || ' Sending...');
 
-      // Generate PDF and send to WP REST endpoint
+      // Send result data to API — server generates PDF and sends email via SES.
       var lastResult = window.QAProof && window.QAProof.state && window.QAProof.state.lastResult;
-      var pdfBase64 = null;
 
       if (!lastResult) {
         console.warn('[QAProof] Email: lastResult is null — no active test result in state');
@@ -1253,43 +1252,9 @@
         return;
       }
 
-      try {
-        if (window.QAProof && typeof window.QAProof.generatePdfBase64 === 'function') {
-          // Strip screenshots before email generation to keep payload small
-          // (screenshots are base64 images that can be 5-15 MB each)
-          var emailData = Object.assign({}, lastResult);
-          if (emailData.screenshots) emailData.screenshots = {};
-          pdfBase64 = window.QAProof.generatePdfBase64(emailData);
-        } else {
-          console.warn('[QAProof] generatePdfBase64 not found on window.QAProof:', window.QAProof);
-        }
-      } catch(e) {
-        console.error('[QAProof] PDF generation error:', e);
-      }
+      var fileName = 'qaproof-' + (lastResult.testType || 'report') + '-' + Date.now() + '.pdf';
 
-      if (!pdfBase64) {
-        console.warn('[QAProof] Email: PDF generation returned null — jsPDF may not be loaded');
-        sendBtn.disabled = false;
-        sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + (qaproof.i18n.emailErrPdf || 'PDF generation failed. Refresh the page.');
-        setTimeout(function() { collapseEmailBtn(emailBtn); }, 2500);
-        return;
-      }
-
-      fetch(qaproof.restBase + '/send-report-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-WP-Nonce': qaproof.nonce,
-        },
-        body: JSON.stringify({
-          pdfBase64: pdfBase64,
-          fileName: 'qaproof-report-' + Date.now() + '.pdf',
-          testType: (lastResult && lastResult.testType) || '',
-          pageUrl: (lastResult && lastResult.pageUrl) || '',
-          score: (lastResult && lastResult.score) || 0,
-        }),
-      })
-      .then(function(r) { return r.json(); })
+      Q.sendServerPdfEmail(lastResult, fileName)
       .then(function(data) {
         if (data.success) {
           sendBtn.innerHTML = '<span class="dashicons dashicons-yes"></span>' + (qaproof.i18n.emailSent || ' Sent!');
@@ -1297,7 +1262,6 @@
           setTimeout(function() { collapseEmailBtn(emailBtn); }, 1200);
         } else {
           sendBtn.disabled = false;
-          // data.error is API-supplied — escape before injecting into innerHTML.
           sendBtn.innerHTML = '<span class="dashicons dashicons-warning"></span> ' + Q.escapeHtml(data.error || 'Failed');
           setTimeout(function() {
             sendBtn.disabled = false;
