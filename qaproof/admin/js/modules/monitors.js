@@ -2068,11 +2068,11 @@
     var pdfBtn = document.getElementById('qaproof-pdf-btn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        Q.generatePdfReport({
+        Q.downloadServerPdf({
           testType: 'regression', score: score, summary: result.summary,
           categories: categories, differences: differences,
           recommendations: recommendations, pageUrl: result.page_url || '',
-        });
+        }, 'qaproof-regression-report.pdf');
       });
     }
 
