@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.18
+Stable tag: 1.0.19
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,11 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.19 =
+PDF reports: browser-side generation with screenshots.
+
+* PDF report downloads are now generated in the browser (jsPDF) and include a screenshots section of the captured pages.
 
 = 1.0.18 =
 History: clearer loading message (and companion fidelity fixes in the API).
