@@ -351,8 +351,12 @@
       a.click();
       setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
     } catch (e) {
-      console.error('[QAProof] PDF download failed:', e);
-      QAProof.alert && QAProof.alert('Could not generate PDF. Please try again.');
+      console.warn('[QAProof] Server PDF failed, falling back to jsPDF:', e.message);
+      if (typeof QAProof.generatePdfReport === 'function') {
+        QAProof.generatePdfReport(data);
+      } else {
+        QAProof.alert && QAProof.alert('Could not generate PDF. Please try again.');
+      }
     }
   };
 
