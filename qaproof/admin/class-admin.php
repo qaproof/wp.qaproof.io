@@ -319,6 +319,12 @@ class QAProof_Admin {
             return new WP_REST_Response( [ 'success' => false, 'error' => 'No result data provided.' ], 400 );
         }
 
+        // Screenshots can be several MB of base64 each; compress before sending
+        // to keep the payload within nginx body limits and avoid 502 errors.
+        if ( ! empty( $result_data['screenshots'] ) && is_array( $result_data['screenshots'] ) ) {
+            $result_data['screenshots'] = self::compress_screenshots( $result_data['screenshots'] );
+        }
+
         $pdf = QAProof_API_Client::generate_pdf( $result_data );
 
         if ( is_wp_error( $pdf ) ) {
@@ -338,6 +344,41 @@ class QAProof_Admin {
         header( 'Cache-Control: private, no-store' );
         echo $pdf;
         exit;
+    }
+
+    /**
+     * Resize each base64 data-URI screenshot to max 800 px wide at 65% JPEG
+     * quality so the PDF payload stays within nginx body limits.
+     * Falls back to stripping screenshots if PHP-GD is unavailable.
+     */
+    private static function compress_screenshots( array $screenshots ) {
+        if ( ! function_exists( 'imagecreatefromstring' ) ) {
+            return [];
+        }
+        foreach ( $screenshots as $key => &$val ) {
+            if ( ! is_string( $val ) || strpos( $val, 'data:image' ) === false ) {
+                continue;
+            }
+            $pos = strpos( $val, 'base64,' );
+            if ( $pos === false ) continue;
+            $img = @imagecreatefromstring( base64_decode( substr( $val, $pos + 7 ) ) );
+            if ( ! $img ) continue;
+            $w = imagesx( $img );
+            $h = imagesy( $img );
+            if ( $w > 800 ) {
+                $new_h = (int) round( $h * 800 / $w );
+                $thumb = imagecreatetruecolor( 800, $new_h );
+                imagecopyresampled( $thumb, $img, 0, 0, 0, 0, 800, $new_h, $w, $h );
+                imagedestroy( $img );
+                $img = $thumb;
+            }
+            ob_start();
+            imagejpeg( $img, null, 65 );
+            $val = 'data:image/jpeg;base64,' . base64_encode( ob_get_clean() );
+            imagedestroy( $img );
+        }
+        unset( $val );
+        return $screenshots;
     }
 
     /**

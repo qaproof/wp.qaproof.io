@@ -1047,7 +1047,7 @@
     html += '<div class="qaproof-diff-rec-grid">';
 
     html += '<div class="qaproof-diff-rec-col">';
-    html += '<h2>Differences <span class="qaproof-diff-count" id="qaproof-diff-count">0</span></h2>';
+    html += '<h2>Issues <span class="qaproof-diff-count" id="qaproof-diff-count">0</span></h2>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-severity-filter">';
@@ -1225,7 +1225,7 @@
     html += '<div class="qaproof-diff-rec-grid">';
 
     html += '<div class="qaproof-diff-rec-col">';
-    html += '<h2>Differences <span class="qaproof-diff-count" id="qaproof-resp-diff-count">0</span></h2>';
+    html += '<h2>Issues <span class="qaproof-diff-count" id="qaproof-resp-diff-count">0</span></h2>';
     html += '<div class="qaproof-card">';
     html += '  <div class="qaproof-filter-row">';
     html += '    <div class="qaproof-severity-filter" id="qaproof-resp-severity-filter">';
