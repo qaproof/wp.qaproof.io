@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.16
+Stable tag: 1.0.17
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,16 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.17 =
+Server-side PDF reports, duplicate test-history fix, and monitor polish.
+
+* **PDF reports are now generated server-side.** Both downloaded and emailed reports are rendered by the API (Playwright) instead of jsPDF in the browser — no PDF library to load on the page, a smaller payload, and consistent output across browsers. The legacy browser path is kept as a fallback.
+* **Fixed duplicate test-history entries.** Every completed test was saved twice — once server-side when the job finished and again by the browser after it polled — which double-counted your test usage. The browser-side save has been removed; the API is now the single writer and the database enforces one row per test. Existing duplicates are merged and cleaned up automatically on the companion API deploy.
+* **Monitors:** the running state now appears instantly when you trigger a run, a guard prevents a storm of toast notifications, and the empty-state white frame is fixed.
+* Removed the "Auto-Save Results" toggle — results are always recorded now (how long they're kept is governed by your plan's retention window). "Max History Entries" is now "History Page Size" (it only controls rows per page), and the history list loads lighter — screenshots are no longer shipped with every list row.
+
+**Requires** the companion `api.qaproof.io` deploy (server-side PDF endpoints + single-writer save + dedupe migration).
 
 = 1.0.16 =
 Fix the Visual Comparison missing from a fresh Design Fidelity result.

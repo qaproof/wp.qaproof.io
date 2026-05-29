@@ -164,12 +164,6 @@ class QAProof_Settings {
             'default'           => 'fidelity',
         ]);
 
-        register_setting( self::GROUP_TESTS_GENERAL, 'qaproof_auto_save_history', [
-            'type'              => 'boolean',
-            'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
-        ]);
-
         register_setting( self::GROUP_TESTS_GENERAL, 'qaproof_max_history', [
             'type'              => 'integer',
             'sanitize_callback' => [ __CLASS__, 'sanitize_max_history' ],
@@ -194,16 +188,8 @@ class QAProof_Settings {
         );
 
         add_settings_field(
-            'qaproof_auto_save_history',
-            __( 'Auto-Save Results', 'qaproof' ),
-            [ __CLASS__, 'render_auto_save_history_field' ],
-            'qaproof-settings-tests-general',
-            'qaproof_tests_general_section'
-        );
-
-        add_settings_field(
             'qaproof_max_history',
-            __( 'Max History Entries', 'qaproof' ),
+            __( 'History Page Size', 'qaproof' ),
             [ __CLASS__, 'render_max_history_field' ],
             'qaproof-settings-tests-general',
             'qaproof_tests_general_section'
@@ -578,16 +564,10 @@ class QAProof_Settings {
         <?php
     }
 
-    public static function render_auto_save_history_field() {
-        $value = get_option( 'qaproof_auto_save_history', true );
-        echo '<label><input type="checkbox" name="qaproof_auto_save_history" value="1" ' . checked( $value, true, false ) . ' /> ';
-        echo esc_html__( 'Automatically save test results to history.', 'qaproof' ) . '</label>';
-    }
-
     public static function render_max_history_field() {
         $value = get_option( 'qaproof_max_history', 30 );
         echo '<input type="number" name="qaproof_max_history" value="' . esc_attr( $value ) . '" min="5" max="30" step="5" class="small-text" />';
-        echo '<p class="description">' . esc_html__( 'Maximum number of test results to keep. Oldest results are pruned automatically.', 'qaproof' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Number of results to show per page in the test history list. How long results are kept is set by your plan.', 'qaproof' ) . '</p>';
     }
 
     public static function sanitize_saved_designs( $input ) {
