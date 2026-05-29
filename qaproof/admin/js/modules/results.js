@@ -1123,7 +1123,7 @@
     var pdfBtn = document.getElementById('qaproof-pdf-btn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        Q.downloadServerPdf(data, 'qaproof-' + (data.testType || 'report') + '-report.pdf');
+        Q.generatePdfReport(data);
       });
     }
 
@@ -1334,7 +1334,7 @@
     var pdfBtn = document.getElementById('qaproof-pdf-btn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        Q.downloadServerPdf(data, 'qaproof-' + (data.testType || 'report') + '-report.pdf');
+        Q.generatePdfReport(data);
       });
     }
 
@@ -1496,7 +1496,7 @@
     var pdfBtn = document.getElementById('qaproof-pdf-btn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        Q.downloadServerPdf(data, 'qaproof-' + (data.testType || 'report') + '-report.pdf');
+        Q.generatePdfReport(data);
       });
     }
 
@@ -2012,7 +2012,7 @@
     var pdfBtn = document.getElementById('qaproof-pdf-btn');
     if (pdfBtn) {
       pdfBtn.addEventListener('click', function () {
-        Q.downloadServerPdf(data, 'qaproof-' + (data.testType || 'report') + '-report.pdf');
+        Q.generatePdfReport(data);
       });
     }
 
