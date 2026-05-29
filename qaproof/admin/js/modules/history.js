@@ -335,7 +335,8 @@
         .then(function (resp) {
           if (resp.success && resp.data) {
             var resultData = parseResultData(resp.data);
-            Q.generatePdfReport(resultData);
+            var fileName = 'qaproof-' + (resultData.testType || 'report') + '-report.pdf';
+            Q.downloadServerPdf(resultData, fileName);
           }
         })
         .catch(function () {

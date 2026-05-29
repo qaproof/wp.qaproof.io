@@ -329,10 +329,15 @@ class QAProof_Admin {
         $stamp     = gmdate( 'Y-m-d' );
         $filename  = "qaproof-{$test_type}-{$stamp}.pdf";
 
-        return new WP_HTTP_Response( $pdf, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ] );
+        // WP REST server always json_encodes WP_HTTP_Response body, which corrupts
+        // binary data. Send the PDF directly and exit before that happens.
+        status_header( 200 );
+        header( 'Content-Type: application/pdf' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+        header( 'Content-Length: ' . strlen( $pdf ) );
+        header( 'Cache-Control: private, no-store' );
+        echo $pdf;
+        exit;
     }
 
     /**
