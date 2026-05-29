@@ -193,31 +193,8 @@ class QAProof_Admin_REST_Tests {
         ], 200 );
     }
 
-    public static function handle_save_test_result( WP_REST_Request $request ) {
-        $params = $request->get_json_params();
-
-        if ( empty( $params['testType'] ) || empty( $params['pageUrl'] ) || empty( $params['result'] ) ) {
-            return new WP_REST_Response( [
-                'success' => false,
-                'error'   => [ 'message' => __( 'Missing required fields.', 'qaproof' ) ],
-            ], 400 );
-        }
-
-        $result_data = is_array( $params['result'] ) ? $params['result'] : [];
-
-        $save_data = array_merge(
-            [
-                'test_type' => sanitize_text_field( $params['testType'] ),
-                'page_url'  => sanitize_url( $params['pageUrl'] ),
-            ],
-            $result_data
-        );
-
-        $saved = QAProof_API_Client::history_save( $save_data );
-
-        return new WP_REST_Response( [
-            'success'      => true,
-            'historySaved' => ! is_wp_error( $saved ),
-        ], 200 );
-    }
+    // NOTE: there is intentionally no save-test-result handler. Test history is
+    // persisted server-side by the API when the async job finishes (single
+    // writer). The plugin used to POST results back here, which created a
+    // duplicate row per test; that path has been removed.
 }

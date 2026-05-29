@@ -1170,14 +1170,11 @@
             S.testsPageBusy = false;
           },
           onScreenshotsDone: function (resultData) {
-            Q.saveTestHistory(body.testType, body.pageUrl, jobId, resultData)
-              .then(function (saveResp) {
-                if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
-              })
-              .catch(function (err) {
-                console.error('[QAProof] Failed to save history:', err.message);
-                if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
-              });
+            // History is persisted server-side by the API when the job
+            // completes (single writer). We only refresh the list here so the
+            // new run shows up. The screenshot round-trip that precedes this
+            // callback gives the server's insert ample time to land.
+            if (Q.testsHistoryMgr) Q.testsHistoryMgr.load(true);
           },
           onFailed: function (errorMsg) {
             loadingTimers.forEach(clearTimeout);
