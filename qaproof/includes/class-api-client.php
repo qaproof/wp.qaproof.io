@@ -1057,51 +1057,131 @@ class QAProof_API_Client {
             return new WP_Error( 'qaproof_api_error', $msg );
         }
 
-        $rows = array_map( [ __CLASS__, 'normalize_history' ], (array) $decoded['data'] );
+        $rows = isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? $decoded['data'] : array();
+        $rows = array_map( [ __CLASS__, 'normalize_history' ], $rows );
         return array( 'data' => $rows, 'total' => isset( $decoded['total'] ) ? (int) $decoded['total'] : count( $rows ) );
     }
 
-    public static function history_get( $id ) {
-        $result = self::api_request( 'GET', '/api/history/' . rawurlencode( $id ) );
-        if ( is_wp_error( $result ) ) return $result;
-        return self::normalize_history( $result );
+    // ── History stats ─────────────────────────────────────────────────────────
+
+    /**
+     * Aggregated stats for the dashboard (total tests + avg score).
+     *
+     * @param  int $threshold Score below which a test is considered a failure.
+     * @return array|WP_Error { total: int, avg_score: float|null, failures: int }
+     */
+    public static function history_stats( $threshold = 90 ) {
+        $path     = '/api/history/stats?threshold=' . (int) $threshold;
+        $endpoint = QAProof_Settings::get_api_endpoint() . $path;
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $response = wp_remote_get( $endpoint, array(
+            'headers'   => array( 'Authorization' => 'Bearer ' . $api_key ),
+            'timeout'   => self::TIMEOUT,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null || ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
+            $msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_api_error', $msg );
+        }
+
+        return is_array( $decoded['data'] ) ? $decoded['data'] : array();
     }
 
-    // NOTE: history_save() (POST /api/history) was removed. The SaaS API now
-    // persists each test_history row server-side when the async job completes,
-    // so a client-side POST here only created a duplicate row. The read paths
-    // (history_list / history_get / history_delete / history_stats) remain.
+    // ── Plugin feedback ───────────────────────────────────────────────────────
 
-    public static function history_delete( $id ) {
-        $result = self::api_request( 'DELETE', '/api/history/' . rawurlencode( $id ) );
+    /**
+     * Submit user feedback (rating + optional comment) to the SaaS API.
+     *
+     * @param  array $params { rating, comment, testType, pageUrl, score, wpUserId, sourceSiteUrl }
+     * @return true|WP_Error
+     */
+    public static function submit_feedback( $params ) {
+        $result = self::api_request( 'POST', '/api/feedback', $params );
         if ( is_wp_error( $result ) ) return $result;
         return true;
     }
 
-    public static function history_stats( $threshold = 70 ) {
-        $path   = '/api/history/stats?threshold=' . (int) $threshold;
-        $result = self::api_request( 'GET', $path );
-        if ( is_wp_error( $result ) ) return $result;
-        return $result;
-    }
+    // ── PDF / email report ────────────────────────────────────────────────────
 
     /**
-     * Send a PDF report via the SaaS API (SES).
+     * Ask the SaaS API to send a PDF report by email.
      *
-     * @param  array $params { pdfBase64, to, fileName, testType, pageUrl, score }
-     * @return array|WP_Error
+     * Two accepted forms (mirrors send-report-email.js on the server):
+     *   Form B (new):    params include 'resultData' array + 'to' + 'fileName'
+     *   Form A (legacy): params include 'pdfBase64' + 'to' + 'fileName' + 'testType' + 'pageUrl' + 'score'
+     *
+     * @param  array $params
+     * @return true|WP_Error
      */
     public static function send_report_email( $params ) {
-        return self::api_request( 'POST', '/api/send-report-email', $params, 60 );
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/send-report-email';
+        $api_key  = QAProof_Settings::get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $response = wp_remote_post( $endpoint, array(
+            'headers'   => array(
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ),
+            // send-report-email accepts up to 20 MB (screenshots inside resultData)
+            'body'      => wp_json_encode( $params ),
+            'timeout'   => 120,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $decoded     = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $decoded === null || ( $status_code < 200 || $status_code >= 300 ) || empty( $decoded['success'] ) ) {
+            $msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+            return new WP_Error( 'qaproof_api_error', $msg );
+        }
+
+        return true;
     }
 
     /**
-     * Generate a PDF from result data via the server-side Playwright renderer.
-     * Returns raw PDF binary string on success, WP_Error on failure.
+     * Generate a PDF server-side from result data and return raw binary bytes.
+     * Used by the WordPress plugin "Download as PDF" button so all reports go
+     * through the same Playwright renderer (matching the emailed PDF).
+     *
+     * POST /api/report/generate — authenticated, returns application/pdf binary.
      *
      * @param  array $result_data { testType, pageUrl, score, summary, categories,
      *                              differences, recommendations, screenshots }
-     * @return string|WP_Error
+     * @return string|WP_Error Raw PDF bytes on success, WP_Error on failure.
      */
     public static function generate_pdf( $result_data ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/report/generate';
@@ -1111,18 +1191,20 @@ class QAProof_API_Client {
             return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
         }
 
-        $response = wp_remote_post( $endpoint, [
-            'headers'   => [
+        $response = wp_remote_post( $endpoint, array(
+            'headers'   => array(
                 'Content-Type'  => 'application/json',
                 'Authorization' => 'Bearer ' . $api_key,
-            ],
+            ),
             'body'      => wp_json_encode( $result_data ),
-            'timeout'   => 90,
+            // Playwright PDF rendering + screenshot processing can take a while
+            'timeout'   => 120,
             'sslverify' => true,
-        ] );
+        ) );
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -1130,92 +1212,17 @@ class QAProof_API_Client {
         $status_code  = wp_remote_retrieve_response_code( $response );
         $content_type = wp_remote_retrieve_header( $response, 'content-type' );
 
-        if ( $status_code !== 200 || strpos( $content_type, 'application/pdf' ) === false ) {
-            $body    = wp_remote_retrieve_body( $response );
-            $decoded = json_decode( $body, true );
-            $msg     = isset( $decoded['error'] ) ? $decoded['error'] : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
-            return new WP_Error( 'qaproof_pdf_error', $msg );
+        // Success: server returns raw PDF bytes
+        if ( $status_code >= 200 && $status_code < 300 && false !== strpos( $content_type, 'application/pdf' ) ) {
+            return wp_remote_retrieve_body( $response );
         }
 
-        return wp_remote_retrieve_body( $response );
-    }
-
-    // ── Figma OAuth ───────────────────────────────────────────────────────────
-
-    /** @return array|WP_Error { authorizeUrl } */
-    public static function figma_oauth_start() {
-        return self::api_request( 'POST', '/api/figma-oauth/start', array(), 60 );
-    }
-
-    /** @return array|WP_Error { connected, revoked, figmaUserEmail, ... } */
-    public static function figma_oauth_status() {
-        return self::api_request( 'GET', '/api/figma-oauth/status' );
-    }
-
-    /** @return array|WP_Error { deleted: bool } */
-    public static function figma_oauth_disconnect() {
-        return self::api_request( 'POST', '/api/figma-oauth/disconnect', array() );
-    }
-
-    /**
-     * Submit a "How was this test?" rating to the SaaS.
-     *
-     * Blocking — the caller (the REST handler) needs to surface success or
-     * failure to the user. 5-second timeout bounds the worst-case wait; the
-     * endpoint is a single INSERT on the SaaS side so it normally returns in
-     * <100 ms.
-     *
-     * Feedback is stored only on the SaaS; the WP install keeps no copy.
-     *
-     * @param array $payload  Validated/sanitised by the REST handler.
-     * @return array|WP_Error Success array `[ 'success' => true ]`, or
-     *                        WP_Error with a translatable user-visible
-     *                        message on failure (no API key, network error,
-     *                        non-2xx response).
-     */
-    public static function submit_feedback( $payload ) {
-        $api_key = QAProof_Settings::get_api_key();
-        if ( empty( $api_key ) ) {
-            return new WP_Error(
-                'qaproof_no_api_key',
-                __( 'API key not configured. Add your key in Settings → API before submitting feedback.', 'qaproof' )
-            );
-        }
-
-        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/feedback';
-        $response = wp_remote_post( $endpoint, [
-            'headers' => [
-                'Content-Type'  => 'application/json',
-                'Authorization' => 'Bearer ' . $api_key,
-            ],
-            'body'        => wp_json_encode( $payload ),
-            'timeout'     => 5,
-            'sslverify'   => true,
-            'httpversion' => '1.1',
-        ] );
-
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'qaproof_api_network_error',
-                sprintf(
-                    /* translators: %s: low-level transport error message */
-                    __( 'Could not reach the API: %s', 'qaproof' ),
-                    $response->get_error_message()
-                )
-            );
-        }
-
-        $status = wp_remote_retrieve_response_code( $response );
-        if ( $status < 200 || $status >= 300 ) {
-            $body    = wp_remote_retrieve_body( $response );
-            $decoded = json_decode( $body, true );
-            $msg     = ( is_array( $decoded ) && ! empty( $decoded['error']['message'] ) )
-                ? $decoded['error']['message']
-                /* translators: %d: HTTP status code returned by the API */
-                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status );
-            return new WP_Error( 'qaproof_api_error', $msg, [ 'status' => $status ] );
-        }
-
-        return [ 'success' => true ];
+        // Error: server returned a JSON error body
+        $decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+        $msg     = isset( $decoded['error']['message'] )
+            ? $decoded['error']['message']
+            /* translators: %d: HTTP status code */
+            : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
+        return new WP_Error( 'qaproof_api_error', $msg );
     }
 }
