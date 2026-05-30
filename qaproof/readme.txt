@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.19
+Stable tag: 1.0.20
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,13 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.20 =
+Monitor reliability + speed fixes.
+
+* Approve no longer hangs; REST URL fixed on installations using plain permalinks; diff groups stay expanded on small reports.
+* Monitor history "View" is faster — screenshots lazy-load on open instead of being fetched up-front, and difference markers render only on the currently-viewed result.
+* The "Generating report" loader now stops the instant completion is detected (no lingering spinner after a run).
 
 = 1.0.19 =
 PDF reports: browser-side generation with screenshots.
