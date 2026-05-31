@@ -90,7 +90,12 @@
         genBarEl.style.background = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#00ADB5';
       }
       if (genRemEl) {
-        genRemEl.textContent = remaining + ' remaining this billing period';
+        // Free is a one-time lifetime trial — no period to "remain in".
+        // Paid plans roll over each billing period.
+        var isPaid = (ws.plan && ws.plan !== 'free');
+        genRemEl.textContent = remaining + (isPaid
+          ? ' remaining this billing period'
+          : ' remaining (lifetime trial)');
       }
       if (monitorsEl) monitorsEl.textContent = (ws.monitors && ws.monitors.limit ? ws.monitors.limit : 1) + ' monitors';
       if (historyEl)  historyEl.textContent  = (ws.historyRetentionDays || 7) + ' days history';
