@@ -19,12 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *   $accessibility_slug (string)
  *   $monitors_slug    (string)
  *   $settings_slug    (string)
- *   $ai_used          (int)    — AI generations consumed this period
+ *   $ai_used          (int)    — AI generations consumed (lifetime on Free, this billing period on paid plans)
  *   $ai_limit         (int)    — AI generations limit for the plan
  *   $ai_pct           (int)    — percentage used (0–100)
  *   $monitor_limit    (int)    — monitor count allowed by the plan
  *   $account_plan     (string) — capitalized plan name ("Free", "Pro", etc.)
- *   $reset_label      (string) — e.g. "Resets on May 1, 2026"
+ *   $reset_label      (string) — "Resets on May 1, 2026" for paid plans;
+ *                                "Lifetime trial — does not reset" for Free.
  */
 ?>
 <div class="wrap" id="qaproof-app">

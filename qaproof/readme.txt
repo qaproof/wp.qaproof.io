@@ -198,6 +198,9 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 
 == Changelog ==
 
+= 1.0.21 =
+Dashboard now correctly reflects the Free plan as a one-time lifetime trial — no false "Resets on …" date is shown for Free workspaces. The reset line on the dashboard reads "Lifetime trial — does not reset" for Free, and the unchanged paid-plan rollover text for Pro / Business / Scale. Header captions and remaining-credits hints adjust the wording for Free vs paid in the same direction.
+
 = 1.0.20 =
 Monitor reliability + speed fixes.
 

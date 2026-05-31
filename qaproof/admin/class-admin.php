@@ -520,26 +520,35 @@ class QAProof_Admin {
         $has_api_key       = ! empty( QAProof_Settings::get_api_key() );
 
         $ai_used       = 0;
-        $ai_limit      = 20;
+        $ai_limit      = 0;
         $monitor_limit = 1;
-        $account_plan  = 'free';
+        $account_plan_raw = 'free';
         $reset_label   = '';
 
         if ( $has_api_key ) {
             $account_info = QAProof_API_Client::get_account_info();
             if ( ! is_wp_error( $account_info ) && isset( $account_info['workspace'] ) ) {
-                $ws            = $account_info['workspace'];
-                $ai_used       = (int) ( $ws['aiGenerations']['used']  ?? 0 );
-                $ai_limit      = (int) ( $ws['aiGenerations']['limit'] ?? 20 );
-                $monitor_limit = (int) ( $ws['monitors']['limit']      ?? 1 );
-                $account_plan  = ucfirst( $ws['plan'] ?? 'free' );
+                $ws               = $account_info['workspace'];
+                $ai_used          = (int) ( $ws['aiGenerations']['used']  ?? 0 );
+                $ai_limit         = (int) ( $ws['aiGenerations']['limit'] ?? 0 );
+                $monitor_limit    = (int) ( $ws['monitors']['limit']      ?? 1 );
+                $account_plan_raw = $ws['plan'] ?? 'free';
             }
         }
 
-        $ai_pct      = $ai_limit > 0 ? round( $ai_used / $ai_limit * 100 ) : 0;
-        $reset_ts    = mktime( 0, 0, 0, (int) gmdate( 'n' ) + 1, 1 );
-        /* translators: %s: reset date (e.g. "Jun 1, 2026") */
-        $reset_label = sprintf( __( 'Resets on %s', 'qaproof' ), wp_date( 'M j, Y', $reset_ts ) );
+        $account_plan = ucfirst( $account_plan_raw );
+        $ai_pct       = $ai_limit > 0 ? round( $ai_used / $ai_limit * 100 ) : 0;
+
+        // Free is a one-time lifetime trial — no monthly reset. Only paid
+        // plans roll over each billing period, so only paid plans get a
+        // "Resets on …" line on the dashboard.
+        if ( 'free' === $account_plan_raw ) {
+            $reset_label = __( 'Lifetime trial — does not reset', 'qaproof' );
+        } else {
+            $reset_ts    = mktime( 0, 0, 0, (int) gmdate( 'n' ) + 1, 1 );
+            /* translators: %s: reset date (e.g. "Jun 1, 2026") */
+            $reset_label = sprintf( __( 'Resets on %s', 'qaproof' ), wp_date( 'M j, Y', $reset_ts ) );
+        }
 
         $ring_radius    = 44;
         $circumference  = 2 * 3.14159 * $ring_radius;
