@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.20
+Stable tag: 1.0.22
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -197,6 +197,12 @@ Job IDs and a tab-open flag for active tests are written to `sessionStorage` (cl
 9. Issues and recommendations — full list of WCAG violations grouped by category with fix suggestions.
 
 == Changelog ==
+
+= 1.0.22 =
+Fix: critical regression introduced in 1.0.20. A refactor of the API client dropped five `public static` methods while their REST proxies kept calling them — every affected click since 1.0.20 silently returned a 500 from a PHP "Call to undefined method" fatal. All five methods restored.
+
+* Test History — `View report`, `Download PDF`, and `Delete` buttons work again (`history_get`, `history_delete`).
+* Figma connection — `Connect Figma`, the live connection-status pill in Settings, and `Disconnect` work again (`figma_oauth_start`, `figma_oauth_status`, `figma_oauth_disconnect`).
 
 = 1.0.21 =
 Dashboard now correctly reflects the Free plan as a one-time lifetime trial — no false "Resets on …" date is shown for Free workspaces. The reset line on the dashboard reads "Lifetime trial — does not reset" for Free, and the unchanged paid-plan rollover text for Pro / Business / Scale. Header captions and remaining-credits hints adjust the wording for Free vs paid in the same direction.
