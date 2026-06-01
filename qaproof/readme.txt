@@ -110,16 +110,16 @@ QAProof works equally well for non-technical site owners and experienced develop
 
 The market has tools for design comparison. Separate tools for regression. Separate tools for accessibility. **QAProof combines all five in one platform** — and goes further than any of them individually.
 
-* ✅ Design vs. live page comparison
-* ✅ Figma tool support *(not available in other tools)*
-* ✅ Responsive testing across 3 viewports *(not available in other tools)*
-* ✅ WCAG accessibility audit — Level A, AA, AAA *(not available in other tools)*
-* ✅ Visual regression monitoring
-* ✅ Design Debt Score *(not available in other tools)*
-* ✅ WordPress plugin with built-in admin UI *(not available in other tools)*
-* ✅ Scheduled automatic monitoring
-* ✅ PDF reports with verification seal *(not available in other tools)*
-* ✅ AI-generated CSS fix recommendations *(not available in other tools)*
+*  Design vs. live page comparison
+*  Figma tool support *(not available in other tools)*
+*  Responsive testing across 3 viewports *(not available in other tools)*
+*  WCAG accessibility audit — Level A, AA, AAA *(not available in other tools)*
+*  Visual regression monitoring
+*  Design Debt Score *(not available in other tools)*
+*  WordPress plugin with built-in admin UI *(not available in other tools)*
+*  Scheduled automatic monitoring
+*  PDF reports with verification seal *(not available in other tools)*
+*  AI-generated CSS fix recommendations *(not available in other tools)*
 
 == Frequently Asked Questions ==
 
