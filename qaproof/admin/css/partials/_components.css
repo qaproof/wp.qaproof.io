@@ -45,6 +45,14 @@
   color: var(--qp-border-light);
 }
 
+#qaproof-app .qaproof-vp-px {
+  margin-left: 5px;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.6;
+  letter-spacing: 0.02em;
+}
+
 /* ============================
    Device Panels
    ============================ */
