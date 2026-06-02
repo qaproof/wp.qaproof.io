@@ -25,6 +25,33 @@ class QAProof_Settings {
         add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'flush_saved_designs_cache' ], 10, 0 );
         add_action( 'update_option_qaproof_saved_designs', [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11, 0 );
         add_action( 'add_option_qaproof_saved_designs',    [ __CLASS__, 'ensure_saved_designs_not_autoloaded' ], 11, 0 );
+        add_action( 'update_option_qaproof_notify_hour', [ __CLASS__, 'sync_notify_hour_to_monitors' ], 10, 2 );
+    }
+
+    /**
+     * When the global notify_hour changes, push the new value to every monitor
+     * on the API so the scheduler picks it up immediately without requiring the
+     * user to manually re-save each monitor.
+     */
+    public static function sync_notify_hour_to_monitors( $old_value, $new_value ) {
+        $hour     = max( 0, min( 23, (int) $new_value ) );
+        $timezone = wp_timezone_string();
+
+        $monitors = QAProof_API_Client::monitors_list();
+        if ( is_wp_error( $monitors ) || empty( $monitors ) ) {
+            return;
+        }
+
+        foreach ( $monitors as $monitor ) {
+            $id = isset( $monitor['id'] ) ? $monitor['id'] : '';
+            if ( $id === '' ) continue;
+            QAProof_API_Client::monitors_update( $id, [
+                'notify_hour'     => $hour,
+                'notify_timezone' => $timezone,
+            ] );
+        }
+
+        delete_transient( 'qaproof_mon_list' );
     }
 
     public static function ensure_api_key_not_autoloaded() {
