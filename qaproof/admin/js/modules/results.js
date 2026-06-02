@@ -219,6 +219,124 @@
     return '<div class="qaproof-meta-badges" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px;">' + badges.join('') + '</div>';
   }
 
+  /**
+   * Build the "Coverage Details" block for fidelity results.
+   *
+   * The API attaches `data.coverage` to every fidelity full-page response
+   * with sectionsDetected/Matched/Unmatched, sectionPixelDiff (per-section
+   * deterministic % drift), findingsRaw vs findingsAfterVerify, and
+   * parallelGroups stats. This block:
+   *
+   *   1. Shows a high-priority WARN callout when ANY signal of degraded
+   *      coverage is present (parallel group had a failed substage,
+   *      verifier dropped > 50% of findings, etc.).
+   *   2. Renders a collapsible <details> with the full breakdown so the
+   *      developer can audit exactly what was analyzed.
+   *
+   * Without this block, partial-coverage runs read as full-coverage to
+   * the user — exactly the kind of silent shortcut the rewrite eliminates.
+   */
+  function buildCoverageBlockHtml(data) {
+    var cov = data && data.coverage;
+    if (!cov || typeof cov !== 'object') return '';
+
+    var warnings = [];
+
+    // Parallel group failure → some substage threw, results from that
+    // substage are missing from synthesis input.
+    var groups = cov.parallelGroups || {};
+    Object.keys(groups).forEach(function(name) {
+      var g = groups[name];
+      if (g && g.failed > 0) {
+        warnings.push(
+          '<strong>' + Q.escapeHtml(name) + '</strong> — ' + g.failed + ' of ' + g.total +
+          ' substage(s) failed; analysis ran with partial data from this group.',
+        );
+      }
+    });
+
+    // Verifier dropped a large fraction of findings — could mean lots of
+    // hallucinations OR could mean over-aggressive filtering. Flag for
+    // visibility either way.
+    if (cov.verify && cov.verify.total > 0) {
+      var dropRate = cov.verify.dropped / cov.verify.total;
+      if (dropRate > 0.5) {
+        warnings.push(
+          '<strong>Verifier filter</strong> — ' + cov.verify.dropped + ' of ' + cov.verify.total +
+          ' raw findings were dropped as unverifiable (' + Math.round(dropRate * 100) + '%). ' +
+          'Re-run if the report seems thinner than expected.',
+        );
+      }
+    }
+
+    // Zero sections matched at all — section-aligned compare didn't happen;
+    // the report relies entirely on the whole-page sanity pass.
+    if (cov.sectionsDetected > 0 && cov.sectionsMatched === 0) {
+      warnings.push(
+        '<strong>No section pairs matched</strong> — the detector could not pair any sections between design and live. Section-aligned compare did not run; report relies on the global pass only.',
+      );
+    }
+
+    var html = '';
+
+    // High-priority WARN callout. Same visual style as viewportWarning.
+    if (warnings.length > 0) {
+      html += '<div class="qaproof-callout qaproof-callout-warn" style="margin:12px 0 16px;padding:12px 14px;border:1px solid #F59E0B;background:#FFFBEB;border-radius:6px;font-size:13px;line-height:1.5;">';
+      html += '<strong>Partial coverage detected:</strong>';
+      html += '<ul style="margin:6px 0 0;padding-left:22px;">';
+      warnings.forEach(function(w) { html += '<li>' + w + '</li>'; });
+      html += '</ul>';
+      html += '</div>';
+    }
+
+    // Collapsible details. Always rendered (even on full coverage) so the
+    // user can audit any test.
+    html += '<details class="qaproof-coverage-details" style="margin:8px 0 12px;font-size:12px;">';
+    html += '  <summary style="cursor:pointer;color:#555;padding:4px 0;">Coverage details</summary>';
+    html += '  <div style="margin-top:8px;padding:10px 12px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;">';
+    html += '    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 16px;">';
+    html += '      <div><strong>Sections detected:</strong> ' + (cov.sectionsDetected || 0) + '</div>';
+    html += '      <div><strong>Matched pairs:</strong> ' + (cov.sectionsMatched || 0) + '</div>';
+    html += '      <div><strong>Unmatched sections:</strong> ' + (cov.sectionsUnmatched || 0) + '</div>';
+    html += '      <div><strong>Findings (raw):</strong> ' + (cov.findingsRaw || 0) + '</div>';
+    html += '      <div><strong>Findings (final):</strong> ' + (cov.findingsAfterVerify || 0) + '</div>';
+    if (cov.verify) {
+      html += '      <div><strong>Verifier kept:</strong> ' + (cov.verify.kept || 0) + '</div>';
+      if (cov.verify.dropped) {
+        html += '      <div><strong>Verifier dropped:</strong> ' + cov.verify.dropped + '</div>';
+      }
+      if (cov.verify.downgraded) {
+        html += '      <div><strong>Severity downgraded:</strong> ' + cov.verify.downgraded + '</div>';
+      }
+    }
+    if (cov.sectionPixelDiff && typeof cov.sectionPixelDiff.overall === 'number') {
+      html += '      <div><strong>Overall pixel-diff:</strong> ' +
+        cov.sectionPixelDiff.overall.toFixed(1) + '%</div>';
+    }
+    html += '    </div>';
+
+    // Per-section pixel-diff table — visible at a glance which section
+    // had the most drift.
+    if (cov.sectionPixelDiff && Array.isArray(cov.sectionPixelDiff.bySection) && cov.sectionPixelDiff.bySection.length > 0) {
+      html += '<div style="margin-top:10px;"><strong>Per-section pixel drift (deterministic):</strong></div>';
+      html += '<table style="width:100%;border-collapse:collapse;margin-top:4px;">';
+      html += '<thead><tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid #E5E7EB;">Section</th><th style="text-align:right;padding:4px 8px;border-bottom:1px solid #E5E7EB;">% diff</th></tr></thead><tbody>';
+      cov.sectionPixelDiff.bySection.forEach(function(s) {
+        var pct = (typeof s.percentDiff === 'number') ? s.percentDiff.toFixed(1) : '?';
+        var pctColor = (typeof s.percentDiff === 'number' && s.percentDiff > 30) ? '#DC2626' :
+                       (typeof s.percentDiff === 'number' && s.percentDiff > 10) ? '#F59E0B' : '#374151';
+        html += '<tr><td style="padding:3px 8px;">' + Q.escapeHtml(s.label || '') + '</td>' +
+                '<td style="padding:3px 8px;text-align:right;color:' + pctColor + ';font-weight:600;">' + pct + '%</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+
+    html += '  </div>';
+    html += '</details>';
+
+    return html;
+  }
+
   function buildParseWarningHtml(data) {
     var categories = data.categories || {};
     var catCount = Object.keys(categories).length;
@@ -923,6 +1041,11 @@
         ' <em>The score may not reflect implementation quality — re-run at a matching width to compare apples-to-apples.</em>' +
         '</div>';
     }
+
+    // Coverage block (partial-coverage callout + collapsible details).
+    // Renders before the score so the user knows if the score is based
+    // on complete or degraded analysis.
+    html += buildCoverageBlockHtml(data);
 
     // Combined score + stats header
     html += '<div class="qaproof-report-hero">';
