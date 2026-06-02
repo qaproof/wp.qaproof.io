@@ -48,6 +48,7 @@ class QAProof_Settings {
             QAProof_API_Client::monitors_update( $id, [
                 'notify_hour'     => $hour,
                 'notify_timezone' => $timezone,
+                'last_run_at'     => null,
             ] );
         }
 
