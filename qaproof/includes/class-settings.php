@@ -286,19 +286,21 @@ class QAProof_Settings {
 
         register_setting( self::GROUP_TESTS_RESPONSIVE, 'qaproof_viewport_desktop', [
             'type'              => 'integer',
-            'sanitize_callback' => 'absint',
+            'sanitize_callback' => function ( $v ) { return max( 800, min( 3840, absint( $v ) ) ); },
             'default'           => 1920,
         ]);
 
         register_setting( self::GROUP_TESTS_RESPONSIVE, 'qaproof_viewport_tablet', [
             'type'              => 'integer',
-            'sanitize_callback' => 'absint',
+            // min 768 — ensures tablet viewport never triggers mobile User-Agent (Math.min(w,h) < 768)
+            'sanitize_callback' => function ( $v ) { return max( 768, min( 1200, absint( $v ) ) ); },
             'default'           => 768,
         ]);
 
         register_setting( self::GROUP_TESTS_RESPONSIVE, 'qaproof_viewport_mobile', [
             'type'              => 'integer',
-            'sanitize_callback' => 'absint',
+            // max 767 — ensures mobile viewport always triggers mobile User-Agent (Math.min(w,h) < 768)
+            'sanitize_callback' => function ( $v ) { return max( 280, min( 767, absint( $v ) ) ); },
             'default'           => 375,
         ]);
 
@@ -870,25 +872,55 @@ class QAProof_Settings {
     }
 
     public static function render_viewports_field() {
-        $desktop = get_option( 'qaproof_viewport_desktop', 1920 );
-        $tablet  = get_option( 'qaproof_viewport_tablet', 768 );
-        $mobile  = get_option( 'qaproof_viewport_mobile', 375 );
+        $desktop = max( 800,  min( 3840, (int) get_option( 'qaproof_viewport_desktop', 1920 ) ) );
+        $tablet  = max( 768,  min( 1200, (int) get_option( 'qaproof_viewport_tablet',  768  ) ) );
+        $mobile  = max( 280,  min( 767,  (int) get_option( 'qaproof_viewport_mobile',  375  ) ) );
         ?>
         <fieldset class="qaproof-viewport-fields">
-            <label>
-                <?php esc_html_e( 'Desktop:', 'qaproof' ); ?>
-                <span class="qaproof-input-suffix"><input type="number" name="qaproof_viewport_desktop" value="<?php echo esc_attr( $desktop ); ?>" min="800" max="3840" step="1" class="small-text" /><span class="qaproof-suffix">px</span></span>
-            </label>
-            <label>
-                <?php esc_html_e( 'Tablet:', 'qaproof' ); ?>
-                <span class="qaproof-input-suffix"><input type="number" name="qaproof_viewport_tablet" value="<?php echo esc_attr( $tablet ); ?>" min="320" max="1200" step="1" class="small-text" /><span class="qaproof-suffix">px</span></span>
-            </label>
-            <label>
-                <?php esc_html_e( 'Mobile:', 'qaproof' ); ?>
-                <span class="qaproof-input-suffix"><input type="number" name="qaproof_viewport_mobile" value="<?php echo esc_attr( $mobile ); ?>" min="280" max="480" step="1" class="small-text" /><span class="qaproof-suffix">px</span></span>
-            </label>
+            <div class="qaproof-viewport-field">
+                <label for="qaproof_viewport_desktop"><?php esc_html_e( 'Desktop', 'qaproof' ); ?></label>
+                <span class="qaproof-input-suffix">
+                    <input type="number" id="qaproof_viewport_desktop" name="qaproof_viewport_desktop" value="<?php echo esc_attr( $desktop ); ?>" min="800" max="3840" step="1" class="small-text" />
+                    <span class="qaproof-suffix">px</span>
+                </span>
+                <span class="qaproof-viewport-hint">800 – 3840 px</span>
+            </div>
+            <div class="qaproof-viewport-field">
+                <label for="qaproof_viewport_tablet"><?php esc_html_e( 'Tablet', 'qaproof' ); ?></label>
+                <span class="qaproof-input-suffix">
+                    <input type="number" id="qaproof_viewport_tablet" name="qaproof_viewport_tablet" value="<?php echo esc_attr( $tablet ); ?>" min="768" max="1200" step="1" class="small-text" />
+                    <span class="qaproof-suffix">px</span>
+                </span>
+                <span class="qaproof-viewport-hint">768 – 1200 px</span>
+            </div>
+            <div class="qaproof-viewport-field">
+                <label for="qaproof_viewport_mobile"><?php esc_html_e( 'Mobile', 'qaproof' ); ?></label>
+                <span class="qaproof-input-suffix">
+                    <input type="number" id="qaproof_viewport_mobile" name="qaproof_viewport_mobile" value="<?php echo esc_attr( $mobile ); ?>" min="280" max="767" step="1" class="small-text" />
+                    <span class="qaproof-suffix">px</span>
+                </span>
+                <span class="qaproof-viewport-hint">280 – 767 px</span>
+            </div>
         </fieldset>
-        <p class="description"><?php esc_html_e( 'Viewport widths (in pixels) used for responsive screenshots.', 'qaproof' ); ?></p>
+        <script>
+        (function() {
+            function clampViewportInputs() {
+                document.querySelectorAll('.qaproof-viewport-fields input[type="number"]').forEach(function(input) {
+                    var val = parseInt(input.value, 10);
+                    var min = parseInt(input.min, 10);
+                    var max = parseInt(input.max, 10);
+                    if (isNaN(val) || val < min) input.value = min;
+                    else if (val > max) input.value = max;
+                });
+            }
+            document.querySelectorAll('.qaproof-viewport-fields input[type="number"]').forEach(function(input) {
+                input.addEventListener('invalid', function(e) { e.preventDefault(); });
+                input.addEventListener('blur', clampViewportInputs);
+            });
+            // capture=true — fires before init.js submit validator on #qaproof-app
+            document.addEventListener('submit', clampViewportInputs, true);
+        })();
+        </script>
         <?php
     }
 

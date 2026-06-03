@@ -354,17 +354,29 @@
 /* Viewport fields row */
 #qaproof-app .qaproof-viewport-fields {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+#qaproof-app .qaproof-viewport-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 #qaproof-app .qaproof-viewport-fields label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  color: #4b5563;
-  font-size: 13px;
+  display: block;
+  font-weight: 600;
+  color: var(--qp-text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#qaproof-app .qaproof-viewport-hint {
+  font-size: 11px;
+  color: var(--qp-text-placeholder);
+  line-height: 1;
 }
 
 /* Number input suffix (px) */
