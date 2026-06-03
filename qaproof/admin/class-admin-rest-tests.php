@@ -78,9 +78,9 @@ class QAProof_Admin_REST_Tests {
 
             // Sane bounds — match the input min/max from the Settings form so a
             // tampered option can't crash Chromium with absurd dimensions.
-            if ( $vw_desktop >= 800 && $vw_desktop <= 3840
-              && $vw_tablet  >= 320 && $vw_tablet  <= 1200
-              && $vw_mobile  >= 280 && $vw_mobile  <= 480 ) {
+            if ( $vw_desktop >= 800  && $vw_desktop <= 3840
+              && $vw_tablet  >= 768  && $vw_tablet  <= 1200
+              && $vw_mobile  >= 280  && $vw_mobile  <= 767 ) {
                 $api_params['viewportWidths'] = [
                     'desktop' => $vw_desktop,
                     'tablet'  => $vw_tablet,
