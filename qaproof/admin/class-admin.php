@@ -27,14 +27,28 @@ class QAProof_Admin {
     }
 
     /**
-     * Inject a fresh REST nonce into every heartbeat tick response.
-     * The JS side (admin/js/modules/init.js) listens for `heartbeat-tick`
-     * and updates `window.qaproof.nonce` from `data.qaproof_nonce`.
+     * Inject a fresh REST nonce into the heartbeat tick response at most
+     * once per hour. WordPress's heartbeat fires every 15–60s in admin —
+     * recomputing the nonce that often is wasteful (the wp_create_nonce
+     * window is 12h, so once an hour leaves a comfortable margin while
+     * staying current for sessions that span the lifetime boundary).
+     *
+     * Per-user transient gates the refresh: while it exists, skip; when it
+     * expires (1h), the next tick generates a new nonce and resets it.
+     * The JS side (admin/js/modules/init.js) updates window.qaproof.nonce
+     * from data.qaproof_nonce on every heartbeat-tick — it just doesn't
+     * get a payload most ticks.
      */
     public static function heartbeat_refresh_nonce( $response, $data ) {
-        if ( current_user_can( self::CAPABILITY ) ) {
-            $response['qaproof_nonce'] = wp_create_nonce( 'wp_rest' );
+        if ( ! current_user_can( self::CAPABILITY ) ) {
+            return $response;
         }
+        $key = 'qaproof_nonce_ref_' . get_current_user_id();
+        if ( get_transient( $key ) ) {
+            return $response;
+        }
+        set_transient( $key, 1, HOUR_IN_SECONDS );
+        $response['qaproof_nonce'] = wp_create_nonce( 'wp_rest' );
         return $response;
     }
 
