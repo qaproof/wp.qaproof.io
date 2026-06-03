@@ -241,7 +241,7 @@ class QAProof_Admin_Assets {
                 'stepRunAnalysis'        => __( 'Running AI analysis', 'qaproof' ),
                 'stepGenerateReport'     => __( 'Generating report', 'qaproof' ),
                 'stepFinalizeResults'    => __( 'Finalizing results', 'qaproof' ),
-                'loadingDuration'        => __( 'This may take 1-3 minutes', 'qaproof' ),
+                'loadingDuration'        => __( 'This may take 2-5 minutes', 'qaproof' ),
                 'loadingAlmostDone'      => __( 'Almost done', 'qaproof' ),
                 // monitors.js — month/day names
                 'monthNames'             => [

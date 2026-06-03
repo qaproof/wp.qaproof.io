@@ -9,6 +9,7 @@
     loading: document.getElementById('qaproof-loading'),
     loadingText: document.getElementById('qaproof-loading-text'),
     loadingSubtext: document.getElementById('qaproof-loading-subtext'),
+    cancelBtn: document.getElementById('qaproof-cancel-btn'),
     errorDiv: document.getElementById('qaproof-error'),
     errorMessage: document.getElementById('qaproof-error-message'),
     resultsContainer: document.getElementById('qaproof-results'),
