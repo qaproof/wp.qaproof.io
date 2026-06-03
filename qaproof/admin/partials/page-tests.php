@@ -208,10 +208,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <div class="qaproof-loading-spinner" aria-hidden="true"></div>
                 <div class="qaproof-loading-info">
                     <strong id="qaproof-loading-text"><?php esc_html_e( 'Analyzing...', 'qaproof' ); ?></strong>
-                    <p class="description" id="qaproof-loading-subtext"><?php esc_html_e( 'This may take 1-3 minutes.', 'qaproof' ); ?></p>
+                    <p class="description" id="qaproof-loading-subtext"><?php esc_html_e( 'This may take 2-5 minutes.', 'qaproof' ); ?></p>
                 </div>
             </div>
             <div class="qaproof-loading-steps" id="qaproof-loading-steps"></div>
+            <button type="button" id="qaproof-cancel-btn" class="qaproof-cancel-btn" aria-label="<?php esc_attr_e( 'Cancel running test', 'qaproof' ); ?>">
+                <?php esc_html_e( 'Cancel', 'qaproof' ); ?>
+            </button>
         </div>
     </div>
 

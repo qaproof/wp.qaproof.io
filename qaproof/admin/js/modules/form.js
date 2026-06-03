@@ -96,6 +96,36 @@
   }
 
   // ============================
+  // Cancel running test
+  // ============================
+  // The polling cancel function is stashed on window.QAProof.__activeCancel
+  // by the submit handler (below). When the user clicks Cancel or hits ESC
+  // we invoke it, reset the loading UI, and re-enable the submit button.
+  // The backend job continues to completion (no abort signal) but the WP
+  // session forgets about it — same as a page reload.
+  function cancelActiveTest() {
+    var fn = window.QAProof.__activeCancel;
+    if (typeof fn === 'function') {
+      try { fn(); } catch (_) { /* ignore */ }
+    }
+    window.QAProof.__activeCancel = null;
+    if (S.loading) S.loading.classList.add('hidden');
+    if (S.submitBtn) S.submitBtn.disabled = false;
+    S.testsPageBusy = false;
+    Q.clearActiveJob('tests');
+    // Suppress any orphan error from a late poll arriving after cancel.
+    if (S.errorDiv) S.errorDiv.classList.add('hidden');
+  }
+  if (S.cancelBtn) {
+    S.cancelBtn.addEventListener('click', cancelActiveTest);
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && S.loading && !S.loading.classList.contains('hidden')) {
+      cancelActiveTest();
+    }
+  });
+
+  // ============================
   // Saved Design Selector (Tests page)
   // ============================
   var savedDesignSelect = document.getElementById('qaproof-saved-design');
@@ -1101,7 +1131,7 @@
           curr.classList.remove('completed');
         }
         S.loadingText.textContent = step.text + '...';
-        S.loadingSubtext.textContent = idx < loadingSteps.length - 1 ? (qaproof.i18n.loadingDuration || 'This may take 1-3 minutes') : (qaproof.i18n.loadingAlmostDone || 'Almost done');
+        S.loadingSubtext.textContent = idx < loadingSteps.length - 1 ? (qaproof.i18n.loadingDuration || 'This may take 2-5 minutes') : (qaproof.i18n.loadingAlmostDone || 'Almost done');
       }, step.time);
     });
 
@@ -1142,7 +1172,11 @@
         var jobId = data.data.jobId;
         Q.saveActiveJob(jobId, body.testType, body.pageUrl, 'tests', 'polling', 0, body.wcagLevel);
 
-        Q.startJobPolling(jobId, {
+        // Stash the polling cancel function so the Cancel button (wired up
+        // below) and the ESC key can stop an in-flight test.
+        window.QAProof.__activeCancel = null;
+
+        var cancelFn = Q.startJobPolling(jobId, {
           page: 'tests',
           onPoll: function (status, elapsed) {
           },
@@ -1189,6 +1223,7 @@
             // Q.showError above, which is enough.
           },
         });
+        window.QAProof.__activeCancel = cancelFn;
       })
       .catch(function (err) {
         loadingTimers.forEach(clearTimeout);

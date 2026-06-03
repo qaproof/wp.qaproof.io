@@ -150,6 +150,31 @@
   white-space: nowrap;
 }
 
+/* Cancel button — sits at the right end of the loading bar, next to the
+   step indicators. Subtle pill style; bright on hover to invite the click
+   when the user wants to abort a running test. */
+#qaproof-app .qaproof-cancel-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(238, 238, 238, 0.25);
+  color: rgba(238, 238, 238, 0.7);
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+#qaproof-app .qaproof-cancel-btn:hover,
+#qaproof-app .qaproof-cancel-btn:focus {
+  background: rgba(255, 80, 80, 0.12);
+  border-color: rgba(255, 80, 80, 0.6);
+  color: #ffd0d0;
+  outline: none;
+}
+
 /* Horizontal loading steps */
 #qaproof-app .qaproof-loading-steps {
   display: flex;

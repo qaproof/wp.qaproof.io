@@ -106,7 +106,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <div class="qaproof-loading-spinner" aria-hidden="true"></div>
                 <div class="qaproof-loading-info">
                     <strong id="qaproof-a11y-loading-text"><?php esc_html_e( 'Auditing accessibility...', 'qaproof' ); ?></strong>
-                    <p class="description" id="qaproof-a11y-loading-subtext"><?php esc_html_e( 'This may take 1-3 minutes.', 'qaproof' ); ?></p>
+                    <p class="description" id="qaproof-a11y-loading-subtext"><?php esc_html_e( 'This may take 2-5 minutes.', 'qaproof' ); ?></p>
                 </div>
             </div>
             <div class="qaproof-loading-steps" id="qaproof-a11y-loading-steps"></div>

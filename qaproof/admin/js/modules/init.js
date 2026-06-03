@@ -743,7 +743,7 @@
             curr.classList.remove('completed');
           }
           a11yLoadingText.textContent = step.text + '...';
-          a11yLoadingSubtext.textContent = idx < a11yLoadingSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+          a11yLoadingSubtext.textContent = idx < a11yLoadingSteps.length - 1 ? 'This may take 2-5 minutes' : 'Almost done';
         }, step.time);
       });
 
@@ -1357,7 +1357,7 @@
           stepsEl.appendChild(stepEl);
         }
         if (S.loadingText) S.loadingText.textContent = resumeSteps[resumeCurrentStep].text + '...';
-        if (S.loadingSubtext) S.loadingSubtext.textContent = resumeCurrentStep < resumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        if (S.loadingSubtext) S.loadingSubtext.textContent = resumeCurrentStep < resumeSteps.length - 1 ? 'This may take 2-5 minutes' : 'Almost done';
       }
 
       // Schedule only the remaining steps, with delay adjusted for elapsed time
@@ -1374,7 +1374,7 @@
           var curr = document.getElementById('qaproof-lstep-' + idx);
           if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
           if (S.loadingText) S.loadingText.textContent = step.text + '...';
-          if (S.loadingSubtext) S.loadingSubtext.textContent = idx < resumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+          if (S.loadingSubtext) S.loadingSubtext.textContent = idx < resumeSteps.length - 1 ? 'This may take 2-5 minutes' : 'Almost done';
         }, delay);
       });
 
@@ -1515,7 +1515,7 @@
           a11yStepsEl.appendChild(stepEl);
         }
         if (a11yLoadText) a11yLoadText.textContent = a11yResumeSteps[a11yCurrentStep].text + '...';
-        if (a11yLoadSub) a11yLoadSub.textContent = a11yCurrentStep < a11yResumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+        if (a11yLoadSub) a11yLoadSub.textContent = a11yCurrentStep < a11yResumeSteps.length - 1 ? 'This may take 2-5 minutes' : 'Almost done';
       }
 
       // Schedule only the remaining steps, with delay adjusted for elapsed time
@@ -1532,7 +1532,7 @@
           var curr = document.getElementById('qaproof-a11y-lstep-' + idx);
           if (curr) { curr.classList.add('active'); curr.classList.remove('completed'); }
           if (a11yLoadText) a11yLoadText.textContent = step.text + '...';
-          if (a11yLoadSub) a11yLoadSub.textContent = idx < a11yResumeSteps.length - 1 ? 'This may take 1-3 minutes' : 'Almost done';
+          if (a11yLoadSub) a11yLoadSub.textContent = idx < a11yResumeSteps.length - 1 ? 'This may take 2-5 minutes' : 'Almost done';
         }, delay);
       });
 
