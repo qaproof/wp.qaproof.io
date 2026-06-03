@@ -1,8 +1,27 @@
-/* global qaproof */
+/* global qaproof, jQuery */
 (function () {
   'use strict';
   var Q = window.QAProof;
   var S = Q.state;
+
+  // ============================
+  // Auto-refresh REST nonce via WP heartbeat
+  // ============================
+  // WordPress's `wp_create_nonce` ties the nonce to a 12–24h time window.
+  // Leaving a Tests / Accessibility page open across that boundary used to
+  // bounce the next submit with HTTP 403 "Server returned HTTP 403 — Reload
+  // the page to retry." Now: the PHP-side `heartbeat_received` filter
+  // injects a fresh nonce on every tick (default 15–60s in admin), and we
+  // swap it into `qaproof.nonce` here so subsequent requests keep working
+  // without a reload. Requires jQuery (WordPress admin always bundles it)
+  // and the 'heartbeat' script (declared as a dep of qaproof-init).
+  if (typeof jQuery !== 'undefined') {
+    jQuery(document).on('heartbeat-tick', function (event, data) {
+      if (data && data.qaproof_nonce && typeof qaproof !== 'undefined') {
+        qaproof.nonce = data.qaproof_nonce;
+      }
+    });
+  }
 
   // ============================
   // Connection Test (Settings Page)

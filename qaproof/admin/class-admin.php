@@ -17,6 +17,25 @@ class QAProof_Admin {
         add_action( 'rest_api_init', [ __CLASS__, 'register_rest_routes' ] );
         add_action( 'wp_ajax_qaproof_health_check',       [ 'QAProof_Admin_AJAX', 'ajax_health_check' ] );
         add_action( 'wp_ajax_qaproof_fetch_account_info', [ 'QAProof_Admin_AJAX', 'ajax_fetch_account_info' ] );
+        // Auto-refresh the REST nonce through WP's heartbeat tick. Without
+        // this, leaving a Tests / Accessibility page open for >12h would
+        // expire the nonce, every submit then bounces with HTTP 403 and the
+        // user has to reload to recover. The heartbeat fires every 15-60s
+        // by default in admin, so the JS-side nonce stays current as long
+        // as the page is open.
+        add_filter( 'heartbeat_received', [ __CLASS__, 'heartbeat_refresh_nonce' ], 10, 2 );
+    }
+
+    /**
+     * Inject a fresh REST nonce into every heartbeat tick response.
+     * The JS side (admin/js/modules/init.js) listens for `heartbeat-tick`
+     * and updates `window.qaproof.nonce` from `data.qaproof_nonce`.
+     */
+    public static function heartbeat_refresh_nonce( $response, $data ) {
+        if ( current_user_can( self::CAPABILITY ) ) {
+            $response['qaproof_nonce'] = wp_create_nonce( 'wp_rest' );
+        }
+        return $response;
     }
 
     public static function register_menu() {
