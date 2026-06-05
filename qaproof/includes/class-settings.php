@@ -253,6 +253,41 @@ class QAProof_Settings {
                         <p class="qaproof-figma-conn-loading"><?php esc_html_e( 'Checking connection…', 'qaproof' ); ?></p>
                     </div>
                 </div>
+
+                <?php
+                /*
+                 * Figma API usage widget. The JS (admin/js/modules/init.js
+                 * wireFigmaUsageWidget) wires up live polling + a reset
+                 * button against this markup. Without this partial the
+                 * widget JS short-circuits and per-file rate-limit state
+                 * has no UI escape hatch — the cooldown gate from
+                 * class-admin-rest-designs.php would brick previews until
+                 * its retryAt timestamp passed.
+                 *
+                 * data-cap is a soft "expected per-file calls per month"
+                 * for the progress bar; it's no longer enforced server-
+                 * side now that OAuth replaced the Starter-plan PAT, but
+                 * 6 stays a useful visual anchor.
+                 */
+                ?>
+                <div id="qaproof-figma-usage" data-cap="6" style="margin-top:16px;padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div style="display:flex;align-items:baseline;gap:10px;min-width:0;">
+                            <strong style="font-size:13px;color:#0f172a;"><?php esc_html_e( 'Figma API calls this month', 'qaproof' ); ?></strong>
+                            <span class="qaproof-figma-usage-total" style="font-size:18px;font-weight:600;color:#0f766e;">0</span>
+                            <span class="qaproof-figma-usage-breakdown" style="font-size:12px;color:#64748b;"></span>
+                        </div>
+                        <button type="button" class="button button-secondary qaproof-figma-usage-reset">
+                            <?php esc_html_e( 'Reset counters', 'qaproof' ); ?>
+                        </button>
+                    </div>
+                    <div style="margin-top:8px;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+                        <div class="qaproof-figma-usage-bar" style="height:100%;width:0;background:#10b981;transition:width 200ms ease;"></div>
+                    </div>
+                    <p style="margin:8px 0 0;font-size:12px;color:#64748b;">
+                        <?php esc_html_e( 'Tracks how many times this site asked Figma for image exports or node trees per file this month. If a file shows as rate-limited, clicking Retry in the Tests preview will bypass the local cooldown.', 'qaproof' ); ?>
+                    </p>
+                </div>
                 <?php
                 /*
                  * The "Alternative: share files manually with figma@qaproof.io"

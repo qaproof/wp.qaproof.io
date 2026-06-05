@@ -17,14 +17,27 @@ class QAProof_Admin_REST_Designs {
         }
 
         // Figma's 429 Retry-After applies per workspace/file, so the gate is per-file.
+        // The gate is purely a defensive throttle on automatic preview loads —
+        // any manual user action (Retry / Refresh) sends forceRefresh=true and
+        // bypasses it. The gate's retryAt is honored as a soft limit, not a
+        // hard one; without the bypass a single stale retryAt would brick the
+        // preview UI until the timestamp passed.
         $file_key = QAProof_Settings::extract_figma_file_key( $figma_url );
         if ( ! $force_refresh && $file_key !== '' ) {
             $blocked_until = QAProof_Settings::figma_rate_limit_active_until( $file_key );
             if ( $blocked_until > 0 ) {
+                // Log so we can tell WP-gate hits apart from real Figma 429s
+                // when the same FIGMA_RATE_LIMITED code reaches the JS layer.
+                error_log( sprintf(
+                    '[qaproof] figma-preview gated locally: fileKey=%s retryAt=%d (in %d s)',
+                    $file_key,
+                    $blocked_until,
+                    max( 0, (int) ( ( $blocked_until - time() * 1000 ) / 1000 ) )
+                ) );
                 return new WP_REST_Response( [
                     'success' => false,
                     'error'   => [
-                        'message' => __( 'Figma rate limit active for this file. Try again after the reset time.', 'qaproof' ),
+                        'message' => __( 'Figma rate limit cooldown active for this file. Click Retry to bypass.', 'qaproof' ),
                         'code'    => 'FIGMA_RATE_LIMITED',
                         'retryAt' => $blocked_until,
                         'fileKey' => $file_key,
@@ -92,11 +105,17 @@ class QAProof_Admin_REST_Designs {
     public static function handle_detect_elements( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 
+        // forceRefresh = explicit user retry; bypasses the local cooldown
+        // gate so a stale retryAt can't brick element detection. Same
+        // contract as handle_figma_preview.
+        $force_refresh = ! empty( $params['forceRefresh'] );
+
         $api_params = array();
         if ( ! empty( $params['figmaUrl'] ) )         $api_params['figmaUrl']         = QAProof_Settings::sanitize_figma_url( $params['figmaUrl'] );
         if ( ! empty( $params['figmaImageBase64'] ) ) $api_params['figmaImageBase64'] = $params['figmaImageBase64'];
         if ( ! empty( $params['sketchFileBase64'] ) ) $api_params['sketchFileBase64'] = $params['sketchFileBase64'];
         if ( ! empty( $params['pixelPerfectOnly'] ) ) $api_params['pixelPerfectOnly'] = true;
+        if ( $force_refresh )                          $api_params['forceRefresh']    = true;
 
         $has_source = ! empty( $api_params['figmaUrl'] )
             || ! empty( $api_params['figmaImageBase64'] )
@@ -115,13 +134,19 @@ class QAProof_Admin_REST_Designs {
             && empty( $api_params['sketchFileBase64'] );
         $file_key = $will_hit_figma ? QAProof_Settings::extract_figma_file_key( $api_params['figmaUrl'] ) : '';
 
-        if ( $will_hit_figma && $file_key !== '' ) {
+        if ( ! $force_refresh && $will_hit_figma && $file_key !== '' ) {
             $blocked_until = QAProof_Settings::figma_rate_limit_active_until( $file_key );
             if ( $blocked_until > 0 ) {
+                error_log( sprintf(
+                    '[qaproof] detect-elements gated locally: fileKey=%s retryAt=%d (in %d s)',
+                    $file_key,
+                    $blocked_until,
+                    max( 0, (int) ( ( $blocked_until - time() * 1000 ) / 1000 ) )
+                ) );
                 return new WP_REST_Response( [
                     'success' => false,
                     'error'   => [
-                        'message' => __( 'Figma rate limit active for this file. Try again after the reset time.', 'qaproof' ),
+                        'message' => __( 'Figma rate limit cooldown active for this file. Click Retry to bypass.', 'qaproof' ),
                         'code'    => 'FIGMA_RATE_LIMITED',
                         'retryAt' => $blocked_until,
                         'fileKey' => $file_key,

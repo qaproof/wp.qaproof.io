@@ -237,20 +237,25 @@
   }
 
   function mapFigmaErrorMessage(code, fallback) {
-    // For FIGMA_NOT_SHARED the backend message ("fallback" arg) is preferred
-    // — it names the connected account and explains the OAuth access model.
-    if (code === 'FIGMA_NOT_SHARED' && fallback) return fallback;
+    // Server message wins when present. It carries the most context — the
+    // connected account name on FIGMA_NOT_SHARED, the cooldown reason and
+    // bypass instruction on FIGMA_RATE_LIMITED, the file name on
+    // FIGMA_FILE_NOT_FOUND, and so on. The static map below is a defensive
+    // fallback for when the server didn't send a message at all (e.g. a
+    // network error caught before the JSON body parses).
+    var serverMsg = (typeof fallback === 'string' && fallback.length) ? fallback : '';
+    if (serverMsg) return serverMsg;
     var map = {
       'FIGMA_NOT_SHARED':           (qaproof.i18n.figmaNotShared || 'Your connected Figma account does not have access to this file.'),
       'FIGMA_NOT_CONFIGURED':       (qaproof.i18n.figmaNotConfigured || 'Figma is not connected. Connect Figma in Settings.'),
       'FIGMA_FILE_NOT_FOUND':       (qaproof.i18n.figmaFileNotFound || 'File not found. Check the URL.'),
-      'FIGMA_RATE_LIMITED':         (qaproof.i18n.figmaRateLimited || 'Figma temporarily throttled our requests. Try again in a minute.'),
+      'FIGMA_RATE_LIMITED':         (qaproof.i18n.figmaRateLimited || 'Figma rate limit cooldown active. Click Retry to bypass.'),
       'FIGMA_RENDER_TIMEOUT':       (qaproof.i18n.figmaRenderTimeout || 'Design too complex to preview.'),
       'FIGMA_EXPORT_FAILED':        (qaproof.i18n.figmaExportFailed || 'Figma could not export this design.'),
       'FIGMA_NODE_NOT_RENDERABLE':  (qaproof.i18n.figmaNodeNotRenderable || 'This node cannot be rendered. Try a different frame.'),
       'FIGMA_NO_FRAMES_FOUND':      (qaproof.i18n.figmaNoFramesFound || 'No frames found. Add a node-id to the URL.'),
     };
-    return map[code] || fallback || 'Could not load preview.';
+    return map[code] || 'Could not load preview.';
   }
 
   function isRetryableError(code) {
@@ -292,7 +297,13 @@
     }
 
     var cacheKey = url;
-    var cached   = figmaPreviewCache[cacheKey];
+    if (manual) {
+      // Manual retry must reach the server (and Figma if cache is also stale)
+      // — drop the in-memory cache so we don't return a stale image and
+      // pretend we recovered.
+      delete figmaPreviewCache[cacheKey];
+    }
+    var cached = figmaPreviewCache[cacheKey];
     if (cached && (Date.now() - cached.ts < 30 * 60 * 1000)) {
       showPreviewResult(cached.data);
       return;
@@ -300,13 +311,18 @@
 
     setPreviewState('loading');
 
+    // manual=true means the user explicitly clicked Retry. Send forceRefresh
+    // so the WP-side per-file cooldown gate (class-admin-rest-designs.php)
+    // doesn't reject the request — manual intent always bypasses defensive
+    // throttling. Auto-loads (debounced URL input, saved-design select) still
+    // respect the gate.
     fetch(qaproof.restBase + '/figma-preview', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-WP-Nonce':   qaproof.nonce,
       },
-      body: JSON.stringify({ figmaUrl: url }),
+      body: JSON.stringify({ figmaUrl: url, forceRefresh: !!manual }),
     })
     .then(function (res) { return res.json(); })
     .then(function (json) {
@@ -318,7 +334,11 @@
         var code = json.error && json.error.code ? json.error.code : '';
         var msg  = json.error && json.error.message ? json.error.message : '';
         if (code === 'FIGMA_RATE_LIMITED') {
-          figmaRateLimitUntil = Date.now() + 60000;
+          // Honor the real retryAt from the server (ms epoch). Fall back to
+          // +60s only if the server didn't send one. Previously we always
+          // set +60s, which let auto-load fire before the WP gate cleared.
+          var retryAt = json.error && json.error.retryAt ? Number(json.error.retryAt) : 0;
+          figmaRateLimitUntil = retryAt > Date.now() ? retryAt : Date.now() + 60000;
         }
         setPreviewState('error', mapFigmaErrorMessage(code, msg), isRetryableError(code));
         maybeOpenFigmaShareGuide(code, url, function () { triggerFigmaPreview(true); });
@@ -427,7 +447,8 @@
           var code = json.error && json.error.code ? json.error.code : '';
           var msg  = json.error && json.error.message ? json.error.message : '';
           if (code === 'FIGMA_RATE_LIMITED') {
-            figmaRateLimitUntil = Date.now() + 60000;
+            var retryAt = json.error && json.error.retryAt ? Number(json.error.retryAt) : 0;
+            figmaRateLimitUntil = retryAt > Date.now() ? retryAt : Date.now() + 60000;
           }
           setPreviewState('error', mapFigmaErrorMessage(code, msg), isRetryableError(code));
           maybeOpenFigmaShareGuide(code, url, function () {
