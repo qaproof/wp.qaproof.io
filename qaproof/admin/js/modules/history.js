@@ -340,8 +340,12 @@
         .then(function (resp) {
           if (resp.success && resp.data) {
             var resultData = parseResultData(resp.data);
-            var fileName = 'qaproof-' + (resultData.testType || 'report') + '-report.pdf';
-            Q.generatePdfReport(resultData);
+            // Disambiguate filenames by history-row ID so two downloads from
+            // the same day don't overwrite each other in the browser's
+            // Downloads folder. generatePdfReport accepts an optional
+            // customFilename arg added below in pdf.js for this exact use.
+            var fileName = 'qaproof-' + (resultData.testType || 'report') + '-' + (resp.data.id || 'report') + '.pdf';
+            Q.generatePdfReport(resultData, undefined, fileName);
           }
         })
         .catch(function () {

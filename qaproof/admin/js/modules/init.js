@@ -1259,6 +1259,13 @@
 
       window.QAProof.__pendingRetries = pendingRetries;
 
+      // Reset the busy flag BEFORE programmatically clicking submit.
+      // Otherwise the submit handler's early-return guard
+      // (`if (S.testsPageBusy) return;`) silently swallows the click, the
+      // retry counter still ticks, and the user eventually sees "max
+      // retries reached" without a single test attempt ever having run.
+      S.testsPageBusy = false;
+      if (S.submitBtn) S.submitBtn.disabled = false;
       if (currentPage === 'tests') {
         var urlInput = document.getElementById('qaproof-page-url');
         if (urlInput && activeJob.pageUrl) urlInput.value = activeJob.pageUrl;
@@ -1267,7 +1274,7 @@
         var a11yUrlInput = document.getElementById('qaproof-a11y-url');
         if (a11yUrlInput && activeJob.pageUrl) a11yUrlInput.value = activeJob.pageUrl;
         var a11ySubmit = document.getElementById('qaproof-a11y-submit-btn');
-        if (a11ySubmit) a11ySubmit.click();
+        if (a11ySubmit) { a11ySubmit.disabled = false; a11ySubmit.click(); }
       }
       return;
     }
@@ -1294,7 +1301,12 @@
           Q.clearActiveJob('tests');
           return;
         }
-        // Already done — render immediately without showing the loading UI
+        // Already done — render immediately without showing the loading UI.
+        // Poll responses strip the heavy `screenshots` blob (only
+        // `screenshotsAvailable` survives), so after rendering we lazy-fetch
+        // them via the same hook the live completion path uses. Previously
+        // the renderer wrote empty <img> tags and the markers placed at 0×0
+        // — recovery UX looked broken.
         if (status === 'done' && preData.data && preData.data.result) {
           Q.clearActiveJob('tests');
           var rd = preData.data.result;
@@ -1307,6 +1319,13 @@
             Q.renderDesignAuditResults(rd);
           } else {
             Q.renderFidelityResults(rd);
+          }
+          if (rd.screenshotsAvailable && !rd.screenshots && typeof Q.fetchAndInjectScreenshots === 'function') {
+            try {
+              Q.fetchAndInjectScreenshots(activeJob.jobId, rd, function () { /* no-op */ });
+            } catch (e) {
+              if (window.console && console.warn) console.warn('[QAProof] preflight screenshot fetch failed', e);
+            }
           }
           return;
         }

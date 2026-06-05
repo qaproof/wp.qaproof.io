@@ -13,7 +13,7 @@
   // ============================
   // PDF Report Generation
   // ============================
-  function generatePdfReport(data, captureMode) {
+  function generatePdfReport(data, captureMode, customFilename) {
     if (!window.jspdf || !window.jspdf.jsPDF) {
       // i18n() lives later inside this function; use raw qaproof.i18n lookup
       // here so we don't crash before the function body sets up its helpers.
@@ -594,13 +594,24 @@
           return typeof e[1] === 'string' && e[1].indexOf('data:image') === 0;
         })
       : [];
-    if (ssEntries.length) {
+    // Cap embedded screenshots. Responsive tests produce up to 5 viewport
+    // entries each at 1–4 MB base64; jsPDF holds every addImage() in memory
+    // until doc.save(), so an unbounded list reliably crashes low-RAM
+    // browsers (every mobile, plus many laptops) before the file is even
+    // written. Fidelity tests typically have 1–2 entries so the cap rarely
+    // bites them; for responsive the cap drops the long tail of secondary
+    // viewports — the user can still email the report from the server,
+    // which uses the full set.
+    var SS_MAX_EMBED = 3;
+    var ssTruncated = ssEntries.length > SS_MAX_EMBED;
+    var ssToEmbed = ssTruncated ? ssEntries.slice(0, SS_MAX_EMBED) : ssEntries;
+    if (ssToEmbed.length) {
       sectionHeading('Screenshots');
-      for (var si = 0; si < ssEntries.length; si++) {
-        var ssLabel = ssEntries[si][0]
+      for (var si = 0; si < ssToEmbed.length; si++) {
+        var ssLabel = ssToEmbed[si][0]
           .replace(/_/g, ' ')
           .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
-        var ssUri = ssEntries[si][1];
+        var ssUri = ssToEmbed[si][1];
         var imgProps = doc.getImageProperties(ssUri);
         var imgH = Math.round(CW * imgProps.height / imgProps.width);
         checkPage(imgH + 10);
@@ -610,6 +621,16 @@
         y += 4;
         doc.addImage(ssUri, 'JPEG', M, y, CW, imgH);
         y += imgH + 8;
+      }
+      if (ssTruncated) {
+        checkPage(8);
+        doc.setFontSize(7);
+        setC(C.grayLight);
+        doc.text(
+          'Only the first ' + SS_MAX_EMBED + ' of ' + ssEntries.length + ' screenshots are embedded to keep the PDF lightweight. Use the email report for the full set.',
+          M, y, { maxWidth: CW }
+        );
+        y += 6;
       }
     }
 
@@ -658,8 +679,9 @@
       addFooter();
     }
 
-    // Download or return base64
-    var filename = 'qaproof-' + currentTestType + '-report-' + now.toISOString().slice(0, 10) + '.pdf';
+    // Download or return base64. customFilename (from history downloads)
+    // wins so two downloads on the same day don't collide.
+    var filename = customFilename || ('qaproof-' + currentTestType + '-report-' + now.toISOString().slice(0, 10) + '.pdf');
     if (captureMode) {
       return doc.output('datauristring');
     }

@@ -383,16 +383,26 @@
       else lowCount++;
     });
 
-    var highestCat = { name: '—', score: 0 };
-    var lowestCat = { name: '—', score: 100 };
+    // Initialise from the first numeric entry rather than [0, 100] sentinels.
+    // The old init meant: when every category scored 0 (parse-fallback path
+    // produces this), the "highest" widget showed the LAST iterated category
+    // at 0 in the "needs improvement" red band — directly contradicting its
+    // "Best Category" label. Same in reverse when every score was 100. Now
+    // we start from null and only widen the bounds when a finite score
+    // arrives, falling back to '—' when nothing qualified.
+    var highestCat = null;
+    var lowestCat  = null;
     var passCount = 0;
     catEntries.forEach(function(entry) {
       var name = entry[0].replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-      var s = entry[1].score;
-      if (s >= highestCat.score) highestCat = { name: name, score: s };
-      if (s <= lowestCat.score) lowestCat = { name: name, score: s };
+      var s = Number(entry[1] && entry[1].score);
+      if (!isFinite(s)) return;
+      if (!highestCat || s > highestCat.score) highestCat = { name: name, score: s };
+      if (!lowestCat  || s < lowestCat.score)  lowestCat  = { name: name, score: s };
       if (s >= 90) passCount++;
     });
+    if (!highestCat) highestCat = { name: '—', score: 0 };
+    if (!lowestCat)  lowestCat  = { name: '—', score: 100 };
     var passRate = catEntries.length > 0 ? Math.round((passCount / catEntries.length) * 100) : 0;
 
     var html = '';
@@ -613,16 +623,26 @@
       else lowCount++;
     });
 
-    var highestCat = { name: '—', score: 0 };
-    var lowestCat = { name: '—', score: 100 };
+    // Initialise from the first numeric entry rather than [0, 100] sentinels.
+    // The old init meant: when every category scored 0 (parse-fallback path
+    // produces this), the "highest" widget showed the LAST iterated category
+    // at 0 in the "needs improvement" red band — directly contradicting its
+    // "Best Category" label. Same in reverse when every score was 100. Now
+    // we start from null and only widen the bounds when a finite score
+    // arrives, falling back to '—' when nothing qualified.
+    var highestCat = null;
+    var lowestCat  = null;
     var passCount = 0;
     catEntries.forEach(function(entry) {
       var name = entry[0].replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-      var s = entry[1].score;
-      if (s >= highestCat.score) highestCat = { name: name, score: s };
-      if (s <= lowestCat.score) lowestCat = { name: name, score: s };
+      var s = Number(entry[1] && entry[1].score);
+      if (!isFinite(s)) return;
+      if (!highestCat || s > highestCat.score) highestCat = { name: name, score: s };
+      if (!lowestCat  || s < lowestCat.score)  lowestCat  = { name: name, score: s };
       if (s >= 90) passCount++;
     });
+    if (!highestCat) highestCat = { name: '—', score: 0 };
+    if (!lowestCat)  lowestCat  = { name: '—', score: 100 };
     var passRate = catEntries.length > 0 ? Math.round((passCount / catEntries.length) * 100) : 0;
 
     var html = '<div class="qaproof-stats-row qaproof-stats-inline">';

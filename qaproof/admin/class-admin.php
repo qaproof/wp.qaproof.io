@@ -317,10 +317,37 @@ class QAProof_Admin {
         $result_data = $request->get_param( 'resultData' );
         $file_name   = sanitize_file_name( $request->get_param( 'fileName' ) ?: 'qaproof-report.pdf' );
 
+        // Per-user 60s cooldown. The endpoint forwards a (potentially large)
+        // PDF generation request to api.qaproof.io; without throttling a
+        // logged-in editor could spam the operator's SES bill and damage the
+        // sender-domain reputation just by holding down a button. The
+        // transient gates by current user, so two users on the same site
+        // don't block each other.
+        $cooldown_key = 'qaproof_email_cd_' . get_current_user_id();
+        if ( get_transient( $cooldown_key ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => __( 'You just sent a report. Please wait a minute before sending another.', 'qaproof' ),
+            ], 429 );
+        }
+
         $current_user = wp_get_current_user();
         $to = ( $current_user->ID && $current_user->user_email )
             ? $current_user->user_email
             : get_option( 'qaproof_notify_email', get_option( 'admin_email' ) );
+
+        // Validate recipient is a real address. On WP installs imported from
+        // staging, admin_email sometimes still says `wordpress@localhost` —
+        // we'd happily forward the PDF to SES, which bounces, and the user
+        // sees "Sent!" with nothing actually delivered.
+        if ( ! is_email( $to ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => __( 'No valid recipient address on your WordPress account. Update your profile email and try again.', 'qaproof' ),
+            ], 400 );
+        }
+
+        set_transient( $cooldown_key, 1, 60 );
 
         if ( ! empty( $result_data ) && is_array( $result_data ) ) {
             // New path — API generates PDF server-side from result data.

@@ -120,7 +120,13 @@
     S.cancelBtn.addEventListener('click', cancelActiveTest);
   }
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && S.loading && !S.loading.classList.contains('hidden')) {
+    if (e.key !== 'Escape') return;
+    // Bail when any modal/dialog overlay is open — the modal's own ESC
+    // handler should win. Previously this fired on every ESC during a
+    // running test, so dismissing a confirm-delete dialog with ESC also
+    // cancelled the test that happened to be running in the background.
+    if (document.querySelector('.qaproof-modal-overlay, [role="dialog"]:not([aria-hidden="true"])')) return;
+    if (S.loading && !S.loading.classList.contains('hidden')) {
       cancelActiveTest();
     }
   });
@@ -156,6 +162,14 @@
 
   if (savedDesignSelect) {
     savedDesignSelect.addEventListener('change', function () {
+      // Drop element overlays + Detect button state from the PREVIOUS
+      // design when switching. Without this the overlays from design A
+      // remained drawn on design B's preview image, and the Detect button
+      // stayed disabled with design A's count label — looked like a
+      // permanent feature break.
+      if (typeof window.QAProof.clearElementOverlays === 'function') {
+        window.QAProof.clearElementOverlays();
+      }
       if (typeof window.QAProof.updateDetectBtnLabel === 'function') {
         window.QAProof.updateDetectBtnLabel();
       }
@@ -178,8 +192,8 @@
       // If design has Figma URL, silently fetch preview
       if (found.figmaUrl) {
         updateFigmaPreviewVisibility();
-        clearTimeout(figmaPreviewTimeout);
-        figmaPreviewTimeout = setTimeout(function () { triggerFigmaPreview(true); }, 300);
+        clearTimeout(savedDesignPreviewTimeout);
+        savedDesignPreviewTimeout = setTimeout(function () { triggerFigmaPreview(true); }, 300);
       }
     });
   }
@@ -196,7 +210,16 @@
   var previewImage        = document.getElementById('qaproof-preview-image');
   var previewMeta         = document.getElementById('qaproof-preview-meta');
   var figmaPreviewCache   = {};
+  // URL-input debounce — fired by typing or pasting into the legacy Figma
+  // URL field.
   var figmaPreviewTimeout = null;
+  // Saved-design selection debounce — fired by picking a design from the
+  // dropdown. Kept SEPARATE from figmaPreviewTimeout so the URL-input
+  // handler can't clobber a pending saved-design preview (and vice versa).
+  // Previously the same timer var was shared: pick a saved design,
+  // immediately type in the URL field, and the URL handler cleared the
+  // saved-design preview without ever firing it.
+  var savedDesignPreviewTimeout = null;
   var figmaRateLimitUntil = 0;
 
   function updateFigmaPreviewVisibility() {
