@@ -1,4 +1,4 @@
-=== QAProof ===
+=== AI QAProof ===
 Contributors: qaproof
 Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
