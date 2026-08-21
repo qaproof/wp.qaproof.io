@@ -1210,6 +1210,14 @@
               'before starting another.'
             );
           }
+          // Quota walls carry their code through so the catch below can
+          // render an actionable CTA (upgrade / verify email) instead of
+          // "reload the page" — which is wrong advice for a limit error.
+          if (errCode === 'LIMIT_EXCEEDED' || errCode === 'VERIFY_EMAIL_TO_UNLOCK' || errCode === 'PLAN_REQUIRED') {
+            var limitErr = new Error((data.error && data.error.message) || 'AI generation limit reached.');
+            limitErr.qapCode = errCode;
+            throw limitErr;
+          }
           throw new Error((data.error && data.error.message) || 'Failed to create test job.');
         }
 
@@ -1271,7 +1279,22 @@
       })
       .catch(function (err) {
         loadingTimers.forEach(clearTimeout);
-        if (err.message === 'Failed to fetch') {
+        if (err.qapCode === 'LIMIT_EXCEEDED' || err.qapCode === 'PLAN_REQUIRED') {
+          // The highest-intent moment in the funnel — show a working
+          // upgrade link, never "reload the page". Message text comes from
+          // our own API; escape it anyway before innerHTML.
+          Q.clearActiveJob('tests');
+          Q.showErrorHtml(
+            String(err.message).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) +
+            ' <a href="https://qaproof.io/app/settings/billing" target="_blank" rel="noopener" style="font-weight:600;">Upgrade your plan &rarr;</a>'
+          );
+        } else if (err.qapCode === 'VERIFY_EMAIL_TO_UNLOCK') {
+          Q.clearActiveJob('tests');
+          Q.showErrorHtml(
+            String(err.message).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) +
+            ' <a href="https://qaproof.io/app/settings/profile" target="_blank" rel="noopener" style="font-weight:600;">Verify your email &rarr;</a>'
+          );
+        } else if (err.message === 'Failed to fetch') {
           Q.showError(qaproof.i18n.errNoConnection || 'Could not reach the server. Check your connection. Reload the page to retry.');
         } else if (err.message && err.message.indexOf('Rate limit') !== -1) {
           Q.clearActiveJob('tests');

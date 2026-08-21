@@ -98,9 +98,18 @@ class QAProof_Admin_REST_Tests {
                 $status = (int) $data['status'];
             }
 
+            // Forward the API's machine-readable error code — the JS layer
+            // branches on it (LIMIT_EXCEEDED / CONCURRENCY_LIMIT /
+            // VERIFY_EMAIL_TO_UNLOCK) to render an actionable CTA instead of
+            // a bare red sentence.
+            $error = [ 'message' => $result->get_error_message() ];
+            if ( is_array( $data ) && ! empty( $data['error_code'] ) ) {
+                $error['code'] = $data['error_code'];
+            }
+
             return new WP_REST_Response( [
                 'success' => false,
-                'error'   => [ 'message' => $result->get_error_message() ],
+                'error'   => $error,
             ], $status );
         }
 

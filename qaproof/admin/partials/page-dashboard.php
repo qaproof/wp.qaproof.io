@@ -149,7 +149,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <div class="qaproof-dash-usage-footer">
                 <?php echo esc_html( $reset_label ); ?>
                 <span class="qaproof-dash-usage-sep">&middot;</span>
-                <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ); ?>"><?php esc_html_e( 'Upgrade Plan', 'qaproof' ); ?></a>
+                <a href="https://qaproof.io/app/settings/billing" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Plan', 'qaproof' ); ?></a>
             </div>
         </div>
 

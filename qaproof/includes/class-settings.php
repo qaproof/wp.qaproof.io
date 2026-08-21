@@ -189,7 +189,9 @@ class QAProof_Settings {
         register_setting( self::GROUP_TESTS_GENERAL, 'qaproof_default_test_type', [
             'type'              => 'string',
             'sanitize_callback' => 'sanitize_text_field',
-            'default'           => 'fidelity',
+            // Responsive needs only a URL — Fidelity as the default dead-ended
+            // new users on an empty design dropdown behind a Figma OAuth.
+            'default'           => 'responsive',
         ]);
 
         register_setting( self::GROUP_TESTS_GENERAL, 'qaproof_max_history', [
@@ -461,6 +463,14 @@ class QAProof_Settings {
         echo esc_html__( 'Get your API key at qaproof.io/app/api-keys →', 'qaproof' );
         echo '</a>';
         echo '</p>';
+        // New installs have no QAProof account yet — the api-keys link above
+        // dead-ends them on a login wall. Give them the signup path explicitly.
+        echo '<p>';
+        echo esc_html__( 'No account yet?', 'qaproof' );
+        echo ' <a href="https://qaproof.io/signup?utm_source=wp-plugin&utm_medium=settings" target="_blank" rel="noopener noreferrer">';
+        echo esc_html__( 'Create a free QAProof account →', 'qaproof' );
+        echo '</a>';
+        echo '</p>';
     }
 
     public static function render_api_key_field() {
@@ -573,7 +583,7 @@ class QAProof_Settings {
 
 
     public static function render_default_test_type_field() {
-        $value = get_option( 'qaproof_default_test_type', 'fidelity' );
+        $value = get_option( 'qaproof_default_test_type', 'responsive' );
         ?>
         <select name="qaproof_default_test_type">
             <option value="fidelity" <?php selected( $value, 'fidelity' ); ?>><?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?></option>

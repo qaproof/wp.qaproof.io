@@ -113,7 +113,7 @@ class QAProof_Admin_Assets {
             'settingsUrl'   => admin_url( 'admin.php?page=' . QAProof_Admin::SETTINGS_SLUG ),
             'monitorsUrl'   => admin_url( 'admin.php?page=' . QAProof_Admin::MONITORS_SLUG ),
             'defaultThreshold'  => (int) get_option( 'qaproof_default_threshold', 95 ),
-            'defaultTestType'   => get_option( 'qaproof_default_test_type', 'fidelity' ),
+            'defaultTestType'   => get_option( 'qaproof_default_test_type', 'responsive' ),
             'savedDesigns'      => self::get_saved_designs_for_js(),
             'maxHistory'        => (int) get_option( 'qaproof_max_history', 30 ),
             'wcagLevel'         => get_option( 'qaproof_wcag_level', 'AA' ),

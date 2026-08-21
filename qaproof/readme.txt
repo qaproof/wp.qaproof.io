@@ -8,7 +8,7 @@ Stable tag: 1.0.30
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Your site looked perfect when you launched it. Does it still? AI-powered visual quality assurance for WordPress. 5 test types. One plugin. Results in under 2 minutes.
+Your site looked perfect at launch. Does it still? AI-powered visual QA for WordPress — 5 test types, results in under 2 minutes.
 
 == Description ==
 
@@ -150,6 +150,28 @@ Yes. The plugin can be network-activated, and each site in the network manages i
 = What happens if I enter a wrong API key? =
 
 The plugin shows a clear error in the interface — **nothing is sent, no test is run.** You can update your key at any time.
+
+== Installation ==
+
+1. Install the plugin from the WordPress plugin directory (or upload the ZIP via Plugins → Add New → Upload).
+2. Activate it — a **QAProof** menu appears in your admin sidebar.
+3. Create a free account at [qaproof.io/signup](https://qaproof.io/signup) and copy your API key from the dashboard (API Keys page).
+4. Paste the key in **QAProof → Settings** and save.
+5. Open **QAProof → Tests**, enter any page URL, and run your first test — results arrive in about a minute.
+
+== Changelog ==
+
+= 1.0.31 =
+* Responsive Test is now the default test type — it needs only a URL, no design file.
+* Quota and limit errors now show a working upgrade/verify link instead of a generic error.
+* Added a "Create a free QAProof account" link to Settings for new installs.
+* Dashboard "Upgrade Plan" now opens your QAProof billing page.
+
+= 1.0.30 =
+* Fidelity audit improvements and stability fixes.
+
+= 1.0.29 =
+* Report fidelity improvements across all five test types.
 
 == Start for Free Today ==
 
