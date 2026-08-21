@@ -1,7 +1,7 @@
 # QAProof — WordPress Plugin
 
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
-[![Tested up to](https://img.shields.io/badge/WordPress-6.7-21759b.svg)](https://wordpress.org)
+[![Tested up to](https://img.shields.io/badge/WordPress-7.1-21759b.svg)](https://wordpress.org)
 [![PHP](https://img.shields.io/badge/PHP-8.0+-777BB4.svg)](https://www.php.net)
 
 Automated design quality assurance for WordPress. Compare live pages against

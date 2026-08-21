@@ -2,7 +2,7 @@
 Contributors: qaproof
 Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
 Stable tag: 1.0.30
 License: GPL-2.0-or-later
@@ -162,6 +162,7 @@ The plugin shows a clear error in the interface — **nothing is sent, no test i
 == Changelog ==
 
 = 1.0.31 =
+* Compatibility confirmed with WordPress 7.1.
 * Responsive Test is now the default test type — it needs only a URL, no design file.
 * Quota and limit errors now show a working upgrade/verify link instead of a generic error.
 * Added a "Create a free QAProof account" link to Settings for new installs.
