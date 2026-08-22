@@ -76,14 +76,13 @@
     if (!accountInfo) return; // only runs on Settings page
 
     function planLabel(plan) {
-      var labels = { free: 'Free', starter: 'Starter', pro: 'Pro', business: 'Business', enterprise: 'Enterprise' };
+      var labels = { free: 'Free', pro: 'Pro', business: 'Business', scale: 'Scale' };
       return labels[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free');
     }
 
     function planColor(plan) {
       var p = (plan || '').toLowerCase();
-      if (p === 'pro' || p === 'business' || p === 'enterprise') return '#00ADB5';
-      if (p === 'starter') return '#f59e0b';
+      if (p === 'pro' || p === 'business' || p === 'scale') return '#00ADB5';
       return '#9CA3AF'; // free
     }
 
@@ -217,8 +216,8 @@
     var eyeOff    = wrapper.querySelector('.qaproof-eye-off');
     var eyeOn     = wrapper.querySelector('.qaproof-eye-on');
     var errorEl   = wrapper.parentNode.querySelector('.qaproof-api-key-error');
-    // Accepts both old format (qap_<64hex>) and new format (qap_live_sk_<48hex>, qap_test_sk_<48hex>)
-    var keyRegex  = /^qap_(?:[0-9a-f]{64}|(?:live|test)_sk_[0-9a-f]{48})$/i;
+    // Key format: qap_live_sk_<48hex> or qap_test_sk_<48hex> (60 characters total)
+    var keyRegex  = /^qap_(?:live|test)_sk_[0-9a-f]{48}$/i;
 
     var fadeEl = wrapper.querySelector('.qaproof-key-fade');
     function syncFade() {
@@ -266,12 +265,7 @@
           if (val.indexOf('qap_') !== 0) {
             errorEl.textContent = (qaproof.i18n.apiKeyStartError || 'API key must start with "qap_"');
           } else {
-            var hex = val.substring(4);
-            if (hex.length !== 64) {
-              errorEl.textContent = 'Key is ' + (4 + hex.length) + (qaproof.i18n.apiKeyLengthError || ' characters — expected 68 (qap_ + 64 hex chars)');
-            } else {
-              errorEl.textContent = (qaproof.i18n.apiKeyCharError || 'Key contains invalid characters — only 0-9 and a-f are allowed after "qap_"');
-            }
+            errorEl.textContent = (qaproof.i18n.apiKeyLengthError || 'Key should look like qap_live_sk_ followed by 48 hex characters (60 characters total).');
           }
           errorEl.style.display = 'block';
         }

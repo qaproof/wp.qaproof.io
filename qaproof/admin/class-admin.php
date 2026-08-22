@@ -599,15 +599,13 @@ class QAProof_Admin {
         $account_plan = ucfirst( $account_plan_raw );
         $ai_pct       = $ai_limit > 0 ? round( $ai_used / $ai_limit * 100 ) : 0;
 
-        // Free is a one-time lifetime trial — no monthly reset. Only paid
-        // plans roll over each billing period, so only paid plans get a
-        // "Resets on …" line on the dashboard.
+        // Free is a one-time lifetime trial — no monthly reset. Paid plans
+        // roll over each billing period on the subscription anniversary, a
+        // date the plugin does not know, so no specific date is shown.
         if ( 'free' === $account_plan_raw ) {
             $reset_label = __( 'Lifetime trial — does not reset', 'qaproof' );
         } else {
-            $reset_ts    = mktime( 0, 0, 0, (int) gmdate( 'n' ) + 1, 1 );
-            /* translators: %s: reset date (e.g. "Jun 1, 2026") */
-            $reset_label = sprintf( __( 'Resets on %s', 'qaproof' ), wp_date( 'M j, Y', $reset_ts ) );
+            $reset_label = __( 'Resets each billing period', 'qaproof' );
         }
 
         $ring_radius    = 44;

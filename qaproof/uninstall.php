@@ -22,6 +22,7 @@ function qaproof_uninstall_blog_cleanup() {
 			'qaproof_notify_email_enabled',
 			'qaproof_notify_admin_enabled',
 			'qaproof_default_threshold',
+			'qaproof_notify_hour',
 			'qaproof_default_test_type',
 			'qaproof_auto_save_history',
 			'qaproof_max_history',

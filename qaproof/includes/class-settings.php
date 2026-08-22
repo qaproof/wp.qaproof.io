@@ -118,16 +118,14 @@ class QAProof_Settings {
             'default'           => true,
         ]);
 
-        register_setting( self::GROUP_MONITORS, 'qaproof_notify_admin_enabled', [
-            'type'              => 'boolean',
-            'sanitize_callback' => 'rest_sanitize_boolean',
-            'default'           => true,
-        ]);
+        // 'qaproof_notify_admin_enabled' (admin-menu badge) is intentionally
+        // not registered: the badge feature is dormant (its transient is never
+        // set), so the option is hidden from the Settings UI.
 
         register_setting( self::GROUP_MONITORS, 'qaproof_default_threshold', [
             'type'              => 'integer',
             'sanitize_callback' => 'absint',
-            'default'           => 90,
+            'default'           => 95,
         ]);
 
         register_setting( self::GROUP_MONITORS, 'qaproof_notify_hour', [
@@ -158,14 +156,6 @@ class QAProof_Settings {
             'qaproof_notify_email_enabled',
             __( 'Email Notifications', 'qaproof' ),
             [ __CLASS__, 'render_notify_email_enabled_field' ],
-            'qaproof-settings-monitors',
-            'qaproof_monitoring_section'
-        );
-
-        add_settings_field(
-            'qaproof_notify_admin_enabled',
-            __( 'Admin Badge Notifications', 'qaproof' ),
-            [ __CLASS__, 'render_notify_admin_enabled_field' ],
             'qaproof-settings-monitors',
             'qaproof_monitoring_section'
         );
@@ -568,12 +558,6 @@ class QAProof_Settings {
         echo esc_html__( 'Send email notifications when regressions are detected.', 'qaproof' ) . '</label>';
     }
 
-    public static function render_notify_admin_enabled_field() {
-        $value = get_option( 'qaproof_notify_admin_enabled', true );
-        echo '<label><input type="checkbox" name="qaproof_notify_admin_enabled" value="1" ' . checked( $value, true, false ) . ' /> ';
-        echo esc_html__( 'Show badge on QAProof menu when regressions are detected.', 'qaproof' ) . '</label>';
-    }
-
     public static function render_default_threshold_field() {
         $value = get_option( 'qaproof_default_threshold', 95 );
         echo '<input type="number" name="qaproof_default_threshold" value="' . esc_attr( $value ) . '" min="0" max="100" step="1" class="small-text" />';
@@ -953,7 +937,7 @@ class QAProof_Settings {
     // Data Cleanup — Uninstall Fields
     // ============================
     public static function render_uninstall_section_description() {
-        echo '<p>' . esc_html__( 'Choose which data to delete when the plugin is removed. Unchecked items will be preserved in the database so they are available if you reinstall later.', 'qaproof' ) . '</p>';
+        echo '<p>' . esc_html__( 'Your test history and monitors live in your QAProof account (manage them at qaproof.io/app) and are not affected by uninstalling this plugin. The options below only remove local WordPress data when the plugin is removed. Unchecked items will be preserved in the database so they are available if you reinstall later.', 'qaproof' ) . '</p>';
     }
 
     public static function render_uninstall_api_key_field() {
@@ -974,7 +958,7 @@ class QAProof_Settings {
         $value = get_option( 'qaproof_uninstall_delete_saved_designs', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_saved_designs" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_saved_designs" value="1" ' . checked( $value, true, false ) . ' /> ';
-        echo esc_html__( 'Delete saved designs (including cached images)', 'qaproof' ) . '</label>';
+        echo esc_html__( 'Delete saved designs', 'qaproof' ) . '</label>';
     }
 
     public static function render_uninstall_test_history_field() {
@@ -988,7 +972,7 @@ class QAProof_Settings {
         $value = get_option( 'qaproof_uninstall_delete_monitors', false );
         echo '<input type="hidden" name="qaproof_uninstall_delete_monitors" value="0" />';
         echo '<label><input type="checkbox" name="qaproof_uninstall_delete_monitors" value="1" ' . checked( $value, true, false ) . ' /> ';
-        echo esc_html__( 'Delete all monitors and their regression results', 'qaproof' ) . '</label>';
+        echo esc_html__( 'Delete legacy local monitor tables (monitors themselves live in your QAProof account)', 'qaproof' ) . '</label>';
     }
 
     public static function sanitize_api_key( $value ) {

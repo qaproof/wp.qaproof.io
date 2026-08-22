@@ -9,8 +9,8 @@ Figma designs, audit accessibility, detect visual regressions, and analyze
 responsive behavior — powered by AI vision.
 
 QAProof is a [SaaS-backed](https://qaproof.io) plugin: WordPress handles the
-admin UI (WP-Cron + REST API), while screenshot capture, AI analysis, and
-result generation run on the QAProof API. A free QAProof account is required.
+admin UI (REST API; monitors are scheduled server-side), while screenshot
+capture, AI analysis, and result generation run on the QAProof API. A free QAProof account is required.
 
 ## Install
 
@@ -41,4 +41,4 @@ bundled-asset attribution.
 ## Support
 
 Bugs & feature requests — [GitHub Issues](https://github.com/qaproof/wp.qaproof.io/issues).
-Account / billing / API — [qaproof.io/support](https://qaproof.io/support).
+Account / billing / API — [qaproof.io/help-center](https://qaproof.io/help-center).

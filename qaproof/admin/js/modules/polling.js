@@ -8,8 +8,8 @@
    * through the WP proxy during polling.
    *
    * Retries up to MAX_RETRIES times with a 2-second delay between attempts.
-   * Handles transient PHP memory limits, network hiccups, and in-memory job
-   * expiry after API restarts.
+   * Handles transient PHP memory limits, network hiccups, and expired jobs
+   * (results are kept for 1 hour).
    */
   function fetchAndInjectScreenshots(jobId, resultData, onComplete) {
     var MAX_RETRIES = 3;
@@ -179,11 +179,11 @@
         credentials: 'same-origin',
       })
         .then(function (res) {
-          // 404 = job no longer exists (API restarted, job lost from memory).
+          // 404 = job no longer exists (expired — results are kept for 1 hour).
           // Tag the error so the catch handler can stop immediately.
           if (res.status === 404) throw new Error('JOB_NOT_FOUND');
           // 502 = WP got an error back from the API — also non-retryable for poll
-          if (res.status === 502) throw new Error('JOB_NOT_FOUND');
+          if (res.status === 502) throw new Error('API_ERROR');
           return Q.safeJson(res);
         })
         .then(function (pollData) {
@@ -237,12 +237,21 @@
         .catch(function (pollErr) {
           if (cancelled || done) return;
 
-          // Job not found (API restarted) — stop immediately, don't retry
+          // Job not found (expired) — stop immediately, don't retry
           if (pollErr.message === 'JOB_NOT_FOUND') {
-            console.warn('[QAProof] Job not found (API may have restarted) — stopping poll (jobId=' + jobId + ')');
+            console.warn('[QAProof] Job not found (expired or unavailable) — stopping poll (jobId=' + jobId + ')');
             clearInterval(pollInterval);
             Q.clearActiveJob(page);
-            onFailed('Test session lost — the server was restarted while your test was running. Please run the test again.');
+            onFailed('This test has expired or is no longer available (results are kept for 1 hour). Please run the test again.');
+            return;
+          }
+
+          // API returned an error for the poll request — stop, don't retry
+          if (pollErr.message === 'API_ERROR') {
+            console.warn('[QAProof] API error while polling — stopping poll (jobId=' + jobId + ')');
+            clearInterval(pollInterval);
+            Q.clearActiveJob(page);
+            onFailed('The QAProof API returned an error while checking this test. Please try again in a minute.');
             return;
           }
 

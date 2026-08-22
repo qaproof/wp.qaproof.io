@@ -1051,7 +1051,7 @@
     } else if (S.testType === 'accessibility') {
       S.loadingText.textContent = qaproof.i18n.loadingAccessibility || 'Capturing page and running accessibility audit...';
       var wcagLvl = (document.getElementById('qaproof-a11y-wcag-level') || {}).value || (typeof qaproof !== 'undefined' && qaproof.wcagLevel) || 'AA';
-      S.loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level ' + wcagLvl + ' compliance (30-60 seconds)';
+      S.loadingSubtext.textContent = 'Analyzing WCAG 2.1 Level ' + wcagLvl + ' compliance (2–5 minutes)';
     } else if (S.testType === 'design-audit') {
       S.loadingText.textContent = qaproof.i18n.loadingDesignAudit || 'Scanning page and extracting design tokens...';
       S.loadingSubtext.textContent = qaproof.i18n.loadingDesignAuditSub || 'Analyzing design system consistency (1-2 minutes)';
@@ -1203,7 +1203,7 @@
           var errCode = data.error && data.error.code;
           if (errCode === 'CONCURRENCY_LIMIT') {
             var active = (data.error && data.error.activeJobs) || 0;
-            var limit  = (data.error && data.error.limit) || 2;
+            var limit  = (data.error && data.error.limit) || 1;
             throw new Error(
               'You already have ' + active + ' test' + (active === 1 ? '' : 's') +
               ' running (limit ' + limit + ' per workspace). Wait for one to finish ' +

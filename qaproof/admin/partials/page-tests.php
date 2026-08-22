@@ -52,11 +52,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <!-- Test Type Selector -->
     <div class="qaproof-card">
         <div class="qaproof-test-type-selector">
-            <button type="button" class="qaproof-test-type-btn active" data-type="fidelity">
+            <button type="button" class="qaproof-test-type-btn" data-type="fidelity">
                 <span class="dashicons dashicons-art"></span>
                 <?php esc_html_e( 'Design Fidelity', 'qaproof' ); ?>
             </button>
-            <button type="button" class="qaproof-test-type-btn" data-type="responsive">
+            <button type="button" class="qaproof-test-type-btn active" data-type="responsive">
                 <span class="dashicons dashicons-smartphone"></span>
                 <?php esc_html_e( 'Responsive Test', 'qaproof' ); ?>
             </button>
@@ -121,7 +121,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
                     <p class="submit">
                         <button type="submit" id="qaproof-submit-btn" class="button button-primary button-hero">
-                            <?php esc_html_e( 'Analyze Design Fidelity', 'qaproof' ); ?>
+                            <?php esc_html_e( 'Test Responsive', 'qaproof' ); ?>
                         </button>
                     </p>
                 </div>

@@ -1890,7 +1890,7 @@
             pollForMonitorResult(monitor.id, totalResultCount || 0);
           } else {
             runBtn.disabled = false;
-            runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now');
+            runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Check Now');
             if (loadingBlock) loadingBlock.style.display = 'none';
             stopCapturingAnimation();
             try { sessionStorage.removeItem('qaproof_pending_run_' + monitor.id); } catch(e) {}
@@ -1898,7 +1898,7 @@
           }
         }).catch(function () {
           runBtn.disabled = false;
-          runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Run Now');
+          runBtn.textContent = (qaproof.i18n.monitorBtnRun || 'Check Now');
           if (loadingBlock) loadingBlock.style.display = 'none';
           stopCapturingAnimation();
           try { sessionStorage.removeItem('qaproof_pending_run_' + monitor.id); } catch(e) {}

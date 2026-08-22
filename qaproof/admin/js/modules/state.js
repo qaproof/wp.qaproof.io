@@ -20,7 +20,7 @@
     connectionStatus: document.getElementById('qaproof-connection-status'),
 
     // Test state
-    testType: (typeof qaproof !== 'undefined' && qaproof.defaultTestType) ? qaproof.defaultTestType : 'fidelity',
+    testType: (typeof qaproof !== 'undefined' && qaproof.defaultTestType) ? qaproof.defaultTestType : 'responsive',
     allDifferences: [],
     activeDiffIndex: null,
     activeDevice: 'desktop',

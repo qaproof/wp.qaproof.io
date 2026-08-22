@@ -89,11 +89,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                             <input type="checkbox" id="qaproof-monitor-notify-email" checked />
                             <?php esc_html_e( 'Email', 'qaproof' ); ?>
                         </label>
-                        &nbsp;&nbsp;
-                        <label>
-                            <input type="checkbox" id="qaproof-monitor-notify-admin" checked />
-                            <?php esc_html_e( 'Admin badge', 'qaproof' ); ?>
-                        </label>
+                        <?php // Admin-badge notifications are dormant; keep the hidden checkbox so monitors.js can still read its state. ?>
+                        <input type="checkbox" id="qaproof-monitor-notify-admin" checked hidden />
                     </td>
                 </tr>
                 <tr>

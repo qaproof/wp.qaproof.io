@@ -8,25 +8,25 @@ Stable tag: 1.0.30
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Your site looked perfect at launch. Does it still? AI-powered visual QA for WordPress — 5 test types, results in under 2 minutes.
+Your site looked perfect at launch. Does it still? AI-powered visual QA for WordPress — 5 test types, results in minutes.
 
 == Description ==
 
 **Your site looked perfect when you launched it. Does it still?**
 
-AI-powered visual quality assurance for WordPress. 5 test types. One plugin. Results in under 2 minutes.
+AI-powered visual quality assurance for WordPress. 5 test types. One plugin. Results in minutes.
 
 **Watch QAProof in action:**
 
 https://youtu.be/I3ZUg2rDA7w
 
-Full walkthrough — from uploading a design file to sending a finished PDF report to your client.
+Full walkthrough — from connecting your Figma account and picking a design to sending a finished PDF report to your client.
 
 = What is QAProof? =
 
 After every plugin update, deployment, or content change, something can silently break. A shifted layout. A missing button. A page that falls apart on mobile. **Your users notice before you do.**
 
-**QAProof catches it first.** It renders your live pages in a real browser, runs **AI-powered visual analysis**, and returns a detailed report with a quality score, a breakdown of every issue, and **ready-to-paste CSS fix recommendations** — all in under 2 minutes.
+**QAProof catches it first.** It renders your live pages in a real browser, runs **AI-powered visual analysis**, and returns a detailed report with a quality score, a breakdown of every issue, and **ready-to-paste CSS fix recommendations** — all in minutes.
 
 Available as a **WordPress plugin** with a clean admin interface — **no technical skills required.**
 
@@ -40,7 +40,7 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 
 **The situation:** "I sent the mockup to the developer and the result looks nothing like it. I spend hours comparing elements by eye — and still miss things."
 
-**What you get:** Upload a Figma file — and QAProof compares it against your live page. Every layout shift, color mismatch, typography difference, and spacing issue is flagged with its exact location and a copy-paste CSS fix.
+**What you get:** Connect your Figma account and pick a design — QAProof compares it against your live page. Every layout shift, color mismatch, typography difference, and spacing issue is flagged with its exact location and a copy-paste CSS fix.
 
 **Responsive Testing**
 
@@ -48,7 +48,7 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 
 **The situation:** "Everything looks fine on my phone. Then a client calls from their iPad and says half the page is broken."
 
-**What you get:** Your page is tested at desktop (1920px), tablet (768px), and mobile (375px) simultaneously. The AI identifies overflow, broken stacks, illegible text, and layout failures across all three viewports — **not just the device you happened to check.**
+**What you get:** Your page is tested at five viewports — desktop, tablet (portrait and landscape) and mobile (portrait and landscape). The AI identifies overflow, broken stacks, illegible text, and layout failures across all five viewports — **not just the device you happened to check.**
 
 **Accessibility Audit (WCAG 2.1)**
 
@@ -64,7 +64,7 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 
 **The situation:** "After a plugin update, the header shifted and a button disappeared. We only found out a week later — when a client complained."
 
-**What you get:** Set a baseline screenshot of any page. QAProof re-checks it on a daily, weekly, or monthly schedule and sends you an email the moment something changes. **Catch broken deploys in hours, not weeks.**
+**What you get:** Set a baseline screenshot of any page. QAProof re-checks it on your schedule (daily, weekly or monthly) and emails you when the score drops below your threshold. **Catch broken deploys in hours, not weeks.**
 
 **Design Audit (Design Debt Score)**
 
@@ -78,7 +78,7 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 
 QAProof works equally well for non-technical site owners and experienced development teams.
 
-* **Agencies & studios** — replace 2–4 hours of manual pre-delivery QA with a 2-minute automated report. Send clients a branded PDF with a verification seal at every handoff.
+* **Agencies & studios** — replace 2–4 hours of manual pre-delivery QA with an automated report that takes a few minutes. Send clients a PDF report with a verification seal at every handoff.
 * **Freelancers** — prove your work matches the design with objective data. A score is more convincing than "trust me."
 * **In-house teams** — set up monitors on your key pages and get alerted the moment a deploy breaks something.
 * **WordPress site owners** — no code, no complexity. Install the plugin, add your API key, run your first test. That's it.
@@ -91,8 +91,8 @@ QAProof works equally well for non-technical site owners and experienced develop
 
 * Install the QAProof plugin from your WordPress admin panel.
 * Enter your API key in Settings.
-* Enter a page URL and upload your design file (or paste a Figma link).
-* **Click "Run Test" — your full report is ready in 30–90 seconds.**
+* Enter a page URL (and, for Design Fidelity, pick a design from your connected Figma account).
+* **Click "Run Test" — your full report is ready in a few minutes (typically 1–5).**
 * Set up a monitor — QAProof will check the page on schedule and alert you if anything changes.
 
 = What you get in every report =
@@ -104,52 +104,52 @@ QAProof works equally well for non-technical site owners and experienced develop
 * **PDF reports with a verification seal** — ready to send to your client in one click.
 * **Email reports** — send directly from the interface without downloading.
 * **WCAG level selector (A / AA / AAA)** — adjust audit strictness to match your requirements.
-* **Saved designs** — upload a design once, reuse it across all future tests.
+* **Saved designs** — save a Figma design once, reuse it across all future tests.
 
 = Why choose QAProof over separate tools? =
 
-The market has tools for design comparison. Separate tools for regression. Separate tools for accessibility. **QAProof combines all five in one platform** — and goes further than any of them individually.
+The market has tools for design comparison. Separate tools for regression. Separate tools for accessibility. **QAProof combines all five in one platform.**
 
 *  Design vs. live page comparison
-*  Figma tool support *(not available in other tools)*
-*  Responsive testing across 3 viewports *(not available in other tools)*
-*  WCAG accessibility audit — Level A, AA, AAA *(not available in other tools)*
+*  Figma tool support
+*  Responsive testing across 5 viewports
+*  WCAG accessibility audit — Level A, AA, AAA
 *  Visual regression monitoring
-*  Design Debt Score *(not available in other tools)*
-*  WordPress plugin with built-in admin UI *(not available in other tools)*
+*  Design Debt Score
+*  WordPress plugin with built-in admin UI
 *  Scheduled automatic monitoring
-*  PDF reports with verification seal *(not available in other tools)*
-*  AI-generated CSS fix recommendations *(not available in other tools)*
+*  PDF reports with verification seal
+*  AI-generated CSS fix recommendations
 
 == Frequently Asked Questions ==
 
 = Is QAProof free? =
 
-The WordPress plugin is **free and open-source** (GPL-2.0+). The backend that powers the tests has a **free tier** suitable for individual sites and smaller projects. Paid plans are available for higher volume. Full pricing at [qaproof.io/pricing](https://qaproof.io/pricing).
+The WordPress plugin is **free and open-source** (GPL-2.0+). The QAProof service has a **Free plan** that includes 10 AI generations as a one-time trial (they do not reset monthly), 1 monitor, and 7 days of test history. Paid plans (Pro, Business, Scale) add more generations, monitors and history. Full pricing at [qaproof.io/pricing](https://qaproof.io/pricing).
 
 = Do I need a Figma account? =
 
-Figma integration is available as a convenience for those who prefer to pull designs directly from a URL.
+Only for Design Fidelity (Figma vs live page). Responsive, Accessibility, Design Audit and Visual Regression need just a URL.
 
 = What information does QAProof send when I run a test? =
 
-Only what you explicitly submit: the **URL of the page** you want to test and your **design file**. QAProof never reads your post content, user accounts, visitor data, passwords, or any other information from your site.
+Only what you explicitly submit: the **URL of the page** you want to test and, for Design Fidelity, the **Figma design link**. QAProof never reads your post content, user accounts, visitor data, passwords, or any other information from your site.
 
 = Where are my test results stored? =
 
-Results are stored securely in your **QAProof account**, scoped to your workspace. The plugin itself stores only your local settings — API key and notification preferences. No test data is saved to your WordPress database.
+Results are stored securely in your **QAProof account**, scoped to your workspace. The plugin itself stores only your settings (API key, saved designs as name + Figma link, notification and test preferences). Test results are not saved to your WordPress database.
 
 = How long does a test take? =
 
-**Design Fidelity:** 15–30 seconds. **Responsive Testing:** 1–2 minutes. **Accessibility Audit:** 2–5 minutes on complex pages.
+Most tests finish in a few minutes (typically 1–5). **Design Fidelity:** 1–3 minutes. **Responsive Testing:** 2–4 minutes (5 viewports). **Accessibility Audit:** 2–5 minutes. **Design Audit:** 1–3 minutes.
 
 = Does the plugin work on WordPress Multisite? =
 
-Yes. The plugin can be network-activated, and each site in the network manages its own settings, API key, and test history independently.
+Yes. The plugin can be network-activated, and each site in the network manages its own settings and API key independently. Note that test history lives in the QAProof account behind the API key — sites that share one API key share one test history.
 
 = What happens if I enter a wrong API key? =
 
-The plugin shows a clear error in the interface — **nothing is sent, no test is run.** You can update your key at any time.
+The API rejects it and the plugin shows an error; no test runs until you enter a valid key. You can update your key at any time.
 
 == Installation ==
 
@@ -157,7 +157,7 @@ The plugin shows a clear error in the interface — **nothing is sent, no test i
 2. Activate it — a **QAProof** menu appears in your admin sidebar.
 3. Create a free account at [qaproof.io/signup](https://qaproof.io/signup) and copy your API key from the dashboard (API Keys page).
 4. Paste the key in **QAProof → Settings** and save.
-5. Open **QAProof → Tests**, enter any page URL, and run your first test — results arrive in about a minute.
+5. Open **QAProof → Tests**, enter any page URL, and run your first test — results arrive in a few minutes (typically 1–5).
 
 == Changelog ==
 
@@ -176,4 +176,4 @@ The plugin shows a clear error in the interface — **nothing is sent, no test i
 
 == Start for Free Today ==
 
-Install the plugin on WordPress or get your API key at [qaproof.io](https://qaproof.io) — and run your first test in under 2 minutes.
+Install the plugin on WordPress or get your API key at [qaproof.io](https://qaproof.io) — and run your first test in minutes.
