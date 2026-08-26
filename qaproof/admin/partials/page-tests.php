@@ -165,7 +165,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                 <div class="qaproof-inspector-sidebar" id="qaproof-inspector-sidebar">
                                     <div class="qaproof-preview-meta" id="qaproof-preview-meta"></div>
                                     <div class="qaproof-element-controls" id="qaproof-element-controls">
-                                        <button type="button" class="qaproof-detect-btn" id="qaproof-detect-elements-btn">
+                                        <button type="button" class="qaproof-detect-btn" id="qaproof-detect-elements-btn" title="<?php esc_attr_e( 'AI element detection uses 1 AI generation', 'qaproof' ); ?>">
                                             <span class="dashicons dashicons-screenoptions"></span>
                                             <span class="qaproof-detect-btn-label"><?php esc_html_e( 'Detect Elements', 'qaproof' ); ?></span>
                                             <span class="qaproof-element-count hidden" id="qaproof-element-count"></span>
