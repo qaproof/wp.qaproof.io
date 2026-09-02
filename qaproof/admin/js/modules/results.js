@@ -3051,6 +3051,20 @@
         if (diff.device) el.dataset.device = diff.device;
         if (diff.sectionLabel) el.dataset.section = diff.sectionLabel;
 
+        // "Where it is": CSS selector (click-to-copy) + source snippet.
+        // First customer interview: reports were hard to act on without
+        // seeing WHERE in the source the problem lives.
+        var whereHtml = '';
+        if (diff.selector || diff.snippet) {
+          var selHtml = diff.selector
+            ? '<code class="qaproof-diff-selector" title="Click to copy CSS selector">' + Q.escapeHtml(String(diff.selector)) + '<span class="qaproof-copy-hint">copy</span></code>'
+            : '';
+          var snipHtml = diff.snippet
+            ? '<pre class="qaproof-diff-snippet">' + Q.escapeHtml(String(diff.snippet)) + '</pre>'
+            : '';
+          whereHtml = '<div class="qaproof-diff-where">' + selHtml + snipHtml + '</div>';
+        }
+
         el.innerHTML =
           '<div class="qaproof-diff-indicator qaproof-diff-indicator-' + severity + '">' +
           '  <span class="qaproof-diff-num">' + globalNum + '</span>' +
@@ -3063,11 +3077,27 @@
           '    ' + deviceBadge +
           '  </div>' +
           '  <div class="qaproof-diff-description">' + Q.escapeHtml(diff.description || '') + '</div>' +
+          whereHtml +
           '</div>';
 
         el.addEventListener('click', (function (idx) {
           return function () { selectDifference(idx); };
         })(diff._origIndex));
+
+        // Click-to-copy on the selector chip (must not trigger row selection)
+        var selChip = el.querySelector('.qaproof-diff-selector');
+        if (selChip) {
+          selChip.addEventListener('click', (function (chip, sel) {
+            return function (ev) {
+              ev.stopPropagation();
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(sel);
+                var hint = chip.querySelector('.qaproof-copy-hint');
+                if (hint) { hint.textContent = 'copied'; setTimeout(function () { hint.textContent = 'copy'; }, 1200); }
+              } catch (e) { /* clipboard unavailable — ignore */ }
+            };
+          })(selChip, String(diff.selector || '')));
+        }
 
         bodyEl.appendChild(el);
       }
