@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.30
+Stable tag: 1.0.32
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -161,7 +161,10 @@ The API rejects it and the plugin shows an error; no test runs until you enter a
 
 == Changelog ==
 
-= 1.0.31 =
+= 1.0.32 =
+* Every accessibility and responsive finding now shows WHERE it is: the exact CSS selector (click to copy) and a snippet of the element's source, right on the finding card and in the PDF report.
+* Tests page now discloses that AI element detection uses 1 AI generation before you run it.
+* Plugin copy aligned with actual behaviour — descriptions, tooltips and button labels now say exactly what each action does.
 * Compatibility confirmed with WordPress 7.1.
 * Responsive Test is now the default test type — it needs only a URL, no design file.
 * Quota and limit errors now show a working upgrade/verify link instead of a generic error.
