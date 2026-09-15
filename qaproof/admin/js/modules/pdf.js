@@ -459,6 +459,15 @@
         var sev = (diff.severity || 'low');
         var desc = diff.description || '';
         if (diff.wcag_criterion) desc += '  [WCAG ' + diff.wcag_criterion + ']';
+        // "Where it is": same selector + snippet the finding card shows. The PDF
+        // is what agencies forward to the developer who fixes the issue — without
+        // the location the report stops one step short of actionable.
+        if (diff.selector) desc += '\n' + i18n(qaproof.i18n.pdfWhere, 'Where') + ': ' + diff.selector;
+        if (diff.snippet) {
+          var snip = String(diff.snippet).replace(/\s+/g, ' ').trim();
+          if (snip.length > 180) snip = snip.slice(0, 177) + '...';
+          desc += '\n' + snip;
+        }
         issueRows.push([
           String(ii + 1),
           sev.charAt(0).toUpperCase() + sev.slice(1),
