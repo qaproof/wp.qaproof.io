@@ -8,7 +8,7 @@ Stable tag: 1.0.32
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Your site looked perfect at launch. Does it still? AI-powered visual QA for WordPress — 5 test types, results in minutes.
+Your site looked perfect at launch. Does it still? AI visual QA and WCAG accessibility audits for WordPress — results in minutes.
 
 == Description ==
 
@@ -56,7 +56,9 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 
 **The situation:** "We got a complaint that our site is unusable for people with visual impairments. We had no idea where to even start."
 
-**What you get:** **Full compliance check at Level A, AA, or AAA.** Color contrast, keyboard navigation, heading structure, form labels, touch targets — every violation is listed with the specific WCAG criterion it breaks and a clear recommendation to fix it.
+**What you get:** **Automated WCAG 2.1 check at Level A, AA, or AAA.** Color contrast, visible keyboard focus, ARIA and accessible names, heading structure, form labels, image alt text, touch targets — every issue is listed with the WCAG criterion it breaks, the exact element (CSS selector and code snippet) and a clear recommendation to fix it. Automated checks catch many common issues but not all of WCAG, so manual testing with a keyboard and screen reader is still recommended.
+
+**Try it without installing anything:** run a free accessibility check on any page at [qaproof.io/free-accessibility-checker](https://qaproof.io/free-accessibility-checker/) — no account needed.
 
 **Visual Regression Monitoring**
 
@@ -121,6 +123,10 @@ The market has tools for design comparison. Separate tools for regression. Separ
 *  PDF reports with verification seal
 *  AI-generated CSS fix recommendations
 
+= Start for free today =
+
+Install the plugin on WordPress or get your API key at [qaproof.io](https://qaproof.io) — and run your first test in minutes.
+
 == Frequently Asked Questions ==
 
 = Is QAProof free? =
@@ -159,6 +165,17 @@ The API rejects it and the plugin shows an error; no test runs until you enter a
 4. Paste the key in **QAProof → Settings** and save.
 5. Open **QAProof → Tests**, enter any page URL, and run your first test — results arrive in a few minutes (typically 1–5).
 
+== Screenshots ==
+
+1. Dashboard — average score, test count, monitors and AI generation usage at a glance.
+2. All five test types in one place: Design Fidelity, Responsive Testing, Design Audit, Accessibility Audit and Visual Regression.
+3. Run a test — paste a page URL and pick the test type.
+4. Accessibility Audit — choose WCAG 2.1 Level A, AA or AAA and follow the audit progress live.
+5. Visual Regression Monitors — scheduled daily, weekly or monthly checks against an approved baseline.
+6. Settings — connect your QAProof account with an API key and see your plan and usage.
+7. Accessibility report — score, severity breakdown, category scores, PDF export and send-to-email.
+8. Issue markers on the page screenshot — every finding pinned to the exact element.
+
 == Changelog ==
 
 = 1.0.32 =
@@ -176,7 +193,3 @@ The API rejects it and the plugin shows an error; no test runs until you enter a
 
 = 1.0.29 =
 * Report fidelity improvements across all five test types.
-
-== Start for Free Today ==
-
-Install the plugin on WordPress or get your API key at [qaproof.io](https://qaproof.io) — and run your first test in minutes.
