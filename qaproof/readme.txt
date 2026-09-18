@@ -4,7 +4,7 @@ Tags: design qa, responsive, accessibility, visual regression, wcag
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.32
+Stable tag: 1.0.33
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -177,6 +177,11 @@ The API rejects it and the plugin shows an error; no test runs until you enter a
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.33 =
+* Plugin homepage link now points to qaproof.io.
+* Settings: account panel says "1 monitor" (was "1 monitors").
+* Listing: screenshot captions added; accessibility audit description clarified (automated WCAG 2.1 check, with a link to the free no-signup checker).
 
 = 1.0.32 =
 * Every accessibility and responsive finding now shows WHERE it is: the exact CSS selector (click to copy) and a snippet of the element's source, right on the finding card and in the PDF report.

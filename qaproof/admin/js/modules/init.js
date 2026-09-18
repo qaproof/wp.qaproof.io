@@ -115,7 +115,10 @@
           ? ' remaining this billing period'
           : ' remaining (lifetime trial)');
       }
-      if (monitorsEl) monitorsEl.textContent = (ws.monitors && ws.monitors.limit ? ws.monitors.limit : 1) + ' monitors';
+      if (monitorsEl) {
+        var monLimit = ws.monitors && ws.monitors.limit ? ws.monitors.limit : 1;
+        monitorsEl.textContent = monLimit + (monLimit === 1 ? ' monitor' : ' monitors');
+      }
       if (historyEl)  historyEl.textContent  = (ws.historyRetentionDays || 7) + ' days history';
 
       if (accountLoading) accountLoading.style.display = 'none';
