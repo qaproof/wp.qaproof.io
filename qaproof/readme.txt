@@ -1,38 +1,62 @@
-=== AI QAProof ===
+=== Accessibility Checker & WCAG Audit – QAProof ===
 Contributors: qaproof
-Tags: design qa, responsive, accessibility, visual regression, wcag
+Tags: accessibility, wcag, accessibility checker, ada compliance, visual regression
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.33
+Stable tag: 1.0.34
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Your site looked perfect at launch. Does it still? AI visual QA and WCAG accessibility audits for WordPress — results in minutes.
+Free WCAG 2.1 AA accessibility checker for WordPress. Get a real score for your site before you sign up — no account, no API key.
 
 == Description ==
 
-**Your site looked perfect when you launched it. Does it still?**
+**Find out where your site fails WCAG — before anyone else does.**
 
-AI-powered visual quality assurance for WordPress. 5 test types. One plugin. Results in minutes.
+Install the plugin, click one button, and QAProof loads your home page in a real
+browser and checks it against **WCAG 2.1 Level AA**. You get a score and the
+issues it found straight away. **No account, no API key, nothing to configure
+for that first check.**
 
-**Watch QAProof in action:**
+= What it checks =
 
-https://youtu.be/I3ZUg2rDA7w
+QAProof runs the checks that can be made automatically, and tells you exactly
+where each one failed:
 
-Full walkthrough — from connecting your Figma account and picking a design to sending a finished PDF report to your client.
+* **Colour contrast** — text and UI borders measured against the 4.5:1 and 3:1 thresholds, with the computed colours it used.
+* **Images without alt text** — and alt text that is a file name, a placeholder word, or far too long.
+* **Form fields without labels** — including fields whose only label is a placeholder, which disappears as soon as someone types.
+* **Keyboard focus** — controls with `outline: none` and no visible focus style, which strand keyboard users.
+* **Heading structure** — skipped levels, empty headings, more than one H1.
+* **ARIA** — invalid roles and roles missing the attributes they cannot work without.
+* **Landmarks** — content sitting outside any navigable region.
+* **Touch targets** — controls below the 24×24px minimum.
+* **Page language** — a missing or malformed `lang` attribute, which decides how a screen reader pronounces your page.
 
-= What is QAProof? =
+Every finding names the **WCAG success criterion** it relates to, the **exact
+element** (CSS selector and a snippet of the source) and what was measured —
+the actual contrast ratio, the actual size — so you can check it yourself
+rather than take our word for it.
 
-After every plugin update, deployment, or content change, something can silently break. A shifted layout. A missing button. A page that falls apart on mobile. **Your users notice before you do.**
+= An honest word about "compliance" =
 
-**QAProof catches it first.** It renders your live pages in a real browser, runs **AI-powered visual analysis**, and returns a detailed report with a quality score, a breakdown of every issue, and **ready-to-paste CSS fix recommendations** — all in minutes.
+Automated checks find a meaningful share of accessibility problems, and they
+find them in minutes. They **cannot** tell you that a site is compliant.
 
-Available as a **WordPress plugin** with a clean admin interface — **no technical skills required.**
+No automated tool can judge whether your alt text is *meaningful*, whether your
+tab order makes sense, or whether a screen reader user can actually complete
+your checkout. Standards like **EN 301 549**, the **European Accessibility
+Act**, **Section 508** and Italy's **AgID** guidelines all expect manual
+testing with a keyboard and a screen reader.
 
-= Five test types. Everything your site needs. =
+Use this to find what can be found quickly, to measure whether you are getting
+better, and to hand a developer a precise list. Do not use it as a compliance
+certificate — and be sceptical of any tool that offers you one.
 
-QAProof covers every aspect of visual quality that teams typically check manually — or skip entirely.
+= Beyond accessibility =
+
+The same plugin also covers the visual side of QA, if you need it:
 
 **Design Fidelity**
 
@@ -49,16 +73,6 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 **The situation:** "Everything looks fine on my phone. Then a client calls from their iPad and says half the page is broken."
 
 **What you get:** Your page is tested at five viewports — desktop, tablet (portrait and landscape) and mobile (portrait and landscape). The AI identifies overflow, broken stacks, illegible text, and layout failures across all five viewports — **not just the device you happened to check.**
-
-**Accessibility Audit (WCAG 2.1)**
-
-**Is your site usable by everyone?**
-
-**The situation:** "We got a complaint that our site is unusable for people with visual impairments. We had no idea where to even start."
-
-**What you get:** **Automated WCAG 2.1 check at Level A, AA, or AAA.** Color contrast, visible keyboard focus, ARIA and accessible names, heading structure, form labels, image alt text, touch targets — every issue is listed with the WCAG criterion it breaks, the exact element (CSS selector and code snippet) and a clear recommendation to fix it. Automated checks catch many common issues but not all of WCAG, so manual testing with a keyboard and screen reader is still recommended.
-
-**Try it without installing anything:** run a free accessibility check on any page at [qaproof.io/free-accessibility-checker](https://qaproof.io/free-accessibility-checker/) — no account needed.
 
 **Visual Regression Monitoring**
 
@@ -80,22 +94,29 @@ QAProof covers every aspect of visual quality that teams typically check manuall
 
 QAProof works equally well for non-technical site owners and experienced development teams.
 
-* **Agencies & studios** — replace 2–4 hours of manual pre-delivery QA with an automated report that takes a few minutes. Send clients a PDF report with a verification seal at every handoff.
+* **Agencies & studios** — audit a client site in minutes instead of an afternoon, and hand over a PDF that names the WCAG criterion and the element for each finding.
+* **Public-sector sites** — councils, schools and agencies working to EN 301 549, the European Accessibility Act or AgID: find what is findable automatically, then put your manual testing time where it counts.
 * **Freelancers** — prove your work matches the design with objective data. A score is more convincing than "trust me."
 * **In-house teams** — set up monitors on your key pages and get alerted the moment a deploy breaks something.
-* **WordPress site owners** — no code, no complexity. Install the plugin, add your API key, run your first test. That's it.
+* **WordPress site owners** — no code, no complexity. Install the plugin and click one button.
 * **QA engineers** — help identify, reproduce, and investigate issues quickly, making the development process faster and more reliable.
 * **Designers** — see exactly where your design was implemented incorrectly, and hand developers the precise CSS they need to fix it.
 
-= Up and running in minutes =
+= Getting started =
 
-**For WordPress users:**
+**Your first check needs nothing but the plugin:**
 
-* Install the QAProof plugin from your WordPress admin panel.
-* Enter your API key in Settings.
-* Enter a page URL (and, for Design Fidelity, pick a design from your connected Figma account).
-* **Click "Run Test" — your full report is ready in a few minutes (typically 1–5).**
-* Set up a monitor — QAProof will check the page on schedule and alert you if anything changes.
+* Install and activate QAProof.
+* Open the **QAProof** menu and click **Check my site**.
+* A real WCAG 2.1 AA check of your home page runs — usually 1–2 minutes — and you get a score and the issues found.
+
+**To go further**, connect a free account (Settings → it takes a minute) and you can:
+
+* audit any page, not just the home page, and pick WCAG Level A, AA or AAA;
+* see every issue rather than the first few, each with its element and a recommendation;
+* export a PDF or email the report;
+* set a monitor that re-checks a page on a schedule and tells you when the score drops;
+* run the visual tests below.
 
 = What you get in every report =
 
@@ -112,10 +133,11 @@ QAProof works equally well for non-technical site owners and experienced develop
 
 The market has tools for design comparison. Separate tools for regression. Separate tools for accessibility. **QAProof combines all five in one platform.**
 
+*  WCAG 2.1 accessibility audit — Level A, AA, AAA
+*  A real result before you create an account
 *  Design vs. live page comparison
 *  Figma tool support
 *  Responsive testing across 5 viewports
-*  WCAG accessibility audit — Level A, AA, AAA
 *  Visual regression monitoring
 *  Design Debt Score
 *  WordPress plugin with built-in admin UI
@@ -125,13 +147,25 @@ The market has tools for design comparison. Separate tools for regression. Separ
 
 = Start for free today =
 
-Install the plugin on WordPress or get your API key at [qaproof.io](https://qaproof.io) — and run your first test in minutes.
+Install the plugin and click **Check my site**. You will know where your site stands before you have typed an email address.
 
 == Frequently Asked Questions ==
 
+= Do I need an account? =
+
+Not for the first check. Install the plugin, click **Check my site**, and you get a real score and the issues found on your home page — no account, no API key, no card.
+
+An account (free) is what unlocks auditing other pages, seeing every issue rather than the first few, PDF export and scheduled monitoring.
+
 = Is QAProof free? =
 
-The WordPress plugin is **free and open-source** (GPL-2.0+). The QAProof service has a **Free plan** that includes 10 AI generations as a one-time trial (they do not reset monthly), 1 monitor, and 7 days of test history. Paid plans (Pro, Business, Scale) add more generations, monitors and history. Full pricing at [qaproof.io/pricing](https://qaproof.io/pricing).
+The WordPress plugin is **free and open-source** (GPL-2.0+). The first check of your site needs no account at all.
+
+The QAProof service then has a **Free plan**: 10 AI generations as a one-time trial — they do not reset monthly — 1 monitor, and 7 days of test history. If you sign up with an email address you get 3 of those 10 until you verify the address; signing in with Google or GitHub gives you all 10 immediately. Paid plans (Pro, Business, Scale) add more generations, monitors and history. Full pricing at [qaproof.io/pricing](https://qaproof.io/pricing).
+
+= Does this make my site legally compliant? =
+
+No, and no automated tool can. It finds the problems that can be detected automatically — a large and useful share of them — but judging whether alt text is meaningful, whether the tab order makes sense, or whether someone using a screen reader can finish a purchase needs a person. EN 301 549, the European Accessibility Act, Section 508 and AgID all expect manual testing alongside automated checks.
 
 = Do I need a Figma account? =
 
@@ -140,6 +174,8 @@ Only for Design Fidelity (Figma vs live page). Responsive, Accessibility, Design
 = What information does QAProof send when I run a test? =
 
 Only what you explicitly submit: the **URL of the page** you want to test and, for Design Fidelity, the **Figma design link**. QAProof never reads your post content, user accounts, visitor data, passwords, or any other information from your site.
+
+The one request that happens without an API key is the first check: when you click **Check my site**, the plugin sends your site's public home page URL to api.qaproof.io so it can be loaded and audited. Nothing is sent until you click that button, and nothing else about your site goes with it.
 
 = Where are my test results stored? =
 
@@ -161,9 +197,12 @@ The API rejects it and the plugin shows an error; no test runs until you enter a
 
 1. Install the plugin from the WordPress plugin directory (or upload the ZIP via Plugins → Add New → Upload).
 2. Activate it — a **QAProof** menu appears in your admin sidebar.
-3. Create a free account at [qaproof.io/signup](https://qaproof.io/signup) and copy your API key from the dashboard (API Keys page).
-4. Paste the key in **QAProof → Settings** and save.
-5. Open **QAProof → Tests**, enter any page URL, and run your first test — results arrive in a few minutes (typically 1–5).
+3. Open **QAProof** and click **Check my site**. Your accessibility score and the issues found appear in a minute or two. No account needed for this.
+
+To audit other pages, see every issue, export PDFs or set up monitoring:
+
+4. Create a free account at [qaproof.io/signup](https://qaproof.io/signup) and copy your API key (API Keys page).
+5. Paste it into **QAProof → Settings** and save.
 
 == Screenshots ==
 
@@ -177,6 +216,11 @@ The API rejects it and the plugin shows an error; no test runs until you enter a
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.34 =
+* **You can now see a real accessibility score without an account.** The Dashboard runs a WCAG 2.1 AA check of your site on request — no API key, nothing to configure — and shows the score and the issues found. Connect a free account when you want the rest.
+* The URL fields on the Tests and Accessibility pages are pre-filled with your own site address instead of being empty.
+* Listing rewritten around what the plugin is mostly used for: accessibility.
 
 = 1.0.33 =
 * Plugin homepage link now points to qaproof.io.

@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       AI QAProof
+ * Plugin Name:       Accessibility Checker & WCAG Audit – QAProof
  * Plugin URI:        https://qaproof.io/
- * Description:       Compare live pages against Figma, audit accessibility, detect visual regressions, analyze responsive behavior — AI vision powered.
- * Version:           1.0.33
+ * Description:       Check your site against WCAG 2.1 AA in minutes — no account needed for the first check. Plus Figma comparison, responsive testing and visual regression monitoring.
+ * Version:           1.0.34
  * Author:            QAProof
  * Author URI:        https://qaproof.io
  * License:           GPL-2.0-or-later
