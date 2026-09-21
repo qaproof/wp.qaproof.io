@@ -49,6 +49,10 @@ if [[ -z "$VERSION" ]]; then
   exit 1
 fi
 
+# The caller may name a directory that does not exist yet — locally this is
+# always /tmp, but CI passes a path inside the workspace.
+mkdir -p "$OUTPUT_DIR"
+
 # Canonical asset name (must stay versionless — see header comment).
 ZIP_NAME="qaproof.zip"
 ZIP_PATH="$OUTPUT_DIR/$ZIP_NAME"
