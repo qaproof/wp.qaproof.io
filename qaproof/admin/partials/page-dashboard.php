@@ -60,18 +60,53 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
         <!-- Notices -->
         <?php if ( ! $has_api_key ) : ?>
-            <div class="qaproof-dash-notice notice-warn">
-                <span class="dashicons dashicons-warning"></span>
-                <div>
-                    <strong><?php esc_html_e( 'Setup Required', 'qaproof' ); ?></strong>
+            <?php
+            /*
+             * No API key yet. Rather than a "Setup Required" warning that sends
+             * the reader off to sign up before we have shown them anything, run
+             * a real accessibility check of this site — no account needed — and
+             * ask for the account afterwards, to unlock the rest.
+             */
+            ?>
+            <div class="qaproof-firstrun" id="qaproofFirstRun"
+                 data-site="<?php echo esc_attr( home_url( '/' ) ); ?>"
+                 data-settings-url="<?php echo esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ); ?>">
+
+                <div class="qaproof-firstrun-intro" id="qaproofFrIntro">
+                    <strong><?php esc_html_e( 'Check this site for accessibility issues', 'qaproof' ); ?></strong>
                     <p><?php
-                        echo wp_kses_post( sprintf(
-                            /* translators: %1$s: opening anchor tag, %2$s: closing anchor tag */
-                            __( 'Add your API key in %1$sSettings%2$s to start testing.', 'qaproof' ),
-                            '<a href="' . esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ) . '">',
-                            '</a>'
+                        echo esc_html( sprintf(
+                            /* translators: %s: the site's own domain */
+                            __( 'We will load %s in a real browser and check it against WCAG 2.1 AA. No account, nothing to configure.', 'qaproof' ),
+                            wp_parse_url( home_url( '/' ), PHP_URL_HOST )
                         ) );
                     ?></p>
+                    <button type="button" class="button button-primary" id="qaproofFrRun">
+                        <?php esc_html_e( 'Check my site — free', 'qaproof' ); ?>
+                    </button>
+                    <p class="qaproof-firstrun-note"><?php esc_html_e( 'Usually takes 1–2 minutes. Automated checks only — they do not replace manual keyboard and screen-reader testing.', 'qaproof' ); ?></p>
+                </div>
+
+                <div class="qaproof-firstrun-busy" id="qaproofFrBusy" hidden>
+                    <span class="spinner is-active"></span>
+                    <span id="qaproofFrBusyText"><?php esc_html_e( 'Loading your site in a real browser…', 'qaproof' ); ?></span>
+                </div>
+
+                <div class="qaproof-firstrun-result" id="qaproofFrResult" hidden>
+                    <div class="qaproof-firstrun-score">
+                        <span class="qaproof-firstrun-score-num" id="qaproofFrScore">—</span>
+                        <span class="qaproof-firstrun-score-label"><?php esc_html_e( 'accessibility score', 'qaproof' ); ?></span>
+                    </div>
+                    <div class="qaproof-firstrun-body">
+                        <p id="qaproofFrSummary"></p>
+                        <ul class="qaproof-firstrun-issues" id="qaproofFrIssues"></ul>
+                        <p class="qaproof-firstrun-cta" id="qaproofFrCta"></p>
+                    </div>
+                </div>
+
+                <div class="qaproof-firstrun-error" id="qaproofFrError" hidden>
+                    <p id="qaproofFrErrorText"></p>
+                    <p><a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ); ?>"><?php esc_html_e( 'Add an API key in Settings instead →', 'qaproof' ); ?></a></p>
                 </div>
             </div>
         <?php elseif ( $total_monitors === 0 ) : ?>

@@ -128,6 +128,22 @@ class QAProof_Admin {
             return current_user_can( self::CAPABILITY );
         };
 
+        // First-run check: no API key required, because its whole purpose is
+        // to show a result before the user has an account. Still behind the
+        // same capability as every other route — only an admin of THIS site
+        // can ask us to audit it.
+        register_rest_route( self::REST_NAMESPACE, '/site-audit', [
+            'methods'             => 'POST',
+            'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_site_audit' ],
+            'permission_callback' => $permission,
+        ]);
+
+        register_rest_route( self::REST_NAMESPACE, '/site-audit/(?P<auditId>[a-f0-9]{16})', [
+            'methods'             => 'GET',
+            'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_poll_site_audit' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/run-test', [
             'methods'             => 'POST',
             'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_run_test' ],

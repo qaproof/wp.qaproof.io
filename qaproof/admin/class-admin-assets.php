@@ -94,6 +94,10 @@ class QAProof_Admin_Assets {
         wp_enqueue_script( 'qaproof-monitors', $js_base . 'monitors.js', [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/monitors.js' ), true );
         wp_enqueue_script( 'qaproof-history',  $js_base . 'history.js',  [ 'qaproof-state', 'qaproof-results' ], $asset_ver( 'admin/js/modules/history.js' ), true );
         wp_enqueue_script( 'qaproof-form',         $js_base . 'form.js',         [ 'qaproof-state', 'qaproof-polling', 'qaproof-results' ], $asset_ver( 'admin/js/modules/form.js' ), true );
+        // Only meaningful on the Dashboard while there is no API key, but it
+        // is inert elsewhere (it returns immediately when its root node is
+        // absent), so it rides with the rest rather than needing its own gate.
+        wp_enqueue_script( 'qaproof-first-run',    $js_base . 'first-run.js',    [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/first-run.js' ), true );
         wp_enqueue_script( 'qaproof-figma-oauth',  $js_base . 'figma-oauth.js',  [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/figma-oauth.js' ), true );
         wp_enqueue_script( 'qaproof-init',         $js_base . 'init.js',         [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results', 'heartbeat' ], $asset_ver( 'admin/js/modules/init.js' ), true );
 
@@ -124,6 +128,21 @@ class QAProof_Admin_Assets {
             'figmaApiUsage'     => QAProof_Settings::get_figma_api_usage(),
             'figmaApiCap'       => 6,
             'i18n' => [
+                // first-run.js — the no-account check on the Dashboard
+                'frHigh'       => __( 'High', 'qaproof' ),
+                'frMedium'     => __( 'Medium', 'qaproof' ),
+                'frLow'        => __( 'Low', 'qaproof' ),
+                'frClean'      => __( 'No automated WCAG 2.1 AA failures found on this page.', 'qaproof' ),
+                /* translators: {n} is replaced with the number of issues found. */
+                'frFound'      => __( 'Found {n} issues on your home page.', 'qaproof' ),
+                /* translators: {n} is replaced with the number of issues not shown. */
+                'frMore'       => __( 'Connect a free account to see the remaining {n} issues, the exact element for each one, and export a PDF.', 'qaproof' ),
+                'frMoreNone'   => __( 'Connect a free account to audit any page, track changes over time and export a PDF.', 'qaproof' ),
+                'frConnect'    => __( 'Connect a free account', 'qaproof' ),
+                'frAnalysing'  => __( 'Checking the page against WCAG 2.1 AA…', 'qaproof' ),
+                'frTimeout'    => __( 'The check is taking longer than expected. Please try again in a moment.', 'qaproof' ),
+                'frFailed'     => __( 'The check could not be completed.', 'qaproof' ),
+                'frNetwork'    => __( 'Could not reach the check. Please try again.', 'qaproof' ),
                 'errHttp'            => __( 'Server returned HTTP ', 'qaproof' ),
                 'err404'             => __( 'REST API endpoint not found (404). Check that the plugin is activated and permalinks are flushed (Settings → Permalinks → Save).', 'qaproof' ),
                 'err403'             => __( 'Access denied (403). Your login session may have expired — try refreshing the page.', 'qaproof' ),

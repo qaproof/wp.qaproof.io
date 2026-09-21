@@ -1019,3 +1019,45 @@
 #qaproof-app .qaproof-diff-group:nth-child(6) { animation-delay: 0.25s; }
 #qaproof-app .qaproof-diff-group:nth-child(7) { animation-delay: 0.3s; }
 #qaproof-app .qaproof-diff-group:nth-child(8) { animation-delay: 0.35s; }
+/* ── First-run check (no API key yet) ──────────────────────────────────────
+   Replaces the old "Setup Required" warning: a real result for this site
+   before anything is asked of the reader. */
+.qaproof-firstrun {
+  margin: 16px 0;
+  padding: 20px 22px;
+  border: 1px solid #dcdcde;
+  border-left: 4px solid #2271b1;
+  border-radius: 6px;
+  background: #fff;
+}
+.qaproof-firstrun strong { display: block; font-size: 15px; margin-bottom: 6px; }
+.qaproof-firstrun p { margin: 0 0 12px; color: #50575e; }
+.qaproof-firstrun-note { font-size: 12px; color: #787c82; margin: 10px 0 0; }
+.qaproof-firstrun-busy { display: flex; align-items: center; gap: 10px; color: #50575e; }
+.qaproof-firstrun-busy .spinner { float: none; margin: 0; }
+.qaproof-firstrun-result { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+.qaproof-firstrun-score {
+  flex: 0 0 auto; min-width: 104px; padding: 12px 18px;
+  border-radius: 8px; background: #f0f6fc; text-align: center;
+}
+.qaproof-firstrun-score-num { display: block; font-size: 38px; font-weight: 700; line-height: 1.1; color: #0a4b78; }
+.qaproof-firstrun-score-label { display: block; font-size: 11px; color: #50575e; text-transform: uppercase; letter-spacing: .04em; }
+.qaproof-firstrun-body { flex: 1 1 320px; min-width: 260px; }
+.qaproof-firstrun-issues { margin: 0 0 14px; padding: 0; list-style: none; }
+.qaproof-firstrun-issues li {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 7px 0; border-top: 1px solid #f0f0f1; font-size: 13px; line-height: 1.5;
+}
+.qaproof-firstrun-sev {
+  flex: 0 0 auto; padding: 1px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
+}
+.qaproof-firstrun-sev-high { background: #fcf0f1; color: #8a2424; }
+.qaproof-firstrun-sev-medium { background: #fcf9e8; color: #8a6116; }
+.qaproof-firstrun-sev-low { background: #f0f6fc; color: #0a4b78; }
+.qaproof-firstrun-cta { margin: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.qaproof-firstrun-error p { color: #8a2424; }
+@media (max-width: 600px) {
+  .qaproof-firstrun { padding: 16px; }
+  .qaproof-firstrun-result { gap: 14px; }
+}

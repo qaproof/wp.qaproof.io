@@ -3,6 +3,38 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class QAProof_Admin_REST_Tests {
 
+    /**
+     * Start the keyless first-run check of this site.
+     */
+    public static function handle_site_audit( WP_REST_Request $request ) {
+        $result = QAProof_API_Client::start_site_audit();
+
+        if ( is_wp_error( $result ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => $result->get_error_message() ],
+            ], 502 );
+        }
+
+        return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );
+    }
+
+    /**
+     * Poll a first-run check.
+     */
+    public static function handle_poll_site_audit( WP_REST_Request $request ) {
+        $result = QAProof_API_Client::poll_site_audit( $request['auditId'] );
+
+        if ( is_wp_error( $result ) ) {
+            return new WP_REST_Response( [
+                'success' => false,
+                'error'   => [ 'message' => $result->get_error_message() ],
+            ], 502 );
+        }
+
+        return new WP_REST_Response( [ 'success' => true, 'data' => $result ], 200 );
+    }
+
     public static function handle_run_test( WP_REST_Request $request ) {
         $params = $request->get_json_params();
 

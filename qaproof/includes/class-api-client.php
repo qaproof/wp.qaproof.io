@@ -103,6 +103,89 @@ class QAProof_API_Client {
     }
 
     /**
+     * Start the first-run accessibility check for THIS site.
+     *
+     * Deliberately the only API call in this class that needs no API key: the
+     * whole point is to show a real result before anyone is asked to create
+     * an account. The endpoint only accepts a site URL and is rate limited
+     * per hostname on the server.
+     *
+     * @return array|WP_Error { auditId, status, url, ... }
+     */
+    public static function start_site_audit() {
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/plugin/site-audit';
+
+        $response = wp_remote_post( $endpoint, [
+            'headers'   => [ 'Content-Type' => 'application/json' ],
+            'body'      => wp_json_encode( [
+                'siteUrl'       => home_url( '/' ),
+                'pluginVersion' => defined( 'QAPROOF_VERSION' ) ? QAPROOF_VERSION : null,
+            ] ),
+            'timeout'   => self::TIMEOUT,
+            'sslverify' => true,
+        ]);
+
+        return self::decode_public_response( $response );
+    }
+
+    /**
+     * Poll a first-run check. Reuses the public endpoint the website's own
+     * free checker polls, so there is no second code path to keep in step.
+     *
+     * @param  string $audit_id
+     * @return array|WP_Error
+     */
+    public static function poll_site_audit( $audit_id ) {
+        $audit_id = sanitize_text_field( $audit_id );
+        if ( ! preg_match( '/^[a-f0-9]{16}$/', $audit_id ) ) {
+            return new WP_Error( 'qaproof_bad_audit_id', __( 'Invalid check id.', 'qaproof' ) );
+        }
+
+        $endpoint = QAProof_Settings::get_api_endpoint() . '/api/public/quick-audit/' . $audit_id;
+
+        $response = wp_remote_get( $endpoint, [
+            'timeout'   => 15,
+            'sslverify' => true,
+        ]);
+
+        return self::decode_public_response( $response );
+    }
+
+    /**
+     * Shared decoding for the two keyless calls above. Keeps the API's own
+     * error message where there is one — "this site has used its 3 free
+     * checks for today" is more use to the reader than a generic failure.
+     *
+     * @param  array|WP_Error $response
+     * @return array|WP_Error
+     */
+    private static function decode_public_response( $response ) {
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'qaproof_api_network_error',
+                /* translators: %s: error message */
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $body    = wp_remote_retrieve_body( $response );
+        $decoded = json_decode( $body, true );
+
+        if ( ! is_array( $decoded ) ) {
+            return new WP_Error( 'qaproof_api_bad_response', __( 'Unexpected response from the API.', 'qaproof' ) );
+        }
+
+        if ( empty( $decoded['success'] ) ) {
+            $message = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                : __( 'The check could not be started.', 'qaproof' );
+            return new WP_Error( 'qaproof_api_error', $message );
+        }
+
+        return isset( $decoded['data'] ) ? $decoded['data'] : [];
+    }
+
+    /**
      * Poll a job. Returns { id, status, result?, error?, elapsed? }.
      *
      * @param  string $job_id
