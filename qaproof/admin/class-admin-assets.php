@@ -134,7 +134,7 @@ class QAProof_Admin_Assets {
                 'frLow'        => __( 'Low', 'qaproof' ),
                 'frClean'      => __( 'No automated WCAG 2.1 AA failures found on this page.', 'qaproof' ),
                 /* translators: {n} is replaced with the number of issues found. */
-                'frFound'      => __( 'Found {n} issues on your home page.', 'qaproof' ),
+                'frFound'      => __( 'Found {n} issues on that page.', 'qaproof' ),
                 /* translators: {n} is replaced with the number of issues not shown. */
                 'frMore'       => __( 'Connect a free account to see the remaining {n} issues, the exact element for each one, and export a PDF.', 'qaproof' ),
                 'frMoreNone'   => __( 'Connect a free account to audit any page, track changes over time and export a PDF.', 'qaproof' ),

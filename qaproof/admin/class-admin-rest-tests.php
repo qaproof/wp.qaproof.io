@@ -7,7 +7,9 @@ class QAProof_Admin_REST_Tests {
      * Start the keyless first-run check of this site.
      */
     public static function handle_site_audit( WP_REST_Request $request ) {
-        $result = QAProof_API_Client::start_site_audit();
+        $params = $request->get_json_params();
+        $url    = isset( $params['url'] ) ? sanitize_url( $params['url'] ) : '';
+        $result = QAProof_API_Client::start_site_audit( $url );
 
         if ( is_wp_error( $result ) ) {
             return new WP_REST_Response( [

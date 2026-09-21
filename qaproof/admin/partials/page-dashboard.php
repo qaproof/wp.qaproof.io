@@ -81,9 +81,18 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                             wp_parse_url( home_url( '/' ), PHP_URL_HOST )
                         ) );
                     ?></p>
-                    <button type="button" class="button button-primary" id="qaproofFrRun">
-                        <?php esc_html_e( 'Check my site — free', 'qaproof' ); ?>
-                    </button>
+                    <div class="qaproof-firstrun-form">
+                        <label class="screen-reader-text" for="qaproofFrUrl"><?php esc_html_e( 'Page URL to check', 'qaproof' ); ?></label>
+                        <input type="url" id="qaproofFrUrl" class="regular-text"
+                               value="<?php echo esc_attr( home_url( '/' ) ); ?>"
+                               placeholder="https://example.com" />
+                        <button type="button" class="button button-primary" id="qaproofFrRun">
+                            <?php esc_html_e( 'Check my site — free', 'qaproof' ); ?>
+                        </button>
+                    </div>
+                    <p class="qaproof-firstrun-local" id="qaproofFrLocal" hidden>
+                        <?php esc_html_e( 'This address is not reachable from the internet, so we cannot load it. Put in a public URL — your live or staging site — to check that instead.', 'qaproof' ); ?>
+                    </p>
                     <p class="qaproof-firstrun-note"><?php esc_html_e( 'Usually takes 1–2 minutes. Automated checks only — they do not replace manual keyboard and screen-reader testing.', 'qaproof' ); ?></p>
                 </div>
 
@@ -106,6 +115,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
                 <div class="qaproof-firstrun-error" id="qaproofFrError" hidden>
                     <p id="qaproofFrErrorText"></p>
+                    <p><button type="button" class="button" id="qaproofFrRetry"><?php esc_html_e( 'Try another URL', 'qaproof' ); ?></button></p>
                     <p><a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ); ?>"><?php esc_html_e( 'Add an API key in Settings instead →', 'qaproof' ); ?></a></p>
                 </div>
             </div>

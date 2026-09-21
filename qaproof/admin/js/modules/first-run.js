@@ -40,6 +40,11 @@
     show(errBox);
   }
 
+  function retryFromError() {
+    show(intro);
+    if (urlInput) { urlInput.focus(); urlInput.select(); }
+  }
+
   function headers() {
     return { 'Content-Type': 'application/json', 'X-WP-Nonce': qaproof.nonce };
   }
@@ -60,7 +65,7 @@
     var summary = document.getElementById('qaproofFrSummary');
     summary.textContent = total === 0
       ? t('frClean', 'No automated WCAG 2.1 AA failures found on this page.')
-      : t('frFound', 'Found {n} issues on your home page.').replace('{n}', String(total));
+      : t('frFound', 'Found {n} issues on that page.').replace('{n}', String(total));
 
     var list = document.getElementById('qaproofFrIssues');
     list.innerHTML = '';
@@ -129,13 +134,45 @@
       });
   }
 
+  var urlInput = document.getElementById('qaproofFrUrl');
+  var localHint = document.getElementById('qaproofFrLocal');
+
+  /**
+   * Addresses our crawler cannot reach from the internet. Warning up front
+   * beats a round trip that comes back "enter a public website URL" while the
+   * field still holds the address the reader cannot use.
+   */
+  function looksUnreachable(value) {
+    var host;
+    try { host = new URL(value).hostname.toLowerCase(); } catch (e) { return false; }
+    if (host === 'localhost' || host.indexOf('.') === -1) return true;
+    if (/\.(local|test|localhost|internal|invalid)$/.test(host)) return true;
+    if (/^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host)) return true;
+    if (/^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)) return true;
+    return false;
+  }
+
+  function syncLocalHint() {
+    if (!localHint || !urlInput) return;
+    localHint.hidden = !looksUnreachable(urlInput.value);
+  }
+
+  if (urlInput) {
+    syncLocalHint();
+    urlInput.addEventListener('input', syncLocalHint);
+  }
+
+  var retryBtn = document.getElementById('qaproofFrRetry');
+  if (retryBtn) retryBtn.addEventListener('click', retryFromError);
+
   document.getElementById('qaproofFrRun').addEventListener('click', function () {
+    var target = urlInput ? urlInput.value.trim() : '';
     show(busy);
     fetch(qaproof.restBase + '/site-audit', {
       method: 'POST',
       headers: headers(),
       credentials: 'same-origin',
-      body: '{}',
+      body: JSON.stringify({ url: target }),
     })
       .then(function (res) { return res.json(); })
       .then(function (body) {

@@ -112,13 +112,25 @@ class QAProof_API_Client {
      *
      * @return array|WP_Error { auditId, status, url, ... }
      */
-    public static function start_site_audit() {
+    public static function start_site_audit( $url = '' ) {
         $endpoint = QAProof_Settings::get_api_endpoint() . '/api/plugin/site-audit';
+
+        $url = trim( (string) $url );
+        // Default to this site, but let the reader point it elsewhere: a plugin
+        // being evaluated on a local or staging install cannot be reached from
+        // the internet, and "no public URL" should not be the end of the road.
+        if ( $url === '' ) {
+            $url = home_url( '/' );
+        }
+        $scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+        if ( ! in_array( $scheme, [ 'http', 'https' ], true ) ) {
+            return new WP_Error( 'qaproof_bad_url', __( 'Enter a full URL starting with http:// or https://', 'qaproof' ) );
+        }
 
         $response = wp_remote_post( $endpoint, [
             'headers'   => [ 'Content-Type' => 'application/json' ],
             'body'      => wp_json_encode( [
-                'siteUrl'       => home_url( '/' ),
+                'siteUrl'       => $url,
                 'pluginVersion' => defined( 'QAPROOF_VERSION' ) ? QAPROOF_VERSION : null,
             ] ),
             'timeout'   => self::TIMEOUT,
