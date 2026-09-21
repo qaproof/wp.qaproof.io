@@ -90,6 +90,116 @@
   }
 
   // ============================
+  // Evidence screenshot crop
+  // ============================
+  // The last piece a beta user asked for in the evidence panel: show the bit
+  // of the captured page the finding is about, so "is this real?" is answered
+  // by looking rather than by hunting for the element on the live site.
+  //
+  // No new image is produced anywhere. The page screenshot is already on this
+  // page and every finding already carries its element box as percentages of
+  // it, so the crop is that same image, scaled and offset behind a small
+  // window. That also means the crop shows the page AS CAPTURED — the state
+  // the finding was actually measured in, not the page as it looks now.
+
+  /** The element box (percent of the screenshot), or null when unusable. */
+  function cropRegion(diff) {
+    var loc = diff && diff.location;
+    if (!loc) return null;
+    var left = loc.elLeft != null ? loc.elLeft : loc.left;
+    var top = loc.elTop != null ? loc.elTop : loc.top;
+    if (typeof left !== 'number' || typeof top !== 'number') return null;
+    // Width/height are optional on some findings; a zero-size box still gives
+    // a usable crop centred on the point.
+    return {
+      x: left,
+      y: top,
+      w: typeof loc.width === 'number' ? loc.width : 0,
+      h: typeof loc.height === 'number' ? loc.height : 0,
+    };
+  }
+
+  /** The screenshot a crop should be taken from, once it has loaded. */
+  function cropSourceImage() {
+    var ids = ['qaproof-screenshot-a11y', 'qaproof-screenshot-live', 'qaproof-screenshot-figma'];
+    for (var i = 0; i < ids.length; i++) {
+      var img = document.getElementById(ids[i]);
+      if (img && img.src && img.naturalWidth > 0 && img.naturalHeight > 0) return img;
+    }
+    return null;
+  }
+
+  /**
+   * Paint one crop. Returns false when it cannot yet be painted — a collapsed
+   * panel has no width, and the screenshot may still be loading — so the
+   * caller can try again rather than leaving an empty grey box.
+   */
+  function paintEvidenceCrop(cropEl) {
+    if (!cropEl || cropEl.dataset.painted === '1') return true;
+    var box = cropEl.querySelector('.qaproof-ev-crop-box');
+    var ring = cropEl.querySelector('.qaproof-ev-crop-ring');
+    if (!box || !ring) return true;
+
+    var img = cropSourceImage();
+    if (!img) return false;
+    var boxW = box.clientWidth, boxH = box.clientHeight;
+    if (!boxW || !boxH) return false;
+
+    var region;
+    try { region = JSON.parse(cropEl.dataset.crop || 'null'); } catch (e) { region = null; }
+    if (!region) return true;
+
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var ex = (region.x / 100) * iw;
+    var ey = (region.y / 100) * ih;
+    var ew = Math.max((region.w / 100) * iw, 2);
+    var eh = Math.max((region.h / 100) * ih, 2);
+
+    // Context around the element, so the crop shows what it sits next to —
+    // a contrast finding is unreadable without the surface behind the text.
+    var padX = Math.max(48, ew * 0.5);
+    var padY = Math.max(36, eh * 0.7);
+    var rx = ex - padX, ry = ey - padY;
+    var rw = ew + padX * 2, rh = eh + padY * 2;
+
+    // Never magnify past 2x: past that a screenshot is guesswork, and an
+    // enlarged blur would look like evidence without being any.
+    var scale = Math.min(boxW / rw, boxH / rh, 2);
+    var offX = -rx * scale + (boxW - rw * scale) / 2;
+    var offY = -ry * scale + (boxH - rh * scale) / 2;
+
+    box.style.backgroundImage = 'url("' + img.src + '")';
+    box.style.backgroundSize = Math.round(iw * scale) + 'px ' + Math.round(ih * scale) + 'px';
+    box.style.backgroundPosition = Math.round(offX) + 'px ' + Math.round(offY) + 'px';
+
+    ring.style.left = Math.round(ex * scale + offX) + 'px';
+    ring.style.top = Math.round(ey * scale + offY) + 'px';
+    ring.style.width = Math.max(Math.round(ew * scale), 3) + 'px';
+    ring.style.height = Math.max(Math.round(eh * scale), 3) + 'px';
+
+    cropEl.dataset.painted = '1';
+    return true;
+  }
+
+  /** Paint on open, and retry once the screenshot arrives if it hasn't yet. */
+  function wireEvidenceCrop(details) {
+    if (!details) return;
+    var cropEl = details.querySelector('.qaproof-ev-crop');
+    if (!cropEl) return;
+    details.addEventListener('toggle', function () {
+      if (!details.open) return;
+      if (paintEvidenceCrop(cropEl)) return;
+      var img = document.getElementById('qaproof-screenshot-a11y') ||
+        document.getElementById('qaproof-screenshot-live');
+      if (img && Q.waitForImage) {
+        Q.waitForImage(img).then(function () { paintEvidenceCrop(cropEl); });
+      } else {
+        setTimeout(function () { paintEvidenceCrop(cropEl); }, 400);
+      }
+    });
+  }
+
+  // ============================
   // Category Descriptions
   // ============================
   var categoryDescriptions = {
@@ -3196,11 +3306,24 @@
             rowsHtml += '<div class="qaproof-ev-row"><span class="qaproof-ev-prop">viewport</span><code class="qaproof-ev-val">' +
               Q.escapeHtml(String(ev.viewport)) + '</code></div>';
           }
+          // The crop of the page screenshot around the element. Painted lazily
+          // when the panel is opened — see paintEvidenceCrop — because a
+          // collapsed <details> has no layout to measure against.
+          var cropHtml = '';
+          if (!diff.noMarker && cropRegion(diff)) {
+            cropHtml = '<div class="qaproof-ev-crop" data-crop="' +
+              Q.escapeAttr(JSON.stringify(cropRegion(diff))) + '">' +
+              '<div class="qaproof-ev-crop-box"><div class="qaproof-ev-crop-ring"></div></div>' +
+              '<span class="qaproof-ev-crop-note">' +
+              Q.escapeHtml(qaproof.i18n.evidenceCropNote || 'The element, as it appears on the captured page') +
+              '</span></div>';
+          }
           evidenceHtml =
             '<details class="qaproof-diff-evidence">' +
             '<summary>' + (qaproof.i18n.evidenceLabel || 'Why we say so') + '</summary>' +
             (ev.measured ? '<p class="qaproof-ev-measured">' + Q.escapeHtml(String(ev.measured)) + '</p>' : '') +
             rowsHtml +
+            cropHtml +
             (ev.reasoning ? '<p class="qaproof-ev-reasoning">' + Q.escapeHtml(String(ev.reasoning)) + '</p>' : '') +
             '</details>';
         }
@@ -3243,6 +3366,8 @@
             };
           })(el, diff, dismissBtn));
         }
+
+        wireEvidenceCrop(el.querySelector('.qaproof-diff-evidence'));
 
         el.addEventListener('click', (function (idx) {
           return function () { selectDifference(idx); };

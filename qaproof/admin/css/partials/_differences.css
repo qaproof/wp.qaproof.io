@@ -1008,3 +1008,35 @@
   color: #6fd7dc;
   border-color: rgba(0, 173, 181, 0.45);
 }
+
+/* Evidence: crop of the captured page around the element the finding is about.
+   The box is a window onto the same screenshot already rendered above — the
+   background is scaled and offset by JS (paintEvidenceCrop), and the ring
+   marks the element itself inside it. */
+#qaproof-app .qaproof-ev-crop {
+  margin: 10px 0 2px;
+}
+#qaproof-app .qaproof-ev-crop-box {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background-color: #0f1418;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+#qaproof-app .qaproof-ev-crop-ring {
+  position: absolute;
+  border: 2px solid #00adb5;
+  border-radius: 3px;
+  box-shadow: 0 0 0 9999px rgba(8, 12, 16, 0.48);
+  pointer-events: none;
+}
+#qaproof-app .qaproof-ev-crop-note {
+  display: block;
+  margin-top: 5px;
+  color: #7f8b96;
+  font-size: 11px;
+  line-height: 1.5;
+}
