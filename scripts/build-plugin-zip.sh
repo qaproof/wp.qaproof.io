@@ -50,8 +50,12 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 # The caller may name a directory that does not exist yet — locally this is
-# always /tmp, but CI passes a path inside the workspace.
+# always /tmp, but CI passes a path inside the workspace. The path is then
+# resolved to an absolute one, because the zip step runs from inside the
+# staging directory and a relative output path would land in the wrong place
+# (or, as CI showed, nowhere at all).
 mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
 # Canonical asset name (must stay versionless — see header comment).
 ZIP_NAME="qaproof.zip"
