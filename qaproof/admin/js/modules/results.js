@@ -3043,8 +3043,17 @@
           ? '<span class="qaproof-badge qaproof-badge-page-level" title="Page-wide observation — not tied to a specific element">Page-level</span>'
           : '';
 
+        // Findings the rules could not judge (text over a gradient, a clip that
+        // looks deliberate) are observations, not failures — they are excluded
+        // from the score, so the card must not read like a violation either.
+        var reviewBadge = diff.needsReview
+          ? '<span class="qaproof-badge qaproof-badge-review" title="We spotted this but could not verify it — not counted as an issue and not included in the score">' +
+            (qaproof.i18n.needsReviewLabel || 'Unverified') + '</span>'
+          : '';
+
         var el = document.createElement('div');
         el.className = 'qaproof-difference';
+        if (diff.needsReview) el.classList.add('qaproof-difference-review');
         if (diff.noMarker) el.classList.add('qaproof-difference-page-level');
         el.dataset.index = diff._origIndex;
         el.dataset.severity = severity;
@@ -3065,6 +3074,35 @@
           whereHtml = '<div class="qaproof-diff-where">' + selHtml + snipHtml + '</div>';
         }
 
+        // "Why we say so": the measurement and the reasoning behind the
+        // finding, collapsed by default. Requested by a beta user who could
+        // not tell a real failure from a false positive without re-checking
+        // the page by hand. Absent on findings that don't carry evidence yet.
+        var evidenceHtml = '';
+        var ev = diff.evidence;
+        if (ev && (ev.measured || ev.reasoning || (ev.computed && ev.computed.length))) {
+          var rowsHtml = '';
+          if (ev.computed && ev.computed.length) {
+            for (var ei = 0; ei < ev.computed.length; ei++) {
+              var c = ev.computed[ei] || {};
+              rowsHtml += '<div class="qaproof-ev-row"><span class="qaproof-ev-prop">' +
+                Q.escapeHtml(String(c.prop || '')) + '</span><code class="qaproof-ev-val">' +
+                Q.escapeHtml(String(c.value == null ? '' : c.value)) + '</code></div>';
+            }
+          }
+          if (ev.viewport) {
+            rowsHtml += '<div class="qaproof-ev-row"><span class="qaproof-ev-prop">viewport</span><code class="qaproof-ev-val">' +
+              Q.escapeHtml(String(ev.viewport)) + '</code></div>';
+          }
+          evidenceHtml =
+            '<details class="qaproof-diff-evidence">' +
+            '<summary>' + (qaproof.i18n.evidenceLabel || 'Why we say so') + '</summary>' +
+            (ev.measured ? '<p class="qaproof-ev-measured">' + Q.escapeHtml(String(ev.measured)) + '</p>' : '') +
+            rowsHtml +
+            (ev.reasoning ? '<p class="qaproof-ev-reasoning">' + Q.escapeHtml(String(ev.reasoning)) + '</p>' : '') +
+            '</details>';
+        }
+
         el.innerHTML =
           '<div class="qaproof-diff-indicator qaproof-diff-indicator-' + severity + '">' +
           '  <span class="qaproof-diff-num">' + globalNum + '</span>' +
@@ -3072,12 +3110,14 @@
           '<div class="qaproof-diff-body">' +
           '  <div class="qaproof-diff-header">' +
           '    <span class="qaproof-severity-tag qaproof-severity-tag-' + severity + '">' + severityIcon(severity) + ' ' + Q.escapeHtml(Q.capitalize(severity)) + '</span>' +
+          '    ' + reviewBadge +
           '    ' + pageLevelBadge +
           '    ' + sectionBadge +
           '    ' + deviceBadge +
           '  </div>' +
           '  <div class="qaproof-diff-description">' + Q.escapeHtml(diff.description || '') + '</div>' +
           whereHtml +
+          evidenceHtml +
           '</div>';
 
         el.addEventListener('click', (function (idx) {
