@@ -42,3 +42,39 @@ bundled-asset attribution.
 
 Bugs & feature requests — [GitHub Issues](https://github.com/qaproof/wp.qaproof.io/issues).
 Account / billing / API — [qaproof.io/help-center](https://qaproof.io/help-center).
+
+## Release
+
+Releases are automated — no SVN client and no manual steps.
+
+```bash
+git tag v1.0.34 && git push origin v1.0.34
+```
+
+That triggers `.github/workflows/release.yml`, which:
+
+1. checks the plugin header version, the readme `Stable tag` and the tag all
+   agree, and that the changelog has an entry for that version;
+2. lints every PHP file;
+3. checks all twelve wordpress.org listing assets are present in
+   `.wordpress-org/` — that directory is synced wholesale, so a file missing
+   here is a file **deleted** from the public listing;
+4. builds the plugin with `scripts/build-plugin-zip.sh` (one definition of what
+   ships, used for both the SVN tree and the ZIP);
+5. publishes to wordpress.org and creates the GitHub release with
+   `qaproof.zip` — the exact filename the site's download button links to.
+
+Run it with **Actions → Release → Run workflow** to build and check without
+publishing anything.
+
+### One-time setup
+
+Add two repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `WPORG_SVN_USERNAME` | the wordpress.org account with commit rights on the `qaproof` plugin |
+| `WPORG_SVN_PASSWORD` | that account's password |
+
+Until they exist the wordpress.org step is skipped with a warning rather than
+failing, so the GitHub release and the download link keep working.

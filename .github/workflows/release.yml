@@ -1,0 +1,137 @@
+name: Release
+
+# Tag and the release happens: wordpress.org gets the new version, GitHub gets
+# the ZIP the site's download button links to. Nobody has to hold SVN
+# credentials or remember the order of the steps.
+#
+# Cut a release with:
+#   git tag v1.0.34 && git push origin v1.0.34
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   WPORG_SVN_USERNAME — the wordpress.org account with commit rights
+#   WPORG_SVN_PASSWORD — that account's password
+#
+# Without those two the wordpress.org step is skipped, not failed: the GitHub
+# release still happens, so the site's download link keeps working and the
+# secrets can be added later.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and check only — do not publish anywhere'
+        type: boolean
+        default: true
+
+jobs:
+  release:
+    name: Build, verify and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── The checks that catch the mistakes releases actually make ─────────
+      # A version that disagrees with itself is the classic one: wordpress.org
+      # reads `Stable tag` from readme.txt, WordPress reads `Version` from the
+      # plugin header, and a mismatch ships a release nobody can install.
+      - name: Verify the version agrees with itself
+        run: |
+          set -euo pipefail
+          HEADER=$(grep -E '^ \* Version:' qaproof/qaproof.php | head -1 | sed -E 's/.*Version: *([0-9.]+).*/\1/')
+          STABLE=$(grep -E '^Stable tag:' qaproof/readme.txt | head -1 | sed -E 's/Stable tag: *([0-9.]+).*/\1/')
+          echo "plugin header: $HEADER"
+          echo "readme stable: $STABLE"
+
+          if [ "$HEADER" != "$STABLE" ]; then
+            echo "::error::Plugin header ($HEADER) and readme Stable tag ($STABLE) disagree."
+            exit 1
+          fi
+
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            if [ "$TAG" != "$HEADER" ]; then
+              echo "::error::Tag v$TAG does not match the plugin version $HEADER."
+              exit 1
+            fi
+          fi
+
+          if ! grep -qE "^= ${HEADER} =" qaproof/readme.txt; then
+            echo "::error::readme.txt has no changelog entry for $HEADER."
+            exit 1
+          fi
+          echo "VERSION=$HEADER" >> "$GITHUB_ENV"
+
+      - name: Lint PHP
+        run: |
+          set -euo pipefail
+          find qaproof -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+          echo "All PHP files parse."
+
+      # The assets directory is synced to wordpress.org wholesale, so a missing
+      # file here removes it from the public listing. These 12 are what the
+      # listing is made of.
+      - name: Verify the listing assets are all present
+        run: |
+          set -euo pipefail
+          missing=0
+          for f in banner-1544x500.png banner-772x250.png icon-128x128.png icon-256x256.png \
+                   screenshot-1.png screenshot-2.png screenshot-3.png screenshot-4.png \
+                   screenshot-5.png screenshot-6.png screenshot-7.png screenshot-8.png; do
+            if [ ! -f ".wordpress-org/$f" ]; then
+              echo "::error::.wordpress-org/$f is missing — publishing would delete it from the listing."
+              missing=1
+            fi
+          done
+          [ "$missing" = "0" ]
+
+      - name: Stage the plugin
+        run: bash scripts/build-plugin-zip.sh --stage build
+
+      - name: Build the ZIP
+        run: bash scripts/build-plugin-zip.sh --output dist
+
+      - name: Are the wordpress.org credentials configured?
+        id: creds
+        env:
+          SVN_USERNAME: ${{ secrets.WPORG_SVN_USERNAME }}
+        run: |
+          if [ -n "$SVN_USERNAME" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::WPORG_SVN_USERNAME is not set — skipping the wordpress.org publish."
+          fi
+
+      - name: Publish to wordpress.org
+        if: github.event_name == 'push' && steps.creds.outputs.have == 'true'
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.WPORG_SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WPORG_SVN_PASSWORD }}
+          SLUG: qaproof
+          VERSION: ${{ env.VERSION }}
+          BUILD_DIR: build/qaproof
+          ASSETS_DIR: .wordpress-org
+
+      # The site's "Download plugin" button links to
+      # /releases/latest/download/qaproof.zip, so the asset name is fixed.
+      - name: Publish the GitHub release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/qaproof.zip
+          name: v${{ env.VERSION }}
+          generate_release_notes: true
+
+      - name: Keep the build for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: qaproof-${{ env.VERSION }}
+          path: dist/qaproof.zip
+          retention-days: 14

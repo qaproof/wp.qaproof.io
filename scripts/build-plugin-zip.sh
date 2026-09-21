@@ -30,9 +30,14 @@ PLUGIN_DIR="$REPO_ROOT/qaproof"
 
 # Output dir defaults to /tmp so we don't pollute the repo.
 OUTPUT_DIR="/tmp"
+# --stage <dir> writes the cleaned plugin tree to <dir>/qaproof and skips the
+# ZIP. The wordpress.org deploy needs a directory, not an archive, and the
+# rules for what ships must not be written down twice.
+STAGE_OUT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --output) OUTPUT_DIR="$2"; shift 2 ;;
+    --stage)  STAGE_OUT="$2";  shift 2 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -53,8 +58,14 @@ ZIP_VERSIONED_PATH="$OUTPUT_DIR/qaproof-${VERSION}.zip"
 echo "Building $ZIP_NAME (v${VERSION}) from $PLUGIN_DIR ..."
 
 # Stage the plugin in a tmpdir so we can strip files without touching the repo.
-STAGE_DIR=$(mktemp -d -t qaproof-build-XXXXXX)
-trap "rm -rf $STAGE_DIR" EXIT
+if [[ -n "$STAGE_OUT" ]]; then
+  STAGE_DIR="$STAGE_OUT"
+  rm -rf "$STAGE_DIR"
+  mkdir -p "$STAGE_DIR"
+else
+  STAGE_DIR=$(mktemp -d -t qaproof-build-XXXXXX)
+  trap "rm -rf $STAGE_DIR" EXIT
+fi
 
 # rsync with explicit excludes — everything we don't want shipping to WP sites.
 # Belt-and-suspenders against accidental dev-file leaks.
@@ -108,6 +119,14 @@ if [[ -n "$SCAN_HITS" ]]; then
   echo "✗ Suspected secrets detected in build — aborting:" >&2
   echo "$SCAN_HITS" >&2
   exit 1
+fi
+
+# --stage: the caller wanted the tree, not an archive.
+if [[ -n "$STAGE_OUT" ]]; then
+  FILE_COUNT=$(find "$STAGE_DIR/qaproof" -type f | wc -l | tr -d ' ')
+  echo ""
+  echo "✓ Staged v${VERSION} → $STAGE_DIR/qaproof  (${FILE_COUNT} files)"
+  exit 0
 fi
 
 # Build ZIP. -X strips macOS extended attrs (those weird __MACOSX folders).
