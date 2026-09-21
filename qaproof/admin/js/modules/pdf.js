@@ -75,7 +75,12 @@
     var dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     var reportId = 'QP-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-    var differences = data.differences || [];
+    // Findings the user switched off as false positives never reach the PDF —
+    // the report is what they forward to whoever fixes the site, so it should
+    // not contain items they have already judged wrong.
+    var differences = (typeof Q.withoutDismissed === 'function')
+      ? Q.withoutDismissed(data.differences || [])
+      : (data.differences || []);
     var recommendations = data.recommendations || [];
     var categories = data.categories || {};
     var catKeys = Object.keys(categories);

@@ -16,6 +16,80 @@
   var S = Q.state;
 
   // ============================
+  // False positives
+  // ----------------------------
+  // A beta user asked to be able to switch a finding off before exporting the
+  // report, because he forwards it to someone else to act on and did not want
+  // to hand over items he had already judged wrong. Dismissals are per
+  // browser, keyed by the finding itself (selector + the start of its text) so
+  // they survive a re-render and a re-run of the same page.
+  // ============================
+  var dismissed = Object.create(null);
+
+  function dismissKey(diff) {
+    if (!diff) return '';
+    return (diff.selector || diff.category || '') + '|' +
+      String(diff.description || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  }
+
+  function dismissStoreKey() {
+    // Scope dismissals to the page under test and the kind of test, so marking
+    // something wrong on one client site doesn't hide it on another.
+    var urlEl = document.getElementById('qaproof-a11y-url') || document.getElementById('qaproof-url');
+    var pageUrl = (urlEl && urlEl.value) ? String(urlEl.value).trim() : location.pathname;
+    return 'qap_dismissed:' + pageUrl + ':' + ((S && S.testType) || '');
+  }
+
+  function loadDismissed() {
+    dismissed = Object.create(null);
+    try {
+      var raw = localStorage.getItem(dismissStoreKey());
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) for (var i = 0; i < arr.length; i++) dismissed[arr[i]] = true;
+    } catch (e) { /* a full or blocked localStorage must not break the report */ }
+  }
+
+  function saveDismissed() {
+    try { localStorage.setItem(dismissStoreKey(), JSON.stringify(Object.keys(dismissed))); }
+    catch (e) { /* ignore */ }
+  }
+
+  function isDismissed(diff) { return !!dismissed[dismissKey(diff)]; }
+
+  function toggleDismissed(diff) {
+    var k = dismissKey(diff);
+    if (dismissed[k]) delete dismissed[k]; else dismissed[k] = true;
+    saveDismissed();
+    return !!dismissed[k];
+  }
+
+  /**
+   * A line above the findings telling the user how many they have switched
+   * off and that the export will leave them out — otherwise a dismissal is
+   * invisible once the card scrolls away.
+   */
+  function updateDismissedSummary(container) {
+    if (!container) return;
+    var n = container.querySelectorAll('.qaproof-difference-dismissed').length;
+    var bar = container.parentNode && container.parentNode.querySelector('.qaproof-dismissed-summary');
+    if (!n) { if (bar) bar.remove(); return; }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'qaproof-dismissed-summary';
+      container.parentNode.insertBefore(bar, container);
+    }
+    var tpl = qaproof.i18n.dismissedSummary || '{n} marked as not an issue — they will be left out of the exported PDF.';
+    bar.textContent = tpl.replace('{n}', String(n));
+  }
+
+  /** Drop everything the user marked as a false positive — used by the PDF. */
+  function withoutDismissed(differences) {
+    if (!differences || !differences.length) return differences || [];
+    return differences.filter(function (d) { return !isDismissed(d); });
+  }
+
+  // ============================
   // Category Descriptions
   // ============================
   var categoryDescriptions = {
@@ -53,10 +127,12 @@
   // ============================
   // Score Ring SVG helper
   // ============================
+  // Thresholds unified with helpers.js getScoreClass:
+  // >=80 good / >=60 medium / <60 low.
   function getScoreLevelText(score) {
     if (score == null) return '';
-    if (score >= 90) return 'Excellent';
-    if (score >= 70) return 'Good';
+    if (score >= 80) return 'Good';
+    if (score >= 60) return 'Fair';
     return 'Needs Work';
   }
 
@@ -399,7 +475,7 @@
       if (!isFinite(s)) return;
       if (!highestCat || s > highestCat.score) highestCat = { name: name, score: s };
       if (!lowestCat  || s < lowestCat.score)  lowestCat  = { name: name, score: s };
-      if (s >= 90) passCount++;
+      if (s >= 80) passCount++; // aligned with the >=80 "good" threshold
     });
     if (!highestCat) highestCat = { name: '—', score: 0 };
     if (!lowestCat)  lowestCat  = { name: '—', score: 100 };
@@ -639,7 +715,7 @@
       if (!isFinite(s)) return;
       if (!highestCat || s > highestCat.score) highestCat = { name: name, score: s };
       if (!lowestCat  || s < lowestCat.score)  lowestCat  = { name: name, score: s };
-      if (s >= 90) passCount++;
+      if (s >= 80) passCount++; // aligned with the >=80 "good" threshold
     });
     if (!highestCat) highestCat = { name: '—', score: 0 };
     if (!lowestCat)  lowestCat  = { name: '—', score: 100 };
@@ -1079,6 +1155,9 @@
     // tickets and "the tool is unreliable" trust drops.
     html += '      <div class="qaproof-score-disclaimer" style="font-size:11px;color:#888;margin-top:6px;text-align:center;" title="Vision-AI scoring is not bit-exact across runs.">';
     html += '        AI-based score · expect ±5 point variance on re-run';
+    html += '      </div>';
+    html += '      <div class="qaproof-score-baseline-note" style="font-size:11px;color:#888;margin-top:4px;text-align:center;max-width:220px;">';
+    html += '        Typical production sites score 50–75 on first runs — treat this as a baseline to improve from.';
     html += '      </div>';
     html += '    </div>';
     html += '    <div class="qaproof-report-hero-info">';
@@ -1555,6 +1634,22 @@
       html += '    </div>';
       html += '  </div>';
       html += '</div>';
+    }
+
+    // Audit coverage strip — how much the audit actually looked at.
+    // auditStats shape varies across API versions; derive defensively.
+    if (data.auditStats) {
+      var _as = data.auditStats || {};
+      var _es = _as.elementsScanned;
+      var _scanned = (_es != null && typeof _es === 'object') ? _es.total : _es;
+      if (_scanned == null) _scanned = _as.totalElements;
+      var _scannedNum = Number(_scanned);
+      var _criteria = Number(_as.criteriaChecked || _as.wcagCriteriaChecked) || 59;
+      if (isFinite(_scannedNum) && _scannedNum > 0) {
+        html += '<div class="qaproof-audit-stats-strip" style="margin:16px 0 4px;font-size:12.5px;color:#64748b;">' +
+          _scannedNum + ' elements scanned &middot; ' + _criteria + ' WCAG success criteria checked' +
+          '</div>';
+      }
     }
 
     // Issues + Recommendations — two-column grid
@@ -2897,6 +2992,7 @@
     var container = document.getElementById(containerId);
     var countEl = document.getElementById(countId);
     if (!container) return;
+    loadDismissed();
     container.innerHTML = '';
     if (countEl) countEl.textContent = differences.length;
 
@@ -3042,6 +3138,11 @@
         var pageLevelBadge = diff.noMarker
           ? '<span class="qaproof-badge qaproof-badge-page-level" title="Page-wide observation — not tied to a specific element">Page-level</span>'
           : '';
+        // Accessibility issues carry the WCAG success criterion they violate —
+        // surface it as a small badge so auditors can cross-reference the spec.
+        var wcagBadge = diff.wcag_criterion
+          ? '<span class="qaproof-badge qaproof-badge-wcag" title="WCAG success criterion" style="background:#eef2ff;color:#4338ca;">SC ' + Q.escapeHtml(String(diff.wcag_criterion)) + '</span>'
+          : '';
 
         // Findings the rules could not judge (text over a gradient, a clip that
         // looks deliberate) are observations, not failures — they are excluded
@@ -3053,6 +3154,7 @@
 
         var el = document.createElement('div');
         el.className = 'qaproof-difference';
+        if (isDismissed(diff)) el.classList.add('qaproof-difference-dismissed');
         if (diff.needsReview) el.classList.add('qaproof-difference-review');
         if (diff.noMarker) el.classList.add('qaproof-difference-page-level');
         el.dataset.index = diff._origIndex;
@@ -3114,11 +3216,33 @@
           '    ' + pageLevelBadge +
           '    ' + sectionBadge +
           '    ' + deviceBadge +
+          '    ' + wcagBadge +
           '  </div>' +
           '  <div class="qaproof-diff-description">' + Q.escapeHtml(diff.description || '') + '</div>' +
           whereHtml +
           evidenceHtml +
+          '  <button type="button" class="qaproof-diff-dismiss" title="' +
+          Q.escapeHtml(qaproof.i18n.dismissHint || 'Exclude this finding from the exported PDF. Stays on this browser.') + '">' +
+          Q.escapeHtml(isDismissed(diff)
+            ? (qaproof.i18n.dismissUndo || 'Marked as not an issue — undo')
+            : (qaproof.i18n.dismissLabel || 'Not an issue')) +
+          '</button>' +
           '</div>';
+
+        var dismissBtn = el.querySelector('.qaproof-diff-dismiss');
+        if (dismissBtn) {
+          dismissBtn.addEventListener('click', (function (card, d, btn) {
+            return function (ev) {
+              ev.stopPropagation();
+              var now = toggleDismissed(d);
+              card.classList.toggle('qaproof-difference-dismissed', now);
+              btn.textContent = now
+                ? (qaproof.i18n.dismissUndo || 'Marked as not an issue — undo')
+                : (qaproof.i18n.dismissLabel || 'Not an issue');
+              updateDismissedSummary(container);
+            };
+          })(el, diff, dismissBtn));
+        }
 
         el.addEventListener('click', (function (idx) {
           return function () { selectDifference(idx); };
@@ -3145,6 +3269,8 @@
       groupEl.appendChild(bodyEl);
       container.appendChild(groupEl);
     }
+
+    updateDismissedSummary(container);
   }
 
   // ============================
@@ -4017,5 +4143,7 @@
   Q.showTooltip = showTooltip;
   Q.hideTooltip = hideTooltip;
   Q.categoryDescriptions = categoryDescriptions;
+  Q.isDismissed = isDismissed;
+  Q.withoutDismissed = withoutDismissed;
 
 })();
