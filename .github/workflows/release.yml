@@ -108,8 +108,11 @@ jobs:
             echo "::warning::WPORG_SVN_USERNAME is not set — skipping the wordpress.org publish."
           fi
 
+      # Publishes on a tag push, or on a manual run with dry_run unticked —
+      # so a release can be pushed to wordpress.org after the secrets are
+      # added, without deleting and re-pushing the tag.
       - name: Publish to wordpress.org
-        if: github.event_name == 'push' && steps.creds.outputs.have == 'true'
+        if: (github.event_name == 'push' || inputs.dry_run == false) && steps.creds.outputs.have == 'true'
         uses: 10up/action-wordpress-plugin-deploy@stable
         env:
           SVN_USERNAME: ${{ secrets.WPORG_SVN_USERNAME }}
