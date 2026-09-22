@@ -170,6 +170,12 @@ class QAProof_Admin {
             ],
         ]);
 
+        register_rest_route( self::REST_NAMESPACE, '/site-audits/(?P<id>[a-fA-F0-9-]{8,64})/report.pdf', [
+            'methods'             => 'GET',
+            'callback'            => [ 'QAProof_Admin_REST_Site_Audit', 'handle_report_pdf' ],
+            'permission_callback' => $permission,
+        ]);
+
         register_rest_route( self::REST_NAMESPACE, '/site-audits/(?P<id>[a-fA-F0-9-]{8,64})', [
             'methods'             => 'GET',
             'callback'            => [ 'QAProof_Admin_REST_Site_Audit', 'handle_get' ],

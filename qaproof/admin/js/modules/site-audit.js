@@ -26,6 +26,7 @@
   var reportEl = el('qasa-report');
 
   var pollTimer = null;
+  var currentId = null;
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -109,6 +110,7 @@
   }
 
   function remember(id) {
+    currentId = id;
     try { localStorage.setItem(LAST_KEY, id); } catch (e) { /* private mode */ }
     try {
       var u = new URL(window.location.href);
@@ -118,6 +120,7 @@
   }
 
   function forget() {
+    currentId = null;
     try { localStorage.removeItem(LAST_KEY); } catch (e) {}
     try {
       var u = new URL(window.location.href);
@@ -488,6 +491,45 @@
     stopPolling();
     show('start');
     loadRecent();
+  });
+
+  /**
+   * The PDF is the artifact that leaves the tool, so it is fetched through the
+   * site's own REST route rather than linked at the API: the API key lives in
+   * PHP and must not reach the browser.
+   */
+  el('qasa-pdf').addEventListener('click', function () {
+    if (!currentId) return;
+    var btn = el('qasa-pdf');
+    var label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = t('saPdfBuilding', 'Building the report…');
+
+    fetch(restUrl('/site-audits/' + currentId + '/report.pdf'), {
+      headers: { 'X-WP-Nonce': qaproof.nonce },
+      credentials: 'same-origin'
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error(t('saPdfFailed', 'The report could not be generated.'));
+        var name = 'qaproof-accessibility-report.pdf';
+        var cd = res.headers.get('content-disposition') || '';
+        var m = cd.match(/filename="([^"]+)"/);
+        if (m) name = m[1];
+        return res.blob().then(function (blob) { return { blob: blob, name: name }; });
+      })
+      .then(function (out) {
+        var url = URL.createObjectURL(out.blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = out.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        // Revoking immediately can cancel the download in some browsers.
+        setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+      })
+      .catch(function (err) { showError(err.message); })
+      .finally(function () { btn.disabled = false; btn.textContent = label; });
   });
 
   el('qasa-new').addEventListener('click', function () {

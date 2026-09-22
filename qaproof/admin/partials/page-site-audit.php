@@ -130,6 +130,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
         </div>
 
         <p class="submit">
+            <button type="button" class="button button-primary" id="qasa-pdf"><?php esc_html_e( 'Download PDF report', 'qaproof' ); ?></button>
             <button type="button" class="button" id="qasa-new"><?php esc_html_e( 'Run another audit', 'qaproof' ); ?></button>
         </p>
     </div>

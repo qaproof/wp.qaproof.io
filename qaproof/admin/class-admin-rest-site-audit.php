@@ -67,6 +67,42 @@ class QAProof_Admin_REST_Site_Audit {
     }
 
     /**
+     * Stream the PDF report to the browser.
+     *
+     * The response is binary, so it cannot go through WP_REST_Response — the
+     * REST server would JSON-encode it. Headers are sent by hand and the
+     * request ends here.
+     *
+     * The download is proxied rather than linked directly at the API because
+     * the API key lives in PHP and must not reach the browser; the nonce and
+     * the manage_options capability are what authorise the caller.
+     */
+    public static function handle_report_pdf( WP_REST_Request $request ) {
+        $id     = sanitize_text_field( (string) $request['id'] );
+        $result = QAProof_API_Client::site_audit_report_pdf( $id );
+
+        if ( is_wp_error( $result ) ) {
+            return self::error_response( $result );
+        }
+
+        // Anything already buffered would corrupt the PDF.
+        while ( ob_get_level() > 0 ) {
+            ob_end_clean();
+        }
+
+        header( 'Content-Type: ' . $result['content_type'] );
+        header( 'Content-Disposition: attachment; filename="' . $result['filename'] . '"' );
+        header( 'Content-Length: ' . strlen( $result['body'] ) );
+        // The report names the customer's pages and their defects.
+        header( 'Cache-Control: private, no-store' );
+        header( 'X-Content-Type-Options: nosniff' );
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- binary PDF
+        echo $result['body'];
+        exit;
+    }
+
+    /**
      * Read one audit. `findings=1` asks for the full report (per-page
      * findings, the cross-page grouping and the comparison with the previous
      * audit); without it the response is the light progress view, which is

@@ -174,6 +174,8 @@ class QAProof_Admin_Assets {
                 'saPageCompared'     => __( 'pages compared with the previous audit', 'qaproof' ),
                 'saPageComparedOne'  => __( 'page compared with the previous audit', 'qaproof' ),
                 'saNewToThisScan'    => __( 'new to this scan', 'qaproof' ),
+                'saPdfBuilding'      => __( 'Building the report…', 'qaproof' ),
+                'saPdfFailed'        => __( 'The report could not be generated.', 'qaproof' ),
                 'errHttp'            => __( 'Server returned HTTP ', 'qaproof' ),
                 'err404'             => __( 'REST API endpoint not found (404). Check that the plugin is activated and permalinks are flushed (Settings → Permalinks → Save).', 'qaproof' ),
                 'err403'             => __( 'Access denied (403). Your login session may have expired — try refreshing the page.', 'qaproof' ),

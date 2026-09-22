@@ -1185,6 +1185,64 @@ class QAProof_API_Client {
         return self::api_request( 'POST', '/api/site-audits', $body );
     }
 
+    /**
+     * Fetch the PDF report as raw bytes.
+     *
+     * Deliberately not routed through api_request(), which decodes JSON: this
+     * response is a binary body and must be handed back untouched. The PDF
+     * takes seconds to render (the API drives a headless browser), hence the
+     * longer timeout.
+     *
+     * @return array|WP_Error { body, content_type, filename }
+     */
+    public static function site_audit_report_pdf( $id ) {
+        $api_key = QAProof_Settings::get_api_key();
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'qaproof_no_api_key', __( 'API key not configured.', 'qaproof' ) );
+        }
+
+        $endpoint = QAProof_Settings::get_api_endpoint()
+            . '/api/site-audits/' . rawurlencode( $id ) . '/report.pdf';
+
+        $response = wp_remote_get( $endpoint, array(
+            'headers'   => array( 'Authorization' => 'Bearer ' . $api_key ),
+            'timeout'   => 120,
+            'sslverify' => true,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: error message */
+                sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
+            );
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        $body = wp_remote_retrieve_body( $response );
+
+        if ( $code < 200 || $code >= 300 ) {
+            $decoded = json_decode( $body, true );
+            $msg = isset( $decoded['error']['message'] )
+                ? $decoded['error']['message']
+                /* translators: %d: HTTP status code */
+                : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $code );
+            return new WP_Error( 'qaproof_api_error', $msg, array( 'status' => $code ) );
+        }
+
+        // Keep the server's filename: it carries the host and the date.
+        $filename = 'qaproof-accessibility-report.pdf';
+        $disposition = wp_remote_retrieve_header( $response, 'content-disposition' );
+        if ( $disposition && preg_match( '/filename="([^"]+)"/', $disposition, $m ) ) {
+            $filename = sanitize_file_name( $m[1] );
+        }
+
+        return array(
+            'body'         => $body,
+            'content_type' => wp_remote_retrieve_header( $response, 'content-type' ) ?: 'application/pdf',
+            'filename'     => $filename,
+        );
+    }
+
     public static function site_audit_list( $limit = 10 ) {
         return self::api_request( 'GET', '/api/site-audits?limit=' . (int) $limit );
     }
