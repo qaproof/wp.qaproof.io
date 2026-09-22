@@ -8,6 +8,7 @@ class QAProof_Admin_Assets {
             QAProof_Admin::MENU_SLUG,
             QAProof_Admin::TESTS_SLUG,
             QAProof_Admin::ACCESSIBILITY_SLUG,
+            QAProof_Admin::SITE_AUDIT_SLUG,
             QAProof_Admin::MONITORS_SLUG,
             QAProof_Admin::SETTINGS_SLUG,
         ];
@@ -47,6 +48,7 @@ class QAProof_Admin_Assets {
             '_ui',
             '_dark-mode',
             '_monitors',
+            '_site-audit',
         ];
         $prev_handle = '';
         foreach ( $css_partials as $partial ) {
@@ -99,6 +101,9 @@ class QAProof_Admin_Assets {
         // absent), so it rides with the rest rather than needing its own gate.
         wp_enqueue_script( 'qaproof-first-run',    $js_base . 'first-run.js',    [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/first-run.js' ), true );
         wp_enqueue_script( 'qaproof-figma-oauth',  $js_base . 'figma-oauth.js',  [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/figma-oauth.js' ), true );
+        // Site Audit page. Inert elsewhere — it returns immediately when its
+        // root node is absent — so it rides with the rest like first-run.js.
+        wp_enqueue_script( 'qaproof-site-audit',   $js_base . 'site-audit.js',   [ 'qaproof-helpers' ], $asset_ver( 'admin/js/modules/site-audit.js' ), true );
         wp_enqueue_script( 'qaproof-init',         $js_base . 'init.js',         [ 'qaproof-state', 'qaproof-history', 'qaproof-form', 'qaproof-polling', 'qaproof-results', 'heartbeat' ], $asset_ver( 'admin/js/modules/init.js' ), true );
 
         wp_localize_script( 'qaproof-helpers', 'qaproof', [
@@ -143,6 +148,32 @@ class QAProof_Admin_Assets {
                 'frTimeout'    => __( 'The check is taking longer than expected. Please try again in a moment.', 'qaproof' ),
                 'frFailed'     => __( 'The check could not be completed.', 'qaproof' ),
                 'frNetwork'    => __( 'Could not reach the check. Please try again.', 'qaproof' ),
+                // site-audit.js — the whole-site audit page
+                'saPhaseFinding'     => __( 'Finding pages…', 'qaproof' ),
+                'saPhaseChecking'    => __( 'Checking pages…', 'qaproof' ),
+                'saLeft'             => __( 'left', 'qaproof' ),
+                'saFailed'           => __( 'failed', 'qaproof' ),
+                'saJustNow'          => __( 'just now', 'qaproof' ),
+                'saOnePage'          => __( '1 page', 'qaproof' ),
+                'saPagesWord'        => __( 'pages', 'qaproof' ),
+                'saUnverified'       => __( 'Unverified', 'qaproof' ),
+                'saOf'               => __( 'of', 'qaproof' ),
+                'saPagesFound'       => __( 'pages found', 'qaproof' ),
+                'saPagesChecked'     => __( 'pages checked', 'qaproof' ),
+                'saCouldNotLoad'     => __( 'could not be loaded', 'qaproof' ),
+                'saViaLinks'         => __( 'found by following links (no sitemap)', 'qaproof' ),
+                'saSinglePage'       => __( 'only this page could be found', 'qaproof' ),
+                'saNoIssues'         => __( 'No issues were found on the pages we could check.', 'qaproof' ),
+                'saNeedUrl'          => __( 'Enter the address of the site you want to audit.', 'qaproof' ),
+                'saFailedRun'        => __( 'The audit could not be completed.', 'qaproof' ),
+                'saRequestFailed'    => __( 'The request failed. Please try again.', 'qaproof' ),
+                'saNonceExpired'     => __( 'This page has been open too long. Reload it to continue.', 'qaproof' ),
+                'saMore'             => __( 'more', 'qaproof' ),
+                'saFixedList'        => __( 'Fixed since last audit', 'qaproof' ),
+                'saNewList'          => __( 'New since last audit', 'qaproof' ),
+                'saPageCompared'     => __( 'pages compared with the previous audit', 'qaproof' ),
+                'saPageComparedOne'  => __( 'page compared with the previous audit', 'qaproof' ),
+                'saNewToThisScan'    => __( 'new to this scan', 'qaproof' ),
                 'errHttp'            => __( 'Server returned HTTP ', 'qaproof' ),
                 'err404'             => __( 'REST API endpoint not found (404). Check that the plugin is activated and permalinks are flushed (Settings → Permalinks → Save).', 'qaproof' ),
                 'err403'             => __( 'Access denied (403). Your login session may have expired — try refreshing the page.', 'qaproof' ),

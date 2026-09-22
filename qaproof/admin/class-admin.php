@@ -6,6 +6,7 @@ class QAProof_Admin {
     const MENU_SLUG       = 'qaproof';
     const TESTS_SLUG      = 'qaproof-tests';
     const ACCESSIBILITY_SLUG = 'qaproof-accessibility';
+    const SITE_AUDIT_SLUG    = 'qaproof-site-audit';
     const MONITORS_SLUG   = 'qaproof-monitors';
     const SETTINGS_SLUG   = 'qaproof-settings';
     const REST_NAMESPACE  = 'qaproof/v1';
@@ -92,6 +93,15 @@ class QAProof_Admin {
 
         add_submenu_page(
             self::MENU_SLUG,
+            __( 'Site Audit', 'qaproof' ),
+            __( 'Site Audit', 'qaproof' ),
+            self::CAPABILITY,
+            self::SITE_AUDIT_SLUG,
+            [ __CLASS__, 'render_site_audit_page' ]
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
             __( 'Monitors', 'qaproof' ),
             __( 'Monitors', 'qaproof' ),
             self::CAPABILITY,
@@ -141,6 +151,28 @@ class QAProof_Admin {
         register_rest_route( self::REST_NAMESPACE, '/site-audit/(?P<auditId>[a-f0-9]{16})', [
             'methods'             => 'GET',
             'callback'            => [ 'QAProof_Admin_REST_Tests', 'handle_poll_site_audit' ],
+            'permission_callback' => $permission,
+        ]);
+
+        // Site audits (plural) — a whole site, API key required. Kept apart
+        // from the keyless single-page '/site-audit' above on purpose: they
+        // differ in auth, in scope and in how long they run.
+        register_rest_route( self::REST_NAMESPACE, '/site-audits', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ 'QAProof_Admin_REST_Site_Audit', 'handle_start' ],
+                'permission_callback' => $permission,
+            ],
+            [
+                'methods'             => 'GET',
+                'callback'            => [ 'QAProof_Admin_REST_Site_Audit', 'handle_list' ],
+                'permission_callback' => $permission,
+            ],
+        ]);
+
+        register_rest_route( self::REST_NAMESPACE, '/site-audits/(?P<id>[a-fA-F0-9-]{8,64})', [
+            'methods'             => 'GET',
+            'callback'            => [ 'QAProof_Admin_REST_Site_Audit', 'handle_get' ],
             'permission_callback' => $permission,
         ]);
 
@@ -656,6 +688,15 @@ class QAProof_Admin {
         if ( ! current_user_can( self::CAPABILITY ) ) return;
         $settings_url = admin_url( 'admin.php?page=' . self::SETTINGS_SLUG );
         include QAPROOF_PLUGIN_DIR . 'admin/partials/page-accessibility.php';
+    }
+
+    public static function render_site_audit_page() {
+        if ( ! current_user_can( self::CAPABILITY ) ) return;
+        $settings_url = admin_url( 'admin.php?page=' . self::SETTINGS_SLUG );
+        // Pre-fill with this WordPress site — auditing the site the plugin is
+        // installed on is the case the page exists for.
+        $site_url = home_url( '/' );
+        include QAPROOF_PLUGIN_DIR . 'admin/partials/page-site-audit.php';
     }
 
     private static function render_test_history_section( $qaproof_prefix, $qaproof_filters = [], $qaproof_inline = false ) {

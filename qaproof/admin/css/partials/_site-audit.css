@@ -1,0 +1,438 @@
+/**
+ * Site Audit page.
+ *
+ * Scoped to `qasa-` so nothing here can reach the other pages, and built on
+ * the existing card/variable vocabulary rather than a second design system.
+ * Shared colours come from the plugin's --qp-* variables (note the prefix:
+ * --qaproof-* does not exist, and using it silently pins the light fallback
+ * in dark mode). The severity palette is restated for dark at the end of this
+ * file, because those colours carry meaning and a dark red on a dark card is
+ * exactly the failure this plugin exists to find.
+ *
+ * Small text uses --qp-text-secondary, NOT --qp-text-muted: measured, muted
+ * is 3.87:1 on the light card and 3.50:1 on the dark one, so it fails WCAG
+ * 1.4.3 AA in both themes. That is a plugin-wide problem worth fixing at the
+ * token, but this page must not add to it in the meantime.
+ */
+
+#qasa-start .qasa-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.qasa-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.qasa-row .regular-text {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.qasa-error {
+    margin-top: 12px;
+}
+
+/* ── progress ──────────────────────────────────────────────────────────── */
+
+.qasa-prog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.qasa-prog-phase {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.qasa-prog-url {
+    color: var(--qp-text-secondary, #4b5563);
+    font-size: 13px;
+    margin-top: 2px;
+    word-break: break-all;
+}
+
+.qasa-bar {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.qasa-bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--qp-accent, #00adb5);
+    transition: width 0.4s ease;
+}
+
+.qasa-prog-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--qp-text-secondary, #4b5563);
+    margin-top: 8px;
+}
+
+/* ── page list ─────────────────────────────────────────────────────────── */
+
+.qasa-pagelist {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.qasa-page {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.qasa-page:nth-child(odd) {
+    background: rgba(0, 0, 0, 0.025);
+}
+
+.qasa-page-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+    background: #d1d5db;
+}
+
+.qasa-page-dot.done { background: #10b981; }
+.qasa-page-dot.failed { background: #ef4444; }
+.qasa-page-dot.running {
+    background: var(--qp-accent, #00adb5);
+    animation: qasa-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes qasa-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* A pulsing dot is decoration; for a reader who asked for less motion the
+   state is still carried by colour. */
+@media (prefers-reduced-motion: reduce) {
+    .qasa-page-dot.running { animation: none; }
+    .qasa-bar-fill { transition: none; }
+}
+
+.qasa-page-url {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qasa-page-score { font-weight: 600; flex: none; }
+
+.qasa-page-note {
+    color: var(--qp-text-secondary, #4b5563);
+    flex: none;
+    font-size: 12px;
+}
+
+/* ── summary ───────────────────────────────────────────────────────────── */
+
+.qasa-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.qasa-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.qasa-score-ring {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    flex: none;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: 700;
+    background: rgba(0, 173, 181, 0.1);
+    color: #00838a;
+}
+
+.qasa-summary-host {
+    font-weight: 600;
+    font-size: 17px;
+    word-break: break-all;
+}
+
+.qasa-summary-sub {
+    color: var(--qp-text-secondary, #4b5563);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.qasa-summary-right {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+}
+
+.qasa-stat { text-align: center; }
+.qasa-stat strong { display: block; font-size: 22px; font-weight: 700; }
+.qasa-stat span { font-size: 12px; color: var(--qp-text-secondary, #4b5563); }
+.qasa-stat-review strong { color: var(--qp-text-secondary, #4b5563); }
+
+/* ── headings ──────────────────────────────────────────────────────────── */
+
+.qasa-h2 { font-size: 17px; margin: 0 0 4px; }
+
+.qasa-h2-sub {
+    font-size: 13px;
+    color: var(--qp-text-secondary, #4b5563);
+    margin: 0 0 16px;
+}
+
+/* ── proof of fix ──────────────────────────────────────────────────────── */
+
+.qasa-diff-stats {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin: 4px 0 18px;
+}
+
+.qasa-diff-stat strong {
+    display: block;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.qasa-diff-stat span { font-size: 12px; color: var(--qp-text-secondary, #4b5563); }
+.qasa-diff-fixed strong { color: #059669; }
+.qasa-diff-new strong { color: #b45309; }
+
+.qasa-diff-group h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 16px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--qp-text-secondary, #4b5563);
+}
+
+.qasa-diff-item {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.qasa-diff-item:nth-child(odd) { background: rgba(0, 0, 0, 0.025); }
+.qasa-diff-mark { flex: none; font-weight: 700; }
+.qasa-diff-item.fixed .qasa-diff-mark { color: #059669; }
+.qasa-diff-item.added .qasa-diff-mark { color: #b45309; }
+.qasa-diff-item-body { min-width: 0; }
+
+.qasa-diff-item-where {
+    color: var(--qp-text-secondary, #4b5563);
+    font-size: 12px;
+    margin-top: 2px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-all;
+}
+
+.qasa-diff-more {
+    font-size: 12px;
+    color: var(--qp-text-secondary, #4b5563);
+    padding: 8px 10px;
+}
+
+/* ── grouped findings ──────────────────────────────────────────────────── */
+
+.qasa-group {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 13px 15px;
+    margin-bottom: 9px;
+}
+
+.qasa-group-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.qasa-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    flex: none;
+}
+
+.qasa-badge.high { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+.qasa-badge.medium { background: rgba(217, 119, 6, 0.12); color: #b45309; }
+.qasa-badge.low { background: rgba(37, 99, 235, 0.10); color: #1d4ed8; }
+.qasa-badge.review { background: rgba(0, 0, 0, 0.06); color: #6b7280; }
+
+.qasa-group-pages {
+    font-weight: 600;
+    font-size: 13px;
+    color: #00838a;
+    flex: none;
+}
+
+.qasa-group-sc {
+    font-size: 12px;
+    color: var(--qp-text-secondary, #4b5563);
+    flex: none;
+}
+
+.qasa-group-desc { margin: 8px 0 0; font-size: 14px; line-height: 1.5; }
+
+.qasa-group-sel {
+    margin-top: 7px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--qp-text-secondary, #4b5563);
+    word-break: break-all;
+}
+
+/* ── recent ────────────────────────────────────────────────────────────── */
+
+.qasa-recent {
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.qasa-recent-title { font-size: 15px; margin: 0 0 12px; }
+
+.qasa-recent-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.qasa-recent-row:hover { background: rgba(0, 0, 0, 0.04); }
+
+.qasa-recent-host {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qasa-recent-when { color: var(--qp-text-secondary, #4b5563); flex: none; }
+
+/* wp-admin collapses its own chrome below 782px; match that. */
+@media (max-width: 782px) {
+    .qasa-summary-right {
+        gap: 16px;
+        width: 100%;
+        justify-content: space-between;
+    }
+    .qasa-diff-stats { gap: 18px; }
+}
+
+
+/* ============================
+   Dark theme
+   ============================
+   The shared card/text colours come from the --qp-* variables above, but the
+   severity palette is stated in literal colour here because it has to MEAN
+   something — so it has to be restated for a dark surface. Dark red on a dark
+   slate card is precisely the failure this plugin exists to find, and
+   shipping it in our own UI would be indefensible. */
+
+#qaproof-app.qaproof-dark .qasa-page:nth-child(odd),
+#qaproof-app.qaproof-dark .qasa-diff-item:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+#qaproof-app.qaproof-dark .qasa-bar {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#qaproof-app.qaproof-dark .qasa-group {
+  border-color: var(--qp-border-light, rgba(255, 255, 255, 0.08));
+}
+
+#qaproof-app.qaproof-dark .qasa-recent {
+  border-top-color: var(--qp-divider, rgba(255, 255, 255, 0.09));
+}
+
+#qaproof-app.qaproof-dark .qasa-recent-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#qaproof-app.qaproof-dark .qasa-score-ring {
+  background: rgba(0, 173, 181, 0.18);
+  color: #5eead4;
+}
+
+#qaproof-app.qaproof-dark .qasa-group-pages {
+  color: #5eead4;
+}
+
+#qaproof-app.qaproof-dark .qasa-badge.high {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fca5a5;
+}
+
+#qaproof-app.qaproof-dark .qasa-badge.medium {
+  background: rgba(251, 191, 36, 0.16);
+  color: #fcd34d;
+}
+
+#qaproof-app.qaproof-dark .qasa-badge.low {
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+}
+
+#qaproof-app.qaproof-dark .qasa-badge.review {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--qp-text-secondary, #a8b2c1);
+}
+
+#qaproof-app.qaproof-dark .qasa-diff-fixed strong,
+#qaproof-app.qaproof-dark .qasa-diff-item.fixed .qasa-diff-mark {
+  color: #34d399;
+}
+
+#qaproof-app.qaproof-dark .qasa-diff-new strong,
+#qaproof-app.qaproof-dark .qasa-diff-item.added .qasa-diff-mark {
+  color: #fbbf24;
+}
+
+#qaproof-app.qaproof-dark .qasa-page-dot {
+  background: rgba(255, 255, 255, 0.25);
+}

@@ -1167,6 +1167,37 @@ class QAProof_API_Client {
     // so a client-side POST here only created a duplicate row. The read paths
     // (history_list / history_get / history_delete / history_stats) remain.
 
+    /**
+     * Site audits — one accessibility audit across many pages of one site.
+     *
+     * Thin proxies over /api/site-audits, which the SaaS API exposes to API-key
+     * callers as well as to the dashboard's JWT. The run is server-side and
+     * takes 10–35 minutes, so `site_audit_start` returns as soon as the audit
+     * row exists and the admin page polls `site_audit_get` for progress.
+     *
+     * NOTE: not to be confused with start_site_audit()/poll_site_audit() above,
+     * which are the KEYLESS single-page check shown on a fresh install before
+     * an account exists. These need an API key and cover a whole site.
+     */
+    public static function site_audit_start( $url, $pages = null ) {
+        $body = array( 'url' => $url );
+        if ( $pages ) { $body['pages'] = (int) $pages; }
+        return self::api_request( 'POST', '/api/site-audits', $body );
+    }
+
+    public static function site_audit_list( $limit = 10 ) {
+        return self::api_request( 'GET', '/api/site-audits?limit=' . (int) $limit );
+    }
+
+    /**
+     * @param bool $with_findings Only the report view needs findings; the
+     *        progress poll must not drag megabytes across the wire every 4s.
+     */
+    public static function site_audit_get( $id, $with_findings = false ) {
+        $path = '/api/site-audits/' . rawurlencode( $id ) . ( $with_findings ? '?findings=1' : '' );
+        return self::api_request( 'GET', $path );
+    }
+
     public static function history_delete( $id ) {
         $result = self::api_request( 'DELETE', '/api/history/' . rawurlencode( $id ) );
         if ( is_wp_error( $result ) ) return $result;
