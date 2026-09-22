@@ -38,7 +38,12 @@
   --qp-text-primary: #f0f3f7;
   --qp-text-dark: #222831;
   --qp-text-secondary: #a8b2c1;
-  --qp-text-muted: #7b8698;
+  /* Was #7b8698 — 3.50:1 on the page, 3.07:1 on a card, 2.71:1 on a surface.
+     Lightened to the first step that clears 4.5:1 on ALL THREE dark surfaces
+     (5.82 / 5.10 / 4.50). The dark palette's surfaces sit close together, so a
+     genuinely dimmer muted tone cannot pass AA at body size — correctness wins
+     over the tonal step here. */
+  --qp-text-muted: #a4afc1;
   --qp-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   --qp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
   --qp-card-border: rgba(255, 255, 255, 0.10);

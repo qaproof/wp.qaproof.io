@@ -29,7 +29,12 @@
   --qp-accent-mid: rgba(0, 173, 181, 0.25);
   --qp-text-primary: #222831;
   --qp-text-secondary: #393E46;
-  --qp-text-muted: #7a8290;
+  /* Measured: the previous #7a8290 was 3.87:1 on a white card and 3.40:1 on
+     the #F0F0F0 surface — below the 4.5:1 WCAG 1.4.3 AA threshold for normal
+     text, on every page of a plugin whose job is to find exactly that. This
+     value is the same hue darkened to the first step that clears AA on both
+     (5.43:1 and 4.76:1). */
+  --qp-text-muted: #646a77;
   --qp-text-placeholder: #9CA3AF;
   --qp-white: #FFFFFF;
   --qp-black: #000000;
