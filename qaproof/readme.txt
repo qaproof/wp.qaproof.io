@@ -1,10 +1,10 @@
-=== Accessibility Checker & WCAG Audit – QAProof ===
+=== Accessibility Checker & Visual QA – QAProof ===
 Contributors: qaproof
 Tags: accessibility, wcag, accessibility checker, ada compliance, visual regression
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.35
+Stable tag: 1.0.36
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -216,6 +216,9 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.36 =
+* Listing name now says what else the plugin does: "Accessibility Checker & Visual QA".
 
 = 1.0.35 =
 * **Connecting an account is one click.** "Connect a QAProof account" opens qaproof.io, signs you in or creates a free account, and brings you back with the API key already saved. Pasting a key by hand still works.
