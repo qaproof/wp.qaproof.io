@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, ada compliance, visual regress
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.37
+Stable tag: 1.0.38
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -234,6 +234,9 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.38 =
+* **Download the site audit as a PDF.** One file with the score, what changed since your last audit, the fixes that cover the most pages, and the per-page table — the report you send to a client. It states plainly how many pages were checked out of how many were found, and which could not be loaded.
 
 = 1.0.37 =
 * **Site Audit: check the whole site, not one page.** A new page finds your pages from your sitemap, checks every one against WCAG 2.1 AA, and groups the findings — so a defect in a template reads as "this one fix covers 38 pages" instead of being listed thirty-eight times.
