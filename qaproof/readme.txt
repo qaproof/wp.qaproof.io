@@ -1,14 +1,14 @@
-=== Accessibility Checker & Visual QA – QAProof ===
+=== Accessibility Checker – WCAG 2.1 AA, EAA & Section 508 Site Audit – QAProof ===
 Contributors: qaproof
-Tags: accessibility, wcag, accessibility checker, ada compliance, visual regression
+Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.38
+Stable tag: 1.0.39
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Free WCAG 2.1 AA accessibility checker for WordPress. Get a real score for your site before you sign up — no account, no API key.
+Free WCAG 2.1 AA accessibility checker. Scan one page or your whole site, and see what changed since last time. No account for the first check.
 
 == Description ==
 
@@ -19,12 +19,19 @@ browser and checks it against **WCAG 2.1 Level AA**. You get a score and the
 issues it found straight away. **No account, no API key, nothing to configure
 for that first check.**
 
+It is an accessibility scanner, not an overlay or a toolbar: it changes nothing
+on your site and shows nothing to your visitors. It finds a11y defects and tells
+you where they are, so you or your developer can fix them properly — the
+approach the accessibility community asks for, and the one that stands up when
+someone checks your work against WCAG, EN 301 549, the European Accessibility
+Act (EAA) or Section 508.
+
 = What it checks =
 
 QAProof runs the checks that can be made automatically, and tells you exactly
 where each one failed:
 
-* **Colour contrast** — text and UI borders measured against the 4.5:1 and 3:1 thresholds, with the computed colours it used.
+* **Colour contrast** (color contrast) — text and UI borders measured against the 4.5:1 and 3:1 thresholds, with the computed colours it used.
 * **Images without alt text** — and alt text that is a file name, a placeholder word, or far too long.
 * **Form fields without labels** — including fields whose only label is a placeholder, which disappears as soon as someone types.
 * **Keyboard focus** — controls with `outline: none` and no visible focus style, which strand keyboard users.
@@ -181,6 +188,12 @@ The WordPress plugin is **free and open-source** (GPL-2.0+). The first check of 
 
 The QAProof service then has a **Free plan**: 10 AI generations as a one-time trial — they do not reset monthly — 1 monitor, and 7 days of test history. If you sign up with an email address you get 3 of those 10 until you verify the address; signing in with Google or GitHub gives you all 10 immediately. Paid plans (Pro, Business, Scale) add more generations, monitors and history. Full pricing at [qaproof.io/pricing](https://qaproof.io/pricing).
 
+= Is this an accessibility overlay or a toolbar? =
+
+No. QAProof adds nothing to your pages and your visitors never see it. Overlays and toolbars try to patch a site from the outside at page load; they are widely rejected by disabled users and by accessibility professionals, and in 2025 the US Federal Trade Commission fined one overlay vendor $1,000,000 over claims about what its script achieved.
+
+QAProof does the opposite job. It reads your page, tells you which WCAG success criterion each defect relates to and which element is at fault, and then gets out of the way so the problem can be fixed in your theme or content — where it actually lives.
+
 = Does this make my site legally compliant? =
 
 No, and no automated tool can. It finds the problems that can be detected automatically — a large and useful share of them — but judging whether alt text is meaningful, whether the tab order makes sense, or whether someone using a screen reader can finish a purchase needs a person. EN 301 549, the European Accessibility Act, Section 508 and AgID all expect manual testing alongside automated checks.
@@ -224,16 +237,21 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 
 == Screenshots ==
 
-1. Dashboard — average score, test count, monitors and AI generation usage at a glance.
+1. Accessibility report — score, severity breakdown, category scores, PDF export and send-to-email.
 2. All five test types in one place: Design Fidelity, Responsive Testing, Design Audit, Accessibility Audit and Visual Regression.
 3. Run a test — paste a page URL and pick the test type.
 4. Accessibility Audit — choose WCAG 2.1 Level A, AA or AAA and follow the audit progress live.
 5. Visual Regression Monitors — scheduled daily, weekly or monthly checks against an approved baseline.
 6. Settings — connect your QAProof account with an API key and see your plan and usage.
-7. Accessibility report — score, severity breakdown, category scores, PDF export and send-to-email.
+7. Dashboard — average score, test count, monitors and AI generation usage at a glance.
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.39 =
+* **Listing rewritten so the plugin can actually be found.** The directory search could not match us on "EAA", "a11y" or "accessibility scanner" at all, because those words appeared nowhere in this file. They do now, and the tag that pointed at a four-plugin corner of the directory has been spent on ones people search.
+* **New FAQ: is this an overlay or a toolbar?** It is not, and the difference matters enough to say so plainly.
+* The accessibility report is now the first screenshot, instead of the dashboard.
 
 = 1.0.38 =
 * **Download the site audit as a PDF.** One file with the score, what changed since your last audit, the fixes that cover the most pages, and the per-page table — the report you send to a client. It states plainly how many pages were checked out of how many were found, and which could not be loaded.
