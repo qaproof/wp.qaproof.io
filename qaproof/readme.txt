@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, ada compliance, visual regress
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.34
+Stable tag: 1.0.35
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -216,6 +216,10 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.35 =
+* **Connecting an account is one click.** "Connect a QAProof account" opens qaproof.io, signs you in or creates a free account, and brings you back with the API key already saved. Pasting a key by hand still works.
+* The first-run check lets you change the URL, so a local or staging install is no longer a dead end, and warns before running if the address cannot be reached from the internet.
 
 = 1.0.34 =
 * **You can now see a real accessibility score without an account.** The Dashboard runs a WCAG 2.1 AA check of your site on request — no API key, nothing to configure — and shows the score and the issues found. Connect a free account when you want the rest.

@@ -3,7 +3,7 @@
  * Plugin Name:       Accessibility Checker & WCAG Audit – QAProof
  * Plugin URI:        https://qaproof.io/
  * Description:       Check your site against WCAG 2.1 AA in minutes — no account needed for the first check. Plus Figma comparison, responsive testing and visual regression monitoring.
- * Version:           1.0.34
+ * Version:           1.0.35
  * Author:            QAProof
  * Author URI:        https://qaproof.io
  * License:           GPL-2.0-or-later
@@ -96,6 +96,7 @@ require_once QAPROOF_PLUGIN_DIR . 'includes/class-api-client.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-settings.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-database.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-notifications.php';
+require_once QAPROOF_PLUGIN_DIR . 'includes/class-connect.php';
 require_once QAPROOF_PLUGIN_DIR . 'includes/class-privacy.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin.php';
 require_once QAPROOF_PLUGIN_DIR . 'admin/class-admin-assets.php';
@@ -111,6 +112,7 @@ add_action( 'plugins_loaded', function() {
     QAProof_Admin::init();
     QAProof_Notifications::init();
     QAProof_Privacy::init();
+    QAProof_Connect::init();
     QAProof_API_Client::register_user_agent_filter();
     QAProof_Database::maybe_upgrade();
 });

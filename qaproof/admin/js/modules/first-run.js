@@ -95,7 +95,9 @@
     cta.appendChild(document.createTextNode(' '));
     var link = document.createElement('a');
     link.className = 'button button-primary';
-    link.href = root.getAttribute('data-settings-url');
+    // Straight into the connect flow — landing on Settings just moves the
+    // hunt for the button one page along.
+    link.href = root.getAttribute('data-connect-url') || root.getAttribute('data-settings-url');
     link.textContent = t('frConnect', 'Connect a free account');
     cta.appendChild(link);
 

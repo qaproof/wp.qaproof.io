@@ -447,20 +447,36 @@ class QAProof_Settings {
     }
 
     public static function render_section_description() {
-        echo '<p>';
-        echo esc_html__( 'Enter your API key to connect this plugin to your QAProof account.', 'qaproof' );
-        echo ' <a href="https://qaproof.io/app/api-keys" target="_blank" rel="noopener noreferrer">';
-        echo esc_html__( 'Get your API key at qaproof.io/app/api-keys →', 'qaproof' );
-        echo '</a>';
-        echo '</p>';
-        // New installs have no QAProof account yet — the api-keys link above
-        // dead-ends them on a login wall. Give them the signup path explicitly.
-        echo '<p>';
-        echo esc_html__( 'No account yet?', 'qaproof' );
-        echo ' <a href="https://qaproof.io/signup?utm_source=wp-plugin&utm_medium=settings" target="_blank" rel="noopener noreferrer">';
-        echo esc_html__( 'Create a free QAProof account →', 'qaproof' );
-        echo '</a>';
-        echo '</p>';
+        $notice = QAProof_Connect::notice();
+        if ( $notice ) {
+            printf(
+                '<div class="notice notice-%1$s inline" style="margin:0 0 14px"><p>%2$s</p></div>',
+                esc_attr( $notice[0] ),
+                esc_html( $notice[1] )
+            );
+        }
+
+        // One click beats six steps: sign in on qaproof.io and come straight
+        // back with the key already saved. Pasting one by hand still works,
+        // which is what the field below is for.
+        if ( ! QAProof_Settings::get_api_key() ) {
+            echo '<p style="margin:0 0 6px">';
+            echo '<a class="button button-primary" href="' . esc_url( QAProof_Connect::start_url() ) . '">';
+            echo esc_html__( 'Connect a QAProof account', 'qaproof' );
+            echo '</a>';
+            echo '</p>';
+            echo '<p class="description" style="margin:0 0 16px">';
+            echo esc_html__( 'Opens qaproof.io, signs you in or creates a free account, and brings you back with the key in place. Free, no card.', 'qaproof' );
+            echo '</p>';
+            echo '<p>' . esc_html__( 'Or paste a key by hand:', 'qaproof' ) . '</p>';
+        } else {
+            echo '<p>';
+            echo esc_html__( 'This site is connected to your QAProof account.', 'qaproof' );
+            echo ' <a href="' . esc_url( QAProof_Connect::start_url() ) . '">';
+            echo esc_html__( 'Reconnect', 'qaproof' );
+            echo '</a>';
+            echo '</p>';
+        }
     }
 
     public static function render_api_key_field() {

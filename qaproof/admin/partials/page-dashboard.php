@@ -70,6 +70,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             ?>
             <div class="qaproof-firstrun" id="qaproofFirstRun"
                  data-site="<?php echo esc_attr( home_url( '/' ) ); ?>"
+                 data-connect-url="<?php echo esc_url( QAProof_Connect::start_url() ); ?>"
                  data-settings-url="<?php echo esc_url( admin_url( 'admin.php?page=' . $settings_slug ) ); ?>">
 
                 <div class="qaproof-firstrun-intro" id="qaproofFrIntro">
