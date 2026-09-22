@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, ada compliance, visual regress
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.36
+Stable tag: 1.0.37
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,24 @@ testing with a keyboard and a screen reader.
 Use this to find what can be found quickly, to measure whether you are getting
 better, and to hand a developer a precise list. Do not use it as a compliance
 certificate — and be sceptical of any tool that offers you one.
+
+= Check the whole site, not one page =
+
+**Site Audit** finds your pages from your sitemap and checks every one of them,
+then does the thing a page-by-page list cannot: it groups the findings.
+
+On a WordPress site most defects live in a template, so the same problem
+appears on every page that uses it. Instead of reporting it forty times, Site
+Audit says **"this one fix covers 38 pages"** — and sorts the list so the
+fix with the widest reach is at the top.
+
+Run it again after the work is done and you get the other half: **what changed
+since last time.** How many issues were resolved, which ones, on which pages,
+and anything new that appeared. That is the part you can show a client.
+
+Coverage is always stated plainly — how many pages were checked out of how many
+were found, and which ones could not be loaded. A page behind a bot wall or one
+that times out is reported as exactly that, and never counted as passing.
 
 = Beyond accessibility =
 
@@ -216,6 +234,12 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.37 =
+* **Site Audit: check the whole site, not one page.** A new page finds your pages from your sitemap, checks every one against WCAG 2.1 AA, and groups the findings — so a defect in a template reads as "this one fix covers 38 pages" instead of being listed thirty-eight times.
+* **See what you fixed.** Run it again and the report opens with what changed since last time: how many issues were resolved, which ones, on which pages, and anything new. The re-scan deliberately re-checks the same pages so the comparison is like for like.
+* Coverage is stated plainly — how many pages were checked out of how many were found, and any page that could not be loaded is reported as that rather than counted as passing.
+* Fixed: secondary text in the plugin's own admin screens did not meet the WCAG 1.4.3 AA contrast threshold (3.87:1 on light, 3.50:1 on dark). Both themes corrected.
 
 = 1.0.36 =
 * Listing name now says what else the plugin does: "Accessibility Checker & Visual QA".
