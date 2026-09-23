@@ -218,11 +218,11 @@
     content_overflow: 'Text truncation, horizontal scrolling, and content clipping issues',
     // Accessibility
     color_contrast: 'WCAG 2.1 AA contrast ratios between text and backgrounds',
-    text_readability: 'Font sizes, line spacing, and overall text legibility',
+    text_readability: 'Font sizes, line spacing, and the language the page declares',
     form_labels: 'Proper label associations, placeholders, and input accessibility',
     heading_hierarchy: 'Correct heading order (h1→h2→h3) and semantic structure',
     focus_indicators: 'Visible focus outlines for keyboard navigation',
-    spacing_layout: 'Touch spacing, element grouping, and visual hierarchy',
+    spacing_layout: 'Landmarks, ARIA roles, element grouping and touch spacing',
     images: 'Alt text presence, decorative image handling, and image descriptions',
     // Regression
     styling: 'CSS changes including colors, borders, shadows, and visual properties',
@@ -1810,12 +1810,12 @@
     // Render dynamic sections
     renderCategoriesInto('qaproof-a11y-categories', data.categories, {
       color_contrast: 'Color Contrast',
-      text_readability: 'Text Readability',
+      text_readability: 'Text & Language',
       form_labels: 'Form Labels',
       touch_targets: 'Touch Targets',
       heading_hierarchy: 'Heading Hierarchy',
       focus_indicators: 'Focus Indicators',
-      spacing_layout: 'Spacing & Layout',
+      spacing_layout: 'Structure & Layout',
       images: 'Images & Alt Text',
     });
 

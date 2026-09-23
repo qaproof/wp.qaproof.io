@@ -111,7 +111,9 @@ rsync -a --delete \
 find "$STAGE_DIR" -type d -empty -delete
 
 # Final sanity check — required WP-compliance files must be present.
-for f in qaproof.php readme.txt uninstall.php; do
+# LICENSE is in this list because THIRD-PARTY-NOTICES.txt tells the reader to
+# "see the LICENSE file", and for a while there was no such file to see.
+for f in qaproof.php readme.txt uninstall.php LICENSE THIRD-PARTY-NOTICES.txt; do
   if [[ ! -f "$STAGE_DIR/qaproof/$f" ]]; then
     echo "✗ Missing required file in staged build: qaproof/$f" >&2
     exit 1

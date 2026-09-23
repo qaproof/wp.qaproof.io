@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.40
+Stable tag: 1.0.41
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,10 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.41 =
+* Added the GPL-2.0 LICENSE file that THIRD-PARTY-NOTICES.txt has been telling you to read. The build now refuses to package without it.
+* Category names in the report now describe what is actually in them: an invalid ARIA role was filed under "Spacing & Layout" and a broken page language under "Text Readability".
 
 = 1.0.40 =
 * **A mistyped API key now tells you so.** Settings queued an error and never printed it, so pasting a malformed key returned a page that silently did nothing. Saving correctly says so now too.
