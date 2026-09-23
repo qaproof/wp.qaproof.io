@@ -463,6 +463,7 @@ class QAProof_Admin {
         header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
         header( 'Content-Length: ' . strlen( $pdf ) );
         header( 'Cache-Control: private, no-store' );
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- binary PDF
         echo $pdf;
         exit;
     }
@@ -572,6 +573,32 @@ class QAProof_Admin {
         // (the page wouldn't be reachable otherwise), but we re-check for
         // defence-in-depth.
         if ( ! current_user_can( self::CAPABILITY ) ) return;
+
+        // Print whatever sanitize_api_key() queued with add_settings_error().
+        //
+        // The form posts to options.php and comes back here, but WordPress
+        // only auto-renders queued settings errors on options-*.php screens.
+        // This is a top-level admin.php?page= screen, so nothing was ever
+        // printed: a mistyped API key was rejected in silence and the user
+        // was left looking at a page that appeared to do nothing. A correct
+        // save was equally mute.
+        //
+        // Called with no argument so every registered group is covered, not
+        // just the API key's.
+        settings_errors();
+
+        // options.php redirects back with ?settings-updated=true on success.
+        // Nothing consumed it, hence no confirmation. Only shown when the
+        // sanitizer queued no error of its own, so a rejected key never reads
+        // as "Saved".
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only flag set by options.php
+        $qaproof_saved = isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'];
+        if ( $qaproof_saved && ! get_settings_errors() ) {
+            printf(
+                '<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+                esc_html__( 'Settings saved.', 'qaproof' )
+            );
+        }
 
         // Read-only tab navigation. `tab` and `subtab` only pick which UI tab
         // is displayed; they do NOT trigger writes, options updates, or any

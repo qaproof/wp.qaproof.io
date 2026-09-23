@@ -1307,6 +1307,7 @@ class QAProof_API_Client {
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error( 'qaproof_api_network_error',
+                /* translators: %s: the underlying network error message */
                 sprintf( __( 'Could not reach the API: %s', 'qaproof' ), $response->get_error_message() )
             );
         }
@@ -1317,6 +1318,7 @@ class QAProof_API_Client {
         if ( $status_code !== 200 || strpos( $content_type, 'application/pdf' ) === false ) {
             $body    = wp_remote_retrieve_body( $response );
             $decoded = json_decode( $body, true );
+            /* translators: %d: HTTP status code returned by the API */
             $msg     = isset( $decoded['error'] ) ? $decoded['error'] : sprintf( __( 'API returned HTTP %d', 'qaproof' ), $status_code );
             return new WP_Error( 'qaproof_pdf_error', $msg );
         }

@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.39
+Stable tag: 1.0.40
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -79,6 +79,11 @@ Coverage is always stated plainly — how many pages were checked out of how man
 were found, and which ones could not be loaded. A page behind a bot wall or one
 that times out is reported as exactly that, and never counted as passing.
 
+How many pages one run checks depends on your plan: **5 on the free plan**, 50
+on Pro, 150 on Business. The report always says how many it found so you can
+see what was left out. When a run finishes, a copy of the report is emailed to
+the address on your account.
+
 = Beyond accessibility =
 
 The same plugin also covers the visual side of QA, if you need it:
@@ -149,7 +154,7 @@ QAProof works equally well for non-technical site owners and experienced develop
 * **Category-by-category breakdown** with visual charts.
 * **Every issue listed with its exact location** on the page.
 * **Ready-to-paste CSS fix recommendations** — not "something looks off" but "add margin-top: 16px to .header-nav".
-* **PDF reports with a verification seal** — ready to send to your client in one click.
+* **PDF reports** — the findings, the elements and the measured values, ready to send to your client in one click.
 * **Email reports** — send directly from the interface without downloading.
 * **WCAG level selector (A / AA / AAA)** — adjust audit strictness to match your requirements.
 * **Saved designs** — save a Figma design once, reuse it across all future tests.
@@ -167,7 +172,7 @@ The market has tools for design comparison. Separate tools for regression. Separ
 *  Design Debt Score
 *  WordPress plugin with built-in admin UI
 *  Scheduled automatic monitoring
-*  PDF reports with verification seal
+*  PDF reports
 *  AI-generated CSS fix recommendations
 
 = Start for free today =
@@ -206,7 +211,9 @@ Only for Design Fidelity (Figma vs live page). Responsive, Accessibility, Design
 
 Only what you explicitly submit: the **URL of the page** you want to test and, for Design Fidelity, the **Figma design link**. QAProof never reads your post content, user accounts, visitor data, passwords, or any other information from your site.
 
-The one request that happens without an API key is the first check: when you click **Check my site**, the plugin sends your site's public home page URL to api.qaproof.io so it can be loaded and audited. Nothing is sent until you click that button, and nothing else about your site goes with it.
+Every request also carries a normal User-Agent identifying the plugin version and your WordPress and PHP versions — the same thing any HTTP client sends — so we can tell which versions are in use when something breaks. Emailed reports carry the address you send them to, and the feedback form carries your WordPress user ID and your site's home URL so we can reply about the right site.
+
+The one request that happens without an API key is the first check: when you click **Check my site**, the plugin sends your site's public home page URL to api.qaproof.io so it can be loaded and audited. Nothing is sent until you click that button.
 
 = Where are my test results stored? =
 
@@ -247,6 +254,13 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.40 =
+* **A mistyped API key now tells you so.** Settings queued an error and never printed it, so pasting a malformed key returned a page that silently did nothing. Saving correctly says so now too.
+* **The PDF no longer carries a "verified" seal.** Nothing verified it — there was no signature and nothing a recipient could check. It says what it is: an automated check. This plugin's own FAQ tells you to be sceptical of exactly that kind of mark, and it should hold itself to that.
+* **The readme now matches the code** on what leaves your site (the plugin version and your WordPress and PHP versions travel in the User-Agent, as with any HTTP client), on Site Audit's per-plan page limit, and on the fact that a finished site audit emails you a copy.
+* Fixed a finding that contradicted itself on a default WordPress theme, reporting content "outside any landmark region" while listing the landmarks it was inside.
+* Errors from the analysis service are now written for you rather than for whoever operates it.
 
 = 1.0.39 =
 * **Listing rewritten so the plugin can actually be found.** The directory search could not match us on "EAA", "a11y" or "accessibility scanner" at all, because those words appeared nowhere in this file. They do now, and the tag that pointed at a four-plugin corner of the directory has been spent on ones people search.

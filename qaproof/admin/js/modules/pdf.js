@@ -672,14 +672,20 @@
     var sealX = W - M - sealSize / 2 - 2;
     var sealY = H - 28 - sealSize / 2;
 
-    if (Q.cachedSealPng) {
-      doc.addImage(Q.cachedSealPng, 'PNG', sealX - sealSize / 2, sealY - sealSize / 2, sealSize, sealSize);
-    } else {
-      doc.setFontSize(6);
-      doc.setFont('helvetica', 'bold');
-      setC(C.teal);
-      doc.text(i18n(qaproof.i18n.pdfQaproofVerified, 'QAPROOF VERIFIED'), sealX, sealY, { align: 'center' });
-    }
+    // No "verified" mark here, deliberately. The old stamp said QAPROOF
+    // VERIFIED, and nothing verified it — there was no signature, no
+    // reference, nothing a recipient could check. This plugin's own readme
+    // tells people to be sceptical of exactly that, and the FTC fined an
+    // overlay vendor a million dollars over claims of the same shape. The
+    // PNG is not used for the same reason: an image cannot be corrected by
+    // changing a translated string.
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'bold');
+    setC(C.teal);
+    doc.text(i18n(qaproof.i18n.pdfQaproofMark, 'QAPROOF'), sealX, sealY - 2, { align: 'center' });
+    doc.setFontSize(4.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(i18n(qaproof.i18n.pdfAutomatedCheck, 'Automated check'), sealX, sealY + 2.5, { align: 'center' });
 
     doc.setFontSize(5);
     doc.setFont('helvetica', 'bold');

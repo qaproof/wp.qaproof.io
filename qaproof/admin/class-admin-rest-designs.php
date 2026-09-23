@@ -28,7 +28,7 @@ class QAProof_Admin_REST_Designs {
             if ( $blocked_until > 0 ) {
                 // Log so we can tell WP-gate hits apart from real Figma 429s
                 // when the same FIGMA_RATE_LIMITED code reaches the JS layer.
-                error_log( sprintf(
+                qaproof_debug_log( sprintf(
                     '[qaproof] figma-preview gated locally: fileKey=%s retryAt=%d (in %d s)',
                     $file_key,
                     $blocked_until,
@@ -137,7 +137,7 @@ class QAProof_Admin_REST_Designs {
         if ( ! $force_refresh && $will_hit_figma && $file_key !== '' ) {
             $blocked_until = QAProof_Settings::figma_rate_limit_active_until( $file_key );
             if ( $blocked_until > 0 ) {
-                error_log( sprintf(
+                qaproof_debug_log( sprintf(
                     '[qaproof] detect-elements gated locally: fileKey=%s retryAt=%d (in %d s)',
                     $file_key,
                     $blocked_until,
