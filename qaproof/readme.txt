@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.41
+Stable tag: 1.0.42
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,9 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.42 =
+* Settings no longer says "This site is connected to your QAProof account" when the saved key is one the API rejects. It says a key is saved, and lets the account panel — which actually asks the API — report whether it works.
 
 = 1.0.41 =
 * Added the GPL-2.0 LICENSE file that THIRD-PARTY-NOTICES.txt has been telling you to read. The build now refuses to package without it.

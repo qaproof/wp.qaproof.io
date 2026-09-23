@@ -470,8 +470,13 @@ class QAProof_Settings {
             echo '</p>';
             echo '<p>' . esc_html__( 'Or paste a key by hand:', 'qaproof' ) . '</p>';
         } else {
+            // "Connected" used to mean nothing more than "the option is not
+            // empty", so a key the API rejects produced a page that said
+            // "This site is connected to your QAProof account." directly above
+            // "Invalid API key." Say a key is present; let the account panel,
+            // which actually asks the API, say whether it works.
             echo '<p>';
-            echo esc_html__( 'This site is connected to your QAProof account.', 'qaproof' );
+            echo esc_html__( 'An API key is saved for this site. The account details below are fetched with it — if they fail to load, the key is not valid.', 'qaproof' );
             echo ' <a href="' . esc_url( QAProof_Connect::start_url() ) . '">';
             echo esc_html__( 'Reconnect', 'qaproof' );
             echo '</a>';
