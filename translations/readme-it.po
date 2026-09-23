@@ -1,0 +1,743 @@
+# Translation of Plugins - Accessibility Checker – WCAG 2.1 AA, EAA &amp; Section 508 Site Audit – QAProof - Stable Readme (latest release) in Italian
+# This file is distributed under the same license as the Plugins - Accessibility Checker – WCAG 2.1 AA, EAA &amp; Section 508 Site Audit – QAProof - Stable Readme (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: +0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.1.0\n"
+"Language: it\n"
+"Project-Id-Version: Plugins - Accessibility Checker – WCAG 2.1 AA, EAA &amp; Section 508 Site Audit – QAProof - Stable Readme (latest release)\n"
+
+#. Short description.
+#, gp-priority: high
+msgid "Free WCAG 2.1 AA accessibility checker. Scan one page or your whole site, and see what changed since last time. No account for the first check."
+msgstr "Verifica di accessibilità WCAG 2.1 AA gratuita. Analizza una pagina o l'intero sito e vedi che cosa è cambiato dall'ultima volta. La prima verifica non richiede un account."
+
+#. Plugin name.
+#, gp-priority: high
+msgid "Accessibility Checker – WCAG 2.1 AA, EAA &amp; Section 508 Site Audit – QAProof"
+msgstr "Verifica Accessibilità – Audit del sito WCAG 2.1 AA, EAA e Section 508 – QAProof"
+
+#. Found in faq paragraph.
+msgid "Every request also carries a normal User-Agent identifying the plugin version and your WordPress and PHP versions — the same thing any HTTP client sends — so we can tell which versions are in use when something breaks. Emailed reports carry the address you send them to, and the feedback form carries your WordPress user ID and your site's home URL so we can reply about the right site."
+msgstr "Ogni richiesta trasporta anche un normale User-Agent che indica la versione del plugin e le versioni di WordPress e PHP in uso — la stessa cosa che invia qualsiasi client HTTP — così sappiamo quali versioni sono in uso quando qualcosa non funziona. I report inviati per email contengono l'indirizzo a cui li spedite, e il modulo di feedback contiene il vostro ID utente WordPress e l'indirizzo della home del sito, così possiamo rispondervi sul sito giusto."
+
+#. Found in description paragraph.
+msgid ""
+"How many pages one run checks depends on your plan: <strong>5 on the free plan</strong>, 50\n"
+"on Pro, 150 on Business. The report always says how many it found so you can\n"
+"see what was left out. When a run finishes, a copy of the report is emailed to\n"
+"the address on your account."
+msgstr "Quante pagine vengono controllate in una singola esecuzione dipende dal vostro piano: <strong>5 nel piano gratuito</strong>, 50 con Pro, 150 con Business. Il report indica sempre quante pagine sono state trovate, così vedete che cosa è rimasto fuori. Al termine, una copia del report viene inviata all'indirizzo email del vostro account."
+
+#. Found in description list item.
+msgid "PDF reports"
+msgstr "Report PDF"
+
+#. Found in description list item.
+msgid "<strong>PDF reports</strong> — the findings, the elements and the measured values, ready to send to your client in one click."
+msgstr "<strong>Report PDF</strong> — i rilievi, gli elementi e i valori misurati, pronti da inviare al cliente in un clic."
+
+#. Found in faq paragraph.
+msgid "QAProof does the opposite job. It reads your page, tells you which WCAG success criterion each defect relates to and which element is at fault, and then gets out of the way so the problem can be fixed in your theme or content — where it actually lives."
+msgstr "QAProof fa il lavoro opposto. Legge la vostra pagina, indica a quale criterio di successo WCAG si riferisce ogni difetto e quale elemento lo causa, e poi si toglie di mezzo perché il problema venga risolto nel tema o nei contenuti — dove il problema vive davvero."
+
+#. Found in faq paragraph.
+msgid "No. QAProof adds nothing to your pages and your visitors never see it. Overlays and toolbars try to patch a site from the outside at page load; they are widely rejected by disabled users and by accessibility professionals, and in 2025 the US Federal Trade Commission fined one overlay vendor $1,000,000 over claims about what its script achieved."
+msgstr "No. QAProof non aggiunge nulla alle vostre pagine e i visitatori non lo vedono mai. Gli overlay e le toolbar cercano di rattoppare un sito dall'esterno al caricamento della pagina; sono ampiamente respinti dalle persone con disabilità e dai professionisti dell'accessibilità, e nel 2025 la Federal Trade Commission statunitense ha multato per 1.000.000 di dollari un fornitore di overlay per le affermazioni su ciò che il suo script otteneva."
+
+#. Found in faq header.
+msgid "Is this an accessibility overlay or a toolbar?"
+msgstr "Questo è un overlay di accessibilità o una toolbar?"
+
+#. Found in description paragraph.
+msgid ""
+"It is an accessibility scanner, not an overlay or a toolbar: it changes nothing\n"
+"on your site and shows nothing to your visitors. It finds a11y defects and tells\n"
+"you where they are, so you or your developer can fix them properly — the\n"
+"approach the accessibility community asks for, and the one that stands up when\n"
+"someone checks your work against WCAG, EN 301 549, the European Accessibility\n"
+"Act (EAA) or Section 508."
+msgstr "È uno scanner di accessibilità, non un overlay né una toolbar: non modifica nulla sul vostro sito e non mostra nulla ai visitatori. Individua i difetti di accessibilità e vi dice dove sono, così voi o il vostro sviluppatore potete correggerli davvero — l'approccio che la comunità dell'accessibilità chiede, e quello che regge quando qualcuno verifica il vostro lavoro rispetto a WCAG, EN 301 549, European Accessibility Act (EAA) o Section 508."
+
+#. Found in description paragraph.
+msgid ""
+"Coverage is always stated plainly — how many pages were checked out of how many\n"
+"were found, and which ones could not be loaded. A page behind a bot wall or one\n"
+"that times out is reported as exactly that, and never counted as passing."
+msgstr "La copertura è sempre dichiarata in modo esplicito: quante pagine sono state controllate su quante ne sono state trovate, e quali non è stato possibile caricare. Una pagina protetta da un blocco anti-bot o che va in timeout viene segnalata esattamente come tale, e non viene mai conteggiata come conforme."
+
+#. Found in description paragraph.
+msgid ""
+"Run it again after the work is done and you get the other half: <strong>what changed\n"
+"since last time.</strong> How many issues were resolved, which ones, on which pages,\n"
+"and anything new that appeared. That is the part you can show a client."
+msgstr "Eseguitelo di nuovo a lavoro finito e otterrete l'altra metà: <strong>che cosa è cambiato dall'ultima volta.</strong> Quanti problemi sono stati risolti, quali, su quali pagine, e che cosa di nuovo è comparso. È questa la parte che potete mostrare a un cliente."
+
+#. Found in description paragraph.
+msgid ""
+"On a WordPress site most defects live in a template, so the same problem\n"
+"appears on every page that uses it. Instead of reporting it forty times, Site\n"
+"Audit says <strong>\"this one fix covers 38 pages\"</strong> — and sorts the list so the\n"
+"fix with the widest reach is at the top."
+msgstr "Su un sito WordPress la maggior parte dei difetti vive in un template, quindi lo stesso problema compare su ogni pagina che lo usa. Invece di segnalarlo quaranta volte, Site Audit dice <strong>\"questa singola correzione copre 38 pagine\"</strong> — e ordina l'elenco mettendo in cima la correzione con la portata più ampia."
+
+#. Found in description paragraph.
+msgid ""
+"<strong>Site Audit</strong> finds your pages from your sitemap and checks every one of them,\n"
+"then does the thing a page-by-page list cannot: it groups the findings."
+msgstr "<strong>Site Audit</strong> trova le vostre pagine dalla sitemap e le controlla tutte, poi fa ciò che un elenco pagina per pagina non può fare: raggruppa i rilievi."
+
+#. Found in description header.
+msgid "Check the whole site, not one page"
+msgstr "Controlla tutto il sito, non una sola pagina"
+
+#. Found in faq paragraph.
+msgid "The one request that happens without an API key is the first check: when you click <strong>Check my site</strong>, the plugin sends your site's public home page URL to api.qaproof.io so it can be loaded and audited. Nothing is sent until you click that button."
+msgstr "L'unica richiesta che avviene senza una chiave API è la prima verifica: quando fate clic su <strong>Check my site</strong>, il plugin invia a api.qaproof.io l'URL pubblico della home page del vostro sito perché possa essere caricato e analizzato. Nulla viene inviato finché non premete quel pulsante."
+
+#. Found in faq paragraph.
+msgid "No, and no automated tool can. It finds the problems that can be detected automatically — a large and useful share of them — but judging whether alt text is meaningful, whether the tab order makes sense, or whether someone using a screen reader can finish a purchase needs a person. EN 301 549, the European Accessibility Act, Section 508 and AgID all expect manual testing alongside automated checks."
+msgstr "No, e nessuno strumento automatico può farlo. Trova i problemi rilevabili automaticamente — una quota ampia e utile — ma giudicare se un testo alternativo è significativo, se l'ordine di tabulazione ha senso o se chi usa uno screen reader riesce a completare un acquisto richiede una persona. EN 301 549, lo European Accessibility Act, la Section 508 e le linee guida AgID prevedono tutti test manuali accanto alle verifiche automatiche."
+
+#. Found in faq paragraph.
+msgid "The QAProof service then has a <strong>Free plan</strong>: 10 AI generations as a one-time trial — they do not reset monthly — 1 monitor, and 7 days of test history. If you sign up with an email address you get 3 of those 10 until you verify the address; signing in with Google or GitHub gives you all 10 immediately. Paid plans (Pro, Business, Scale) add more generations, monitors and history. Full pricing at <a href=\"https://qaproof.io/pricing\">qaproof.io/pricing</a>."
+msgstr "Il servizio QAProof ha poi un <strong>piano gratuito</strong>: 10 generazioni AI come prova una tantum — non si rinnovano ogni mese — 1 monitor e 7 giorni di cronologia dei test. Se vi registrate con un indirizzo email ne avete 3 su 10 finché non verificate l'indirizzo; accedendo con Google o GitHub le ottenete tutte e 10 subito. I piani a pagamento (Pro, Business, Scale) aggiungono più generazioni, monitor e cronologia. Prezzi completi su <a href=\"https://qaproof.io/pricing\">qaproof.io/pricing</a>."
+
+#. Found in faq paragraph.
+msgid "The WordPress plugin is <strong>free and open-source</strong> (GPL-2.0+). The first check of your site needs no account at all."
+msgstr "Il plugin WordPress è <strong>gratuito e open source</strong> (GPL-2.0+). La prima verifica del vostro sito non richiede alcun account."
+
+#. Found in faq paragraph.
+msgid "An account (free) is what unlocks auditing other pages, seeing every issue rather than the first few, PDF export and scheduled monitoring."
+msgstr "Un account (gratuito) è ciò che sblocca l'analisi di altre pagine, la visione di tutti i problemi anziché dei primi, l'esportazione in PDF e il monitoraggio programmato."
+
+#. Found in faq paragraph.
+msgid "Not for the first check. Install the plugin, click <strong>Check my site</strong>, and you get a real score and the issues found on your home page — no account, no API key, no card."
+msgstr "Non per la prima verifica. Installate il plugin, fate clic su <strong>Check my site</strong> e ottenete un punteggio reale e i problemi trovati sulla vostra home page — senza account, senza chiave API, senza carta di credito."
+
+#. Found in faq header.
+msgid "Does this make my site legally compliant?"
+msgstr "Questo rende il mio sito legalmente conforme?"
+
+#. Found in faq header.
+msgid "Do I need an account?"
+msgstr "Serve un account?"
+
+#. Found in installation paragraph.
+msgid "To audit other pages, see every issue, export PDFs or set up monitoring:"
+msgstr "Per analizzare altre pagine, vedere tutti i problemi, esportare PDF o impostare il monitoraggio:"
+
+#. Found in installation list item.
+msgid "Open <strong>QAProof</strong> and click <strong>Check my site</strong>. Your accessibility score and the issues found appear in a minute or two. No account needed for this."
+msgstr "Aprite <strong>QAProof</strong> e fate clic su <strong>Check my site</strong>. Il punteggio di accessibilità e i problemi trovati compaiono in un minuto o due. Per questo non serve un account."
+
+#. Found in description paragraph.
+msgid "Install the plugin and click <strong>Check my site</strong>. You will know where your site stands before you have typed an email address."
+msgstr "Installate il plugin e fate clic su <strong>Check my site</strong>. Saprete a che punto è il vostro sito prima ancora di aver digitato un indirizzo email."
+
+#. Found in description paragraph.
+msgid "<strong>To go further</strong>, connect a free account (Settings → it takes a minute) and you can:"
+msgstr "<strong>Per andare oltre</strong>, collegate un account gratuito (Impostazioni → richiede un minuto) e potrete:"
+
+#. Found in description paragraph.
+msgid "<strong>Your first check needs nothing but the plugin:</strong>"
+msgstr "<strong>La prima verifica non richiede altro che il plugin:</strong>"
+
+#. Found in description paragraph.
+msgid "The same plugin also covers the visual side of QA, if you need it:"
+msgstr "Lo stesso plugin copre anche il lato visivo della QA, se vi serve:"
+
+#. Found in description paragraph.
+msgid ""
+"Use this to find what can be found quickly, to measure whether you are getting\n"
+"better, and to hand a developer a precise list. Do not use it as a compliance\n"
+"certificate — and be sceptical of any tool that offers you one."
+msgstr "Usatelo per trovare in fretta ciò che è trovabile, per misurare se state migliorando e per consegnare a uno sviluppatore un elenco preciso. Non usatelo come certificato di conformità — e diffidate di qualsiasi strumento che ve ne offra uno."
+
+#. Found in description paragraph.
+msgid ""
+"No automated tool can judge whether your alt text is <em>meaningful</em>, whether your\n"
+"tab order makes sense, or whether a screen reader user can actually complete\n"
+"your checkout. Standards like <strong>EN 301 549</strong>, the <strong>European Accessibility\n"
+"Act</strong>, <strong>Section 508</strong> and Italy's <strong>AgID</strong> guidelines all expect manual\n"
+"testing with a keyboard and a screen reader."
+msgstr "Nessuno strumento automatico può giudicare se il vostro testo alternativo è <em>significativo</em>, se l'ordine di tabulazione ha senso o se chi usa uno screen reader riesce davvero a completare il checkout. Standard come <strong>EN 301 549</strong>, lo <strong>European Accessibility Act</strong>, la <strong>Section 508</strong> e le linee guida <strong>AgID</strong> italiane prevedono tutti test manuali con tastiera e screen reader."
+
+#. Found in description paragraph.
+msgid ""
+"Automated checks find a meaningful share of accessibility problems, and they\n"
+"find them in minutes. They <strong>cannot</strong> tell you that a site is compliant."
+msgstr "Le verifiche automatiche trovano una quota significativa dei problemi di accessibilità, e la trovano in pochi minuti. <strong>Non possono</strong> dirvi che un sito è conforme."
+
+#. Found in description paragraph.
+msgid ""
+"Every finding names the <strong>WCAG success criterion</strong> it relates to, the <strong>exact\n"
+"element</strong> (CSS selector and a snippet of the source) and what was measured —\n"
+"the actual contrast ratio, the actual size — so you can check it yourself\n"
+"rather than take our word for it."
+msgstr "Ogni rilievo indica il <strong>criterio di successo WCAG</strong> a cui si riferisce, l'<strong>elemento esatto</strong> (selettore CSS e un frammento del sorgente) e che cosa è stato misurato — il rapporto di contrasto reale, la dimensione reale — così potete verificarlo voi stessi invece di fidarvi sulla parola."
+
+#. Found in description paragraph.
+msgid ""
+"QAProof runs the checks that can be made automatically, and tells you exactly\n"
+"where each one failed:"
+msgstr "QAProof esegue le verifiche che possono essere fatte automaticamente e vi dice esattamente dove ciascuna non è stata superata:"
+
+#. Found in description paragraph.
+msgid ""
+"Install the plugin, click one button, and QAProof loads your home page in a real\n"
+"browser and checks it against <strong>WCAG 2.1 Level AA</strong>. You get a score and the\n"
+"issues it found straight away. <strong>No account, no API key, nothing to configure\n"
+"for that first check.</strong>"
+msgstr "Installate il plugin, fate clic su un pulsante e QAProof carica la vostra home page in un browser reale e la verifica rispetto a <strong>WCAG 2.1 livello AA</strong>. Ottenete subito un punteggio e i problemi trovati. <strong>Nessun account, nessuna chiave API, niente da configurare per questa prima verifica.</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>Find out where your site fails WCAG — before anyone else does.</strong>"
+msgstr "<strong>Scoprite dove il vostro sito non rispetta le WCAG — prima che lo faccia qualcun altro.</strong>"
+
+#. Found in description list item.
+msgid "A real result before you create an account"
+msgstr "Un risultato reale prima di creare un account"
+
+#. Found in description list item.
+msgid "run the visual tests below."
+msgstr "eseguire i test visivi descritti sotto."
+
+#. Found in description list item.
+msgid "set a monitor that re-checks a page on a schedule and tells you when the score drops;"
+msgstr "impostare un monitor che ricontrolla una pagina a intervalli regolari e vi avvisa quando il punteggio cala;"
+
+#. Found in description list item.
+msgid "export a PDF or email the report;"
+msgstr "esportare un PDF o inviare il report per email;"
+
+#. Found in description list item.
+msgid "see every issue rather than the first few, each with its element and a recommendation;"
+msgstr "vedere tutti i problemi anziché i primi, ciascuno con il suo elemento e una raccomandazione;"
+
+#. Found in description list item.
+msgid "audit any page, not just the home page, and pick WCAG Level A, AA or AAA;"
+msgstr "analizzare qualsiasi pagina, non solo la home page, e scegliere il livello WCAG A, AA o AAA;"
+
+#. Found in description list item.
+msgid "A real WCAG 2.1 AA check of your home page runs — usually 1–2 minutes — and you get a score and the issues found."
+msgstr "Viene eseguita una verifica WCAG 2.1 AA reale della vostra home page — di solito 1–2 minuti — e ottenete un punteggio e i problemi trovati."
+
+#. Found in description list item.
+msgid "Open the <strong>QAProof</strong> menu and click <strong>Check my site</strong>."
+msgstr "Aprite il menu <strong>QAProof</strong> e fate clic su <strong>Check my site</strong>."
+
+#. Found in description list item.
+msgid "Install and activate QAProof."
+msgstr "Installate e attivate QAProof."
+
+#. Found in description list item.
+msgid "<strong>WordPress site owners</strong> — no code, no complexity. Install the plugin and click one button."
+msgstr "<strong>Proprietari di siti WordPress</strong> — nessun codice, nessuna complicazione. Installate il plugin e fate clic su un pulsante."
+
+#. Found in description list item.
+msgid "<strong>Public-sector sites</strong> — councils, schools and agencies working to EN 301 549, the European Accessibility Act or AgID: find what is findable automatically, then put your manual testing time where it counts."
+msgstr "<strong>Siti della pubblica amministrazione</strong> — comuni, scuole ed enti che lavorano secondo EN 301 549, lo European Accessibility Act o le linee guida AgID: trovate ciò che è rilevabile automaticamente, poi dedicate il tempo dei test manuali a ciò che conta davvero."
+
+#. Found in description list item.
+msgid "<strong>Agencies &amp; studios</strong> — audit a client site in minutes instead of an afternoon, and hand over a PDF that names the WCAG criterion and the element for each finding."
+msgstr "<strong>Agenzie e studi</strong> — analizzate il sito di un cliente in pochi minuti invece che in un pomeriggio, e consegnate un PDF che per ogni rilievo indica il criterio WCAG e l'elemento."
+
+#. Found in description list item.
+msgid "<strong>Page language</strong> — a missing or malformed <code>lang</code> attribute, which decides how a screen reader pronounces your page."
+msgstr "<strong>Lingua della pagina</strong> — un attributo <code>lang</code> mancante o malformato, che determina come uno screen reader pronuncia la vostra pagina."
+
+#. Found in description list item.
+msgid "<strong>Touch targets</strong> — controls below the 24×24px minimum."
+msgstr "<strong>Dimensione del target</strong> — controlli sotto il minimo di 24×24px."
+
+#. Found in description list item.
+msgid "<strong>Landmarks</strong> — content sitting outside any navigable region."
+msgstr "<strong>Landmark</strong> — contenuti che stanno fuori da qualsiasi regione navigabile."
+
+#. Found in description list item.
+msgid "<strong>ARIA</strong> — invalid roles and roles missing the attributes they cannot work without."
+msgstr "<strong>ARIA</strong> — ruoli non validi e ruoli privi degli attributi senza cui non possono funzionare."
+
+#. Found in description list item.
+msgid "<strong>Heading structure</strong> — skipped levels, empty headings, more than one H1."
+msgstr "<strong>Struttura delle intestazioni</strong> — livelli saltati, intestazioni vuote, più di un H1."
+
+#. Found in description list item.
+msgid "<strong>Keyboard focus</strong> — controls with <code>outline: none</code> and no visible focus style, which strand keyboard users."
+msgstr "<strong>Focus da tastiera</strong> — controlli con <code>outline: none</code> e nessuno stile di focus visibile, che lasciano a piedi chi naviga da tastiera."
+
+#. Found in description list item.
+msgid "<strong>Form fields without labels</strong> — including fields whose only label is a placeholder, which disappears as soon as someone types."
+msgstr "<strong>Campi di modulo senza etichetta</strong> — inclusi i campi la cui unica etichetta è un placeholder, che sparisce appena si inizia a digitare."
+
+#. Found in description list item.
+msgid "<strong>Images without alt text</strong> — and alt text that is a file name, a placeholder word, or far too long."
+msgstr "<strong>Immagini senza testo alternativo</strong> — e testi alternativi che sono un nome di file, una parola segnaposto o decisamente troppo lunghi."
+
+#. Found in description list item.
+msgid "<strong>Colour contrast</strong> (color contrast) — text and UI borders measured against the 4.5:1 and 3:1 thresholds, with the computed colours it used."
+msgstr "<strong>Contrasto dei colori</strong> (color contrast) — testo e bordi dell'interfaccia misurati rispetto alle soglie 4.5:1 e 3:1, con i colori calcolati che sono stati usati."
+
+#. Found in description header.
+msgid "Getting started"
+msgstr "Come iniziare"
+
+#. Found in description header.
+msgid "Beyond accessibility"
+msgstr "Oltre l'accessibilità"
+
+#. Found in description header.
+msgid "An honest word about \"compliance\""
+msgstr "Una parola onesta sulla \"conformità\""
+
+#. Found in description header.
+msgid "What it checks"
+msgstr "Che cosa verifica"
+
+#. Screenshot description.
+msgid "Issue markers on the page screenshot — every finding pinned to the exact element."
+msgstr "Marcatori dei problemi sullo screenshot della pagina — ogni rilievo puntato sull'elemento esatto."
+
+#. Screenshot description.
+msgid "Accessibility report — score, severity breakdown, category scores, PDF export and send-to-email."
+msgstr "Report di accessibilità — punteggio, ripartizione per gravità, punteggi per categoria, esportazione PDF e invio per email."
+
+#. Screenshot description.
+msgid "Settings — connect your QAProof account with an API key and see your plan and usage."
+msgstr "Impostazioni — collegate il vostro account QAProof con una chiave API e vedete piano e consumi."
+
+#. Screenshot description.
+msgid "Visual Regression Monitors — scheduled daily, weekly or monthly checks against an approved baseline."
+msgstr "Monitor di regressione visiva — verifiche programmate giornaliere, settimanali o mensili rispetto a una baseline approvata."
+
+#. Screenshot description.
+msgid "Accessibility Audit — choose WCAG 2.1 Level A, AA or AAA and follow the audit progress live."
+msgstr "Audit di accessibilità — scegliete il livello WCAG 2.1 A, AA o AAA e seguite l'avanzamento in tempo reale."
+
+#. Screenshot description.
+msgid "Run a test — paste a page URL and pick the test type."
+msgstr "Eseguire un test — incollate l'URL di una pagina e scegliete il tipo di test."
+
+#. Screenshot description.
+msgid "All five test types in one place: Design Fidelity, Responsive Testing, Design Audit, Accessibility Audit and Visual Regression."
+msgstr "Tutti e cinque i tipi di test in un unico posto: Design Fidelity, Responsive Testing, Design Audit, Accessibility Audit e Visual Regression."
+
+#. Screenshot description.
+msgid "Dashboard — average score, test count, monitors and AI generation usage at a glance."
+msgstr "Dashboard — punteggio medio, numero di test, monitor e consumo di generazioni AI a colpo d'occhio."
+
+#. Found in faq paragraph.
+msgid "The API rejects it and the plugin shows an error; no test runs until you enter a valid key. You can update your key at any time."
+msgstr "L'API la rifiuta e il plugin mostra un errore; nessun test viene eseguito finché non inserite una chiave valida. Potete aggiornare la chiave in qualsiasi momento."
+
+#. Found in faq paragraph.
+msgid "Yes. The plugin can be network-activated, and each site in the network manages its own settings and API key independently. Note that test history lives in the QAProof account behind the API key — sites that share one API key share one test history."
+msgstr "Sì. Il plugin può essere attivato a livello di rete e ogni sito della rete gestisce in modo indipendente le proprie impostazioni e la propria chiave API. Attenzione: la cronologia dei test vive nell'account QAProof associato alla chiave API — i siti che condividono una chiave condividono una cronologia."
+
+#. Found in faq paragraph.
+msgid "Most tests finish in a few minutes (typically 1–5). <strong>Design Fidelity:</strong> 1–3 minutes. <strong>Responsive Testing:</strong> 2–4 minutes (5 viewports). <strong>Accessibility Audit:</strong> 2–5 minutes. <strong>Design Audit:</strong> 1–3 minutes."
+msgstr "La maggior parte dei test finisce in pochi minuti (tipicamente 1–5). <strong>Design Fidelity:</strong> 1–3 minuti. <strong>Responsive Testing:</strong> 2–4 minuti (5 viewport). <strong>Accessibility Audit:</strong> 2–5 minuti. <strong>Design Audit:</strong> 1–3 minuti."
+
+#. Found in faq paragraph.
+msgid "Results are stored securely in your <strong>QAProof account</strong>, scoped to your workspace. The plugin itself stores only your settings (API key, saved designs as name + Figma link, notification and test preferences). Test results are not saved to your WordPress database."
+msgstr "I risultati sono conservati in modo sicuro nel vostro <strong>account QAProof</strong>, all'interno del vostro workspace. Il plugin in sé memorizza solo le vostre impostazioni (chiave API, design salvati come nome + link Figma, preferenze di notifica e di test). I risultati dei test non vengono salvati nel database di WordPress."
+
+#. Found in faq paragraph.
+msgid "Only for Design Fidelity (Figma vs live page). Responsive, Accessibility, Design Audit and Visual Regression need just a URL."
+msgstr "Solo per Design Fidelity (Figma rispetto alla pagina pubblicata). Responsive, Accessibility, Design Audit e Visual Regression richiedono soltanto un URL."
+
+#. Found in installation list item.
+msgid "Paste it into <strong>QAProof → Settings</strong> and save."
+msgstr "Incollatela in <strong>QAProof → Impostazioni</strong> e salvate."
+
+#. Found in installation list item.
+msgid "Create a free account at <a href=\"https://qaproof.io/signup\">qaproof.io/signup</a> and copy your API key (API Keys page)."
+msgstr "Create un account gratuito su <a href=\"https://qaproof.io/signup\">qaproof.io/signup</a> e copiate la vostra chiave API (pagina API Keys)."
+
+#. Found in installation list item.
+msgid "Activate it — a <strong>QAProof</strong> menu appears in your admin sidebar."
+msgstr "Attivatelo — nella barra laterale dell'amministrazione compare il menu <strong>QAProof</strong>."
+
+#. Found in installation list item.
+msgid "Install the plugin from the WordPress plugin directory (or upload the ZIP via Plugins → Add New → Upload)."
+msgstr "Installate il plugin dalla directory dei plugin di WordPress (oppure caricate lo ZIP da Plugin → Aggiungi nuovo → Carica)."
+
+#. Found in description paragraph.
+msgid "The market has tools for design comparison. Separate tools for regression. Separate tools for accessibility. <strong>QAProof combines all five in one platform.</strong>"
+msgstr "Sul mercato esistono strumenti per il confronto con il design. Strumenti separati per la regressione. Strumenti separati per l'accessibilità. <strong>QAProof unisce tutti e cinque in un'unica piattaforma.</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>What you get:</strong> Set a baseline screenshot of any page. QAProof re-checks it on your schedule (daily, weekly or monthly) and emails you when the score drops below your threshold. <strong>Catch broken deploys in hours, not weeks.</strong>"
+msgstr "<strong>Che cosa ottenete:</strong> impostate uno screenshot di riferimento di qualsiasi pagina. QAProof la ricontrolla secondo la vostra pianificazione (giornaliera, settimanale o mensile) e vi scrive quando il punteggio scende sotto la vostra soglia. <strong>Intercettate i deploy rotti in ore, non in settimane.</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>What you get:</strong> Your page is tested at five viewports — desktop, tablet (portrait and landscape) and mobile (portrait and landscape). The AI identifies overflow, broken stacks, illegible text, and layout failures across all five viewports — <strong>not just the device you happened to check.</strong>"
+msgstr "<strong>Che cosa ottenete:</strong> la vostra pagina viene testata su cinque viewport — desktop, tablet (verticale e orizzontale) e mobile (verticale e orizzontale). L'AI individua overflow, impilamenti rotti, testo illeggibile e cedimenti di layout su tutti e cinque i viewport — <strong>non solo su quello che vi è capitato di controllare.</strong>"
+
+#. Found in description list item.
+msgid "AI-generated CSS fix recommendations"
+msgstr "Raccomandazioni di correzione CSS generate dall'AI"
+
+#. Found in description list item.
+msgid "WordPress plugin with built-in admin UI"
+msgstr "Plugin WordPress con interfaccia di amministrazione integrata"
+
+#. Found in description list item.
+msgid "Design Debt Score"
+msgstr "Design Debt Score"
+
+#. Found in description list item.
+msgid "WCAG 2.1 accessibility audit — Level A, AA, AAA"
+msgstr "Audit di accessibilità WCAG 2.1 — livelli A, AA, AAA"
+
+#. Found in description list item.
+msgid "Responsive testing across 5 viewports"
+msgstr "Test responsive su 5 viewport"
+
+#. Found in description list item.
+msgid "Figma tool support"
+msgstr "Supporto per Figma"
+
+#. Found in faq paragraph.
+msgid "Only what you explicitly submit: the <strong>URL of the page</strong> you want to test and, for Design Fidelity, the <strong>Figma design link</strong>. QAProof never reads your post content, user accounts, visitor data, passwords, or any other information from your site."
+msgstr "Solo ciò che inviate esplicitamente: l'<strong>URL della pagina</strong> che volete testare e, per Design Fidelity, il <strong>link al design Figma</strong>. QAProof non legge mai i contenuti dei vostri articoli, gli account utente, i dati dei visitatori, le password o qualsiasi altra informazione dal vostro sito."
+
+#. Found in faq header.
+msgid "What happens if I enter a wrong API key?"
+msgstr "Che cosa succede se inserisco una chiave API sbagliata?"
+
+#. Found in faq header.
+msgid "Does the plugin work on WordPress Multisite?"
+msgstr "Il plugin funziona su WordPress Multisite?"
+
+#. Found in faq header.
+msgid "What information does QAProof send when I run a test?"
+msgstr "Quali informazioni invia QAProof quando eseguo un test?"
+
+#. Found in description paragraph.
+msgid "QAProof works equally well for non-technical site owners and experienced development teams."
+msgstr "QAProof funziona altrettanto bene per proprietari di siti non tecnici e per team di sviluppo esperti."
+
+#. Found in description paragraph.
+msgid "<strong>What you get:</strong> QAProof reads your live design tokens directly from the DOM — colors, fonts, spacing, CSS variables — and grades your design system's internal consistency on a score from 0 to 100. 0 is ideal. See exactly <strong>where the drift started.</strong>"
+msgstr "<strong>Che cosa ottenete:</strong> QAProof legge i design token direttamente dal DOM della pagina pubblicata — colori, font, spaziature, variabili CSS — e valuta la coerenza interna del vostro design system con un punteggio da 0 a 100. 0 è l'ideale. Vedete esattamente <strong>dove è iniziata la deriva.</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>The situation:</strong> \"Our site uses 47 shades of gray and 12 different font sizes. There's a design system, but nobody follows it. And we have no way to measure how bad it's gotten.\""
+msgstr "<strong>La situazione:</strong> \"Il nostro sito usa 47 sfumature di grigio e 12 dimensioni di carattere diverse. Un design system c'è, ma non lo segue nessuno. E non abbiamo modo di misurare quanto sia peggiorata la situazione.\""
+
+#. Found in description paragraph.
+msgid "<strong>How consistent is your design system — really?</strong>"
+msgstr "<strong>Quanto è coerente il vostro design system, davvero?</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>Design Audit (Design Debt Score)</strong>"
+msgstr "<strong>Design Audit (Design Debt Score)</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>The situation:</strong> \"After a plugin update, the header shifted and a button disappeared. We only found out a week later — when a client complained.\""
+msgstr "<strong>La situazione:</strong> \"Dopo l'aggiornamento di un plugin l'header si è spostato ed è sparito un pulsante. Ce ne siamo accorti solo una settimana dopo — quando si è lamentato un cliente.\""
+
+#. Found in description paragraph.
+msgid "<strong>Did the last update break something you haven't noticed yet?</strong>"
+msgstr "<strong>L'ultimo aggiornamento ha rotto qualcosa che non avete ancora notato?</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>Visual Regression Monitoring</strong>"
+msgstr "<strong>Monitoraggio delle regressioni visive</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>The situation:</strong> \"Everything looks fine on my phone. Then a client calls from their iPad and says half the page is broken.\""
+msgstr "<strong>La situazione:</strong> \"Sul mio telefono sembra tutto a posto. Poi chiama un cliente dal suo iPad e dice che metà pagina è rotta.\""
+
+#. Found in description paragraph.
+msgid "<strong>Does your site hold together on every screen size?</strong>"
+msgstr "<strong>Il vostro sito tiene su ogni dimensione di schermo?</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>Responsive Testing</strong>"
+msgstr "<strong>Test responsive</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>What you get:</strong> Connect your Figma account and pick a design — QAProof compares it against your live page. Every layout shift, color mismatch, typography difference, and spacing issue is flagged with its exact location and a copy-paste CSS fix."
+msgstr "<strong>Che cosa ottenete:</strong> collegate il vostro account Figma e scegliete un design — QAProof lo confronta con la vostra pagina pubblicata. Ogni spostamento di layout, discrepanza di colore, differenza tipografica e problema di spaziatura viene segnalato con la posizione esatta e una correzione CSS da copiare e incollare."
+
+#. Found in description paragraph.
+msgid "<strong>The situation:</strong> \"I sent the mockup to the developer and the result looks nothing like it. I spend hours comparing elements by eye — and still miss things.\""
+msgstr "<strong>La situazione:</strong> \"Ho mandato il mockup allo sviluppatore e il risultato non gli somiglia per niente. Passo ore a confrontare gli elementi a occhio — e qualcosa mi sfugge comunque.\""
+
+#. Found in description paragraph.
+msgid "<strong>Does the live site actually match the design?</strong>"
+msgstr "<strong>Il sito pubblicato corrisponde davvero al design?</strong>"
+
+#. Found in description paragraph.
+msgid "<strong>Design Fidelity</strong>"
+msgstr "<strong>Design Fidelity</strong>"
+
+#. Found in description list item.
+msgid "Scheduled automatic monitoring"
+msgstr "Monitoraggio automatico programmato"
+
+#. Found in description list item.
+msgid "Visual regression monitoring"
+msgstr "Monitoraggio delle regressioni visive"
+
+#. Found in description list item.
+msgid "Design vs. live page comparison"
+msgstr "Confronto tra design e pagina pubblicata"
+
+#. Found in description list item.
+msgid "<strong>Saved designs</strong> — save a Figma design once, reuse it across all future tests."
+msgstr "<strong>Design salvati</strong> — salvate una volta un design Figma e riusatelo in tutti i test futuri."
+
+#. Found in description list item.
+msgid "<strong>WCAG level selector (A / AA / AAA)</strong> — adjust audit strictness to match your requirements."
+msgstr "<strong>Selettore del livello WCAG (A / AA / AAA)</strong> — regolate la severità dell'audit in base alle vostre esigenze."
+
+#. Found in description list item.
+msgid "<strong>Email reports</strong> — send directly from the interface without downloading."
+msgstr "<strong>Report via email</strong> — inviateli direttamente dall'interfaccia senza scaricarli."
+
+#. Found in description list item.
+msgid "<strong>Ready-to-paste CSS fix recommendations</strong> — not \"something looks off\" but \"add margin-top: 16px to .header-nav\"."
+msgstr "<strong>Raccomandazioni CSS pronte da incollare</strong> — non \"qualcosa non torna\" ma \"aggiungi margin-top: 16px a .header-nav\"."
+
+#. Found in description list item.
+msgid "<strong>Every issue listed with its exact location</strong> on the page."
+msgstr "<strong>Ogni problema elencato con la sua posizione esatta</strong> nella pagina."
+
+#. Found in description list item.
+msgid "<strong>Category-by-category breakdown</strong> with visual charts."
+msgstr "<strong>Ripartizione categoria per categoria</strong> con grafici."
+
+#. Found in description list item.
+msgid "<strong>An overall quality score</strong> from 0 to 100 — clear, communicable, and objective."
+msgstr "<strong>Un punteggio di qualità complessivo</strong> da 0 a 100 — chiaro, comunicabile e oggettivo."
+
+#. Found in description list item.
+msgid "<strong>Designers</strong> — see exactly where your design was implemented incorrectly, and hand developers the precise CSS they need to fix it."
+msgstr "<strong>Designer</strong> — vedete esattamente dove il vostro design è stato implementato in modo scorretto e consegnate agli sviluppatori il CSS preciso che serve per correggerlo."
+
+#. Found in description list item.
+msgid "<strong>QA engineers</strong> — help identify, reproduce, and investigate issues quickly, making the development process faster and more reliable."
+msgstr "<strong>QA engineer</strong> — individuate, riproducete e analizzate i problemi rapidamente, rendendo il processo di sviluppo più veloce e affidabile."
+
+#. Found in description list item.
+msgid "<strong>In-house teams</strong> — set up monitors on your key pages and get alerted the moment a deploy breaks something."
+msgstr "<strong>Team interni</strong> — impostate monitor sulle vostre pagine chiave e ricevete un avviso nel momento in cui un deploy rompe qualcosa."
+
+#. Found in description list item.
+msgid "<strong>Freelancers</strong> — prove your work matches the design with objective data. A score is more convincing than \"trust me.\""
+msgstr "<strong>Freelance</strong> — dimostrate con dati oggettivi che il vostro lavoro corrisponde al design. Un punteggio convince più di \"fidati di me\"."
+
+#. Found in description header.
+msgid "Start for free today"
+msgstr "Iniziate gratis oggi"
+
+#. Found in description header.
+msgid "Why choose QAProof over separate tools?"
+msgstr "Perché scegliere QAProof invece di strumenti separati?"
+
+#. Found in description header.
+msgid "What you get in every report"
+msgstr "Che cosa trovate in ogni report"
+
+#. Found in description header.
+msgid "Who uses QAProof?"
+msgstr "Chi usa QAProof?"
+
+#. Found in faq header.
+msgid "How long does a test take?"
+msgstr "Quanto dura un test?"
+
+#. Found in faq header.
+msgid "Where are my test results stored?"
+msgstr "Dove vengono conservati i risultati dei miei test?"
+
+#. Found in faq header.
+msgid "Do I need a Figma account?"
+msgstr "Serve un account Figma?"
+
+#. Found in faq header.
+msgid "Is QAProof free?"
+msgstr "QAProof è gratuito?"
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Errors from the analysis service are now written for you rather than for whoever operates it."
+msgstr "Gli errori del servizio di analisi ora sono scritti per voi, non per chi lo gestisce."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fixed a finding that contradicted itself on a default WordPress theme, reporting content \"outside any landmark region\" while listing the landmarks it was inside."
+msgstr "Corretto un rilievo che si contraddiceva su un tema WordPress predefinito, segnalando contenuti \"fuori da qualsiasi regione landmark\" mentre elencava i landmark in cui si trovavano."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>The readme now matches the code</strong> on what leaves your site (the plugin version and your WordPress and PHP versions travel in the User-Agent, as with any HTTP client), on Site Audit's per-plan page limit, and on the fact that a finished site audit emails you a copy."
+msgstr "<strong>Il readme ora corrisponde al codice</strong> su ciò che esce dal vostro sito (la versione del plugin e le versioni di WordPress e PHP viaggiano nello User-Agent, come per qualsiasi client HTTP), sul limite di pagine per piano di Site Audit e sul fatto che un site audit concluso vi invia una copia per email."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>The PDF no longer carries a \"verified\" seal.</strong> Nothing verified it — there was no signature and nothing a recipient could check. It says what it is: an automated check. This plugin's own FAQ tells you to be sceptical of exactly that kind of mark, and it should hold itself to that."
+msgstr "<strong>Il PDF non porta più un sigillo \"verified\".</strong> Non l'aveva verificato nulla — non c'era firma e non c'era niente che il destinatario potesse controllare. Ora dice che cos'è: una verifica automatica. Le FAQ di questo stesso plugin vi dicono di diffidare esattamente di quel tipo di bollino, ed è giusto che valga anche per noi."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>A mistyped API key now tells you so.</strong> Settings queued an error and never printed it, so pasting a malformed key returned a page that silently did nothing. Saving correctly says so now too."
+msgstr "<strong>Una chiave API digitata male ora ve lo dice.</strong> Le impostazioni mettevano in coda un errore senza stamparlo mai, quindi incollare una chiave malformata restituiva una pagina che in silenzio non faceva nulla. Ora anche il salvataggio riuscito ve lo dice."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Category names in the report now describe what is actually in them: an invalid ARIA role was filed under \"Spacing &amp; Layout\" and a broken page language under \"Text Readability\"."
+msgstr "I nomi delle categorie nel report ora descrivono ciò che contengono davvero: un ruolo ARIA non valido finiva sotto \"Spaziatura e layout\" e una lingua della pagina errata sotto \"Leggibilità del testo\"."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Added the GPL-2.0 LICENSE file that THIRD-PARTY-NOTICES.txt has been telling you to read. The build now refuses to package without it."
+msgstr "Aggiunto il file LICENSE GPL-2.0 che THIRD-PARTY-NOTICES.txt vi diceva di leggere. Ora la build si rifiuta di creare il pacchetto senza di esso."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Settings no longer says \"This site is connected to your QAProof account\" when the saved key is one the API rejects. It says a key is saved, and lets the account panel — which actually asks the API — report whether it works."
+msgstr "Le impostazioni non dicono più \"Questo sito è collegato al tuo account QAProof\" quando la chiave salvata è una che l'API rifiuta. Dicono che una chiave è salvata, e lasciano al pannello dell'account — che l'API la interroga davvero — il compito di riferire se funziona."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "The accessibility report is now the first screenshot, instead of the dashboard."
+msgstr "Il report di accessibilità è ora il primo screenshot, al posto della dashboard."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>New FAQ: is this an overlay or a toolbar?</strong> It is not, and the difference matters enough to say so plainly."
+msgstr "<strong>Nuova FAQ: è un overlay o una toolbar?</strong> Non lo è, e la differenza conta abbastanza da dirlo chiaramente."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Listing rewritten so the plugin can actually be found.</strong> The directory search could not match us on \"EAA\", \"a11y\" or \"accessibility scanner\" at all, because those words appeared nowhere in this file. They do now, and the tag that pointed at a four-plugin corner of the directory has been spent on ones people search."
+msgstr "<strong>Scheda riscritta perché il plugin possa essere effettivamente trovato.</strong> La ricerca della directory non riusciva ad abbinarci a \"EAA\", \"a11y\" o \"accessibility scanner\", perché quelle parole non comparivano da nessuna parte in questo file. Ora ci sono, e il tag che puntava a un angolo della directory con quattro plugin è stato speso su parole che le persone cercano davvero."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Download the site audit as a PDF.</strong> One file with the score, what changed since your last audit, the fixes that cover the most pages, and the per-page table — the report you send to a client. It states plainly how many pages were checked out of how many were found, and which could not be loaded."
+msgstr "<strong>Scaricate il site audit in PDF.</strong> Un unico file con il punteggio, che cosa è cambiato dall'audit precedente, le correzioni che coprono più pagine e la tabella pagina per pagina — il report da inviare a un cliente. Dichiara esplicitamente quante pagine sono state controllate su quante ne sono state trovate e quali non è stato possibile caricare."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fixed: secondary text in the plugin's own admin screens did not meet the WCAG 1.4.3 AA contrast threshold (3.87:1 on light, 3.50:1 on dark). Both themes corrected."
+msgstr "Corretto: il testo secondario nelle schermate di amministrazione del plugin non raggiungeva la soglia di contrasto WCAG 1.4.3 AA (3.87:1 su chiaro, 3.50:1 su scuro). Corretti entrambi i temi."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Coverage is stated plainly — how many pages were checked out of how many were found, and any page that could not be loaded is reported as that rather than counted as passing."
+msgstr "La copertura è dichiarata esplicitamente — quante pagine sono state controllate su quante ne sono state trovate — e ogni pagina che non è stato possibile caricare viene segnalata come tale, non conteggiata come conforme."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>See what you fixed.</strong> Run it again and the report opens with what changed since last time: how many issues were resolved, which ones, on which pages, and anything new. The re-scan deliberately re-checks the same pages so the comparison is like for like."
+msgstr "<strong>Vedete che cosa avete corretto.</strong> Eseguitelo di nuovo e il report si apre con ciò che è cambiato dall'ultima volta: quanti problemi sono stati risolti, quali, su quali pagine e che cosa di nuovo è comparso. La nuova scansione ricontrolla deliberatamente le stesse pagine, così il confronto è a parità di condizioni."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Site Audit: check the whole site, not one page.</strong> A new page finds your pages from your sitemap, checks every one against WCAG 2.1 AA, and groups the findings — so a defect in a template reads as \"this one fix covers 38 pages\" instead of being listed thirty-eight times."
+msgstr "<strong>Site Audit: controlla tutto il sito, non una sola pagina.</strong> Una nuova pagina trova i vostri URL dalla sitemap, li verifica tutti rispetto a WCAG 2.1 AA e raggruppa i rilievi — così un difetto in un template si legge come \"questa singola correzione copre 38 pagine\" invece di essere elencato trentotto volte."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Listing: screenshot captions added; accessibility audit description clarified (automated WCAG 2.1 check, with a link to the free no-signup checker)."
+msgstr "Scheda: aggiunte le didascalie agli screenshot; chiarita la descrizione dell'audit di accessibilità (verifica WCAG 2.1 automatica, con un link al verificatore gratuito senza registrazione)."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Settings: account panel says \"1 monitor\" (was \"1 monitors\")."
+msgstr "Impostazioni: il pannello dell'account dice \"1 monitor\" (prima diceva \"1 monitors\")."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Plugin homepage link now points to qaproof.io."
+msgstr "Il link alla home page del plugin ora punta a qaproof.io."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Listing rewritten around what the plugin is mostly used for: accessibility."
+msgstr "Scheda riscritta attorno a ciò per cui il plugin viene usato più spesso: l'accessibilità."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "The URL fields on the Tests and Accessibility pages are pre-filled with your own site address instead of being empty."
+msgstr "I campi URL nelle pagine Tests e Accessibility sono precompilati con l'indirizzo del vostro sito invece di essere vuoti."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>You can now see a real accessibility score without an account.</strong> The Dashboard runs a WCAG 2.1 AA check of your site on request — no API key, nothing to configure — and shows the score and the issues found. Connect a free account when you want the rest."
+msgstr "<strong>Ora potete vedere un punteggio di accessibilità reale senza un account.</strong> La dashboard esegue su richiesta una verifica WCAG 2.1 AA del vostro sito — senza chiave API, senza nulla da configurare — e mostra il punteggio e i problemi trovati. Collegate un account gratuito quando volete il resto."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "The first-run check lets you change the URL, so a local or staging install is no longer a dead end, and warns before running if the address cannot be reached from the internet."
+msgstr "La verifica al primo avvio consente di cambiare l'URL, così un'installazione locale o di staging non è più un vicolo cieco, e avvisa prima di partire se l'indirizzo non è raggiungibile da internet."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Connecting an account is one click.</strong> \"Connect a QAProof account\" opens qaproof.io, signs you in or creates a free account, and brings you back with the API key already saved. Pasting a key by hand still works."
+msgstr "<strong>Collegare un account è questione di un clic.</strong> \"Connect a QAProof account\" apre qaproof.io, vi fa accedere o crea un account gratuito e vi riporta indietro con la chiave API già salvata. Incollare una chiave a mano funziona ancora."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Listing name now says what else the plugin does: \"Accessibility Checker &amp; Visual QA\"."
+msgstr "Il nome nella scheda ora dice anche che cos'altro fa il plugin: \"Accessibility Checker e Visual QA\"."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Report fidelity improvements across all five test types."
+msgstr "Migliorata la fedeltà dei report in tutti e cinque i tipi di test."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Fidelity audit improvements and stability fixes."
+msgstr "Migliorie all'audit di fedeltà e correzioni di stabilità."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Dashboard \"Upgrade Plan\" now opens your QAProof billing page."
+msgstr "\"Upgrade Plan\" nella dashboard ora apre la vostra pagina di fatturazione QAProof."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Added a \"Create a free QAProof account\" link to Settings for new installs."
+msgstr "Aggiunto alle impostazioni un link \"Crea un account QAProof gratuito\" per le nuove installazioni."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Quota and limit errors now show a working upgrade/verify link instead of a generic error."
+msgstr "Gli errori di quota e di limite ora mostrano un link funzionante per l'upgrade o la verifica invece di un errore generico."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Responsive Test is now the default test type — it needs only a URL, no design file."
+msgstr "Responsive Test è ora il tipo di test predefinito — richiede solo un URL, nessun file di design."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Compatibility confirmed with WordPress 7.1."
+msgstr "Confermata la compatibilità con WordPress 7.1."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Plugin copy aligned with actual behaviour — descriptions, tooltips and button labels now say exactly what each action does."
+msgstr "Testi del plugin allineati al comportamento reale — descrizioni, tooltip ed etichette dei pulsanti ora dicono esattamente che cosa fa ciascuna azione."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Tests page now discloses that AI element detection uses 1 AI generation before you run it."
+msgstr "La pagina Tests ora segnala che il rilevamento degli elementi tramite AI consuma 1 generazione AI prima che lo eseguiate."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "Every accessibility and responsive finding now shows WHERE it is: the exact CSS selector (click to copy) and a snippet of the element's source, right on the finding card and in the PDF report."
+msgstr "Ogni rilievo di accessibilità e responsive ora mostra DOVE si trova: il selettore CSS esatto (clic per copiare) e un frammento del sorgente dell'elemento, direttamente sulla scheda del rilievo e nel report PDF."
