@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.42
+Stable tag: 1.0.43
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,10 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.43 =
+* **Reports no longer name CSS classes your page does not have.** To photograph a page in its final state the audit marks lazy-loaded images, animations and collapsed menus as loaded, and those marker classes were leaking into the selectors in your report — so a finding could point at `img.img-fluid.lazyloaded`, an element nowhere in your HTML. Runtime state such as the active carousel slide is left out too, which also stops one defect being listed several times depending on which slide happened to be showing.
+* The package no longer carries a second copy of Chart.js. Chart.js v4 publishes only minified builds, so the 208 KB `chart.umd.js` shipped next to the file the plugin loads was a duplicate that was never loaded. THIRD-PARTY-NOTICES.txt now says exactly what is bundled.
 
 = 1.0.42 =
 * Settings no longer says "This site is connected to your QAProof account" when the saved key is one the API rejects. It says a key is saved, and lets the account panel — which actually asks the API — report whether it works.
