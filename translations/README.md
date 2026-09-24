@@ -24,7 +24,7 @@ had. Regenerate it before anyone translates the UI.
 
 ## readme-it.po
 
-A complete Italian translation of all 163 strings of the **Stable Readme**
+A complete Italian translation of all 165 strings of the **Stable Readme**
 project, built against the live GlotPress export so every `msgid` matches
 exactly and the file imports without manual matching.
 

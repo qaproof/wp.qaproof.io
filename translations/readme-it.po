@@ -569,6 +569,16 @@ msgstr "QAProof è gratuito?"
 
 #. Found in changelog list item.
 #, gp-priority: low
+msgid "The package no longer carries a second copy of Chart.js. Chart.js v4 publishes only minified builds, so the 208 KB <code>chart.umd.js</code> shipped next to the file the plugin loads was a duplicate that was never loaded. THIRD-PARTY-NOTICES.txt now says exactly what is bundled."
+msgstr "Il pacchetto non contiene più una seconda copia di Chart.js. Chart.js v4 pubblica solo build minificate, quindi il file <code>chart.umd.js</code> da 208 KB distribuito accanto a quello che il plugin carica era un duplicato che non veniva mai caricato. THIRD-PARTY-NOTICES.txt ora dice esattamente che cosa è incluso."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Reports no longer name CSS classes your page does not have.</strong> To photograph a page in its final state the audit marks lazy-loaded images, animations and collapsed menus as loaded, and those marker classes were leaking into the selectors in your report — so a finding could point at <code>img.img-fluid.lazyloaded</code>, an element nowhere in your HTML. Runtime state such as the active carousel slide is left out too, which also stops one defect being listed several times depending on which slide happened to be showing."
+msgstr "<strong>I report non indicano più classi CSS che la vostra pagina non ha.</strong> Per fotografare una pagina nel suo stato finale, l'audit contrassegna come caricate le immagini in lazy-load, le animazioni e i menu chiusi, e quelle classi di servizio finivano nei selettori del report — così un rilievo poteva indicare <code>img.img-fluid.lazyloaded</code>, un elemento che nel vostro HTML non esiste. Anche lo stato che cambia durante l'uso, come la slide attiva di un carosello, viene escluso: così uno stesso difetto non compare più volte a seconda di quale slide era visibile."
+
+#. Found in changelog list item.
+#, gp-priority: low
 msgid "Errors from the analysis service are now written for you rather than for whoever operates it."
 msgstr "Gli errori del servizio di analisi ora sono scritti per voi, non per chi lo gestisce."
 
