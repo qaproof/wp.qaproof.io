@@ -569,6 +569,26 @@ msgstr "QAProof è gratuito?"
 
 #. Found in changelog list item.
 #, gp-priority: low
+msgid "<strong>Findings that are not failures are now labelled <em>Observation</em>.</strong> Some items in a report are deliberately left out of the counts and the score: either WCAG does not require them (heading order, landmarks, duplicate ids) or the checker could not confirm them (text over a gradient). They were labelled <em>Unverified</em>, which only described the second kind."
+msgstr "<strong>I rilievi che non sono violazioni ora sono etichettati <em>Osservazione</em>.</strong> Alcune voci del report sono volutamente escluse dai conteggi e dal punteggio: o le WCAG non le richiedono (ordine dei titoli, landmark, id duplicati) o il controllo non ha potuto confermarle (testo su un gradiente). Erano etichettate <em>Non verificato</em>, che descriveva solo il secondo caso."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Fewer false failures, and fewer missed ones.</strong> The checks run on the QAProof service, so these reach you with or without this update. A skip link written as a button, an inactive tab, a focusable carousel slide and an SVG hidden from screen readers are no longer reported as Level A failures. Target size (WCAG 2.2) now applies its inline and spacing exceptions. Contrast is measured on the colour the text is actually drawn in, and large text uses the WCAG thresholds of 18pt, or 14pt bold. Focusable elements hidden from screen readers with aria-hidden are now reported."
+msgstr "<strong>Meno falsi errori, e meno errori mancati.</strong> I controlli girano sul servizio QAProof, quindi questi miglioramenti vi arrivano con o senza questo aggiornamento. Uno skip link scritto come pulsante, una scheda non attiva, una slide di carosello raggiungibile con il tasto Tab e un SVG nascosto agli screen reader non vengono più segnalati come violazioni di livello A. La dimensione del target (WCAG 2.2) ora applica le eccezioni per il testo in linea e per la spaziatura. Il contrasto è misurato sul colore con cui il testo è effettivamente disegnato, e il testo grande usa le soglie WCAG di 18pt, o 14pt in grassetto. Gli elementi focalizzabili nascosti agli screen reader con aria-hidden ora vengono segnalati."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>Monitors no longer report a hover colour as a change.</strong> The capture left the pointer in the middle of the page, so whatever sat under it could be photographed in its hover state and compared with a baseline taken without it."
+msgstr "<strong>I monitor non segnalano più il colore di hover come una modifica.</strong> L'acquisizione lasciava il puntatore al centro della pagina, quindi l'elemento che si trovava lì sotto poteva essere fotografato nello stato di hover e confrontato con una baseline presa senza."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "A grouped Site Audit finding now counts each page once. Two findings on the same page were shown as two pages."
+msgstr "Un rilievo raggruppato del Site Audit ora conta ogni pagina una sola volta. Due rilievi sulla stessa pagina venivano mostrati come due pagine."
+
+#. Found in changelog list item.
+#, gp-priority: low
 msgid "The package no longer carries a second copy of Chart.js. Chart.js v4 publishes only minified builds, so the 208 KB <code>chart.umd.js</code> shipped next to the file the plugin loads was a duplicate that was never loaded. THIRD-PARTY-NOTICES.txt now says exactly what is bundled."
 msgstr "Il pacchetto non contiene più una seconda copia di Chart.js. Chart.js v4 pubblica solo build minificate, quindi il file <code>chart.umd.js</code> da 208 KB distribuito accanto a quello che il plugin carica era un duplicato che non veniva mai caricato. THIRD-PARTY-NOTICES.txt ora dice esattamente che cosa è incluso."
 

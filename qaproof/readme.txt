@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.43
+Stable tag: 1.0.44
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,12 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.44 =
+* **Findings that are not failures are now labelled *Observation*.** Some items in a report are deliberately left out of the counts and the score: either WCAG does not require them (heading order, landmarks, duplicate ids) or the checker could not confirm them (text over a gradient). They were labelled *Unverified*, which only described the second kind.
+* **Fewer false failures, and fewer missed ones.** The checks run on the QAProof service, so these reach you with or without this update. A skip link written as a button, an inactive tab, a focusable carousel slide and an SVG hidden from screen readers are no longer reported as Level A failures. Target size (WCAG 2.2) now applies its inline and spacing exceptions. Contrast is measured on the colour the text is actually drawn in, and large text uses the WCAG thresholds of 18pt, or 14pt bold. Focusable elements hidden from screen readers with aria-hidden are now reported.
+* **Monitors no longer report a hover colour as a change.** The capture left the pointer in the middle of the page, so whatever sat under it could be photographed in its hover state and compared with a baseline taken without it.
+* A grouped Site Audit finding now counts each page once. Two findings on the same page were shown as two pages.
 
 = 1.0.43 =
 * **Reports no longer name CSS classes your page does not have.** To photograph a page in its final state the audit marks lazy-loaded images, animations and collapsed menus as loaded, and those marker classes were leaking into the selectors in your report — so a finding could point at `img.img-fluid.lazyloaded`, an element nowhere in your HTML. Runtime state such as the active carousel slide is left out too, which also stops one defect being listed several times depending on which slide happened to be showing.
