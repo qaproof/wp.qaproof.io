@@ -95,7 +95,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <div class="qasa-stat"><strong id="qasa-stat-high">0</strong><span><?php esc_html_e( 'High', 'qaproof' ); ?></span></div>
                 <div class="qasa-stat"><strong id="qasa-stat-medium">0</strong><span><?php esc_html_e( 'Medium', 'qaproof' ); ?></span></div>
                 <div class="qasa-stat"><strong id="qasa-stat-low">0</strong><span><?php esc_html_e( 'Low', 'qaproof' ); ?></span></div>
-                <div class="qasa-stat qasa-stat-review"><strong id="qasa-stat-review">0</strong><span><?php esc_html_e( 'Unverified', 'qaproof' ); ?></span></div>
+                <div class="qasa-stat qasa-stat-review"><strong id="qasa-stat-review">0</strong><span><?php esc_html_e( 'Observations', 'qaproof' ); ?></span></div>
             </div>
         </div>
 

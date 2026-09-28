@@ -156,7 +156,7 @@ class QAProof_Admin_Assets {
                 'saJustNow'          => __( 'just now', 'qaproof' ),
                 'saOnePage'          => __( '1 page', 'qaproof' ),
                 'saPagesWord'        => __( 'pages', 'qaproof' ),
-                'saUnverified'       => __( 'Unverified', 'qaproof' ),
+                'saUnverified'       => __( 'Observation', 'qaproof' ),
                 'saOf'               => __( 'of', 'qaproof' ),
                 'saPagesFound'       => __( 'pages found', 'qaproof' ),
                 'saPagesChecked'     => __( 'pages checked', 'qaproof' ),

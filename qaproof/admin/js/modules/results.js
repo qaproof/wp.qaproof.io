@@ -3258,8 +3258,8 @@
         // looks deliberate) are observations, not failures — they are excluded
         // from the score, so the card must not read like a violation either.
         var reviewBadge = diff.needsReview
-          ? '<span class="qaproof-badge qaproof-badge-review" title="We spotted this but could not verify it — not counted as an issue and not included in the score">' +
-            (qaproof.i18n.needsReviewLabel || 'Unverified') + '</span>'
+          ? '<span class="qaproof-badge qaproof-badge-review" title="An observation, not a failure: best-practice advice, or something the checker could not confirm. Not counted as an issue and not included in the score">' +
+            (qaproof.i18n.needsReviewLabel || 'Observation') + '</span>'
           : '';
 
         var el = document.createElement('div');

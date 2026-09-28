@@ -201,7 +201,7 @@
 
     var badge = document.createElement('span');
     badge.className = 'qasa-badge ' + (g.needsReview ? 'review' : (g.severity || 'low'));
-    badge.textContent = g.needsReview ? t('saUnverified', 'Unverified') : (g.severity || 'low');
+    badge.textContent = g.needsReview ? t('saUnverified', 'Observation') : (g.severity || 'low');
     top.appendChild(badge);
 
     var pages = document.createElement('span');
