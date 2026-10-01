@@ -589,6 +589,21 @@ msgstr "Un rilievo raggruppato del Site Audit ora conta ogni pagina una sola vol
 
 #. Found in changelog list item.
 #, gp-priority: low
+msgid "<strong>Site Audit now starts with the pages in your menu.</strong> When a site has more pages than your plan audits in one run, the pages were chosen by the shape of their addresses, which on WordPress's default permalinks came out as the first few posts in alphabetical order. The site's own navigation is read first now, so the audit covers the pages you consider your main ones. This runs on the QAProof service and reaches you with or without this update. A site you have audited before keeps its page list, so results stay comparable."
+msgstr "<strong>Il Site Audit ora parte dalle pagine del vostro menu.</strong> Quando un sito ha più pagine di quante il vostro piano ne controlli in una sola esecuzione, le pagine venivano scelte in base alla forma degli indirizzi, che con i permalink predefiniti di WordPress corrispondeva ai primi articoli in ordine alfabetico. Ora viene letta per prima la navigazione del sito, così l'audit copre le pagine che considerate principali. Questo avviene sul servizio QAProof e vi arriva con o senza questo aggiornamento. Un sito già controllato in passato mantiene il suo elenco di pagine, così i risultati restano confrontabili."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "<strong>When an audit stopped at your plan's limit, the report says so.</strong> It shows how many pages were found, how many were checked, and which plan covers more, with a link. It appears only when the limit was actually reached."
+msgstr "<strong>Quando un audit si ferma al limite del vostro piano, il report lo dice.</strong> Mostra quante pagine sono state trovate, quante sono state controllate e quale piano ne copre di più, con un link. Compare solo quando il limite è stato effettivamente raggiunto."
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "A contrast ratio just under the requirement is no longer displayed as the requirement itself: 4.4957:1 was shown as \"4.5:1 (needs 4.5:1)\". It is shown as 4.49:1."
+msgstr "Un rapporto di contrasto appena sotto il requisito non viene più mostrato come il requisito stesso: 4,4957:1 veniva mostrato come \"4.5:1 (needs 4.5:1)\". Ora viene mostrato come 4,49:1."
+
+#. Found in changelog list item.
+#, gp-priority: low
 msgid "The package no longer carries a second copy of Chart.js. Chart.js v4 publishes only minified builds, so the 208 KB <code>chart.umd.js</code> shipped next to the file the plugin loads was a duplicate that was never loaded. THIRD-PARTY-NOTICES.txt now says exactly what is bundled."
 msgstr "Il pacchetto non contiene più una seconda copia di Chart.js. Chart.js v4 pubblica solo build minificate, quindi il file <code>chart.umd.js</code> da 208 KB distribuito accanto a quello che il plugin carica era un duplicato che non veniva mai caricato. THIRD-PARTY-NOTICES.txt ora dice esattamente che cosa è incluso."
 

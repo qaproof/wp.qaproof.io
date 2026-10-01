@@ -154,6 +154,18 @@ class QAProof_Admin_Assets {
                 'saLeft'             => __( 'left', 'qaproof' ),
                 'saFailed'           => __( 'failed', 'qaproof' ),
                 'saJustNow'          => __( 'just now', 'qaproof' ),
+                /* translators: {checked} pages audited, {found} pages discovered, {host} site hostname. Keep the placeholders. */
+                'saUpTitle'          => __( 'We checked {checked} of the {found} pages we found on {host}', 'qaproof' ),
+                /* translators: {name} plan name, {limit} pages per audit. Keep the placeholders. */
+                'saUpBody'           => __( '{name} checks up to {limit} pages per run, so the next audit covers far more of the site.', 'qaproof' ),
+                /* translators: {checked} pages audited. Keep the placeholder. */
+                'saUpTitleLinks'     => __( '{checked} pages checked — the limit of your plan', 'qaproof' ),
+                /* translators: {host} site hostname, {name} plan name, {limit} pages per audit. Keep the placeholders. */
+                'saUpBodyLinks'      => __( '{host} has no sitemap, so we followed links and stopped at your limit. {name} checks up to {limit} pages per run.', 'qaproof' ),
+                /* translators: {price} monthly price, {year} yearly total. Keep the placeholders. */
+                'saUpPrice'          => __( '{price}/month, billed yearly ({year}) · 14-day money-back guarantee', 'qaproof' ),
+                /* translators: {name} plan name. Keep the placeholder. */
+                'saUpCta'            => __( 'Upgrade to {name}', 'qaproof' ),
                 'saOnePage'          => __( '1 page', 'qaproof' ),
                 'saPagesWord'        => __( 'pages', 'qaproof' ),
                 'saUnverified'       => __( 'Observation', 'qaproof' ),

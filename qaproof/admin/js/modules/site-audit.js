@@ -304,6 +304,43 @@
     section(t('saNewList', 'New since last audit'), cmp.new, 'added', '!');
   }
 
+  function fill(str, vars) {
+    return String(str).replace(/\{(\w+)\}/g, function (m, k) {
+      return vars[k] == null ? m : vars[k];
+    });
+  }
+
+  /**
+   * The upgrade offer for an audit the plan cut short. `audit.upgrade` is
+   * null when the site fit, when the account has upgraded since, and on an
+   * API older than the field — in all three the card stays hidden.
+   */
+  function renderUpsell(audit) {
+    var card = el('qasa-upsell');
+    if (!card) return;
+    card.style.display = 'none';
+    var up = audit.upgrade;
+    if (!up || !up.url || !up.name) return;
+
+    var vars = {
+      checked: audit.pagesDone || 0, found: up.foundLabel, host: hostOf(audit.startUrl),
+      name: up.name, limit: up.limit, price: up.price, year: up.year
+    };
+    if (up.viaLinks) {
+      el('qasa-upsell-title').textContent = fill(t('saUpTitleLinks', '{checked} pages checked — the limit of your plan'), vars);
+      el('qasa-upsell-body').textContent = fill(t('saUpBodyLinks', '{host} has no sitemap, so we followed links and stopped at your limit. {name} checks up to {limit} pages per run.'), vars);
+    } else {
+      el('qasa-upsell-title').textContent = fill(t('saUpTitle', 'We checked {checked} of the {found} pages we found on {host}'), vars);
+      el('qasa-upsell-body').textContent = fill(t('saUpBody', '{name} checks up to {limit} pages per run, so the next audit covers far more of the site.'), vars);
+    }
+    el('qasa-upsell-price').textContent = fill(t('saUpPrice', '{price}/month, billed yearly ({year}) · 14-day money-back guarantee'), vars);
+    var cta = el('qasa-upsell-cta');
+    cta.textContent = fill(t('saUpCta', 'Upgrade to {name}'), vars);
+    // Only ever our own billing page, whatever the response says.
+    cta.href = /^https:\/\/qaproof\.io\//.test(up.url) ? up.url : 'https://qaproof.io/pricing';
+    card.style.display = '';
+  }
+
   function renderReport(audit) {
     el('qasa-host').textContent = hostOf(audit.startUrl);
     el('qasa-score').textContent = audit.score == null ? '—' : String(audit.score);
@@ -349,6 +386,7 @@
     }
 
     renderDiff(audit.comparison);
+    renderUpsell(audit);
     renderPages(el('qasa-report-pages'), audit.pages || []);
   }
 

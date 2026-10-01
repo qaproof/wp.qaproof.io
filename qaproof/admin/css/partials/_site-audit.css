@@ -436,3 +436,18 @@
 #qaproof-app.qaproof-dark .qasa-page-dot {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ── Upgrade offer (only when the plan cut the audit short) ─────────────── */
+.qasa-upsell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    border: 1px solid #007f85;
+}
+.qasa-upsell-text { flex: 1 1 320px; min-width: 0; }
+.qasa-upsell-body { margin: 6px 0 4px; font-size: 14px; color: var(--qp-text-primary, #1f2937); }
+.qasa-upsell-price { margin: 0; font-size: 13px; color: var(--qp-text-secondary, #4b5563); }
+.qasa-upsell-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.qasa-upsell-compare { font-size: 13px; }

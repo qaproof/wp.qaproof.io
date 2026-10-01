@@ -4,7 +4,7 @@ Tags: accessibility, wcag, accessibility checker, a11y, eaa
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.44
+Stable tag: 1.0.45
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -254,6 +254,11 @@ To audit other pages, see every issue, export PDFs or set up monitoring:
 8. Issue markers on the page screenshot — every finding pinned to the exact element.
 
 == Changelog ==
+
+= 1.0.45 =
+* **Site Audit now starts with the pages in your menu.** When a site has more pages than your plan audits in one run, the pages were chosen by the shape of their addresses, which on WordPress's default permalinks came out as the first few posts in alphabetical order. The site's own navigation is read first now, so the audit covers the pages you consider your main ones. This runs on the QAProof service and reaches you with or without this update. A site you have audited before keeps its page list, so results stay comparable.
+* **When an audit stopped at your plan's limit, the report says so.** It shows how many pages were found, how many were checked, and which plan covers more, with a link. It appears only when the limit was actually reached.
+* A contrast ratio just under the requirement is no longer displayed as the requirement itself: 4.4957:1 was shown as "4.5:1 (needs 4.5:1)". It is shown as 4.49:1.
 
 = 1.0.44 =
 * **Findings that are not failures are now labelled *Observation*.** Some items in a report are deliberately left out of the counts and the score: either WCAG does not require them (heading order, landmarks, duplicate ids) or the checker could not confirm them (text over a gradient). They were labelled *Unverified*, which only described the second kind.

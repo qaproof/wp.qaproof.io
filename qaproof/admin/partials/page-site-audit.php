@@ -99,6 +99,21 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             </div>
         </div>
 
+        <!-- Shown only when the plan cut this audit short. The offer itself
+             (plan, limit, price, link) comes from the API with the audit, so
+             the plugin never carries its own copy of the prices. -->
+        <div class="qaproof-card qasa-upsell" id="qasa-upsell" style="display:none;">
+            <div class="qasa-upsell-text">
+                <h2 class="qasa-h2" id="qasa-upsell-title"></h2>
+                <p class="qasa-upsell-body" id="qasa-upsell-body"></p>
+                <p class="qasa-upsell-price" id="qasa-upsell-price"></p>
+            </div>
+            <div class="qasa-upsell-actions">
+                <a class="button button-primary" id="qasa-upsell-cta" href="#" target="_blank" rel="noopener"></a>
+                <a class="qasa-upsell-compare" href="https://qaproof.io/pricing" target="_blank" rel="noopener"><?php esc_html_e( 'Compare plans', 'qaproof' ); ?></a>
+            </div>
+        </div>
+
         <!-- Proof of fix. Hidden until this site has been audited before —
              there is nothing honest to say on a first run. -->
         <div class="qaproof-card qasa-diff" id="qasa-diff" style="display:none;">
